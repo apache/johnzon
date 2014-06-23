@@ -70,11 +70,20 @@ public class Mappings {
         public final int version;
         public final Converter<Object> converter;
         public final boolean primitive;
+        public final boolean array;
+        public final boolean map;
+        public final boolean collection;
 
-        public Getter(final Method setter, final boolean primitive, final Converter<Object> converter, final int version) {
+        public Getter(final Method setter,
+                      final boolean primitive, final boolean array,
+                      final boolean collection, final boolean map,
+                      final Converter<Object> converter, final int version) {
             this.setter = setter;
             this.converter = converter;
             this.version = version;
+            this.array = array;
+            this.map = map;
+            this.collection = collection;
             this.primitive = primitive;
         }
     }
@@ -155,7 +164,11 @@ public class Mappings {
         return false;
     }
 
-    public ClassMapping findClassMapping(final Type clazz) {
+    public ClassMapping getClassMapping(final Type clazz) {
+        return classes.get(clazz);
+    }
+
+    public ClassMapping findOrCreateClassMapping(final Type clazz) {
         ClassMapping classMapping = classes.get(clazz);
         if (classMapping == null) {
             if (!Class.class.isInstance(clazz) || Map.class.isAssignableFrom(Class.class.cast(clazz))) {
@@ -195,9 +208,13 @@ public class Mappings {
                 final FleeceIgnore readIgnore = readMethod != null ? readMethod.getAnnotation(FleeceIgnore.class) : null;
                 if (readMethod != null && readMethod.getDeclaringClass() != Object.class
                         && (readIgnore == null || readIgnore.minVersion() >= 0)) {
+                    final Class<?> returnType = readMethod.getReturnType();
                     getters.put(descriptor.getName(), new Getter(
                             readMethod,
-                            isPrimitive(readMethod.getReturnType()),
+                            isPrimitive(returnType),
+                            returnType.isArray(),
+                            Collection.class.isAssignableFrom(returnType),
+                            Map.class.isAssignableFrom(returnType),
                             findConverter(readMethod),
                             readIgnore != null ? readIgnore.minVersion() : -1));
                 }

@@ -264,7 +264,7 @@ public class Mapper {
 
     private JsonGenerator doWriteObjectBody(final JsonGenerator gen, final Object object) throws IllegalAccessException, InvocationTargetException {
         final Class<?> objectClass = object.getClass();
-        final Mappings.ClassMapping classMapping = mappings.findClassMapping(objectClass);
+        final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(objectClass);
         if (classMapping == null) {
             throw new MapperException("No mapping for " + objectClass.getName());
         }
@@ -277,7 +277,11 @@ public class Mapper {
                 continue;
             }
 
-            generator = writeValue(generator, value.getClass(), getter.primitive, getterEntry.getKey(), getter.converter == null ? value : getter.converter.toString(value));
+            generator = writeValue(generator, value.getClass(),
+                                    getter.primitive, getter.array,
+                                    getter.collection, getter.map,
+                                    getterEntry.getKey(),
+                                    getter.converter == null ? value : getter.converter.toString(value));
         }
         return generator;
     }
@@ -293,26 +297,35 @@ public class Mapper {
             final Object key = entry.getKey();
             final Class<?> valueClass = value.getClass();
             final boolean primitive = Mappings.isPrimitive(valueClass);
-            generator = writeValue(generator, valueClass, primitive, key == null ? "null" : key.toString(), value);
+            final boolean clazz = mappings.getClassMapping(valueClass) != null;
+            final boolean array = clazz || primitive ? false : valueClass.isArray();
+            final boolean collection = clazz || primitive || array ? false : Collection.class.isAssignableFrom(valueClass);
+            final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
+            generator = writeValue(generator, valueClass,
+                                    primitive, array, collection, map,
+                                    key == null ? "null" : key.toString(), value);
         }
         return generator;
     }
 
-    private JsonGenerator writeValue(final JsonGenerator generator, final Class<?> type, final boolean primitive, final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
-        if (type.isArray()) {
+    private JsonGenerator writeValue(final JsonGenerator generator, final Class<?> type,
+                                     final boolean primitive, final boolean array,
+                                     final boolean collection, final boolean map,
+                                     final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
+        if (array) {
             JsonGenerator gen = generator.writeStartArray(key);
             final int length = Array.getLength(value);
             for (int i = 0; i < length; i++) {
                 gen = writeItem(gen, Array.get(value, i));
             }
             return gen.writeEnd();
-        } else if (Collection.class.isInstance(value)) {
+        } else if (collection) {
             JsonGenerator gen = generator.writeStartArray(key);
             for (final Object o : Collection.class.cast(value)) {
                 gen = writeItem(gen, o);
             }
             return gen.writeEnd();
-        } else if (Map.class.isInstance(value)) {
+        } else if (map) {
             JsonGenerator gen = generator.writeStartObject(key);
             gen = writeMapBody((Map<?, ?>) value, gen);
             return gen.writeEnd();
@@ -321,7 +334,7 @@ public class Mapper {
         } else {
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
-                return writeValue(generator, type, true, key, doConverFrom(value, (Converter<Object>) converter));
+                return writeValue(generator, type, true, false, false, false, key, doConverFrom(value, (Converter<Object>) converter));
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
         }
@@ -422,7 +435,7 @@ public class Mapper {
     }
 
     private Object buildObject(final Type type, final JsonObject object) throws InstantiationException, IllegalAccessException {
-        final Mappings.ClassMapping classMapping = mappings.findClassMapping(type);
+        final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
 
         if (classMapping == null) {
             if (ParameterizedType.class.isInstance(type)) {
