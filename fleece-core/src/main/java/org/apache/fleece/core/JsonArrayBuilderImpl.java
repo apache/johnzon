@@ -72,25 +72,25 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        array.add(value ? JsonValue.TRUE : JsonValue.FALSE);
+        array.addInternal(value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull() {
-        array.add(JsonValue.NULL);
+        array.addInternal(JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonObjectBuilder builder) {
-        array.add(builder.build());
+        array.addInternal(builder.build());
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonArrayBuilder builder) {
-        array.add(builder.build());
+        array.addInternal(builder.build());
         return this;
     }
 
