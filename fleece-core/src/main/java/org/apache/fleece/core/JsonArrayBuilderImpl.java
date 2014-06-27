@@ -22,6 +22,7 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -30,24 +31,28 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(final JsonValue value) {
+    	if(value == null) npe();
         array.addInternal(value);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final String value) {
+    	if(value == null) npe();
         array.addInternal(new JsonStringImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigDecimal value) {
+    	if(value == null) npe();
         array.addInternal(new JsonNumberImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigInteger value) {
+    	if(value == null) npe();
         array.addInternal(new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
@@ -66,6 +71,9 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(final double value) {
+    	Double valueObject = Double.valueOf(value);    	
+    	if(valueObject.isInfinite()) throw new NumberFormatException("value must not be infinite");
+    	if(valueObject.isNaN()) throw new NumberFormatException("value must not be NaN");
         array.addInternal(new JsonDoubleImpl(value));
         return this;
     }
@@ -84,12 +92,14 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
 
     @Override
     public JsonArrayBuilder add(final JsonObjectBuilder builder) {
+    	if(builder == null) throw new NullPointerException("builder must not be null");
         array.addInternal(builder.build());
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonArrayBuilder builder) {
+    	if(builder == null) throw new NullPointerException("builder must not be null");
         array.addInternal(builder.build());
         return this;
     }
@@ -97,5 +107,9 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
     @Override
     public JsonArray build() {
         return array;
+    }
+    
+    private static NullPointerException npe() {
+        throw new NullPointerException("value must not be null");
     }
 }

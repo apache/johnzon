@@ -140,7 +140,9 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray {
         return JsonArray.class.isInstance(obj) && super.equals(obj);
     }
 
-    public void addInternal(final JsonValue value) {
+    //make protected if class is supposed to be subclassed
+    //make package private otherwise
+    protected void addInternal(final JsonValue value) {
         super.add(value);
     }
 
