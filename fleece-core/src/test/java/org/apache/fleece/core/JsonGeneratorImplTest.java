@@ -29,6 +29,18 @@ import static org.junit.Assert.assertEquals;
 
 public class JsonGeneratorImplTest {
     @Test
+    public void notFluentGeneratorUsage() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final JsonGenerator generator = Json.createGenerator(baos);
+        generator.writeStartArray();
+        generator.writeStartObject();
+        generator.writeEnd();
+        generator.writeEnd();
+        generator.close();
+        assertEquals("[{}]", new String(baos.toByteArray()));
+    }
+
+    @Test
     public void emptyArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final JsonGenerator generator = Json.createGenerator(baos);

@@ -40,6 +40,10 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory {
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
+        return new JsonGeneratorFacade(newJsonGeneratorImpl(writer));
+    }
+
+    private JsonGenerator newJsonGeneratorImpl(final Writer writer) {
         if (pretty) {
             return new JsonPrettyGeneratorImpl(writer, cache);
         }

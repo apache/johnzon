@@ -72,7 +72,7 @@ public class JsonProviderImpl extends JsonProvider {
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorImpl(writer, new ConcurrentHashMap<String, String>());
+        return new JsonGeneratorFacade(new JsonGeneratorImpl(writer, new ConcurrentHashMap<String, String>()));
     }
 
     @Override
