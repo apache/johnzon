@@ -31,7 +31,7 @@ public class JsonLongImpl implements JsonNumber {
 
     @Override
     public boolean isIntegral() {
-        return false;
+        return true;
     }
 
     @Override
