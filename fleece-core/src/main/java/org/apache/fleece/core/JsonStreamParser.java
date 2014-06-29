@@ -107,6 +107,7 @@ public class JsonStreamParser implements JsonChars, EscapedStringAwareJsonParser
                                 builder.append(current);
                             } else {
                                 builder.append(asEscapedChar(current));
+                                escaped = false;
                             }
                         }
                         escapedValue = currentValue;
@@ -187,10 +188,10 @@ public class JsonStreamParser implements JsonChars, EscapedStringAwareJsonParser
     }
 
     private boolean isNumber() {
-        return isNumber(loadedChars[currentBufferIdx]) || loadedChars[currentBufferIdx] == DOT || loadedChars[currentBufferIdx] == MINUS || loadedChars[currentBufferIdx] == PLUS || loadedChars[currentBufferIdx] == EXP_LOWERCASE || loadedChars[currentBufferIdx] == EXP_UPPERCASE;
+        return isAsciiDigit(loadedChars[currentBufferIdx]) || loadedChars[currentBufferIdx] == DOT || loadedChars[currentBufferIdx] == MINUS || loadedChars[currentBufferIdx] == PLUS || loadedChars[currentBufferIdx] == EXP_LOWERCASE || loadedChars[currentBufferIdx] == EXP_UPPERCASE;
     }
 
-    private static boolean isNumber(final char value) {
+    private static boolean isAsciiDigit(final char value) {
         return value >= ZERO && value <= NINE;
     }
 
@@ -276,16 +277,22 @@ public class JsonStreamParser implements JsonChars, EscapedStringAwareJsonParser
         if (lastEvent == Event.KEY_NAME || lastEvent == Event.VALUE_STRING || lastEvent == Event.VALUE_NUMBER) {
             return currentValue;
         }
-        throw new IllegalStateException(event + " doesnt support getString()");
+        throw new IllegalStateException(event + " doesn't support getString()");
     }
 
     @Override
     public boolean isIntegralNumber() {
+        
+        if (lastEvent != Event.VALUE_NUMBER) {
+            throw new IllegalStateException(event + " doesn't support isIntegralNumber()");
+        }
+        
         for (int i = 0; i < currentValue.length(); i++) {
-            if (!isNumber(currentValue.charAt(i))) {
+            if (!isAsciiDigit(currentValue.charAt(i))) {
                 return false;
             }
         }
+        
         return true;
     }
 

@@ -347,6 +347,18 @@ public class JsonParserTest {
         }
         parser.close();
     }
+    
+    @Test(expected=IllegalStateException.class)
+    public void isIntegralThrowsISE() {
+        final JsonParser parser = Json.createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/bigdecimal.json"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.START_OBJECT, event);
+        assertFalse(parser.isIntegralNumber());
+            
+    }
 
     @Test
     public void escaping() {
