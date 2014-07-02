@@ -65,7 +65,7 @@
   </dependencies>
 
   <properties>
-    <pubsub.url>scm:svn:${fleece.site.url}fleece-jaxrs/</pubsub.url>
+    <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
     <cxf.version>3.0.0</cxf.version>
   </properties>
 </project>
