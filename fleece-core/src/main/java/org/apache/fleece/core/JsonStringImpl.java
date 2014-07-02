@@ -19,7 +19,6 @@
 package org.apache.fleece.core;
 
 import javax.json.JsonString;
-import javax.json.JsonValue;
 
 public class JsonStringImpl implements JsonString {
     private final String value;

@@ -24,7 +24,6 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
 import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.LinkedList;

@@ -43,6 +43,8 @@ public class Strings implements JsonChars {
                 return '\n';
             case '"':
                 return '\"';
+            default:
+                // no-op
         }
         return current;
     }

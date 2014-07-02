@@ -32,7 +32,8 @@ import java.nio.charset.Charset;
 import static org.apache.fleece.core.Strings.asEscapedChar;
 
 public class JsonStreamParser implements JsonChars, EscapedStringAwareJsonParser {
-    private static final BufferCache<char[]> BUFFER_CACHE = new BufferCache<char[]>(Integer.getInteger("org.apache.fleece.default-char-buffer", 8192) /*BufferedReader.defaultCharBufferSize*/) {
+    private static final BufferCache<char[]> BUFFER_CACHE = new BufferCache<char[]>(
+            Integer.getInteger("org.apache.fleece.default-char-buffer", 8192) /*BufferedReader.defaultCharBufferSize*/) {
         @Override
         protected char[] newValue(final int defaultSize) {
             return new char[defaultSize];
@@ -169,7 +170,9 @@ public class JsonStreamParser implements JsonChars, EscapedStringAwareJsonParser
                 } else if (loadedChars[currentBufferIdx] == EOF) {
                     return false;
                 } else if (loadedChars[currentBufferIdx] == COMMA) {
-                    if (event != null && event != Event.KEY_NAME && event != Event.VALUE_STRING && event != Event.VALUE_NUMBER && event != Event.VALUE_TRUE && event != Event.VALUE_FALSE && event != Event.VALUE_NULL) {
+                    if (event != null && event != Event.KEY_NAME && event != Event.VALUE_STRING
+                            && event != Event.VALUE_NUMBER && event != Event.VALUE_TRUE
+                            && event != Event.VALUE_FALSE && event != Event.VALUE_NULL) {
                         throw new JsonParsingException("unexpected comma", createLocation());
                     }
                 } else {
@@ -188,7 +191,9 @@ public class JsonStreamParser implements JsonChars, EscapedStringAwareJsonParser
     }
 
     private boolean isNumber() {
-        return isAsciiDigit(loadedChars[currentBufferIdx]) || loadedChars[currentBufferIdx] == DOT || loadedChars[currentBufferIdx] == MINUS || loadedChars[currentBufferIdx] == PLUS || loadedChars[currentBufferIdx] == EXP_LOWERCASE || loadedChars[currentBufferIdx] == EXP_UPPERCASE;
+        return isAsciiDigit(loadedChars[currentBufferIdx]) || loadedChars[currentBufferIdx] == DOT
+                || loadedChars[currentBufferIdx] == MINUS || loadedChars[currentBufferIdx] == PLUS
+                || loadedChars[currentBufferIdx] == EXP_LOWERCASE || loadedChars[currentBufferIdx] == EXP_UPPERCASE;
     }
 
     private static boolean isAsciiDigit(final char value) {

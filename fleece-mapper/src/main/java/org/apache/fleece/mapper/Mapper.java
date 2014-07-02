@@ -334,7 +334,8 @@ public class Mapper {
         } else {
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
-                return writeValue(generator, type, true, false, false, false, key, doConverFrom(value, (Converter<Object>) converter));
+                return writeValue(generator, type, true, false, false, false, key,
+                                    doConverFrom(value, (Converter<Object>) converter));
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
         }
@@ -473,7 +474,8 @@ public class Mapper {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
             final Method setterMethod = value.setter;
-            final Object convertedValue = value.converter == null? toObject(jsonValue, value.paramType) : value.converter.fromString(jsonValue.toString());
+            final Object convertedValue = value.converter == null?
+                    toObject(jsonValue, value.paramType) : value.converter.fromString(jsonValue.toString());
             if (convertedValue != null) {
                 try {
                     setterMethod.invoke(t, convertedValue);
@@ -530,7 +532,8 @@ public class Mapper {
         }
 
         if (ParameterizedType.class.isInstance(type)) {
-            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type), (Class<Object>) ParameterizedType.class.cast(type).getRawType());
+            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(
+                    ParameterizedType.class.cast(type), (Class<Object>) ParameterizedType.class.cast(type).getRawType());
             if (mapping != null) {
                 return mapCollection(mapping, jsonArray);
             }
