@@ -29,4 +29,8 @@
 
   <artifactId>fleece-core</artifactId>
   <name>Fleece :: Core</name>
+
+  <properties>
+    <pubsub.url>scm:svn:${fleece.site.url}fleece-core/</pubsub.url>
+  </properties>
 </project>

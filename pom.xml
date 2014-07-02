@@ -103,7 +103,7 @@
         <version>1.0-beta-2</version>
         <configuration>
           <content>${project.reporting.outputDirectory}</content>
-          <pubScmUrl>scm:svn:${fleece.site.url}</pubScmUrl>
+          <pubScmUrl>${pubsub.url}</pubScmUrl>
           <tryUpdate>true</tryUpdate>
           <checkoutDirectory>${project.basedir}/.site-content</checkoutDirectory>
         </configuration>
@@ -141,13 +141,14 @@
   <distributionManagement>
     <site>
       <id>apache.website</id>
-      <url>scm:svn:${fleece.site.url}</url>
+      <url>${pubsub.url}</url>
     </site>
   </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <fleece.site.url>https://svn.apache.org/repos/asf/incubator/fleece/site/publish/</fleece.site.url>
+    <pubsub.url>scm:svn:${fleece.site.url}</pubsub.url>
   </properties>
 
   <reporting>

@@ -36,7 +36,7 @@
       <sideBarEnabled>false</sideBarEnabled>
       <sourceLineNumbersEnabled>true</sourceLineNumbersEnabled>
       <ohloh>
-        <projectId>fleece</projectId>
+        <projectId>apache-fleece</projectId>
         <widget>stats</widget>
       </ohloh>
     </fluidoSkin>

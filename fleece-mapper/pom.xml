@@ -37,4 +37,8 @@
       <version>${project.version}</version>
     </dependency>
   </dependencies>
+
+  <properties>
+    <pubsub.url>scm:svn:${fleece.site.url}fleece-mapper/</pubsub.url>
+  </properties>
 </project>
