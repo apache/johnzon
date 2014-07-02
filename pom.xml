@@ -144,9 +144,6 @@
           </execution>
         </executions>
         <configuration>
-          <!-- exclude JAXB generated stuff -->
-          <excludes>org/apache/batchee/jaxb/*</excludes>
-
           <logViolationsToConsole>true</logViolationsToConsole>
           <checkstyleRules>
             <module name="Checker">
