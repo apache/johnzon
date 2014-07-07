@@ -20,10 +20,12 @@ package org.apache.fleece.core;
 
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Map;
 
 public class JsonReaderFactoryImpl implements JsonReaderFactory {
@@ -50,6 +52,6 @@ public class JsonReaderFactoryImpl implements JsonReaderFactory {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return config;
+        return Collections.unmodifiableMap(config);
     }
 }

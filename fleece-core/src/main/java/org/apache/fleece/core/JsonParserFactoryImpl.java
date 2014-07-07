@@ -22,9 +22,11 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Map;
 
 public class JsonParserFactoryImpl implements JsonParserFactory {
@@ -45,20 +47,32 @@ public class JsonParserFactoryImpl implements JsonParserFactory {
             maxSize = Integer.parseInt(maxStringSize.toString());
         }
     }
+    
+    JsonParser getDefaultJsonParserImpl(InputStream in) {
+        return new JsonCharBufferStreamParser(in, maxSize);
+    }
+    
+    JsonParser getDefaultJsonParserImpl(InputStream in, Charset charset) {
+        return new JsonCharBufferStreamParser(in, charset, maxSize);
+    }
+    
+    JsonParser getDefaultJsonParserImpl(Reader in) {
+        return new JsonCharBufferStreamParser(in, maxSize);
+    }
 
     @Override
     public JsonParser createParser(final Reader reader) {
-        return new JsonStreamParser(reader, maxSize);
+        return getDefaultJsonParserImpl(reader);
     }
 
     @Override
     public JsonParser createParser(final InputStream in) {
-        return new JsonStreamParser(in, maxSize);
+        return getDefaultJsonParserImpl(in);
     }
 
     @Override
     public JsonParser createParser(final InputStream in, final Charset charset) {
-        return new JsonStreamParser(in, charset, maxSize);
+        return getDefaultJsonParserImpl(in, charset);
     }
 
     @Override
@@ -73,6 +87,6 @@ public class JsonParserFactoryImpl implements JsonParserFactory {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return config;
+        return Collections.unmodifiableMap(config);
     }
 }

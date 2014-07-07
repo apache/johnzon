@@ -21,6 +21,8 @@ package org.apache.fleece.core;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
+
+import java.util.Collections;
 import java.util.Map;
 
 public class JsonBuilderFactoryImpl implements JsonBuilderFactory {
@@ -42,6 +44,6 @@ public class JsonBuilderFactoryImpl implements JsonBuilderFactory {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return config;
+        return Collections.unmodifiableMap(config);
     }
 }

@@ -50,6 +50,11 @@ public interface JsonChars {
     char EXP_LOWERCASE = 'e';
     char EXP_UPPERCASE = 'E';
     char ESCAPE_CHAR = '\\';
+    
+    char TAB = '\t';
+    char BACKSPACE = '\b';
+    char FORMFEED = '\f';
+    char CR = '\r';
 
     String NULL = "null";
 }

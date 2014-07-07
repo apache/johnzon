@@ -56,7 +56,7 @@ public class MapperTest {
             "\"integer\":3," +
             "\"longnumber\":4" +
             "}" +
-            "]" +
+            "]," +
             "\"list\":[" +
             "{" +
             "\"name\":\"a3\"," +
@@ -68,7 +68,7 @@ public class MapperTest {
             "\"integer\":7," +
             "\"longnumber\":8" +
             "}" +
-            "]" +
+            "]," +
             "\"primitives\":[1,2,3,4,5]," +
             "\"collectionWrapper\":[1,2,3,4,5]," +
             "\"map\":{\"uno\":\"true\",\"duos\":false}" +

@@ -18,20 +18,12 @@
  */
 package org.apache.fleece.core;
 
-import org.apache.fleece.core.JsonArrayImpl;
-import org.apache.fleece.core.JsonNumberImpl;
-import org.apache.fleece.core.JsonObjectImpl;
-import org.apache.fleece.core.JsonParserFactoryImpl;
-import org.apache.fleece.core.JsonReaderImpl;
-import org.apache.fleece.core.JsonStreamParser;
-import org.apache.fleece.core.JsonStringImpl;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonReader;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParsingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,11 +31,13 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonReader;
+import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParsingException;
+
+import org.junit.Test;
 
 public class JsonParserTest {
     private void assertSimple(final JsonParser parser) {
@@ -107,7 +101,7 @@ public class JsonParserTest {
             final JsonParser.Event event = parser.next();
             assertNotNull(event);
             assertEquals(JsonParser.Event.VALUE_NUMBER, event);
-            assertEquals(2, parser.getInt());
+            assertEquals(-2, parser.getInt());
         }
         {
             assertTrue(parser.hasNext());
@@ -208,7 +202,7 @@ public class JsonParserTest {
         simple.putInternal("c", new JsonNumberImpl(new BigDecimal(4)));
         final JsonArrayImpl array = new JsonArrayImpl();
         array.addInternal(new JsonNumberImpl(new BigDecimal(1)));
-        array.addInternal(new JsonNumberImpl(new BigDecimal(2)));
+        array.addInternal(new JsonNumberImpl(new BigDecimal(-2)));
         simple.putInternal("d", array);
 
         final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(simple);
@@ -340,6 +334,36 @@ public class JsonParserTest {
             assertTrue(parser.hasNext());
             final JsonParser.Event event = parser.next();
             assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("b", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertFalse(parser.isIntegralNumber());
+            assertEquals(new BigDecimal("1.23E-3"), parser.getBigDecimal());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("c", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+            assertFalse(parser.isIntegralNumber());
+            assertEquals(new BigDecimal("1.23E+3"), parser.getBigDecimal());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
             assertEquals(JsonParser.Event.END_OBJECT, event);
         }
         {
@@ -359,7 +383,7 @@ public class JsonParserTest {
         assertFalse(parser.isIntegralNumber());
             
     }
-
+    
     @Test
     public void escaping() {
         final JsonParser parser = Json.createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/escaping.json"));
@@ -367,7 +391,21 @@ public class JsonParserTest {
         parser.next();
         assertEquals("\"", parser.getString());
         parser.next();
+        assertEquals("\\", parser.getString());
+        parser.next();
+        assertEquals("/", parser.getString());
+        parser.next();
+        assertEquals("\b", parser.getString());
+        parser.next();
+        assertEquals("\f", parser.getString());
+        parser.next();
+        assertEquals("\n", parser.getString());
+        parser.next();
+        assertEquals("\r", parser.getString());
+        parser.next();
         assertEquals("\t", parser.getString());
+        parser.next();
+        assertEquals("D", parser.getString());
         parser.next();
         assertFalse(parser.hasNext());
         parser.close();
@@ -391,6 +429,7 @@ public class JsonParserTest {
                         case 1:
                             index++;
                             return '"';
+                        default: break;
                     }
                     return 'a'; // infinite key
                 }
@@ -404,7 +443,8 @@ public class JsonParserTest {
             }
             parser.close();
         }
-
+        
+        
         // spaces
         {
             final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {{
@@ -418,6 +458,7 @@ public class JsonParserTest {
                         case 0:
                             index++;
                             return '{';
+                        default: break;
                     }
                     return ' '; // infinite spaces
                 }
@@ -437,7 +478,9 @@ public class JsonParserTest {
 
     @Test
     public void hasNext() {
-        final JsonParser parser = new JsonStreamParser(new ByteArrayInputStream("{}".getBytes()), 1000);
+        final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {{
+            put(JsonParserFactoryImpl.MAX_STRING_LENGTH, 10);
+        }}).createParser(new ByteArrayInputStream("{}".getBytes()));
         assertTrue(parser.hasNext());
         assertTrue(parser.hasNext());
         assertTrue(parser.hasNext());
@@ -449,6 +492,159 @@ public class JsonParserTest {
     @Test(expected = JsonParsingException.class)
     public void commaChecks() {
         // using a reader as wrapper of parser
-        new JsonReaderImpl(new ByteArrayInputStream("{\"z\":\"b\"\"j\":\"d\"}".getBytes())).read();
+  
+        Json.createReader(new ByteArrayInputStream("{\"z\":\"b\"\"j\":\"d\"}".getBytes())).read();
     }
+    
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail1() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail1.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail2() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail2.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail3() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail3.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail4() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail4.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail5() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail5.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail6() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail6.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail7() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail7.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail8() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail8.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail9() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail9.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail10() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail10.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail11() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail11.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail12() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail12.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail13() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail13.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail14() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail14.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail15() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail15.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail16() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail16.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail17() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail17.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail18() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail18.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail19() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail19.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail20() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail20.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail21() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail21.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail22() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail22.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail23() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail23.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail24() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail24.json")).read();
+    }
+    
+    @Test(expected = JsonParsingException.class)
+    public void fail25() {
+        
+        Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail25.json")).read();
+    }
+    
 }

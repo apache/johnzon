@@ -68,4 +68,9 @@ public class JsonLocationImpl implements JsonLocation, Serializable {
         result = 31 * result + (int) (streamOffset ^ (streamOffset >>> 32));
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "JsonLocationImpl [lineNumber=" + lineNumber + ", columnNumber=" + columnNumber + ", streamOffset=" + streamOffset + "]";
+    }
 }

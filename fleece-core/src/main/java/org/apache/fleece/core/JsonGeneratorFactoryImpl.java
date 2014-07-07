@@ -20,10 +20,12 @@ package org.apache.fleece.core;
 
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -62,6 +64,6 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return config;
+        return Collections.unmodifiableMap(config);
     }
 }

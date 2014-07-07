@@ -18,6 +18,7 @@
  */
 package org.apache.fleece.core;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -25,6 +26,7 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
+
 import java.io.InputStream;
 import java.io.Reader;
 import java.math.BigDecimal;
@@ -32,13 +34,13 @@ import java.math.BigDecimal;
 public class JsonReaderImpl implements JsonReader {
     private final EscapedStringAwareJsonParser parser;
     private final JsonReaderListenerFactory listenerFactory;
-
+    
     public JsonReaderImpl(final InputStream in) {
-        this(new JsonStreamParser(in, JsonParserFactoryImpl.DEFAULT_MAX_SIZE), new JsonListenerFactory());
+        this((EscapedStringAwareJsonParser)Json.createParser(in), new JsonListenerFactory());
     }
 
     public JsonReaderImpl(final Reader in) {
-        this(new JsonStreamParser(in, JsonParserFactoryImpl.DEFAULT_MAX_SIZE), new JsonListenerFactory());
+        this((EscapedStringAwareJsonParser)Json.createParser(in), new JsonListenerFactory());
     }
 
     public JsonReaderImpl(final EscapedStringAwareJsonParser parser, final JsonReaderListenerFactory listenerFactory) {
@@ -157,7 +159,6 @@ public class JsonReaderImpl implements JsonReader {
 
     private static class JsonArrayListener implements JsonReaderListener {
         private JsonArrayImpl array = new JsonArrayImpl();
-        private String key = null;
 
         @Override
         public Object getObject() {
@@ -266,10 +267,10 @@ public class JsonReaderImpl implements JsonReader {
                     return;
 
                 case END_ARRAY:
-                    throw new JsonParsingException("']', shouldn't occur", JsonStreamParser.location(parser));
+                    throw new JsonParsingException("']', shouldn't occur", parser.getLocation());
 
                 default:
-                    throw new JsonParsingException(next.name() + ", shouldn't occur", JsonStreamParser.location(parser));
+                    throw new JsonParsingException(next.name() + ", shouldn't occur", parser.getLocation());
             }
         }
     }
@@ -318,13 +319,13 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case KEY_NAME:
-                    throw new JsonParsingException("array doesn't have keys", JsonStreamParser.location(parser));
+                    throw new JsonParsingException("array doesn't have keys", parser.getLocation());
 
                 case END_OBJECT:
-                    throw new JsonParsingException("'}', shouldn't occur", JsonStreamParser.location(parser));
+                    throw new JsonParsingException("'}', shouldn't occur", parser.getLocation());
 
                 default:
-                    throw new JsonParsingException(next.name() + ", shouldn't occur", JsonStreamParser.location(parser));
+                    throw new JsonParsingException(next.name() + ", shouldn't occur", parser.getLocation());
             }
         }
     }
