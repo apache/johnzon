@@ -1,0 +1,86 @@
+[
+  {
+    "id": 0,
+    "guid": "94ab4571-718f-4734-b331-c68c5d8f3acb",
+    "isActive": false,
+    "balance": "$3,105.88",
+    "picture": "http://placehold.it/32x32",
+    "age": 36,
+    "eyeColor": "brown",
+    "name": "Weiss Perkins",
+    "gender": "male",
+    "company": "SHOPABOUT",
+    "address": "989 Lake Street, Kipp, Kansas, 2455",
+    "about": "Sint pariatur nostrud aliquip amet elit commodo aliqua. Fugiat nisi dolore aliquip eu. Exercitation dolore cupidatat mollit occaecat minim aliqua pariatur esse esse amet mollit. In dolor voluptate Lorem incididunt voluptate.\r\n",
+    "registered": "2014-03-23T01:37:39 -01:00",
+    "latitude": 80.963663,
+    "longitude": 4.258947,
+    "tags": [
+      "reprehenderit",
+      "incididunt",
+      "dolor",
+      "nostrud",
+      "id",
+      "culpa",
+      "id"
+    ],
+    "friends": [
+      {
+        "id": 0,
+        "name": "Kimberley Snider"
+      },
+      {
+        "id": 1,
+        "name": "Natasha Hoover"
+      },
+      {
+        "id": 2,
+        "name": "Susana Griffith"
+      }
+    ],
+    "greeting": "Hello, Weiss Perkins! You have 6 unread messages.",
+    "favoriteFruit": "banana"
+  },
+  {
+    "id": 1,
+    "guid": "ca3edf43-8a4c-4102-8f00-ab34fc3242e5",
+    "isActive": true,
+    "balance": "$1,349.81",
+    "picture": "http://placehold.it/32x32",
+    "age": 36,
+    "eyeColor": "blue",
+    "name": "Bessie Koch",
+    "gender": "female",
+    "company": "GEEKY",
+    "address": "318 Noll Street, Toftrees, Washington, 4804",
+    "about": "Consectetur ullamco occaecat cillum amet consequat laboris aliqua qui anim mollit. Esse cillum laborum ipsum esse in reprehenderit irure ex. Ex duis fugiat elit do minim amet Lorem fugiat. Eu ea sit sunt do consequat anim deserunt voluptate in cupidatat id. Labore Lorem est laborum consequat sint exercitation nostrud officia. In velit cupidatat et magna duis aute excepteur tempor eiusmod qui aliquip. Nisi ea anim dolore fugiat fugiat voluptate commodo ullamco id in magna consequat.\r\n",
+    "registered": "2014-06-15T14:31:59 -02:00",
+    "latitude": -22.556508,
+    "longitude": 96.155538,
+    "tags": [
+      "commodo",
+      "reprehenderit",
+      "consectetur",
+      "exercitation",
+      "culpa",
+      "voluptate",
+      "laboris"
+    ],
+    "friends": [
+      {
+        "id": 0,
+        "name": "Duffy Stokes"
+      },
+      {
+        "id": 1,
+        "name": "Faye Wilkins"
+      },
+      {
+        "id": 2,
+        "name": "Blackburn Franklin"
+      }
+    ],
+    "greeting": "Hello, Bessie Koch! You have 7 unread messages.",
+    "favoriteFruit": "strawberry"
+  }
+]
