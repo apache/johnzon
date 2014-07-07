@@ -31,33 +31,42 @@ import java.util.Map;
 
 public class JsonParserFactoryImpl implements JsonParserFactory {
     public static final String MAX_STRING_LENGTH = "org.apache.fleece.max-string-length";
+    public static final String BUFFER_LENGTH = "org.apache.fleece.default-char-buffer";
     public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192);
 
     private final Map<String, ?> config;
     private final int maxSize;
+    private final int bufferSize;
 
     public JsonParserFactoryImpl(final Map<String, ?> config) {
         this.config = config;
-        final Object maxStringSize = config.get(MAX_STRING_LENGTH);
-        if (maxStringSize == null) {
-            maxSize = DEFAULT_MAX_SIZE;
-        } else if (Number.class.isInstance(maxStringSize)) {
-            maxSize = Number.class.cast(maxStringSize).intValue();
-        } else {
-            maxSize = Integer.parseInt(maxStringSize.toString());
+        this.maxSize = getInt(MAX_STRING_LENGTH);
+        this.bufferSize = getInt(BUFFER_LENGTH);
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("buffer length must be greater than zero");
         }
     }
-    
-    JsonParser getDefaultJsonParserImpl(InputStream in) {
-        return new JsonCharBufferStreamParser(in, maxSize);
+
+    private int getInt(final String key) {
+        final Object maxStringSize = config.get(key);
+        if (maxStringSize == null) {
+            return DEFAULT_MAX_SIZE;
+        } else if (Number.class.isInstance(maxStringSize)) {
+            return Number.class.cast(maxStringSize).intValue();
+        }
+        return Integer.parseInt(maxStringSize.toString());
     }
-    
-    JsonParser getDefaultJsonParserImpl(InputStream in, Charset charset) {
-        return new JsonCharBufferStreamParser(in, charset, maxSize);
+
+    private JsonCharBufferStreamParser getDefaultJsonParserImpl(InputStream in) {
+        return new JsonCharBufferStreamParser(in, maxSize, bufferSize);
     }
-    
-    JsonParser getDefaultJsonParserImpl(Reader in) {
-        return new JsonCharBufferStreamParser(in, maxSize);
+
+    private JsonCharBufferStreamParser getDefaultJsonParserImpl(InputStream in, Charset charset) {
+        return new JsonCharBufferStreamParser(in, charset, maxSize, bufferSize);
+    }
+
+    private JsonCharBufferStreamParser getDefaultJsonParserImpl(Reader in) {
+        return new JsonCharBufferStreamParser(in, maxSize, bufferSize);
     }
 
     @Override
@@ -88,5 +97,13 @@ public class JsonParserFactoryImpl implements JsonParserFactory {
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(config);
+    }
+
+    public EscapedStringAwareJsonParser createInternalParser(final InputStream in) {
+        return getDefaultJsonParserImpl(in);
+    }
+
+    public EscapedStringAwareJsonParser createInternalParser(final Reader reader) {
+        return getDefaultJsonParserImpl(reader);
     }
 }

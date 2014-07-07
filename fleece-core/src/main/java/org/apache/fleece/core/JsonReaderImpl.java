@@ -18,7 +18,6 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -26,21 +25,14 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
-
-import java.io.InputStream;
-import java.io.Reader;
 import java.math.BigDecimal;
 
 public class JsonReaderImpl implements JsonReader {
     private final EscapedStringAwareJsonParser parser;
     private final JsonReaderListenerFactory listenerFactory;
     
-    public JsonReaderImpl(final InputStream in) {
-        this((EscapedStringAwareJsonParser)Json.createParser(in), new JsonListenerFactory());
-    }
-
-    public JsonReaderImpl(final Reader in) {
-        this((EscapedStringAwareJsonParser)Json.createParser(in), new JsonListenerFactory());
+    public JsonReaderImpl(final EscapedStringAwareJsonParser parser) {
+        this(parser, new JsonListenerFactory());
     }
 
     public JsonReaderImpl(final EscapedStringAwareJsonParser parser, final JsonReaderListenerFactory listenerFactory) {

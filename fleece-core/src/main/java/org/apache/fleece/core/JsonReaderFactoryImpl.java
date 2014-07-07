@@ -20,7 +20,6 @@ package org.apache.fleece.core;
 
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
-
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -30,24 +29,26 @@ import java.util.Map;
 
 public class JsonReaderFactoryImpl implements JsonReaderFactory {
     private final Map<String, ?> config;
+    private final JsonParserFactoryImpl parserFactory;
 
     public JsonReaderFactoryImpl(final Map<String, ?> config) {
         this.config = config;
+        this.parserFactory = new JsonParserFactoryImpl(config);
     }
 
     @Override
     public JsonReader createReader(final Reader reader) {
-        return new JsonReaderImpl(reader);
+        return new JsonReaderImpl(parserFactory.createInternalParser(reader));
     }
 
     @Override
     public JsonReader createReader(final InputStream in) {
-        return new JsonReaderImpl(in);
+        return new JsonReaderImpl(parserFactory.createInternalParser(in));
     }
 
     @Override
     public JsonReader createReader(final InputStream in, final Charset charset) {
-        return new JsonReaderImpl(new InputStreamReader(in, charset));
+        return createReader(new InputStreamReader(in, charset));
     }
 
     @Override

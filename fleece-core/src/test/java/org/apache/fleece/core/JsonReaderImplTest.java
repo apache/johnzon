@@ -27,6 +27,8 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
 
+import java.util.HashMap;
+
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -34,12 +36,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class JsonReaderImplTest {
-    
-    @Before
-    public void setup(){
-        System.setProperty("org.apache.fleece.default-char-buffer", "8192");
-    }
-    
     @Test
     public void simple() {
         final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"));
@@ -154,8 +150,9 @@ public class JsonReaderImplTest {
     
     @Test
     public void simpleBadBufferSize8() {
-        System.setProperty("org.apache.fleece.default-char-buffer", "8");
-        final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"));
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.fleece.default-char-buffer", "8");
+        }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"));
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -172,8 +169,9 @@ public class JsonReaderImplTest {
     }
     @Test
     public void simpleBadBufferSize9() {
-        System.setProperty("org.apache.fleece.default-char-buffer", "9");
-        final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"));
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.fleece.default-char-buffer", "9");
+        }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"));
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -191,8 +189,9 @@ public class JsonReaderImplTest {
     
     @Test(expected=IllegalArgumentException.class)
     public void emptyZeroCharBuffersize() {
-        System.setProperty("org.apache.fleece.default-char-buffer", "0");
-        final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"));
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.fleece.default-char-buffer", "0");
+        }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"));
         assertNotNull(reader);
         reader.readObject();
         reader.close();
@@ -200,8 +199,9 @@ public class JsonReaderImplTest {
     
     @Test
     public void emptyOneCharBufferSize() {
-        System.setProperty("org.apache.fleece.default-char-buffer", "1");
-        final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"));
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.fleece.default-char-buffer", "1");
+        }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/empty.json"));
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
@@ -211,8 +211,9 @@ public class JsonReaderImplTest {
     
     @Test
     public void emptyArrayOneCharBufferSize() {
-        System.setProperty("org.apache.fleece.default-char-buffer", "1");
-        final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/emptyarray.json"));
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.fleece.default-char-buffer", "1");
+        }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/emptyarray.json"));
         assertNotNull(reader);
         final JsonArray array = reader.readArray();
         assertNotNull(array);
@@ -228,9 +229,10 @@ public class JsonReaderImplTest {
                 28, 32, 64, 128, 1024, 8192 };
 
         for (int i = 0; i < buffersizes.length; i++) {
-            System.setProperty("org.apache.fleece.default-char-buffer", String.valueOf(buffersizes[i]));
-            final JsonReader reader = Json.createReader(Thread.currentThread().getContextClassLoader()
-                    .getResourceAsStream("json/stringescape.json"));
+            final String value = String.valueOf(buffersizes[i]);
+            final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+                put("org.apache.fleece.default-char-buffer", value);
+            }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/stringescape.json"));
             assertNotNull(reader);
             final JsonObject object = reader.readObject();
             assertNotNull(object);

@@ -34,84 +34,167 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.Serializable;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class JsonProviderImpl extends JsonProvider {
-    @Override
-    public JsonParser createParser(final InputStream in) {
-        return createParserFactory(Collections.<String, Object>emptyMap()).createParser(in);
-    }
+public class JsonProviderImpl extends JsonProvider implements Serializable {
+    private static final JsonProvider DELEGATE = new JsonProviderDelegate();
 
     @Override
     public JsonParser createParser(final Reader reader) {
-        return createParserFactory(Collections.<String, Object>emptyMap()).createParser(reader);
+        return DELEGATE.createParser(reader);
     }
 
     @Override
-    public JsonReader createReader(final InputStream in) {
-        return new JsonReaderImpl(in);
+    public JsonParser createParser(final InputStream inputStream) {
+        return DELEGATE.createParser(inputStream);
     }
 
     @Override
-    public JsonReader createReader(final Reader reader) {
-        return new JsonReaderImpl(reader);
-    }
-
-    @Override
-    public JsonParserFactory createParserFactory(final Map<String, ?> config) {
-        return new JsonParserFactoryImpl(config);
-    }
-
-    @Override
-    public JsonReaderFactory createReaderFactory(final Map<String, ?> config) {
-        return new JsonReaderFactoryImpl(config);
+    public JsonParserFactory createParserFactory(final Map<String, ?> stringMap) {
+        return DELEGATE.createParserFactory(stringMap);
     }
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorFacade(new JsonGeneratorImpl(writer, new ConcurrentHashMap<String, String>()));
+        return DELEGATE.createGenerator(writer);
     }
 
     @Override
-    public JsonGenerator createGenerator(final OutputStream out) {
-        return createGenerator(new OutputStreamWriter(out));
+    public JsonGenerator createGenerator(final OutputStream outputStream) {
+        return DELEGATE.createGenerator(outputStream);
     }
 
     @Override
-    public JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> config) {
-        return new JsonGeneratorFactoryImpl(config);
+    public JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> stringMap) {
+        return DELEGATE.createGeneratorFactory(stringMap);
+    }
+
+    @Override
+    public JsonReader createReader(final Reader reader) {
+        return DELEGATE.createReader(reader);
+    }
+
+    @Override
+    public JsonReader createReader(final InputStream inputStream) {
+        return DELEGATE.createReader(inputStream);
     }
 
     @Override
     public JsonWriter createWriter(final Writer writer) {
-        return new JsonWriterImpl(createGenerator(writer));
+        return DELEGATE.createWriter(writer);
     }
 
     @Override
-    public JsonWriter createWriter(final OutputStream out) {
-        return createWriter(new OutputStreamWriter(out));
+    public JsonWriter createWriter(final OutputStream outputStream) {
+        return DELEGATE.createWriter(outputStream);
     }
 
     @Override
-    public JsonWriterFactory createWriterFactory(final Map<String, ?> config) {
-        return new JsonWriterFactoryImpl(config);
+    public JsonWriterFactory createWriterFactory(final Map<String, ?> stringMap) {
+        return DELEGATE.createWriterFactory(stringMap);
+    }
+
+    @Override
+    public JsonReaderFactory createReaderFactory(final Map<String, ?> stringMap) {
+        return DELEGATE.createReaderFactory(stringMap);
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder() {
-        return new JsonObjectBuilderImpl();
+        return DELEGATE.createObjectBuilder();
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder() {
-        return new JsonArrayBuilderImpl();
+        return DELEGATE.createArrayBuilder();
     }
 
     @Override
-    public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
-        return new JsonBuilderFactoryImpl(config);
+    public JsonBuilderFactory createBuilderFactory(Map<String, ?> stringMap) {
+        return DELEGATE.createBuilderFactory(stringMap);
+    }
+
+    private static class JsonProviderDelegate extends JsonProvider {
+        private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(Collections.<String, Object>emptyMap());
+        private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(Collections.<String, Object>emptyMap());
+
+        @Override
+        public JsonParser createParser(final InputStream in) {
+            return parserFactory.createParser(in);
+        }
+
+        @Override
+        public JsonParser createParser(final Reader reader) {
+            return parserFactory.createParser(reader);
+        }
+
+        @Override
+        public JsonReader createReader(final InputStream in) {
+            return readerFactory.createReader(in);
+        }
+
+        @Override
+        public JsonReader createReader(final Reader reader) {
+            return readerFactory.createReader(reader);
+        }
+
+        @Override
+        public JsonParserFactory createParserFactory(final Map<String, ?> config) {
+            return new JsonParserFactoryImpl(config);
+        }
+
+        @Override
+        public JsonReaderFactory createReaderFactory(final Map<String, ?> config) {
+            return new JsonReaderFactoryImpl(config);
+        }
+
+        @Override
+        public JsonGenerator createGenerator(final Writer writer) {
+            return new JsonGeneratorFacade(new JsonGeneratorImpl(writer, new ConcurrentHashMap<String, String>()));
+        }
+
+        @Override
+        public JsonGenerator createGenerator(final OutputStream out) {
+            return createGenerator(new OutputStreamWriter(out));
+        }
+
+        @Override
+        public JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> config) {
+            return new JsonGeneratorFactoryImpl(config);
+        }
+
+        @Override
+        public JsonWriter createWriter(final Writer writer) {
+            return new JsonWriterImpl(createGenerator(writer));
+        }
+
+        @Override
+        public JsonWriter createWriter(final OutputStream out) {
+            return createWriter(new OutputStreamWriter(out));
+        }
+
+        @Override
+        public JsonWriterFactory createWriterFactory(final Map<String, ?> config) {
+            return new JsonWriterFactoryImpl(config);
+        }
+
+        @Override
+        public JsonObjectBuilder createObjectBuilder() {
+            return new JsonObjectBuilderImpl();
+        }
+
+        @Override
+        public JsonArrayBuilder createArrayBuilder() {
+            return new JsonArrayBuilderImpl();
+        }
+
+        @Override
+        public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
+            return new JsonBuilderFactoryImpl(config);
+        }
     }
 }
