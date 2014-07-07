@@ -18,7 +18,9 @@
  */
 package org.apache.fleece.core;
 
-public abstract class BufferCache<T> {
+import java.io.Serializable;
+
+public abstract class BufferCache<T> implements Serializable {
     // alloc are expensive so using a very trivial buffer, we remove from TL to say we use it and reset it when we are done (close)
     private final ThreadLocal<T> buffers;
     private final int defaultSize;

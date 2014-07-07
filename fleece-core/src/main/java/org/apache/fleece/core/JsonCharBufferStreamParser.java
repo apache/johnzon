@@ -30,41 +30,25 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
     private static final Logger LOGGER = Logger.getLogger(JsonCharBufferStreamParser.class.getName());
     private static final boolean LOG = LOGGER.isLoggable(Level.FINE);
 
-    /*
-     * private static final BufferCache<char[]> BUFFER_CACHE = new
-     * BufferCache<char[]>(
-     * Integer.getInteger("org.apache.fleece.default-char-buffer", 8192) ) {
-     * 
-     * @Override protected char[] newValue(final int defaultSize) { return new
-     * char[defaultSize]; } };
-     */
-
-    private final char[] buffer0;// BUFFER_CACHE.getCache();
+    private final char[] buffer;
     private final Reader in;
+    private final BufferStrategy.BufferProvider provider;
     private int pointer = -1;
     private int avail;
     private char mark;
     private boolean reset;
 
-    // private int availOnMark;
-
-    // Test increment buffer sizes
-
-    public JsonCharBufferStreamParser(final Reader reader,
-            final int maxStringLength, final int bufferSize) {
+    public JsonCharBufferStreamParser(final Reader reader, final int maxStringLength,
+                                      final BufferStrategy.BufferProvider bufferProvider) {
         super(maxStringLength);
-        in = reader;
-        buffer0 = new char[bufferSize];
+        this.in = reader;
+        this.buffer = bufferProvider.newBuffer();
+        this.provider = bufferProvider;
     }
 
-    public JsonCharBufferStreamParser(final InputStream stream,
-            final int maxStringLength, final int bufferSize) {
-        this(new InputStreamReader(stream), maxStringLength, bufferSize);
-    }
-
-    public JsonCharBufferStreamParser(final InputStream in,
-            final Charset charset, final int maxStringLength, final int bufferSize) {
-        this(new InputStreamReader(in, charset), maxStringLength, bufferSize);
+    public JsonCharBufferStreamParser(final InputStream in, final Charset charset,
+                                      final int maxStringLength, final BufferStrategy.BufferProvider  buffer) {
+        this(new InputStreamReader(in, charset), maxStringLength, buffer);
     }
 
     @Override
@@ -79,7 +63,7 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
                 LOGGER.fine("avail:" + avail + "/pointer:" + pointer);
             }
 
-            avail = in.read(buffer0, 0, buffer0.length);
+            avail = in.read(buffer, 0, buffer.length);
 
             pointer = -1;
 
@@ -96,17 +80,16 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
 
         pointer++;
         avail--;
-        return buffer0[pointer];
+        return buffer[pointer];
 
     }
 
     @Override
     protected void mark() {
         if (LOG) {
-            LOGGER.fine("    MARK " + buffer0[pointer] + " ("
-                    + (int) buffer0[pointer] + ")");
+            LOGGER.fine("    MARK " + buffer[pointer] + " (" + (int) buffer[pointer] + ")");
         }
-        mark = buffer0[pointer];
+        mark = buffer[pointer];
     }
 
     @Override
@@ -119,10 +102,7 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
 
     @Override
     protected void closeUnderlyingSource() throws IOException {
-        // BUFFER_CACHE.release(buffer0);
-        if (in != null) {
-            in.close();
-        }
+        in.close();
+        provider.release(buffer);
     }
-
 }
