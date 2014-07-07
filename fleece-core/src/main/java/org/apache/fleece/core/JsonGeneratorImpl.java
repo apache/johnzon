@@ -23,12 +23,13 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.concurrent.ConcurrentMap;
 
-public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGenerator, JsonChars {
+public class JsonGeneratorImpl<P extends JsonGeneratorImpl<?>> implements JsonGenerator, JsonChars, Serializable {
     protected static final String START_ARRAY = "[";
     protected static final String END_ARRAY = "]";
     protected static final String END_OBJECT = "}";

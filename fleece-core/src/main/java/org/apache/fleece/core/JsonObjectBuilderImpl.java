@@ -22,10 +22,11 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonObjectBuilderImpl implements JsonObjectBuilder {
+public class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     private final JsonObjectImpl delegate = new JsonObjectImpl();
 
     @Override

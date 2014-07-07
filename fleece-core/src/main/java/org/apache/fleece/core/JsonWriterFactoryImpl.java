@@ -23,11 +23,12 @@ import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGeneratorFactory;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Map;
 
-public class JsonWriterFactoryImpl implements JsonWriterFactory {
+public class JsonWriterFactoryImpl implements JsonWriterFactory,Serializable {
     private final Map<String, ?> config;
     private final JsonGeneratorFactory factory;
 

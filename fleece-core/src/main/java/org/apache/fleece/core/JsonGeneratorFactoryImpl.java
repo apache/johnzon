@@ -23,6 +23,7 @@ import javax.json.stream.JsonGeneratorFactory;
 
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -30,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory {
+public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializable {
     private final Map<String, ?> config;
     private final ConcurrentMap<String, String> cache = new ConcurrentHashMap<String, String>();
     private final boolean pretty;

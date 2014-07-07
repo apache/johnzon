@@ -22,16 +22,17 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonArrayBuilderImpl implements JsonArrayBuilder {
+public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private final JsonArrayImpl array = new JsonArrayImpl();
 
     @Override
     public JsonArrayBuilder add(final JsonValue value) {
         if (value == null) {
-            npe();
+            throw npe();
         }
         array.addInternal(value);
         return this;
@@ -40,7 +41,7 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
     @Override
     public JsonArrayBuilder add(final String value) {
         if (value == null) {
-            npe();
+            throw npe();
         }
         array.addInternal(new JsonStringImpl(value));
         return this;
@@ -49,7 +50,7 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
     @Override
     public JsonArrayBuilder add(final BigDecimal value) {
         if (value == null) {
-            npe();
+            throw npe();
         }
         array.addInternal(new JsonNumberImpl(value));
         return this;
@@ -58,7 +59,7 @@ public class JsonArrayBuilderImpl implements JsonArrayBuilder {
     @Override
     public JsonArrayBuilder add(final BigInteger value) {
         if (value == null) {
-            npe();
+            throw npe();
         }
         array.addInternal(new JsonNumberImpl(new BigDecimal(value)));
         return this;

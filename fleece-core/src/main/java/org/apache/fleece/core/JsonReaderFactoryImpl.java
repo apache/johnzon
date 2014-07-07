@@ -23,11 +23,12 @@ import javax.json.JsonReaderFactory;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 
-public class JsonReaderFactoryImpl implements JsonReaderFactory {
+public class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
     private final Map<String, ?> config;
     private final JsonParserFactoryImpl parserFactory;
 

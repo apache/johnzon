@@ -25,8 +25,9 @@ import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
 import java.io.Flushable;
 import java.io.IOException;
+import java.io.Serializable;
 
-public class JsonWriterImpl implements JsonWriter, Flushable {
+public class JsonWriterImpl implements JsonWriter, Serializable, Flushable {
     private final JsonGenerator generator;
 
     public JsonWriterImpl(final JsonGenerator generator) {

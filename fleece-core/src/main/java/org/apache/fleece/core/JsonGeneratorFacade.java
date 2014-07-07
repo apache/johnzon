@@ -20,6 +20,7 @@ package org.apache.fleece.core;
 
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -27,7 +28,7 @@ import java.math.BigInteger;
 //
 // just a facade allowing to reuse the same pointer (instance)
 // without using a fluent API
-public class JsonGeneratorFacade implements JsonGenerator {
+public class JsonGeneratorFacade implements JsonGenerator, Serializable {
     private JsonGenerator delegate;
 
     public JsonGeneratorFacade(final JsonGenerator delegate) {

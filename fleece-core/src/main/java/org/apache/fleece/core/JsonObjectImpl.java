@@ -23,11 +23,12 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject {
+public class JsonObjectImpl extends LinkedHashMap<String, JsonValue> implements JsonObject, Serializable {
     private Integer hashCode = null;
 
     private <T> T value(final String name, final Class<T> clazz) {

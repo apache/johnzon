@@ -23,12 +23,13 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
-public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray {
+public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, Serializable {
     private Integer hashCode = null;
 
     private <T> T value(final int idx, final Class<T> type) {

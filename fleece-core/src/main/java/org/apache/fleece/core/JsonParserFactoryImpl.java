@@ -25,11 +25,12 @@ import javax.json.stream.JsonParserFactory;
 
 import java.io.InputStream;
 import java.io.Reader;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Map;
 
-public class JsonParserFactoryImpl implements JsonParserFactory {
+public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     public static final String MAX_STRING_LENGTH = "org.apache.fleece.max-string-length";
     public static final String BUFFER_LENGTH = "org.apache.fleece.default-char-buffer";
     public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192);
