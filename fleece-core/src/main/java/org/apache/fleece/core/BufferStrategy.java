@@ -80,7 +80,7 @@ public enum BufferStrategy {
 
         @Override
         public char[] newBuffer() {
-            return cache.newValue(0);
+            return cache.getCache();
         }
 
         @Override
