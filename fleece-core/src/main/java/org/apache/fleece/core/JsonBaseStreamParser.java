@@ -18,24 +18,21 @@
  */
 package org.apache.fleece.core;
 
-import static org.apache.fleece.core.Strings.asEscapedChar;
-
+import javax.json.JsonException;
+import javax.json.stream.JsonLocation;
+import javax.json.stream.JsonParsingException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.json.JsonException;
-import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParsingException;
+import static org.apache.fleece.core.Strings.asEscapedChar;
 
 public abstract class JsonBaseStreamParser implements JsonChars,
         EscapedStringAwareJsonParser {
     private static final Logger LOGGER = Logger.getLogger(JsonBaseStreamParser.class.getName());
     private static final boolean LOG = LOGGER.isLoggable(Level.FINE);
-
-    // private static BufferCache<char[]> VBUFFER_CACHE;
 
     private final int maxStringSize;
 
@@ -44,7 +41,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     private Event lastEvent = null;
     private int lastSignificantChar = -1;
 
-    private final char[] currentValue;
+    protected final char[] currentValue;
     private int valueLength = 0;
 
     // location
@@ -60,19 +57,9 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     private int openArrays = 0;
     private boolean escaped = false;
 
-    protected JsonBaseStreamParser(final int maxStringLength) {
-
-        /*
-         * if(VBUFFER_CACHE == null) { VBUFFER_CACHE = new BufferCache<char[]>(
-         * maxStringLength) {
-         * 
-         * @Override protected char[] newValue(final int defaultSize) { return
-         * new char[defaultSize]; } };}
-         */
-
-        this.maxStringSize = maxStringLength < 0 ? 8192 : maxStringLength;
-        // currentValue = VBUFFER_CACHE.getCache();
-        currentValue = new char[maxStringLength];
+    protected JsonBaseStreamParser(final int maxStringLength, final char[] valueBuffer) {
+        this.maxStringSize = maxStringLength <= 0 ? 8192 : maxStringLength;
+        this.currentValue = valueBuffer;
     }
 
     private void appendValue(final char c) {
@@ -95,13 +82,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     @Override
     public final boolean hasNext() {
-
-        if (event == null) {
-            return true;
-        }
-
-        return !(openArrays == 0 && openObjects == 0);
-
+        return event == null || !(openArrays == 0 && openObjects == 0);
     }
 
     private static boolean isAsciiDigit(final char value) {
@@ -123,10 +104,9 @@ public abstract class JsonBaseStreamParser implements JsonChars,
             if (c == 'u') {
                 final char[] tmp = read(4);
 
-                for (int i = 0; i < tmp.length; i++) {
-                    if (!isHexDigit(tmp[i])) {
-                        throw new JsonParsingException("unexpected character "
-                                + tmp[i], createLocation());
+                for (final char aTmp : tmp) {
+                    if (!isHexDigit(aTmp)) {
+                        throw new JsonParsingException("unexpected character " + aTmp, createLocation());
                     }
                 }
 
@@ -135,7 +115,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                             + (int) tmp[1] + "/" + (int) tmp[0]);
                 }
 
-                final int decimal = ((tmp[3]) - 48) * 1 + ((tmp[2]) - 48) * 16
+                final int decimal = ((tmp[3]) - 48) + ((tmp[2]) - 48) * 16
                         + ((tmp[1]) - 48) * 256 + ((tmp[0]) - 48) * 4096;
                 c = (char) decimal;
 
@@ -430,12 +410,8 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
             }
         } catch (final IOException e) {
-            new JsonParsingException("Unexpected IO Excpetion", e,
-                    createLocation());
+            throw new JsonParsingException("Unexpected IO Exception", e, createLocation());
         }
-
-        throw new JsonParsingException("Unexpected error due to invalid json",
-                createLocation());
     }
 
     private void handleStartObject(final char c) {
@@ -805,9 +781,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     @Override
     public void close() {
-
-        // VBUFFER_CACHE.release(currentValue);
-
         try {
             closeUnderlyingSource();
         } catch (final IOException e) {

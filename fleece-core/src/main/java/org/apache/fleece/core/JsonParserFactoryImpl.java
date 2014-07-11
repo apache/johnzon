@@ -23,6 +23,7 @@ import javax.json.JsonObject;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -38,7 +39,8 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
 
     private final Map<String, ?> config;
     private final int maxSize;
-    private final BufferStrategy.BufferProvider bufferProvider;
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private final BufferStrategy.BufferProvider<char[]> valueBufferProvider;
 
     public JsonParserFactoryImpl(final Map<String, ?> config) {
         this.config = config;
@@ -49,7 +51,8 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         }
 
         this.maxSize = getInt(MAX_STRING_LENGTH);
-        this.bufferProvider = getBufferProvider().newProvider(bufferSize);
+        this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
+        this.valueBufferProvider = getBufferProvider().newCharProvider(maxSize);
     }
 
     private BufferStrategy getBufferProvider() {
@@ -57,7 +60,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         if (name != null) {
             return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
         }
-        return BufferStrategy.BY_INSTANCE;
+        return BufferStrategy.QUEUE;
     }
 
     private int getInt(final String key) {
@@ -71,15 +74,16 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private JsonCharBufferStreamParser getDefaultJsonParserImpl(final InputStream in) {
-        return new JsonCharBufferStreamParser(in, Charset.defaultCharset(), maxSize, bufferProvider);
+        return new JsonCharBufferStreamParser(
+            new InputStreamReader(in, Charset.defaultCharset()), maxSize, bufferProvider, valueBufferProvider);
     }
 
     private JsonCharBufferStreamParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
-        return new JsonCharBufferStreamParser(in, charset, maxSize, bufferProvider);
+        return new JsonCharBufferStreamParser(new InputStreamReader(in, charset), maxSize, bufferProvider, valueBufferProvider);
     }
 
     private JsonCharBufferStreamParser getDefaultJsonParserImpl(final Reader in) {
-        return new JsonCharBufferStreamParser(in, maxSize, bufferProvider);
+        return new JsonCharBufferStreamParser(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
     @Override

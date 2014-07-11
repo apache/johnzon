@@ -18,16 +18,17 @@
  */
 package org.apache.fleece.core;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+
 public class Strings implements JsonChars {
-    private static final BufferCache<StringBuilder> BUFFER_CACHE = new BufferCache<StringBuilder>(Integer.getInteger("org.apache.fleece.default-string-builder", 1024)) {
-        @Override
-        protected StringBuilder newValue(final int defaultSize) {
-            return new StringBuilder(defaultSize);
-        }
-    };
+    private static final BufferStrategy.BufferProvider<StringBuilder> BUILDER_CACHE =
+        BufferStrategy.valueOf(System.getProperty("fleece.string-builder.strategy", "QUEUE"))
+            .newStringBuilderProvider(Integer.getInteger("org.apache.fleece.default-string-builder", 1024));
 
     private static final String UNICODE_PREFIX = "\\u";
     private static final String UNICODE_PREFIX_HELPER = "000";
+    private static final ConcurrentMap<Character, String> UNICODE_CACHE = new ConcurrentHashMap<Character, String>();
 
     public static char asEscapedChar(final char current) {
         switch (current) {
@@ -50,7 +51,7 @@ public class Strings implements JsonChars {
     }
 
     public static String escape(final String value) {
-        final StringBuilder builder = BUFFER_CACHE.getCache();
+        final StringBuilder builder = BUILDER_CACHE.newBuffer();
         try {
             for (int i = 0; i < value.length(); i++) {
                 final char c = value.charAt(i);
@@ -87,17 +88,22 @@ public class Strings implements JsonChars {
                         }
                 }
             }
-            final String s = builder.toString();
-            return s;
+            return builder.toString();
         } finally {
-            builder.setLength(0);
-            BUFFER_CACHE.release(builder);
+            BUILDER_CACHE.release(builder);
         }
     }
 
     private static String toUnicode(final char c) {
+        final String found = UNICODE_CACHE.get(c);
+        if (found != null) {
+            return found;
+        }
+
         final String hex = UNICODE_PREFIX_HELPER + Integer.toHexString(c);
-        return UNICODE_PREFIX + hex.substring(hex.length() - 4);
+        final String s = UNICODE_PREFIX + hex.substring(hex.length() - 4);
+        UNICODE_CACHE.putIfAbsent(c, s);
+        return s;
     }
 
     private Strings() {

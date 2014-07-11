@@ -19,10 +19,7 @@
 package org.apache.fleece.core;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
-import java.nio.charset.Charset;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,23 +29,21 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
 
     private final char[] buffer;
     private final Reader in;
-    private final BufferStrategy.BufferProvider provider;
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private final BufferStrategy.BufferProvider<char[]> valueProvider;
     private int pointer = -1;
     private int avail;
     private char mark;
     private boolean reset;
 
     public JsonCharBufferStreamParser(final Reader reader, final int maxStringLength,
-                                      final BufferStrategy.BufferProvider bufferProvider) {
-        super(maxStringLength);
+                                      final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                                      final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+        super(maxStringLength, valueBuffer.newBuffer());
         this.in = reader;
         this.buffer = bufferProvider.newBuffer();
-        this.provider = bufferProvider;
-    }
-
-    public JsonCharBufferStreamParser(final InputStream in, final Charset charset,
-                                      final int maxStringLength, final BufferStrategy.BufferProvider  buffer) {
-        this(new InputStreamReader(in, charset), maxStringLength, buffer);
+        this.bufferProvider = bufferProvider;
+        this.valueProvider = valueBuffer;
     }
 
     @Override
@@ -102,7 +97,8 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
 
     @Override
     protected void closeUnderlyingSource() throws IOException {
+        bufferProvider.release(buffer);
+        valueProvider.release(currentValue);
         in.close();
-        provider.release(buffer);
     }
 }

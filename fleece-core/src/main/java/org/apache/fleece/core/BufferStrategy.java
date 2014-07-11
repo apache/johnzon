@@ -19,80 +19,156 @@
 package org.apache.fleece.core;
 
 import java.io.Serializable;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public enum BufferStrategy {
     BY_INSTANCE {
         @Override
-        public BufferProvider newProvider(final int size) {
-            return new ByInstanceProvider(size);
+        public BufferProvider<char[]> newCharProvider(final int size) {
+            return new CharBufferByInstanceProvider(size);
+        }
+
+        @Override
+        public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
+            return new StringBuilderByInstanceProvider(size);
         }
     },
     THREAD_LOCAL {
         @Override
-        public BufferProvider newProvider(final int size) {
-            return new ThreadLocalProvider(size);
+        public BufferProvider<char[]> newCharProvider(final int size) {
+            return new CharBufferThreadLocalProvider(size);
+        }
+
+        @Override
+        public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
+            return new StringBuilderThreadLocalProvider(size);
+        }
+    },
+    QUEUE {
+        @Override
+        public BufferProvider<char[]> newCharProvider(final int size) {
+            return new CharBufferQueueProvider(size);
+        }
+
+        @Override
+        public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
+            return new StringBuilderQueueProvider(size);
         }
     },
     SINGLETON {
         @Override
-        public BufferProvider newProvider(final int size) {
-            return new SingletonProvider(size);
-        }
-    };
-
-    public abstract BufferProvider newProvider(int size);
-
-    public static interface BufferProvider extends Serializable {
-        char[] newBuffer();
-
-        void release(char[] value);
-    }
-
-    private static class SingletonProvider implements BufferProvider, Serializable {
-        private final char[] buffer;
-
-        public SingletonProvider(final int size) {
-            buffer = new char[size];
+        public BufferProvider<char[]> newCharProvider(final int size) {
+            return new CharBufferSingletonProvider(size);
         }
 
         @Override
-        public char[] newBuffer() {
+        public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
+            return new StringBuilderSingletonProvider(size);
+        }
+    };
+
+    public abstract BufferProvider<char[]> newCharProvider(int size);
+    public abstract BufferProvider<StringBuilder> newStringBuilderProvider(int size);
+
+    public static interface BufferProvider<T> extends Serializable {
+        T newBuffer();
+
+        void release(T value);
+    }
+
+    private static class CharBufferSingletonProvider extends SingletonProvider<char[]> {
+        public CharBufferSingletonProvider(final int size) {
+            super(size);
+        }
+
+        @Override
+        protected char[] newInstance(int size) {
+            return new char[size];
+        }
+    }
+
+    private static class StringBuilderSingletonProvider extends SingletonProvider<StringBuilder> {
+        public StringBuilderSingletonProvider(final int size) {
+            super(size);
+        }
+
+        @Override
+        protected StringBuilder newInstance(final int size) {
+            return new StringBuilder(size);
+        }
+    }
+
+    private static abstract class SingletonProvider<T> implements BufferProvider<T>, Serializable {
+        protected final T buffer;
+
+        public SingletonProvider(final int size) {
+            buffer = newInstance(size);
+        }
+
+        protected abstract T newInstance(int size);
+
+        @Override
+        public T newBuffer() {
             return buffer;
         }
 
         @Override
-        public void release(char[] value) {
+        public void release(final T value) {
             // no-op
         }
     }
 
-    private static class ThreadLocalProvider implements BufferProvider {
-        private final BufferCache<char[]> cache;
+    private static abstract class ThreadLocalProvider<T> implements BufferProvider<T> {
+        private final ThreadLocalBufferCache<T> cache;
 
         public ThreadLocalProvider(final int size) {
-            cache = new BufferCache<char[]>(size) {
+            cache = new ThreadLocalBufferCache<T>(size) {
                 @Override
-                protected char[] newValue(int defaultSize) {
-                    return new char[size];
+                protected T newValue(int defaultSize) {
+                    return newInstance(size);
                 }
             };
         }
 
+        protected abstract T newInstance(int size);
+
         @Override
-        public char[] newBuffer() {
+        public T newBuffer() {
             return cache.getCache();
         }
 
         @Override
-        public void release(final char[] value) {
+        public void release(final T value) {
             cache.release(value);
         }
     }
 
-    private static class ByInstanceProvider implements BufferProvider {
+    private static class CharBufferThreadLocalProvider extends ThreadLocalProvider<char[]> {
+        public CharBufferThreadLocalProvider(int size) {
+            super(size);
+        }
+
+        @Override
+        protected char[] newInstance(final int size) {
+            return new char[size];
+        }
+    }
+
+    private static class StringBuilderThreadLocalProvider extends ThreadLocalProvider<StringBuilder> {
+        public StringBuilderThreadLocalProvider(int size) {
+            super(size);
+        }
+
+        @Override
+        protected StringBuilder newInstance(final int size) {
+            return new StringBuilder(size);
+        }
+    }
+
+    private static class CharBufferByInstanceProvider implements BufferProvider<char[]> {
         private final int size;
 
-        public ByInstanceProvider(final int size) {
+        public CharBufferByInstanceProvider(final int size) {
             this.size = size;
         }
 
@@ -104,6 +180,77 @@ public enum BufferStrategy {
         @Override
         public void release(final char[] value) {
             // no-op
+        }
+    }
+
+    private static class StringBuilderByInstanceProvider implements BufferProvider<StringBuilder> {
+        private final int size;
+
+        public StringBuilderByInstanceProvider(final int size) {
+            this.size = size;
+        }
+
+        @Override
+        public StringBuilder newBuffer() {
+            return new StringBuilder(size);
+        }
+
+        @Override
+        public void release(final StringBuilder value) {
+            // no-op
+        }
+    }
+
+    private static abstract class QueueProvider<T> implements BufferProvider<T> {
+        private final int size;
+        private final ConcurrentLinkedQueue<T> queue = new ConcurrentLinkedQueue<T>();
+
+        public QueueProvider(final int size) {
+            this.size = size;
+        }
+
+        protected abstract T newInstance(int size);
+
+        @Override
+        public T newBuffer() {
+            final T buffer = queue.poll();
+            if (buffer == null) {
+                return newInstance(size);
+            }
+            return buffer;
+        }
+
+        @Override
+        public void release(final T value) {
+            queue.offer(value);
+        }
+    }
+
+    private static class CharBufferQueueProvider extends QueueProvider<char[]> {
+        public CharBufferQueueProvider(final int size) {
+            super(size);
+        }
+
+        @Override
+        protected char[] newInstance(int size) {
+            return new char[size];
+        }
+    }
+
+    private static class StringBuilderQueueProvider extends QueueProvider<StringBuilder> {
+        public StringBuilderQueueProvider(final int size) {
+            super(size);
+        }
+
+        @Override
+        protected StringBuilder newInstance(int size) {
+            return new StringBuilder(size);
+        }
+
+        @Override
+        public void release(final StringBuilder value) {
+            value.setLength(0);
+            super.release(value);
         }
     }
 }
