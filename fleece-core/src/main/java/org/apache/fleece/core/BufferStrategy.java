@@ -85,6 +85,11 @@ public enum BufferStrategy {
         protected char[] newInstance(int size) {
             return new char[size];
         }
+
+        @Override
+        public void release(final char[] value) {
+            // no-op
+        }
     }
 
     private static class StringBuilderSingletonProvider extends SingletonProvider<StringBuilder> {
@@ -96,9 +101,14 @@ public enum BufferStrategy {
         protected StringBuilder newInstance(final int size) {
             return new StringBuilder(size);
         }
+
+        @Override
+        public void release(final StringBuilder value) {
+            value.setLength(0);
+        }
     }
 
-    private static abstract class SingletonProvider<T> implements BufferProvider<T>, Serializable {
+    private static abstract class SingletonProvider<T> implements BufferProvider<T> {
         protected final T buffer;
 
         public SingletonProvider(final int size) {
@@ -162,6 +172,12 @@ public enum BufferStrategy {
         @Override
         protected StringBuilder newInstance(final int size) {
             return new StringBuilder(size);
+        }
+
+        @Override
+        public void release(final StringBuilder value) {
+            value.setLength(0);
+            super.release(value);
         }
     }
 
