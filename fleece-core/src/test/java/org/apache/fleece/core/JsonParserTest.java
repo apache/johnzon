@@ -602,6 +602,17 @@ public class JsonParserTest {
         assertFalse(parser.hasNext());
         parser.close();
     }
+    
+    @Test
+    public void escapedStringAwareParser() {
+        final EscapedStringAwareJsonParser parser = (EscapedStringAwareJsonParser) Json.createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/stringescape.json"));
+        parser.next();
+        parser.next();
+        parser.next();
+        assertEquals("s\"mit\"", parser.getString());
+        assertEquals("s\\\"mit\\\"", parser.getEscapedString());
+        parser.close();
+    }
 
     @Test
     public void dosProtected() {
@@ -715,6 +726,7 @@ public class JsonParserTest {
   
         assertEquals(0L, Json.createReader(new ByteArrayInputStream("[0]".getBytes())).readArray().getJsonNumber(0).longValue());
     }
+    
     
     @Test
     public void shortestNonEmtyJsonFileWithWhiteSpaceChars() {

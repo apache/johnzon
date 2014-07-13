@@ -46,7 +46,7 @@ public class WadlDocumentToJson {
         return builder.add(item.getNodeName(), createNode(item)).build().toString();
     }
 
-    private void addChildrens(final String nodeName, final JsonObjectBuilder builder, final NodeList children) {
+    private void addChildrens(/*final String nodeName, */final JsonObjectBuilder builder, final NodeList children) {
         final Map<String, Collection<Node>> nodesByName = new LinkedHashMap<String, Collection<Node>>();
         for (int i = 0; i < children.getLength(); i++) {
             final Node node = children.item(i);
@@ -91,7 +91,7 @@ public class WadlDocumentToJson {
             if (childBuilder == null) {
                 childBuilder = builderFactory.createObjectBuilder();
             }
-            addChildrens(node.getNodeName(), childBuilder, node.getChildNodes());
+            addChildrens(/*node.getNodeName(),*/ childBuilder, node.getChildNodes());
         }
         return childBuilder;
     }

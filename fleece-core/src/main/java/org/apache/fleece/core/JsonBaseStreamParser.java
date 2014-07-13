@@ -21,6 +21,7 @@ package org.apache.fleece.core;
 import javax.json.JsonException;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
@@ -103,6 +104,11 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     }
 
     private boolean ifConstructingStringValueAdd(char c) throws IOException {
+        
+        if(!constructingStringValue) {
+            return false;
+        }
+        
         if (escaped) {
 
             if (c == 'u') {
@@ -129,17 +135,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
             escaped = false;
         }
+        
+        appendValue(c);
 
-        return ifConstructingStringValueAdd(c, false);
-    }
-
-    private boolean ifConstructingStringValueAdd(final char c,
-            final boolean escape) {
-        if (constructingStringValue) {
-
-            appendValue(escape ? Strings.asEscapedChar(c) : c);
-        }
-        return constructingStringValue;
+        return true;
     }
 
     protected abstract char readNextChar() throws IOException;
@@ -742,7 +741,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     }
 
-    private boolean isNumber(final char c) {
+    private static boolean isNumber(final char c) {
         return isAsciiDigit(c) || c == DOT || c == MINUS || c == PLUS
                 || c == EXP_LOWERCASE || c == EXP_UPPERCASE;
     }
@@ -777,6 +776,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
             return currentIntegralNumber.intValue();
         }
 
+        if(isCurrentNumberIntegral) {
+            return (int) parseLongFromChars(currentValue, 0, valueLength);
+        }
+        
         return getBigDecimal().intValue();
     }
 
@@ -790,6 +793,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
             return currentIntegralNumber.intValue();
         } // int is ok, its only from 0-9
 
+        if(isCurrentNumberIntegral) {
+            return parseLongFromChars(currentValue, 0, valueLength);
+        }
+        
         return getBigDecimal().longValue();
     }
 
@@ -825,6 +832,31 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     @Override
     public String getEscapedString() {
         return Strings.escape(getValue());
+    }
+    
+    private static long parseLongFromChars(char[] chars, int start, int end) {
+
+        if (chars == null 
+                || chars.length == 0 
+                || start < 0 
+                || end <= start 
+                || end > chars.length - 1 
+                || start > chars.length - 1) {
+            throw new IllegalArgumentException();
+        }
+
+        long retVal = 0;
+        boolean negative = chars[start] == MINUS;
+        for (int i = negative ? start + 1 : start; i < end; i++) {
+
+            //int this context we know its an integral number, so skip this due to perf reasons
+            /*if (chars[i] < ZERO || chars[i] > NINE) {
+                throw new IllegalArgumentException("Not a integral number");
+            }*/
+            retVal = retVal * 10 + (chars[i] - ZERO);
+        }
+
+        return negative ? -retVal : retVal;
     }
 
 }

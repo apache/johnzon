@@ -127,12 +127,12 @@ public class Mapper {
         return generator;
     }
 
-    private <T> String convertFrom(final Class<T> aClass, final T value) {
+    /*private <T> String convertFrom(final Class<T> aClass, final T value) {
         final Converter<T> converter = (Converter<T>) findConverter(aClass);
         return doConverFrom(value, converter);
-    }
+    }*/
 
-    private <T> String doConverFrom(final T value, final Converter<T> converter) {
+    private static <T> String doConverFrom(final T value, final Converter<T> converter) {
         if (converter == null) {
             throw new MapperException("can't convert " + value + " to String");
         }
@@ -242,9 +242,9 @@ public class Mapper {
             return;
         }
 
-        JsonGenerator gen = null;
+        //JsonGenerator gen = null;
         try {
-            gen = doWriteObject(generator, object);
+            /*gen = */doWriteObject(generator, object);
         } finally {
             doCloseOrFlush(generator);
         }
