@@ -21,6 +21,10 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  
+  <prerequisites>
+		<maven>3.1.0</maven>
+</prerequisites>
 
   <parent>
     <groupId>org.apache</groupId>
@@ -33,6 +37,9 @@
   <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
   <name>Fleece</name>
+  <description>Apache Fleece is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
+  <inceptionYear>2014</inceptionYear>
+  <url>http://incubator.apache.org/projects/fleece.html</url>
 
   <modules>
     <module>fleece-core</module>
@@ -65,6 +72,9 @@
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
+          <encoding>UTF-8</encoding>
+          <showDeprecation>true</showDeprecation>
+		  <showWarnings>true</showWarnings>
         </configuration>
       </plugin>
       <plugin>
@@ -86,6 +96,8 @@
             <exclude>*.ipr</exclude>
             <exclude>**/META-INF/services/javax.json.spi.JsonProvider</exclude>
             <exclude>**/*.json</exclude>
+            <exclude>**/*.yml</exclude>
+            <exclude>**/bench/*.txt</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -246,6 +258,21 @@
   <reporting>
     <plugins>
       <plugin>
+		<groupId>org.codehaus.mojo</groupId>
+		<artifactId>findbugs-maven-plugin</artifactId>
+		<version>2.5.3</version>
+		<configuration>
+          <xmlOutput>true</xmlOutput>
+          <!-- Optional directory to put findbugs xdoc xml report -->
+          <xmlOutputDirectory>target/site</xmlOutputDirectory>
+        </configuration>
+	  </plugin>
+	  <plugin>
+		<groupId>org.apache.maven.plugins</groupId>
+		<artifactId>maven-pmd-plugin</artifactId>
+		<version>3.1</version>
+	  </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
         <version>2.7</version>
@@ -273,4 +300,12 @@
       </plugin>
     </plugins>
   </reporting>
+  
+  <licenses>
+		<license>
+			<name>The Apache Software License, Version 2.0</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+  </licenses>
 </project>

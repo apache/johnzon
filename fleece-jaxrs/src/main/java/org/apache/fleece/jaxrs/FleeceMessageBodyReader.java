@@ -68,7 +68,7 @@ public class FleeceMessageBodyReader<T> implements MessageBodyReader<T> {
         if (rawType.isArray()) {
             return (T) mapper.readArray(entityStream, rawType.getComponentType());
         } else if (Collection.class.isAssignableFrom(rawType) && ParameterizedType.class.isInstance(genericType)) {
-            return (T) mapper.readCollection(entityStream, ParameterizedType.class.cast(genericType), rawType);
+            return (T) mapper.<Collection<T>,T>readCollection(entityStream, ParameterizedType.class.cast(genericType), rawType);
         }
         return mapper.readObject(entityStream, genericType);
     }

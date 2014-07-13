@@ -35,7 +35,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -128,8 +130,12 @@ public class Mappings {
             final Class<?> collectionType;
             if (List.class.isAssignableFrom(raw)) {
                 collectionType = List.class;
+            }else if (SortedSet.class.isAssignableFrom(raw)) {
+                collectionType = SortedSet.class;
             } else if (Set.class.isAssignableFrom(raw)) {
                 collectionType = Set.class;
+            } else if (Queue.class.isAssignableFrom(raw)) {
+                collectionType = Queue.class;
             } else if (Collection.class.isAssignableFrom(raw)) {
                 collectionType = Collection.class;
             } else {

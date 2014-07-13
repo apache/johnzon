@@ -107,14 +107,21 @@ public class MapperTest {
 
     @Test
     public void writeObject() {
-        final TheObject instance = new MapperBuilder().build().readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()), TheObject.class); // suppose reader writes but this is tested
+        final TheObject instance = new MapperBuilder().build()
+                .readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()), TheObject.class); // suppose reader writes but this is tested
         final StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(instance, writer);
         final String serialized = writer.toString();
         assertTrue(serialized.contains("\"primitives\":[1,2,3,4,5]"));
         assertTrue(serialized.contains("\"collectionWrapper\":[1,2,3,4,5]"));
         assertTrue(serialized.contains("\"bool\":true"));
-        assertTrue(serialized.contains("\"map\":{\"duos\":false,\"uno\":true}"));
+        
+        //Assert fail with oracle java 1.7.0_45, works well with apple java 1.6.0_65 
+        //assertTrue(serialized.contains("\"map\":{\"uno\":true,\"duos\":false}"));
+        
+        assertTrue(serialized.contains("\"map\":{"));
+        assertTrue(serialized.contains("\"uno\":true"));
+        assertTrue(serialized.contains("\"duos\":false"));
     }
 
     @Test

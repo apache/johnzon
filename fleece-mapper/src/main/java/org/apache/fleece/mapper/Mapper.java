@@ -30,6 +30,7 @@ import javax.json.JsonReaderFactory;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -48,7 +49,13 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -444,9 +451,11 @@ public class Mapper {
                 final Type[] fieldArgTypes = aType.getActualTypeArguments();
                 if (fieldArgTypes.length >= 2) {
                     final Class<?> raw = Class.class.cast(aType.getRawType());
-
+                    
                     final Map map;
-                    if (ConcurrentMap.class.isAssignableFrom(raw)) {
+                    if (SortedMap.class.isAssignableFrom(raw)) {
+                        map = new TreeMap();
+                    } else if (ConcurrentMap.class.isAssignableFrom(raw)) {
                         map = new ConcurrentHashMap(object.size());
                     } else if (Map.class.isAssignableFrom(raw)) {
                         map = new HashMap(object.size());
@@ -455,7 +464,16 @@ public class Mapper {
                     }
 
                     if (map != null) {
-                        final Class<?> keyType = Class.class.cast(fieldArgTypes[0]);
+                        
+                        Class<?> keyType = null;
+                        if (ParameterizedType.class.isInstance(fieldArgTypes[0])) {
+                            //class cast exception when  fieldArgTypes[0] is parameterized
+                            //FIXME
+                            keyType = Class.class.cast(fieldArgTypes[0]); 
+                        } else {
+                            keyType = Class.class.cast(fieldArgTypes[0]);
+                        }
+                         
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                             map.put(convertTo(keyType, value.getKey()), toObject(value.getValue(), fieldArgTypes[1]));
                         }
@@ -476,6 +494,7 @@ public class Mapper {
             final Method setterMethod = value.setter;
             final Object convertedValue = value.converter == null?
                     toObject(jsonValue, value.paramType) : value.converter.fromString(jsonValue.toString());
+                
             if (convertedValue != null) {
                 try {
                     setterMethod.invoke(t, convertedValue);
@@ -489,6 +508,7 @@ public class Mapper {
     }
 
     private Object toObject(final JsonValue jsonValue, final Type type) throws InstantiationException, IllegalAccessException {
+        
         Object convertedValue = null;
         if (JsonObject.class.isInstance(jsonValue)) {
             convertedValue = buildObject(type, JsonObject.class.cast(jsonValue));
@@ -516,6 +536,7 @@ public class Mapper {
 
             final String text = jsonValue.toString();
             if (text != null) {
+                
                 convertedValue = convertTo(Class.class.cast(type), text);
             }
         }
@@ -544,10 +565,16 @@ public class Mapper {
 
     private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray) throws InstantiationException, IllegalAccessException {
         final Collection collection;
-        if (List.class == mapping.raw || Collection.class == mapping.raw) {
-            collection = new ArrayList<T>(jsonArray.size());
+        
+        if (SortedSet.class == mapping.raw) {
+            collection = new TreeSet<T>();
         } else if (Set.class == mapping.raw) {
             collection = new HashSet<T>(jsonArray.size());
+        } else if (Queue.class == mapping.raw) {
+            collection = new ArrayBlockingQueue<T>(jsonArray.size());
+          //fail fast if collection is not know, assume Collection.class to be compatible with ArrayList is wrong for almost all cases
+        } else if (List.class == mapping.raw /*|| Collection.class == mapping.raw*/) {
+            collection = new ArrayList<T>(jsonArray.size());
         } else {
             throw new IllegalStateException("not supported collection type: " + mapping.raw.getName());
         }

@@ -119,6 +119,10 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     public EscapedStringAwareJsonParser createInternalParser(final InputStream in) {
         return getDefaultJsonParserImpl(in);
     }
+    
+    public EscapedStringAwareJsonParser createInternalParser(final InputStream in, final Charset charset) {
+        return getDefaultJsonParserImpl(in, charset);
+    }
 
     public EscapedStringAwareJsonParser createInternalParser(final Reader reader) {
         return getDefaultJsonParserImpl(reader);

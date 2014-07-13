@@ -52,6 +52,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     private boolean constructingStringValue = false;
     private boolean withinArray = false;
     private boolean stringValueIsKey = false;
+    
+    private boolean isCurrentNumberIntegral = false;
+    private Integer currentIntegralNumber = null; //for number from 0 - 9
+    private BigDecimal currentBigDecimalNumber = null;
 
     private int openObjects = 0;
     private int openArrays = 0;
@@ -211,10 +215,18 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     @Override
     public final Event next() {
+        
+        //fast fail
+        if(!hasNext()) {
+            throw new NoSuchElementException();
+        }
 
         int dosCount = 0;
         lastEvent = event;
         event = null;
+        isCurrentNumberIntegral = false;
+        currentBigDecimalNumber = null;
+        currentIntegralNumber = null;
 
         resetValue();
 
@@ -609,6 +621,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
                 boolean endExpected = false;
                 final boolean zeropassed = c == '0';
+                final boolean beginningMinusPassed = c == '-';
                 boolean dotpassed = false;
                 boolean epassed = false;
                 char last = c;
@@ -627,7 +640,20 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                     if (n == COMMA || n == END_ARRAY_CHAR
                             || n == END_OBJECT_CHAR) {
                         resetToMark();
-
+                        
+                        isCurrentNumberIntegral=(!dotpassed && !epassed);
+                        
+                        if(isCurrentNumberIntegral && beginningMinusPassed && i==1 && last >= '0' && last <= '9')
+                        {
+                            currentIntegralNumber=-((int)last - 48); //optimize -0 till -99
+                        }
+                        
+                        if(isCurrentNumberIntegral && !beginningMinusPassed && i==0 && last >= '0' && last <= '9')
+                        {
+                            currentIntegralNumber=((int)last - 48); //optimize 0 till 9
+                        }
+                        
+                        
                         event = Event.VALUE_NUMBER;
                         break;
                     }
@@ -735,41 +761,49 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
         if (event != Event.VALUE_NUMBER) {
             throw new IllegalStateException(event
-                    + " doesn't supportisIntegralNumber()");
+                    + " doesn't support isIntegralNumber()");
         }
 
-        for (int i = 0; i < valueLength; i++) {
-            if (!isAsciiDigit(currentValue[i])) {
-                return false;
-            }
-        }
-
-        return true;
+        return isCurrentNumberIntegral;
     }
 
     @Override
     public int getInt() {
         if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event + " doesn't supportgetInt()");
+            throw new IllegalStateException(event + " doesn't support getInt()");
         }
-        return Integer.parseInt(getValue());
+
+        if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+            return currentIntegralNumber.intValue();
+        }
+
+        return getBigDecimal().intValue();
     }
 
     @Override
     public long getLong() {
         if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event + " doesn't supporgetLong()");
+            throw new IllegalStateException(event + " doesn't support getLong()");
         }
-        return Long.parseLong(getValue());
+
+        if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+            return currentIntegralNumber.intValue();
+        } // int is ok, its only from 0-9
+
+        return getBigDecimal().longValue();
     }
 
     @Override
     public BigDecimal getBigDecimal() {
         if (event != Event.VALUE_NUMBER) {
-            throw new IllegalStateException(event
-                    + " doesn't support getBigDecimal()");
+            throw new IllegalStateException(event + " doesn't support getBigDecimal()");
         }
-        return new BigDecimal(getValue());
+
+        if (currentBigDecimalNumber != null) {
+            return currentBigDecimalNumber;
+        }
+
+        return (currentBigDecimalNumber = new BigDecimal(getString()));
     }
 
     @Override
