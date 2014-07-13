@@ -84,7 +84,7 @@ public class Mappings {
             this.converter = converter;
             this.version = version;
             this.array = array;
-            this.map = map;
+            this.map = map && converter == null;
             this.collection = collection;
             this.primitive = primitive;
         }

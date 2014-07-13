@@ -63,12 +63,13 @@ import static java.util.Arrays.asList;
 
 public class Mapper {
     protected static final JsonObjectImpl EMPTY_OBJECT = new JsonObjectImpl();
+    private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
 
     protected final Mappings mappings = new Mappings();
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
     protected final boolean close;
-    protected final ConcurrentMap<Class<?>, Converter<?>> converters;
+    protected final ConcurrentMap<Type, Converter<?>> converters;
     protected final int version;
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
@@ -77,7 +78,7 @@ public class Mapper {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
-        this.converters = new ConcurrentHashMap<Class<?>, Converter<?>>(converters);
+        this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
     }
 
@@ -138,23 +139,27 @@ public class Mapper {
         return converter.toString(value);
     }
 
-    private <T> Converter<T> findConverter(final Class<T> aClass) {
+    private <T> Converter<T> findConverter(final Type aClass) {
         final Converter<T> converter = (Converter<T>) converters.get(aClass);
         if (converter != null) {
             return converter;
         }
-        if (aClass.isEnum()) {
-            final Converter<T> enumConverter = new EnumConverter(aClass);
-            converters.putIfAbsent(aClass, enumConverter);
-            return enumConverter;
+        if (Class.class.isInstance(aClass)) {
+            final Class<?> clazz = Class.class.cast(aClass);
+            if (clazz.isEnum()) {
+                final Converter<T> enumConverter = new EnumConverter(clazz);
+                converters.putIfAbsent(clazz, enumConverter);
+                return enumConverter;
+            }
         }
         return null;
     }
 
-    private Object convertTo(final Class<?> aClass, final String text) {
+    private Object convertTo(final Type aClass, final String text) {
         final Converter<?> converter = findConverter(aClass);
         if (converter == null) {
-            throw new MapperException("can't convert String to " + aClass.getName());
+            converters.putIfAbsent(aClass, FALLBACK_CONVERTER);
+            return FALLBACK_CONVERTER;
         }
         return converter.fromString(text);
     }
@@ -465,13 +470,13 @@ public class Mapper {
 
                     if (map != null) {
                         
-                        Class<?> keyType = null;
+                        Type keyType = null;
                         if (ParameterizedType.class.isInstance(fieldArgTypes[0])) {
                             //class cast exception when  fieldArgTypes[0] is parameterized
                             //FIXME
-                            keyType = Class.class.cast(fieldArgTypes[0]); 
+                            keyType = fieldArgTypes[0];
                         } else {
-                            keyType = Class.class.cast(fieldArgTypes[0]);
+                            keyType = fieldArgTypes[0];
                         }
                          
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
@@ -593,5 +598,18 @@ public class Mapper {
             Array.set(array, i++, toObject(value, componentType));
         }
         return array;
+    }
+
+    private static class FallbackConverter implements Converter<Object> {
+        @Override
+        public String toString(final Object instance) {
+            return instance.toString();
+        }
+
+        @Override
+        public Object fromString(final String text) {
+            throw new UnsupportedOperationException("Using fallback converter, " +
+                "this only works in write mode but not in read. Please register a custom converter to do so.");
+        }
     }
 }

@@ -18,7 +18,7 @@
  */
 package org.apache.fleece.mapper;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -35,7 +35,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class MapperEnhancedTests {
 
@@ -88,9 +88,46 @@ public class MapperEnhancedTests {
        
     }
 
-   /*@Test
+    @Test
     public void writeTestclass() {
         final StringWriter sw = new StringWriter();
+        final TestClass tc2 = buildTestClassInstance();
+
+        new MapperBuilder().build().writeObject(tc2, sw);
+        assertEquals("{" +
+                        "\"bd\":-456.4567890987654321,\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
+                        "\"dates\":[]," +
+                        "\"sose\":[]," +
+                        "\"inner\":{" +
+                            "\"bd\":-456.4567890987654321," +
+                            "\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
+                            "\"dates\":[]," +
+                            "\"sose\":[\"string1\",\"string2\"]," +
+                            "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":100}" +
+                        "}," +
+                        "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":200}}",
+            sw.toString());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void needConvertersForComplexTypes() {
+        final String str = "{" +
+            "\"bd\":-456.4567890987654321,\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
+            "\"dates\":[]," +
+            "\"sose\":[]," +
+            "\"inner\":{" +
+            "\"bd\":-456.4567890987654321," +
+            "\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
+            "\"dates\":[]," +
+            "\"sose\":[\"string1\",\"string2\"]," +
+            "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":100}" +
+            "}," +
+            "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":200}}";
+
+        new MapperBuilder().build().readObject(new StringReader(str), TestClass.class);
+    }
+
+    private TestClass buildTestClassInstance() {
         final TestClass tc1 = new TestClass(null);
         final Map<String, Integer> m = new TreeMap<String, Integer>();
         m.put("key1", -100);
@@ -116,14 +153,9 @@ public class MapperEnhancedTests {
         l1.add(m);
         l1.add(m2);
         tc2.map.put(l1, 200L);
+        return tc2;
+    }
 
-        new MapperBuilder().build().writeObject(tc2, sw);
-       
-
-        new MapperBuilder().build().readObject(new StringReader(sw.toString()), TestClass.class);
-    }*/
-
-    
     public static class QueueClass {
         private Queue<String> queue = new ArrayBlockingQueue<String>(5);
 
@@ -134,9 +166,6 @@ public class MapperEnhancedTests {
         public void setQueue(Queue<String> queue) {
             this.queue = queue;
         }
-
-        
-        
     }
     
     public static class SoseClass {
@@ -149,7 +178,6 @@ public class MapperEnhancedTests {
         public void setSose(SortedSet<String> sose) {
             this.sose = sose;
         }
-        
     }
     
     public static class SomaClass {
@@ -165,7 +193,6 @@ public class MapperEnhancedTests {
     }
     
     public static class TestClass {
-
         private List<Map<String, Date>> dates = new ArrayList<Map<String, Date>>();
         private Map<List<Map<String, Integer>>, Long> map = new HashMap<List<Map<String, Integer>>, Long>();
         private TestClass inner;
@@ -188,7 +215,6 @@ public class MapperEnhancedTests {
 
         public TestClass() {
             super();
-
         }
 
         public List<Map<String, Date>> getDates() {
@@ -230,6 +256,5 @@ public class MapperEnhancedTests {
         public void setBd(final BigDecimal bd) {
             this.bd = bd;
         }
-
     }
 }
