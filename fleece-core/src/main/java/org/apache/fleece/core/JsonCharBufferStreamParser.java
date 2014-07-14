@@ -54,10 +54,6 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
         }
 
         if (avail <= 0) {
-            if (LOG) {
-                LOGGER.fine("avail:" + avail + "/pointer:" + pointer);
-            }
-
             avail = in.read(buffer, 0, buffer.length);
 
             pointer = -1;
@@ -70,7 +66,6 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
             if (avail <= 0) {
                 throw new IOException("EOF");
             }
-
         }
 
         pointer++;
@@ -81,17 +76,11 @@ public class JsonCharBufferStreamParser extends JsonBaseStreamParser {
 
     @Override
     protected void mark() {
-        if (LOG) {
-            LOGGER.fine("    MARK " + buffer[pointer] + " (" + (int) buffer[pointer] + ")");
-        }
         mark = buffer[pointer];
     }
 
     @Override
     protected void reset() {
-        if (LOG) {
-            LOGGER.fine("    RESET ");
-        }
         reset = true;
     }
 

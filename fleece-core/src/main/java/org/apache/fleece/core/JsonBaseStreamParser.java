@@ -308,9 +308,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                     lastSignificantChar = c;
 
                     stringValueIsKey = true;
-                    if (LOG) {
-                        LOGGER.fine(" VAL_IS_KEY");
-                    }
 
                     break;
                 case KEY_SEPARATOR:
@@ -327,9 +324,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                     lastSignificantChar = c;
 
                     stringValueIsKey = false;
-                    if (LOG) {
-                        LOGGER.fine(" VAL_IS_VALUE");
-                    }
 
                     break;
 
@@ -373,16 +367,9 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                     }
 
                     if (escaped) {
-                        if (LOG) {
-                            LOGGER.fine(" ESCAPEDESCAPED");
-                        }
-
                         appendValue(ESCAPE_CHAR);
                         escaped = false;
                     } else {
-                        if (LOG) {
-                            LOGGER.fine(" ESCAPECHAR");
-                        }
                         escaped = true;
                     }
 
@@ -404,16 +391,8 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                 }
 
                 if (event != null) {
-
-                    if (LOG) {
-                        LOGGER.fine(" +++ +++ +++ +++ +++ +++" + event
-                                + "::" + getValue());
-                    }
-
                     return event;
-
                 }
-
             }
         } catch (final IOException e) {
             throw new JsonParsingException("Unexpected IO Exception", e, createLocation());
@@ -421,10 +400,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     }
 
     private void handleStartObject(final char c) {
-        if (LOG) {
-            LOGGER.fine(" LASIC " + lastSignificantChar);
-        }
-
         final char significantChar = (char) lastSignificantChar; // cast eagerly means we avoid 2 castings and are slwoer in error case only
         if (lastSignificantChar == -2
                 || (lastSignificantChar != -1
@@ -624,10 +599,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
                 while (true) {
                     i++;
-
-                    if (LOG) {
-                        LOGGER.fine("while i:" + i);
-                    }
 
                     final char n = read();
                     mark();
