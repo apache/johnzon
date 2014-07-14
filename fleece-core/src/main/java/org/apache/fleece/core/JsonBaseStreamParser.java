@@ -295,10 +295,11 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                         continue;
                     }
 
+                    final char lastSignificant = (char) lastSignificantChar;
                     if (lastSignificantChar >= 0
-                            && (char) lastSignificantChar != QUOTE
-                            && (char) lastSignificantChar != END_ARRAY_CHAR
-                            && (char) lastSignificantChar != END_OBJECT_CHAR) {
+                            && lastSignificant != QUOTE
+                            && lastSignificant != END_ARRAY_CHAR
+                            && lastSignificant != END_OBJECT_CHAR) {
                         throw new JsonParsingException("Unexpected character "
                                 + c + " (last significant was "
                                 + lastSignificantChar + ")", createLocation());
@@ -420,15 +421,15 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     }
 
     private void handleStartObject(final char c) {
-
         if (LOG) {
             LOGGER.fine(" LASIC " + lastSignificantChar);
         }
 
+        final char significantChar = (char) lastSignificantChar; // cast eagerly means we avoid 2 castings and are slwoer in error case only
         if (lastSignificantChar == -2
                 || (lastSignificantChar != -1
-                        && (char) lastSignificantChar != KEY_SEPARATOR
-                        && (char) lastSignificantChar != COMMA && (char) lastSignificantChar != START_ARRAY_CHAR)) {
+                        && significantChar != KEY_SEPARATOR
+                        && significantChar != COMMA && significantChar != START_ARRAY_CHAR)) {
             throw new JsonParsingException("Unexpected character " + c
                     + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
@@ -436,9 +437,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
         stringValueIsKey = true;
         withinArray = false;
-        if (LOG) {
-            LOGGER.fine(" VAL_IS_KEY");
-        }
 
         lastSignificantChar = c;
         openObjects++;
@@ -447,11 +445,12 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     }
 
     private void handleEndObject(final char c) {
+        final char significantChar = (char) lastSignificantChar;
         if (lastSignificantChar >= 0
-                && (char) lastSignificantChar != START_OBJECT_CHAR
-                && (char) lastSignificantChar != END_ARRAY_CHAR
-                && (char) lastSignificantChar != QUOTE
-                && (char) lastSignificantChar != END_OBJECT_CHAR) {
+                && significantChar != START_OBJECT_CHAR
+                && significantChar != END_ARRAY_CHAR
+                && significantChar != QUOTE
+                && significantChar != END_OBJECT_CHAR) {
             throw new JsonParsingException("Unexpected character " + c
                     + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
@@ -470,10 +469,12 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     private void handleStartArray(final char c) {
         withinArray = true;
 
+        final char significantChar = (char) lastSignificantChar;
         if (lastSignificantChar == -2
                 || (lastSignificantChar != -1
-                        && (char) lastSignificantChar != KEY_SEPARATOR
-                        && (char) lastSignificantChar != COMMA && (char) lastSignificantChar != START_ARRAY_CHAR)) {
+                        && significantChar != KEY_SEPARATOR
+                        && significantChar != COMMA
+                        && significantChar != START_ARRAY_CHAR)) {
             throw new JsonParsingException("Unexpected character " + c
                     + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
@@ -487,11 +488,12 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     private void handleEndArray(final char c) {
         withinArray = false;
 
+        final char significantChar = (char) lastSignificantChar;
         if (lastSignificantChar >= 0
-                && (char) lastSignificantChar != START_ARRAY_CHAR
-                && (char) lastSignificantChar != END_ARRAY_CHAR
-                && (char) lastSignificantChar != END_OBJECT_CHAR
-                && (char) lastSignificantChar != QUOTE) {
+                && significantChar != START_ARRAY_CHAR
+                && significantChar != END_ARRAY_CHAR
+                && significantChar != END_OBJECT_CHAR
+                && significantChar != QUOTE) {
             throw new JsonParsingException("Unexpected character " + c
                     + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
@@ -510,11 +512,13 @@ public abstract class JsonBaseStreamParser implements JsonChars,
 
     private boolean handleQuote(final char c) {
 
-        if (lastSignificantChar >= 0 && (char) lastSignificantChar != QUOTE
-                && (char) lastSignificantChar != KEY_SEPARATOR
-                && (char) lastSignificantChar != START_OBJECT_CHAR
-                && (char) lastSignificantChar != START_ARRAY_CHAR
-                && (char) lastSignificantChar != COMMA) {
+        final char significantChar = (char) lastSignificantChar;
+        if (lastSignificantChar >= 0
+                && significantChar != QUOTE
+                && significantChar != KEY_SEPARATOR
+                && significantChar != START_OBJECT_CHAR
+                && significantChar != START_ARRAY_CHAR
+                && significantChar != COMMA) {
             throw new JsonParsingException("Unexpected character " + c
                     + " (last significant was " + lastSignificantChar + ")",
                     createLocation());
@@ -533,9 +537,6 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                 if (!withinArray && stringValueIsKey) {
                     event = Event.KEY_NAME;
                     stringValueIsKey = false;
-                    if (LOG) {
-                        LOGGER.fine(" VAL_IS_VALUE");
-                    }
                 } else {
 
                     if (lastEvent != Event.KEY_NAME && !withinArray) {
@@ -568,7 +569,8 @@ public abstract class JsonBaseStreamParser implements JsonChars,
     }
 
     private void handleLiteral(final char c) throws IOException {
-        if (lastSignificantChar >= 0 && lastSignificantChar != KEY_SEPARATOR
+        if (lastSignificantChar >= 0
+                && lastSignificantChar != KEY_SEPARATOR
                 && lastSignificantChar != COMMA
                 && lastSignificantChar != START_ARRAY_CHAR) {
             throw new JsonParsingException("unexpected character " + c,
@@ -767,7 +769,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
         }
 
         if (isCurrentNumberIntegral && currentIntegralNumber != null) {
-            return currentIntegralNumber.intValue();
+            return currentIntegralNumber;
         }
 
         if(isCurrentNumberIntegral) {
@@ -784,10 +786,10 @@ public abstract class JsonBaseStreamParser implements JsonChars,
         }
 
         if (isCurrentNumberIntegral && currentIntegralNumber != null) {
-            return currentIntegralNumber.intValue();
+            return currentIntegralNumber;
         } // int is ok, its only from 0-9
 
-        if(isCurrentNumberIntegral) {
+        if (isCurrentNumberIntegral) {
             return parseLongFromChars(currentValue, 0, valueLength);
         }
         
