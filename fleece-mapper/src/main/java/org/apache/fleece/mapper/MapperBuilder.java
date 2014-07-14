@@ -38,6 +38,7 @@ import javax.json.stream.JsonGeneratorFactory;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -72,6 +73,7 @@ public class MapperBuilder {
     private JsonGeneratorFactory generatorFactory;
     private boolean doCloseOnStreams = false;
     private int version = -1;
+    private Comparator<String> attributeOrder = null;
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
 
     public Mapper build() {
@@ -86,7 +88,12 @@ public class MapperBuilder {
             }
         }
 
-        return new Mapper(readerFactory, generatorFactory, doCloseOnStreams, converters, version);
+        return new Mapper(readerFactory, generatorFactory, doCloseOnStreams, converters, version, attributeOrder);
+    }
+
+    public MapperBuilder setAttributeOrder(final Comparator<String> attributeOrder) {
+        this.attributeOrder = attributeOrder;
+        return this;
     }
 
     public MapperBuilder setReaderFactory(final JsonReaderFactory readerFactory) {

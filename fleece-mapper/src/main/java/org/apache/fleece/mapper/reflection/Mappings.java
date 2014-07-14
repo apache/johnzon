@@ -32,12 +32,14 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -108,6 +110,11 @@ public class Mappings {
 
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
+    protected final Comparator<String> fieldOrdering;
+
+    public Mappings(final Comparator<String> attributeOrder) {
+        this.fieldOrdering = attributeOrder;
+    }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType, final Class<T> raw) {
         CollectionMapping collectionMapping = collections.get(genericType);
@@ -155,7 +162,9 @@ public class Mappings {
             return true;
         } else if (type == long.class || type == Long.class) {
             return true;
-        } else if (type == int.class || type == Integer.class) {
+        } else if (type == int.class || type == Integer.class
+                || type == byte.class || type == Byte.class
+                || type == short.class || type == Short.class) {
             return true;
         } else if (type == double.class || type == Double.class
                 || type == float.class || type == Float.class) {
@@ -190,10 +199,12 @@ public class Mappings {
         return classMapping;
     }
 
-    private static ClassMapping createClassMapping(final Class<?> clazz) {
+    private ClassMapping createClassMapping(final Class<?> clazz) {
         try {
-            final Map<String, Getter> getters = new HashMap<String, Getter>();
-            final Map<String, Setter> setters = new HashMap<String, Setter>();
+            final Map<String, Getter> getters = fieldOrdering != null ?
+                new TreeMap<String, Getter>(fieldOrdering) : new HashMap<String, Getter>();
+            final Map<String, Setter> setters = fieldOrdering != null ?
+                new TreeMap<String, Setter>(fieldOrdering) : new HashMap<String, Setter>();
 
             final PropertyDescriptor[] propertyDescriptors = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
             for (final PropertyDescriptor descriptor : propertyDescriptors) {

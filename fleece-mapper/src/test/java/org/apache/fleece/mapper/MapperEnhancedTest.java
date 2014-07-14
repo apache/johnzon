@@ -24,6 +24,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +38,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import static org.junit.Assert.assertEquals;
 
-public class MapperEnhancedTests {
+public class MapperEnhancedTest {
 
     @Test
     public void writeNull() {
@@ -93,20 +94,26 @@ public class MapperEnhancedTests {
         final StringWriter sw = new StringWriter();
         final TestClass tc2 = buildTestClassInstance();
 
-        new MapperBuilder().build().writeObject(tc2, sw);
-        assertEquals("{" +
-                        "\"bd\":-456.4567890987654321,\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
-                        "\"dates\":[]," +
-                        "\"sose\":[]," +
-                        "\"inner\":{" +
-                            "\"bd\":-456.4567890987654321," +
-                            "\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
-                            "\"dates\":[]," +
-                            "\"sose\":[\"string1\",\"string2\"]," +
-                            "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":100}" +
-                        "}," +
-                        "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":200}}",
-            sw.toString());
+        final String json = "{" +
+            "\"bd\":-456.4567890987654321,\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
+            "\"dates\":[]," +
+
+            "\"inner\":{" +
+                "\"bd\":-456.4567890987654321," +
+                "\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +
+                "\"dates\":[]," +
+                "\"sose\":[\"string1\",\"string2\"]," +
+                "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":100}" +
+            "}," +
+            "\"sose\":[]," +
+            "\"map\":{\"[{key1=-100, key11=-1002, key2=100, key22=1002}, {}]\":200}}";
+        new MapperBuilder().setAttributeOrder(new Comparator<String>() {
+            @Override
+            public int compare(String o1, String o2) {
+                return json.indexOf(o1) - json.indexOf(o2);
+            }
+        }).build().writeObject(tc2, sw);
+        assertEquals(json, sw.toString());
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -45,6 +45,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,7 +66,7 @@ public class Mapper {
     protected static final JsonObjectImpl EMPTY_OBJECT = new JsonObjectImpl();
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
 
-    protected final Mappings mappings = new Mappings();
+    protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
     protected final boolean close;
@@ -74,12 +75,13 @@ public class Mapper {
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
-                  final int version) {
+                  final int version, final Comparator<String> attributeOrder) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
+        this.mappings = new Mappings(attributeOrder);
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -112,8 +114,10 @@ public class Mapper {
             return generator.write(key, value.toString());
         } else if (type == long.class || type == Long.class) {
             return generator.write(key, Long.class.cast(value).longValue());
-        } else if (type == int.class || type == Integer.class) {
-            return generator.write(key, Integer.class.cast(value).intValue());
+        } else if (type == int.class || type == Integer.class
+                    || type == byte.class || type == Byte.class
+                    || type == short.class || type == Short.class) {
+            return generator.write(key, Number.class.cast(value).intValue());
         } else if (type == double.class || type == Double.class
                 || type == float.class || type == Float.class) {
             return generator.write(key, Number.class.cast(value).doubleValue());
@@ -470,10 +474,8 @@ public class Mapper {
 
                     if (map != null) {
                         
-                        Type keyType = null;
+                        Type keyType;
                         if (ParameterizedType.class.isInstance(fieldArgTypes[0])) {
-                            //class cast exception when  fieldArgTypes[0] is parameterized
-                            //FIXME
                             keyType = fieldArgTypes[0];
                         } else {
                             keyType = fieldArgTypes[0];
