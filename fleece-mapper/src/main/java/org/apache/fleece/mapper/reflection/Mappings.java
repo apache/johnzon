@@ -212,8 +212,7 @@ public class Mappings {
                 final FleeceIgnore writeIgnore = writeMethod != null ? writeMethod.getAnnotation(FleeceIgnore.class) : null;
                 if (writeMethod != null && writeMethod.getDeclaringClass() != Object.class
                         && (writeIgnore == null || writeIgnore.minVersion() >= 0)) {
-                    if (descriptor.getName().equals("metaClass") &&
-                        writeMethod.getDeclaringClass().getName().equals("groovy.lang.GroovyObject")) {
+                    if (descriptor.getName().equals("metaClass")) {
                         continue;
                     }
                     final Type param = writeMethod.getGenericParameterTypes()[0];
@@ -229,8 +228,7 @@ public class Mappings {
                 final FleeceIgnore readIgnore = readMethod != null ? readMethod.getAnnotation(FleeceIgnore.class) : null;
                 if (readMethod != null && readMethod.getDeclaringClass() != Object.class
                         && (readIgnore == null || readIgnore.minVersion() >= 0)) {
-                    if (descriptor.getName().equals("metaClass") &&
-                        readMethod.getDeclaringClass().getName().equals("groovy.lang.GroovyObject")) {
+                    if (descriptor.getName().equals("metaClass")) {
                         continue;
                     }
 
