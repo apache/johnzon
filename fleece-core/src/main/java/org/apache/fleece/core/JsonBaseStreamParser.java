@@ -271,6 +271,7 @@ public abstract class JsonBaseStreamParser implements JsonChars,
                                 + c + " (" + (int) c + ")", createLocation());
                     }
                     line++;
+                    column = 1;
                     continue; // eol no allowed within a value
 
                 case TAB:
