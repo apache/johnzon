@@ -42,6 +42,15 @@ import org.junit.Test;
 
 public class JsonReaderImplTest {
     
+    
+    
+    public JsonReaderImplTest() {
+        super();
+        if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
+            throw new RuntimeException("Default charset is " + Charset.defaultCharset() + ", must must be UTF-8");
+        }
+    }
+
     protected static Charset utf8Charset = Charset.forName("UTF8");
     protected static Charset asciiCharset = Charset.forName("ASCII");
 
@@ -125,6 +134,7 @@ public class JsonReaderImplTest {
         assertTrue(object.getJsonNumber("w").doubleValue() > 4 && object.getJsonNumber("w").doubleValue() < 5);
         assertEquals(110, object.getInt("1.4312"));
         assertEquals("\"", object.getString("\""));
+        assertTrue(object.isNull("\u0044"));
         assertEquals("ন:4::,[{", object.getString("থii:üäöÖ.,;.-<>!§$%&()=?ß´'`*+#"));
         reader.close();
     }
@@ -305,6 +315,28 @@ public class JsonReaderImplTest {
                 put("org.apache.fleece.default-char-buffer", "8");
             }
         }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple.json"), utf8Charset);
+        assertNotNull(reader);
+        final JsonObject object = reader.readObject();
+        assertNotNull(object);
+        assertEquals(3, object.size());
+        assertEquals("b", object.getString("a"));
+        assertEquals(4, object.getInt("c"));
+        assertThat(object.get("d"), instanceOf(JsonArray.class));
+        final JsonArray array = object.getJsonArray("d");
+        assertNotNull(array);
+        assertEquals(2, array.size());
+        assertEquals(1, array.getInt(0));
+        assertEquals(-2, array.getInt(1));
+        reader.close();
+    }
+    
+    @Test
+    public void simple2BadBufferSize8() {
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.fleece.default-char-buffer", "8");
+            }
+        }).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple2.json"), utf8Charset);
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);

@@ -18,17 +18,17 @@
  */
 package org.apache.fleece.core;
 
+import static org.junit.Assert.assertEquals;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
-
-import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class JsonArrayBuilderImplTest {
     @Test
@@ -39,15 +39,57 @@ public class JsonArrayBuilderImplTest {
     }
     
     @Test
+    public void escapedStringArray() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.add("a\"").add("\u0000");
+        assertEquals("[\"a\\\"\",\"\\u0000\"]", builder.build().toString());
+    }
+    
+    @Test
     public void emptyArray() {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
         assertEquals("[]", builder.build().toString());
     }
     
     @Test
+    public void emptyArrayInEmtyArray() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.add(Json.createArrayBuilder());
+        assertEquals("[[]]", builder.build().toString());
+    }
+    
+    @Test
+    public void arrayInArray() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.add(3).add(4);
+        final JsonArrayBuilder builder2 = Json.createArrayBuilder();
+        builder2.add(1).add(2).add(builder);
+        assertEquals("[1,2,[3,4]]", builder2.build().toString());
+    }
+    
+    @Test
+    public void arrayObjectInArray() {
+        final JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+        objectBuilder.add("key", "val");
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.add(3).add(4).add(objectBuilder);
+        final JsonArrayBuilder builder2 = Json.createArrayBuilder();
+        builder2.add(1).add(2).add(builder);
+        assertEquals("[1,2,[3,4,{\"key\":\"val\"}]]", builder2.build().toString());
+    }
+    
+    @Test
     public void nullArray() {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
         builder.addNull().addNull();
+        assertEquals("[null,null]", builder.build().toString());
+    }
+    
+    @Test
+    public void nullArrayNonChaining() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.addNull();
+        builder.addNull();
         assertEquals("[null,null]", builder.build().toString());
     }
     
@@ -63,6 +105,13 @@ public class JsonArrayBuilderImplTest {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
         builder.add(JsonValue.TRUE).add(JsonValue.FALSE);
         assertEquals("[true,false]", builder.build().toString());
+    }
+    
+    @Test
+    public void numJsonValueArray() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.add(123.12d).add(new BigDecimal("456.789E-12")).add(-0).add(0).add((short)1).add((byte)1);
+        assertEquals("[123.12,4.56789E-10,0,0,1,1]", builder.build().toString());
     }
     
     @Test(expected=NullPointerException.class)

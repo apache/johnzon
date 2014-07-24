@@ -18,11 +18,9 @@
  */
 package org.apache.fleece.core;
 
-import org.apache.fleece.core.JsonObjectImpl;
-import org.apache.fleece.core.JsonStringImpl;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 public class JsonObjectImplTest {
     @Test

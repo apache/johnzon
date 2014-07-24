@@ -19,9 +19,13 @@
 package org.apache.fleece.core;
 
 import javax.json.stream.JsonLocation;
+
 import java.io.Serializable;
 
 public class JsonLocationImpl implements JsonLocation, Serializable {
+    
+    public static final JsonLocation UNKNOW_LOCATION = new JsonLocationImpl(-1, -1, -1);
+    
     private final long lineNumber;
     private final long columnNumber;
     private final long streamOffset;
@@ -71,6 +75,6 @@ public class JsonLocationImpl implements JsonLocation, Serializable {
 
     @Override
     public String toString() {
-        return "JsonLocationImpl [lineNumber=" + lineNumber + ", columnNumber=" + columnNumber + ", streamOffset=" + streamOffset + "]";
+        return "[lineNumber=" + lineNumber + ", columnNumber=" + columnNumber + ", streamOffset=" + streamOffset + "]";
     }
 }

@@ -25,6 +25,7 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
+
 import java.math.BigDecimal;
 
 public class JsonReaderImpl implements JsonReader {
@@ -43,20 +44,28 @@ public class JsonReaderImpl implements JsonReader {
     @Override
     public JsonStructure read() {
         if (!parser.hasNext()) {
-            throw new JsonParsingException("Nothing to read", new JsonLocationImpl(1, 1, 0));
+            throw new IllegalStateException("Nothing to read");
         }
         switch (parser.next()) {
             case START_OBJECT:
                 final JsonReaderListener subObject = listenerFactory.subObject();
                 parseObject(subObject);
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
                 return JsonObject.class.cast(subObject.getObject());
             case START_ARRAY:
                 final JsonReaderListener subArray = listenerFactory.subArray();
                 parseArray(subArray);
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
                 return JsonArray.class.cast(subArray.getObject());
             default:
                 throw new JsonParsingException("Unknown structure: " + parser.next(), parser.getLocation());
         }
+        
+        
     }
 
     @Override

@@ -18,18 +18,34 @@
  */
 package org.apache.fleece.core;
 
-import static org.junit.Assert.assertEquals;
+import java.math.BigInteger;
 
 import javax.json.Json;
-import javax.json.JsonObjectBuilder;
+import javax.json.JsonArray;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-public class JsonObjectBuilderImplTest {
-    @Test
-    public void build() {
-        final JsonObjectBuilder builder = Json.createObjectBuilder();
-        builder.add("a", "b");
-        assertEquals("{\"a\":\"b\"}", builder.build().toString());
+
+
+public class JsonNumberTest {
+    
+    @Test(expected=ArithmeticException.class)
+    public void testBigIntegerExact() {
+       
+        JsonArray array = Json.createArrayBuilder().add(100.0200).build();
+        array.getJsonNumber(0).bigIntegerValueExact();
+
+       
     }
+    
+    @Test
+    public void testBigInteger() {
+       
+        JsonArray array = Json.createArrayBuilder().add(100.0200).build();
+        Assert.assertEquals(new BigInteger("100"), array.getJsonNumber(0).bigIntegerValue());
+
+       
+    }
+
 }

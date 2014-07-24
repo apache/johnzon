@@ -18,11 +18,13 @@
  */
 package org.apache.fleece.core;
 
-import org.apache.fleece.core.JsonArrayImpl;
-import org.apache.fleece.core.JsonStringImpl;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import javax.json.JsonArray;
+
+import org.junit.Test;
 
 public class JsonArrayImplTest {
     @Test
@@ -31,5 +33,26 @@ public class JsonArrayImplTest {
         object.addInternal(new JsonStringImpl("a"));
         object.addInternal(new JsonStringImpl("b"));
         assertEquals("[\"a\",\"b\"]", object.toString());
+    }
+    
+    @Test
+    public void arrayIndex() {
+        final JsonArrayImpl object = new JsonArrayImpl();
+        object.addInternal(new JsonStringImpl("a"));
+        object.addInternal(new JsonStringImpl("b"));
+        object.addInternal(new JsonLongImpl(5));
+        final JsonArray array = (JsonArray) object;
+        assertFalse(array.isEmpty());
+        assertEquals("a", object.getJsonString(0).getString());
+        assertEquals("b", object.getJsonString(1).getString());
+        assertEquals(5, object.getJsonNumber(2).longValue());
+        assertEquals("[\"a\",\"b\",5]", object.toString());
+    }
+    
+    @Test
+    public void emptyArray() {
+        final JsonArray array = new JsonArrayImpl();
+        assertTrue(array.isEmpty());
+        assertEquals("[]", array.toString());
     }
 }

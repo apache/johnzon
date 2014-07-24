@@ -23,7 +23,6 @@ import javax.json.JsonObject;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
@@ -35,7 +34,7 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     public static final String BUFFER_STRATEGY = "org.apache.fleece.buffer-strategy";
     public static final String MAX_STRING_LENGTH = "org.apache.fleece.max-string-length";
     public static final String BUFFER_LENGTH = "org.apache.fleece.default-char-buffer";
-    public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192);
+    public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192*32);
 
     private final Map<String, ?> config;
     private final int maxSize;
@@ -56,6 +55,9 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private BufferStrategy getBufferProvider() {
+        if(config==null) {
+            return BufferStrategy.QUEUE;
+        }
         final Object name = config.get(BUFFER_STRATEGY);
         if (name != null) {
             return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
@@ -64,6 +66,9 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     }
 
     private int getInt(final String key) {
+        if(config==null) {
+            return DEFAULT_MAX_SIZE;
+        }
         final Object maxStringSize = config.get(key);
         if (maxStringSize == null) {
             return DEFAULT_MAX_SIZE;
@@ -73,17 +78,19 @@ public class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         return Integer.parseInt(maxStringSize.toString());
     }
 
-    private JsonCharBufferStreamParser getDefaultJsonParserImpl(final InputStream in) {
-        return new JsonCharBufferStreamParser(
-            new InputStreamReader(in, Charset.defaultCharset()), maxSize, bufferProvider, valueBufferProvider);
+    private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final InputStream in) {
+        //UTF Auto detection RFC 4627
+        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
-    private JsonCharBufferStreamParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
-        return new JsonCharBufferStreamParser(new InputStreamReader(in, charset), maxSize, bufferProvider, valueBufferProvider);
+    private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
+        //use provided charset
+        return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider);
     }
 
-    private JsonCharBufferStreamParser getDefaultJsonParserImpl(final Reader in) {
-        return new JsonCharBufferStreamParser(in, maxSize, bufferProvider, valueBufferProvider);
+    private EscapedStringAwareJsonParser getDefaultJsonParserImpl(final Reader in) {
+        //no charset necessary
+        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
     @Override

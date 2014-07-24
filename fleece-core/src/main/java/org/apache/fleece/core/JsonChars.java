@@ -18,6 +18,8 @@
  */
 package org.apache.fleece.core;
 
+import javax.json.stream.JsonParser.Event;
+
 public interface JsonChars {
     char EOF = Character.MIN_VALUE;
 
@@ -25,10 +27,13 @@ public interface JsonChars {
     char END_OBJECT_CHAR = '}';
     char START_ARRAY_CHAR = '[';
     char END_ARRAY_CHAR = ']';
-    char EOL = '\n';
+    char QUOTE = '"';
     char COMMA = ',';
-    char SPACE = ' ';
     char KEY_SEPARATOR = ':';
+    
+    char EOL = '\n';
+    char SPACE = ' ';
+    
     char TRUE_T = 't';
     char TRUE_R = 'r';
     char TRUE_U = 'u';
@@ -41,7 +46,7 @@ public interface JsonChars {
     char NULL_N = 'n';
     char NULL_U = 'u';
     char NULL_L = 'l';
-    char QUOTE = '"';
+ 
     char ZERO = '0';
     char NINE = '9';
     char DOT = '.';
@@ -57,4 +62,21 @@ public interface JsonChars {
     char CR = '\r';
 
     String NULL = "null";
+    
+    static final byte START_ARRAY = (byte) Event.START_ARRAY.ordinal();
+    static final byte START_OBJECT = (byte) Event.START_OBJECT.ordinal();
+    static final byte KEY_NAME=(byte) Event.KEY_NAME.ordinal();
+    static final byte VALUE_STRING=(byte) Event.VALUE_STRING.ordinal(); 
+    static final byte VALUE_NUMBER=(byte) Event.VALUE_NUMBER.ordinal(); 
+    static final byte VALUE_TRUE=(byte) Event.VALUE_TRUE.ordinal();
+    static final byte VALUE_FALSE=(byte) Event.VALUE_FALSE.ordinal(); 
+    static final byte VALUE_NULL=(byte) Event.VALUE_NULL.ordinal();
+    static final byte END_OBJECT=(byte) Event.END_OBJECT.ordinal();
+    static final byte END_ARRAY=(byte) Event.END_ARRAY.ordinal();
+    
+    static final byte COMMA_EVENT=Byte.MAX_VALUE;
+    static final byte KEY_SEPARATOR_EVENT=Byte.MIN_VALUE;
+    
+    static final Event[] EVT_MAP =Event.values();
+    
 }

@@ -18,15 +18,14 @@
  */
 package org.apache.fleece.core;
 
-import org.apache.fleece.core.JsonObjectImpl;
-import org.apache.fleece.core.JsonStringImpl;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayOutputStream;
 
 import javax.json.Json;
 import javax.json.JsonWriter;
-import java.io.ByteArrayOutputStream;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class JsonWriterImplTest {
     @Test

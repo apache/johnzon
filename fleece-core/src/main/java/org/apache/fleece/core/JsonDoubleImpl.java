@@ -56,12 +56,12 @@ public class JsonDoubleImpl implements JsonNumber {
 
     @Override
     public BigInteger bigIntegerValue() {
-        return new BigInteger(toString());
+        return new BigDecimal(toString()).toBigInteger();
     }
 
     @Override
     public BigInteger bigIntegerValueExact() {
-        return bigIntegerValue();
+        return new BigDecimal(toString()).toBigIntegerExact();
     }
 
     @Override
