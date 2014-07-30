@@ -20,18 +20,18 @@ package org.apache.fleece.core;
 
 import javax.json.JsonString;
 
-public class JsonStringImpl implements JsonString {
+final class JsonStringImpl implements JsonString {
     private final String value;
     private String escape;
     private Integer hashCode = null;
 
-    public JsonStringImpl(final String value) {
-        this(value, null);
-    }
 
-    public JsonStringImpl(final String value, final String escaped) {
+    JsonStringImpl(final String value) {
+        if(value == null) {
+            throw new NullPointerException("value must not be null");
+        }
+
         this.value = value;
-        this.escape = escaped;
     }
 
     @Override
@@ -51,18 +51,22 @@ public class JsonStringImpl implements JsonString {
 
     @Override
     public String toString() {
-        if (escape == null) {
-            escape = Strings.escape(value);
+        String s = escape;
+        if (s == null) {
+            s =  JsonChars.QUOTE_CHAR+Strings.escape(value)+JsonChars.QUOTE_CHAR;
+            escape=s;
         }
-        return escape;
+        return s;
     }
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = value.hashCode();
+        Integer h = hashCode;
+        if (h == null) {
+            h = value.hashCode();
+            hashCode=h;
         }
-        return hashCode;
+        return h;
     }
 
     @Override

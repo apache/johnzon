@@ -27,8 +27,8 @@ public interface JsonChars {
     char END_OBJECT_CHAR = '}';
     char START_ARRAY_CHAR = '[';
     char END_ARRAY_CHAR = ']';
-    char QUOTE = '"';
-    char COMMA = ',';
+    char QUOTE_CHAR = '"';
+    char COMMA_CHAR = ',';
     char KEY_SEPARATOR = ':';
     
     char EOL = '\n';
@@ -61,7 +61,7 @@ public interface JsonChars {
     char FORMFEED = '\f';
     char CR = '\r';
 
-    String NULL = "null";
+    String NULL = "null".intern();
     
     static final byte START_ARRAY = (byte) Event.START_ARRAY.ordinal();
     static final byte START_OBJECT = (byte) Event.START_OBJECT.ordinal();

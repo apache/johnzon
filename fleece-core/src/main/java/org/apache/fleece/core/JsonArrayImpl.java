@@ -18,26 +18,36 @@
  */
 package org.apache.fleece.core;
 
+import java.io.Serializable;
+import java.util.AbstractList;
+import java.util.Iterator;
+import java.util.List;
+
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 
-public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, Serializable {
+class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serializable {
     private Integer hashCode = null;
+    private final List<JsonValue> unmodifieableBackingList;
+
+    JsonArrayImpl(List<JsonValue> backingList) {
+        super();
+        this.unmodifieableBackingList = backingList;
+    }
+
+
 
     private <T> T value(final int idx, final Class<T> type) {
-        if (idx > size()) {
-            throw new IndexOutOfBoundsException(idx + "/" + size());
+        if (idx > unmodifieableBackingList.size()) {
+            throw new IndexOutOfBoundsException(idx + "/" + unmodifieableBackingList.size());
         }
-        return type.cast(get(idx));
+        return type.cast(unmodifieableBackingList.get(idx));
     }
+    
+    
 
     @Override
     public JsonObject getJsonObject(final int index) {
@@ -61,7 +71,7 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
 
     @Override
     public <T extends JsonValue> List<T> getValuesAs(final Class<T> clazz) {
-        return (List<T>) this;
+        return (List<T>) unmodifieableBackingList;
     }
 
     @Override
@@ -119,12 +129,12 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
     @Override
     public String toString() {
         final StringBuilder builder = new StringBuilder("[");
-        final Iterator<JsonValue> it = iterator();
+        final Iterator<JsonValue> it = unmodifieableBackingList.iterator();
         boolean hasNext = it.hasNext();
         while (hasNext) {
             final JsonValue jsonValue = it.next();
             if (JsonString.class.isInstance(jsonValue)) {
-                builder.append(JsonChars.QUOTE).append(jsonValue.toString()).append(JsonChars.QUOTE);
+                builder.append(jsonValue.toString());
             } else {
                 builder.append(jsonValue != JsonValue.NULL ? jsonValue.toString() : JsonChars.NULL);
             }
@@ -138,69 +148,27 @@ public class JsonArrayImpl extends LinkedList<JsonValue> implements JsonArray, S
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonArray.class.isInstance(obj) && super.equals(obj);
+        return JsonArrayImpl.class.isInstance(obj) && unmodifieableBackingList.equals(JsonArrayImpl.class.cast(obj).unmodifieableBackingList);
     }
 
-    //make protected if class is supposed to be subclassed
-    //make package private otherwise
-    protected void addInternal(final JsonValue value) {
-        super.add(value);
-    }
-
-    @Override
-    public boolean add(final JsonValue element) {
-        throw immutable();
-    }
-
-    @Override
-    public boolean addAll(final int index, final Collection<? extends JsonValue> c) {
-        throw immutable();
-    }
-
-    @Override
-    public boolean remove(final Object o) {
-        throw immutable();
-    }
-
-    @Override
-    public JsonValue remove(final int index) {
-        throw immutable();
-    }
-
-    @Override
-    public void add(final int index, final JsonValue element) {
-        throw immutable();
-    }
-
-    @Override
-    public void clear() {
-        throw immutable();
-    }
-
-    @Override
-    public boolean retainAll(final Collection<?> c) {
-        throw immutable();
-    }
-
-    @Override
-    public boolean removeAll(final Collection<?> c) {
-        throw immutable();
-    }
-
-    @Override
-    public JsonValue set(final int index, final JsonValue element) {
-        throw immutable();
-    }
-
-    private static UnsupportedOperationException immutable() {
-        throw new UnsupportedOperationException("JsonArray is immutable. You can create another one thanks to JsonArrayBuilder");
-    }
-
+    
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = super.hashCode();
+        Integer h=hashCode;
+        if (h == null) {
+            h = unmodifieableBackingList.hashCode();
+            h=hashCode;
         }
-        return hashCode;
+        return h;
+    }
+
+    @Override
+    public JsonValue get(int index) {
+        return unmodifieableBackingList.get(index);
+    }
+
+    @Override
+    public int size() {
+        return unmodifieableBackingList.size();
     }
 }

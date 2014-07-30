@@ -18,85 +18,114 @@
  */
 package org.apache.fleece.core;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
-public class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
-    private final JsonObjectImpl delegate = new JsonObjectImpl();
+class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
+    private Map<String, JsonValue> tmpMap;
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonValue value) {
-        delegate.putInternal(name, value);
+        putValue(name, value);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final String value) {
-        delegate.putInternal(name, new JsonStringImpl(value));
+        putValue(name, new JsonStringImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final BigInteger value) {
-        delegate.putInternal(name, new JsonNumberImpl(new BigDecimal(value)));
+        putValue(name, new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final BigDecimal value) {
-        delegate.putInternal(name, new JsonNumberImpl(value));
+        putValue(name, new JsonNumberImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final int value) {
-        delegate.putInternal(name, new JsonLongImpl(value));
+        putValue(name, new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final long value) {
-        delegate.putInternal(name, new JsonLongImpl(value));
+        putValue(name, new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final double value) {
-        delegate.putInternal(name, new JsonDoubleImpl(value));
+        putValue(name, new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final boolean value) {
-        delegate.putInternal(name, value ? JsonValue.TRUE : JsonValue.FALSE);
+        putValue(name, value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonObjectBuilder addNull(final String name) {
-        delegate.putInternal(name, JsonValue.NULL);
+        putValue(name, JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonObjectBuilder builder) {
-        delegate.putInternal(name, builder.build());
+        putValue(name, builder.build());
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonArrayBuilder builder) {
-        delegate.putInternal(name, builder.build());
+        putValue(name, builder.build());
         return this;
+    }
+    
+    private void putValue(String name, JsonValue value){
+        if(name == null || value == null) {
+            throw npe();
+        }
+        
+        if(tmpMap==null){
+            tmpMap=new LinkedHashMap<String, JsonValue>();
+        }
+        
+        tmpMap.put(name, value);
+    }
+    
+    private static NullPointerException npe() {
+        return new NullPointerException("name or value/builder must not be null");
     }
 
     @Override
     public JsonObject build() {
-        return delegate;
+        
+        if(tmpMap==null) {
+            return new JsonObjectImpl(Collections.EMPTY_MAP);
+        } else {
+            Map<String, JsonValue> dump = (Collections.unmodifiableMap(tmpMap));
+            tmpMap=null;
+            return new JsonObjectImpl(dump);
+        }
+        
+        
     }
 }

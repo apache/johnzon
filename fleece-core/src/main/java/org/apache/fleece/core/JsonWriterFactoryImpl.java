@@ -18,23 +18,41 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonWriter;
-import javax.json.JsonWriterFactory;
-import javax.json.stream.JsonGeneratorFactory;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-public class JsonWriterFactoryImpl implements JsonWriterFactory,Serializable {
-    private final Map<String, ?> config;
+import javax.json.JsonWriter;
+import javax.json.JsonWriterFactory;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+
+class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
+    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+        
+        JsonGenerator.PRETTY_PRINTING
+
+    };
     private final JsonGeneratorFactory factory;
 
-    public JsonWriterFactoryImpl(final Map<String, ?> config) {
-        this.config = config;
-        this.factory = new JsonGeneratorFactoryImpl(config);
+    JsonWriterFactoryImpl(final Map<String, ?> config) {
+        if (config != null) {
+
+            for (final String configKey : SUPPORTED_CONFIG_KEYS) {
+                if (config.containsKey(configKey)) {
+                    internalConfig.put(configKey, config.get(configKey));
+                }
+            }
+        }
+
+        this.factory = new JsonGeneratorFactoryImpl(internalConfig);
     }
 
     @Override
@@ -44,7 +62,7 @@ public class JsonWriterFactoryImpl implements JsonWriterFactory,Serializable {
 
     @Override
     public JsonWriter createWriter(final OutputStream out) {
-        return createWriter(new OutputStreamWriter(out));
+        return createWriter(new OutputStreamWriter(out, UTF8_CHARSET));
     }
 
     @Override
@@ -54,6 +72,6 @@ public class JsonWriterFactoryImpl implements JsonWriterFactory,Serializable {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return config;
+        return Collections.unmodifiableMap(internalConfig);
     }
 }

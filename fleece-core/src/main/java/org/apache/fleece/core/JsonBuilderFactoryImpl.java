@@ -18,18 +18,30 @@
  */
 package org.apache.fleece.core;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
 
-import java.util.Collections;
-import java.util.Map;
+class JsonBuilderFactoryImpl implements JsonBuilderFactory {
+    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+    //nothing yet
 
-public class JsonBuilderFactoryImpl implements JsonBuilderFactory {
-    private final Map<String, ?> config;
+    };
 
-    public JsonBuilderFactoryImpl(final Map<String, ?> config) {
-        this.config = config;
+    JsonBuilderFactoryImpl(final Map<String, ?> config) {
+        if (config != null) {
+
+            for (final String configKey : SUPPORTED_CONFIG_KEYS) {
+                if (config.containsKey(configKey)) {
+                    internalConfig.put(configKey, config.get(configKey));
+                }
+            }
+        }
     }
 
     @Override
@@ -44,6 +56,6 @@ public class JsonBuilderFactoryImpl implements JsonBuilderFactory {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return Collections.unmodifiableMap(config);
+        return Collections.unmodifiableMap(internalConfig);
     }
 }

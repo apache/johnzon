@@ -169,6 +169,21 @@ public class JsonReaderImplTest {
         assertEquals("hallo\u20acö\uffff \u08a5 থ?ß§$%&´'`*+#\udbff\udfff", object.getString("নa"));
         reader.close();
     }
+    
+    @Test
+    public void specialKeysWithStringAsByteArrayInputStream() {
+        final String s = "{\"\\\"a\":\"\u0055\",\"\u0055\":\"test2\"}";
+        System.out.println(s);
+        final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
+                new ByteArrayInputStream(s.getBytes(utf8Charset)), utf8Charset);
+        assertNotNull(reader);
+        final JsonObject object = reader.readObject();
+        assertNotNull(object);
+        assertEquals(2, object.size());
+        assertEquals("U", object.getString("\"a"));
+        assertEquals("test2", object.getString("U"));
+        reader.close();
+    }
 
     @Test
     public void specialWithStringReader() {

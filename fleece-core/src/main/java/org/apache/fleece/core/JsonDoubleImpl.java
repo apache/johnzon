@@ -18,14 +18,20 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonNumber;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonDoubleImpl implements JsonNumber {
+import javax.json.JsonNumber;
+
+final class JsonDoubleImpl implements JsonNumber {
     private final double value;
 
-    public JsonDoubleImpl(final double value) {
+    JsonDoubleImpl(final double value) {
+        
+        if(Double.isInfinite(value) || Double.isNaN(value)) {
+            throw new NumberFormatException("double value must to be NaN or Infinite");
+        }
+        
         this.value = value;
     }
 

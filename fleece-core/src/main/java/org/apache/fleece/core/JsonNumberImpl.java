@@ -18,15 +18,20 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonNumber;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonNumberImpl implements JsonNumber {
+import javax.json.JsonNumber;
+
+final class JsonNumberImpl implements JsonNumber {
     private final BigDecimal value;
     private Integer hashCode = null;
 
-    public JsonNumberImpl(final BigDecimal decimal) {
+    JsonNumberImpl(final BigDecimal decimal) {
+        if(decimal == null) {
+            throw new NullPointerException("decimal must not be null");
+        }
+        
         this.value = decimal;
     }
 
@@ -87,10 +92,12 @@ public class JsonNumberImpl implements JsonNumber {
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = value.hashCode();
+        Integer h=hashCode;
+        if (h == null) {
+            h = value.hashCode();
+            hashCode=h;
         }
-        return hashCode;
+        return h;
     }
 
     @Override

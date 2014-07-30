@@ -22,36 +22,39 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 
 import org.junit.Test;
 
 public class JsonArrayImplTest {
     @Test
-    public void arrayToString() {
-        final JsonArrayImpl object = new JsonArrayImpl();
-        object.addInternal(new JsonStringImpl("a"));
-        object.addInternal(new JsonStringImpl("b"));
-        assertEquals("[\"a\",\"b\"]", object.toString());
+    public void arrayToString() {       
+        JsonArrayBuilder ab = Json.createArrayBuilder();
+        
+        ab.add(new JsonStringImpl("a"));
+        ab.add(new JsonStringImpl("b"));
+        assertEquals("[\"a\",\"b\"]", ab.build().toString());
     }
     
     @Test
     public void arrayIndex() {
-        final JsonArrayImpl object = new JsonArrayImpl();
-        object.addInternal(new JsonStringImpl("a"));
-        object.addInternal(new JsonStringImpl("b"));
-        object.addInternal(new JsonLongImpl(5));
-        final JsonArray array = (JsonArray) object;
+        JsonArrayBuilder ab = Json.createArrayBuilder();
+        ab.add(new JsonStringImpl("a"));
+        ab.add(new JsonStringImpl("b"));
+        ab.add(new JsonLongImpl(5));
+        final JsonArray array = (JsonArray) ab.build();
         assertFalse(array.isEmpty());
-        assertEquals("a", object.getJsonString(0).getString());
-        assertEquals("b", object.getJsonString(1).getString());
-        assertEquals(5, object.getJsonNumber(2).longValue());
-        assertEquals("[\"a\",\"b\",5]", object.toString());
+        assertEquals("a", array.getJsonString(0).getString());
+        assertEquals("b", array.getJsonString(1).getString());
+        assertEquals(5, array.getJsonNumber(2).longValue());
+        assertEquals("[\"a\",\"b\",5]", array.toString());
     }
     
     @Test
     public void emptyArray() {
-        final JsonArray array = new JsonArrayImpl();
+        final JsonArray array = Json.createArrayBuilder().build();
         assertTrue(array.isEmpty());
         assertEquals("[]", array.toString());
     }

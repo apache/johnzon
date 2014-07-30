@@ -28,7 +28,7 @@ import javax.json.JsonException;
 
 final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
-    public RFC4627AwareInputStreamReader(final InputStream in) {
+    RFC4627AwareInputStreamReader(final InputStream in) {
         this(new PushbackInputStream(in,4));
     }
     
@@ -60,7 +60,7 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
     private static Charset getCharset(final PushbackInputStream inputStream) {
         Charset charset = Charset.forName("UTF-8");
         final byte[] utfBytes = new byte[4];
-
+        int bomLength=0;
         try {
             final int read = inputStream.read(utfBytes);
             if (read < 2) {
@@ -77,27 +77,47 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
                     charset = (third  == 0x00) ? Charset.forName("UTF-32LE") : Charset.forName("UTF-16LE");
                 } else {
                   
-                    //check BOM
+                    /*check BOM
+
+                    Encoding       hex byte order mark
+                    UTF-8          EF BB BF
+                    UTF-16 (BE)    FE FF
+                    UTF-16 (LE)    FF FE
+                    UTF-32 (BE)    00 00 FE FF
+                    UTF-32 (LE)    FF FE 00 00
+                    */
+                                        
+                    
+                    
+                    
                     if(first == 0xFE && second == 0xFF) {
                         charset = Charset.forName("UTF-16BE");
+                        bomLength=2;
                     } else if(read > 3 && first == 0x00 && second == 0x00 && (utfBytes[2]&0xff) == 0xFE && (utfBytes[3]&0xff) == 0xFF){
                         charset = Charset.forName("UTF-32BE");
+                        bomLength=4;
                     } else if(first == 0xFF && second == 0xFE) {
                         
                         if(read > 3 && (utfBytes[2]&0xff) == 0x00 && (utfBytes[3]&0xff) == 0x00) {
                             charset = Charset.forName("UTF-32LE");
+                            bomLength=4;
                         }else {
                             charset = Charset.forName("UTF-16LE");
+                            bomLength=2;
                         }
                         
-                    }
+                    } 
+                    
+                    //assume UTF8
                     
                 }
 
             }
             
+            if(bomLength < 4) {
+                inputStream.unread(utfBytes,bomLength==2?2:0,read-bomLength);
+            }
             
-            inputStream.unread(utfBytes);
             
 
         } catch (final IOException e) {

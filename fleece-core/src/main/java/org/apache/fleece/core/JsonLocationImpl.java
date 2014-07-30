@@ -18,11 +18,11 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.stream.JsonLocation;
-
 import java.io.Serializable;
 
-public class JsonLocationImpl implements JsonLocation, Serializable {
+import javax.json.stream.JsonLocation;
+
+final class JsonLocationImpl implements JsonLocation, Serializable {
     
     public static final JsonLocation UNKNOW_LOCATION = new JsonLocationImpl(-1, -1, -1);
     
@@ -30,7 +30,7 @@ public class JsonLocationImpl implements JsonLocation, Serializable {
     private final long columnNumber;
     private final long streamOffset;
 
-    public JsonLocationImpl(final long lineNumber, final long columnNumber, final long streamOffset) {
+    JsonLocationImpl(final long lineNumber, final long columnNumber, final long streamOffset) {
         this.lineNumber = lineNumber;
         this.columnNumber = columnNumber;
         this.streamOffset = streamOffset;

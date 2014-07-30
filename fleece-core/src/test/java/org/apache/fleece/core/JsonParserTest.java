@@ -36,11 +36,12 @@ import java.util.NoSuchElementException;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
-import javax.json.stream.JsonParserFactory;
 import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
@@ -219,15 +220,16 @@ public class JsonParserTest {
 
     @Test
     public void simpleInMemory() {
-        final JsonObjectImpl simple = new JsonObjectImpl();
-        simple.putInternal("a", new JsonStringImpl("b"));
-        simple.putInternal("c", new JsonNumberImpl(new BigDecimal(4)));
-        final JsonArrayImpl array = new JsonArrayImpl();
-        array.addInternal(new JsonNumberImpl(new BigDecimal(1)));
-        array.addInternal(new JsonNumberImpl(new BigDecimal(-2)));
-        simple.putInternal("d", array);
+        final JsonObjectBuilder ob = Json.createObjectBuilder();
+        ob.add("a", new JsonStringImpl("b"));
+        ob.add("c", new JsonNumberImpl(new BigDecimal(4)));
+        JsonArrayBuilder ab = Json.createArrayBuilder();
+        ab.add(new JsonNumberImpl(new BigDecimal(1)));
+        ab.add(new JsonNumberImpl(new BigDecimal(-2)));
+        
+        ob.add("d", ab);
 
-        final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(simple);
+        final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(ob.build());
         assertNotNull(parser);
         assertSimple(parser);
     }
@@ -241,7 +243,8 @@ public class JsonParserTest {
     
     @Test
     public void simpleUTF16LE() {
-        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"),UTF_16LE);
+        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread()
+                .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"),UTF_16LE);
         assertNotNull(parser);
         assertSimple(parser);
     }
@@ -642,12 +645,13 @@ public class JsonParserTest {
     
     @Test
     public void escapedStringAwareParser() {
-        final EscapedStringAwareJsonParser parser = (EscapedStringAwareJsonParser) Json.createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/stringescape.json"));
+        final JsonParser parser = Json.createParser(Thread.currentThread()
+                .getContextClassLoader().getResourceAsStream("json/stringescape.json"));
         parser.next();
         parser.next();
         parser.next();
         assertEquals("s\"mit\"", parser.getString());
-        assertEquals("s\\\"mit\\\"", parser.getEscapedString());
+        assertEquals("\"s\\\"mit\\\"\"", new JsonStringImpl(parser.getString()).toString());
         parser.close();
     }
 
@@ -939,6 +943,7 @@ public class JsonParserTest {
             parser.next();
             fail("Should have thrown a NoSuchElementException");
         } catch (NoSuchElementException ne) {
+            //expected
         }
     }
     
@@ -1375,6 +1380,40 @@ public class JsonParserTest {
         
         Json.createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/fails/fail72.json")).read();
     }
+    
+    
+    @Test
+    public void stringescapeVariousBufferSizesBogus() {
+        
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("\t\"special-\":" + "\"" + "\\\\f\\n\\r\\t\\u6565\uDC00\uD800" + "\",\n");
+        sb.append("\t\"unicode-\\u0000- \":\"\\u5656\uDC00\uD800\"\n");
+        String s = "{"+sb.toString()+"}";
+       
+        for (int i = 1; i < s.length()+100; i++) {
+            final String value = String.valueOf(i);
+
+            final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {
+                {
+                    put("org.apache.fleece.default-char-buffer", value);
+                }
+            }).createParser(new ByteArrayInputStream(s.getBytes()));
+            assertNotNull(parser);
+            
+            while(parser.hasNext()) {
+                Event e = parser.next();
+                if(e==null) {
+                    fail();
+                }
+            }
+            
+            assertTrue(!parser.hasNext());
+            parser.close();
+            
+        }
+    }
+    
     
     
 }

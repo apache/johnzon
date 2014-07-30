@@ -18,44 +18,56 @@
  */
 package org.apache.fleece.core;
 
+import java.io.Serializable;
+
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonStructure;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
-import java.io.Flushable;
-import java.io.IOException;
-import java.io.Serializable;
 
-public class JsonWriterImpl implements JsonWriter, Serializable, Flushable {
+class JsonWriterImpl implements JsonWriter, Serializable{
     private final JsonGenerator generator;
+    private boolean closed = false;
 
-    public JsonWriterImpl(final JsonGenerator generator) {
+    JsonWriterImpl(final JsonGenerator generator) {
         this.generator = generator;
     }
 
     @Override
     public void writeArray(final JsonArray array) {
+        checkClosed();
         generator.write(array);
+        close();
     }
 
     @Override
     public void writeObject(final JsonObject object) {
+        checkClosed();
         generator.write(object);
+        close();
     }
 
     @Override
     public void write(final JsonStructure value) {
+        checkClosed();
         generator.write(value);
+        close();
     }
 
     @Override
     public void close() {
-        generator.close();
+        
+        if(!closed) {
+            closed = true;
+            generator.close();
+        }
     }
-
-    @Override
-    public void flush() throws IOException {
-        generator.flush();
+    
+    private void checkClosed() {
+        if(closed) {
+            throw new IllegalStateException("writeArray(), writeObject(), write() or close() method was already called");
+        }
+           
     }
 }

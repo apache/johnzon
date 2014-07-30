@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayOutputStream;
 
 import javax.json.Json;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonWriter;
 
 import org.junit.Test;
@@ -32,9 +33,9 @@ public class JsonWriterImplTest {
     public void writer() {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final JsonWriter writer = Json.createWriter(out);
-        final JsonObjectImpl value = new JsonObjectImpl();
-        value.putInternal("a", new JsonStringImpl("b"));
-        writer.write(value);
+        final JsonObjectBuilder ob = Json.createObjectBuilder();
+        ob.add("a", new JsonStringImpl("b"));
+        writer.write(ob.build());
         writer.close();
         assertEquals("{\"a\":\"b\"}", new String(out.toByteArray()));
     }

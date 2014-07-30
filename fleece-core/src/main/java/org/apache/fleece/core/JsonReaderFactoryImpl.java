@@ -23,19 +23,31 @@ import java.io.Reader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
-@SuppressWarnings("unused")
-public class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
-    private final Map<String, ?> config;
+class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
+    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+        JsonParserFactoryImpl.BUFFER_STRATEGY, JsonParserFactoryImpl.MAX_STRING_LENGTH, JsonParserFactoryImpl.BUFFER_LENGTH
+    };
     private final JsonParserFactoryImpl parserFactory;
 
-    public JsonReaderFactoryImpl(final Map<String, ?> config) {
-        this.config = config;
-        this.parserFactory = new JsonParserFactoryImpl(config);
+    JsonReaderFactoryImpl(final Map<String, ?> config) {
+
+        if(config != null) {
+            
+            for (String configKey : SUPPORTED_CONFIG_KEYS) {
+                if(config.containsKey(configKey)) {
+                    internalConfig.put(configKey, config.get(configKey));
+                }
+            }
+        } 
+        
+        this.parserFactory = new JsonParserFactoryImpl(internalConfig);
     }
 
     @Override
@@ -55,6 +67,6 @@ public class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
 
     @Override
     public Map<String, ?> getConfigInUse() {
-        return Collections.unmodifiableMap(config);
+        return Collections.unmodifiableMap(internalConfig);
     }
 }

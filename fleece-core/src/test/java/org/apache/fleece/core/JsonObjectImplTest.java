@@ -20,13 +20,16 @@ package org.apache.fleece.core;
 
 import static org.junit.Assert.assertEquals;
 
+import javax.json.Json;
+import javax.json.JsonObjectBuilder;
+
 import org.junit.Test;
 
 public class JsonObjectImplTest {
     @Test
     public void objectToString() {
-        final JsonObjectImpl object = new JsonObjectImpl();
-        object.putInternal("a", new JsonStringImpl("b"));
-        assertEquals("{\"a\":\"b\"}", object.toString());
+        final JsonObjectBuilder ob = Json.createObjectBuilder();
+        ob.add("a", new JsonStringImpl("b"));
+        assertEquals("{\"a\":\"b\"}", ob.build().toString());
     }
 }

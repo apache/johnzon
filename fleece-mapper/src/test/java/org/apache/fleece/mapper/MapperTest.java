@@ -19,11 +19,13 @@
 package org.apache.fleece.mapper;
 
 import junit.framework.AssertionFailedError;
+
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +73,7 @@ public class MapperTest {
             "]," +
             "\"primitives\":[1,2,3,4,5]," +
             "\"collectionWrapper\":[1,2,3,4,5]," +
-            "\"map\":{\"uno\":\"true\",\"duos\":false}" +
+            "\"map\":{\"uno\":true,\"duos\":false}" +
             "}";
 
     @Test
@@ -118,11 +120,82 @@ public class MapperTest {
         
         //Assert fail with oracle java 1.7.0_45, works well with apple java 1.6.0_65 
         //assertTrue(serialized.contains("\"map\":{\"uno\":true,\"duos\":false}"));
-        
         assertTrue(serialized.contains("\"map\":{"));
         assertTrue(serialized.contains("\"uno\":true"));
         assertTrue(serialized.contains("\"duos\":false"));
+        
+        TheObject instance2 = new MapperBuilder().build()
+                .readObject(new ByteArrayInputStream(serialized.getBytes()), TheObject.class); // suppose reader writes but this is tested
+      
+        assertEquals(instance, instance2);
     }
+    
+    static class Bool{
+        boolean bool;
+
+        public boolean isBool() {
+            return bool;
+        }
+
+        public void setBool(boolean bool) {
+            this.bool = bool;
+        }
+        
+        
+    }
+    
+    static class Bool2{
+        Map<String, Boolean> map;
+
+        public Map<String, Boolean> getMap() {
+            return map;
+        }
+
+        public void setMap(Map<String, Boolean> map) {
+            this.map = map;
+        }
+
+        
+        
+        
+    }
+    
+    @Test
+    public void literal() {
+        
+        
+        
+        final Bool instance = new MapperBuilder().build()
+                .readObject(new ByteArrayInputStream("{\"bool\":true}".getBytes()), Bool.class);
+        
+        assertTrue(instance.bool);
+        
+        final StringWriter writer = new StringWriter();
+        new MapperBuilder().build().writeObject(instance, writer);
+        final String serialized = writer.toString();
+        assertEquals("{\"bool\":true}", serialized);
+        
+    }
+    
+    @Test(expected= IllegalArgumentException.class)
+    public void literalFail() {
+         
+        final Bool instance = new MapperBuilder().build()
+                .readObject(new ByteArrayInputStream("{\"bool\":\"true\"}".getBytes()), Bool.class);
+        
+        assertTrue(instance.bool);
+        
+    }
+    
+    /*@Test(expected= IllegalArgumentException.class)
+    public void literalFail2() {
+         
+        final Bool2 instance = new MapperBuilder().build()
+                .readObject(new ByteArrayInputStream("{\"map\":{\"key\":\"true\"}}".getBytes()), Bool2.class);
+       
+        
+        
+    }*/
 
     @Test
     public void writeArray() {
@@ -311,6 +384,79 @@ public class MapperTest {
         public void setMap(final Map<String, Boolean> map) {
             this.map = map;
         }
+
+        @Override
+        public String toString() {
+            return "TheObject [name=" + name + ", integer=" + integer + ", longnumber=" + longnumber + ", bool=" + bool + ", nested="
+                    + nested + ", array=" + Arrays.toString(array) + ", list=" + list + ", primitives=" + Arrays.toString(primitives)
+                    + ", collectionWrapper=" + collectionWrapper + ", map=" + map + "]";
+        }
+
+        @Override
+        public int hashCode() {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + Arrays.hashCode(array);
+            result = prime * result + (bool ? 1231 : 1237);
+            result = prime * result + ((collectionWrapper == null) ? 0 : collectionWrapper.hashCode());
+            result = prime * result + integer;
+            result = prime * result + ((list == null) ? 0 : list.hashCode());
+            result = prime * result + (int) (longnumber ^ (longnumber >>> 32));
+            result = prime * result + ((map == null) ? 0 : map.hashCode());
+            result = prime * result + ((name == null) ? 0 : name.hashCode());
+            result = prime * result + ((nested == null) ? 0 : nested.hashCode());
+            result = prime * result + Arrays.hashCode(primitives);
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj)
+                return true;
+            if (obj == null)
+                return false;
+            if (getClass() != obj.getClass())
+                return false;
+            TheObject other = (TheObject) obj;
+            if (!Arrays.equals(array, other.array))
+                return false;
+            if (bool != other.bool)
+                return false;
+            if (collectionWrapper == null) {
+                if (other.collectionWrapper != null)
+                    return false;
+            } else if (!collectionWrapper.equals(other.collectionWrapper))
+                return false;
+            if (integer != other.integer)
+                return false;
+            if (list == null) {
+                if (other.list != null)
+                    return false;
+            } else if (!list.equals(other.list))
+                return false;
+            if (longnumber != other.longnumber)
+                return false;
+            if (map == null) {
+                if (other.map != null)
+                    return false;
+            } else if (!map.equals(other.map))
+                return false;
+            if (name == null) {
+                if (other.name != null)
+                    return false;
+            } else if (!name.equals(other.name))
+                return false;
+            if (nested == null) {
+                if (other.nested != null)
+                    return false;
+            } else if (!nested.equals(other.nested))
+                return false;
+            if (!Arrays.equals(primitives, other.primitives))
+                return false;
+            return true;
+        }
+        
+        
     }
 
     public static class Pair {

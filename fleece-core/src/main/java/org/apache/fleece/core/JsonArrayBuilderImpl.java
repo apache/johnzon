@@ -18,114 +18,113 @@
  */
 package org.apache.fleece.core;
 
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
-import java.io.Serializable;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
-public class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
-    private final JsonArrayImpl array = new JsonArrayImpl();
+class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
+    private List<JsonValue> tmpList;
 
     @Override
     public JsonArrayBuilder add(final JsonValue value) {
-        if (value == null) {
-            throw npe();
-        }
-        array.addInternal(value);
+        addValue(value);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final String value) {
-        if (value == null) {
-            throw npe();
-        }
-        array.addInternal(new JsonStringImpl(value));
+        addValue(new JsonStringImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigDecimal value) {
-        if (value == null) {
-            throw npe();
-        }
-        array.addInternal(new JsonNumberImpl(value));
+        addValue(new JsonNumberImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigInteger value) {
-        if (value == null) {
-            throw npe();
-        }
-        array.addInternal(new JsonNumberImpl(new BigDecimal(value)));
+        addValue(new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final int value) {
-        array.addInternal(new JsonLongImpl(value));
+        addValue(new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final long value) {
-        array.addInternal(new JsonLongImpl(value));
+        addValue(new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final double value) {
-        final Double valueObject = Double.valueOf(value);
-        if (valueObject.isInfinite()) {
-            throw new NumberFormatException("value must not be infinite");
-        }
-        if (valueObject.isNaN()) {
-            throw new NumberFormatException("value must not be NaN");
-        }
-        array.addInternal(new JsonDoubleImpl(value));
+        addValue(new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        array.addInternal(value ? JsonValue.TRUE : JsonValue.FALSE);
+        addValue(value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull() {
-        array.addInternal(JsonValue.NULL);
+        addValue(JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonObjectBuilder builder) {
-        if (builder == null) {
-            throw new NullPointerException("builder must not be null");
-        }
-        array.addInternal(builder.build());
+        addValue(builder.build());
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonArrayBuilder builder) {
-        if (builder == null) {
-            throw new NullPointerException("builder must not be null");
-        }
-        array.addInternal(builder.build());
+        addValue(builder.build());
         return this;
+    }
+    
+    private void addValue(JsonValue value){
+        if (value == null) {
+            throw npe();
+        }
+        
+        if(tmpList==null){
+            tmpList=new ArrayList<JsonValue>();
+        }
+        
+        tmpList.add(value);
     }
 
     @Override
     public JsonArray build() {
-        return array;
+        
+        if(tmpList == null) {
+            return new JsonArrayImpl(Collections.EMPTY_LIST);
+        } else {
+            List<JsonValue> dump = (Collections.unmodifiableList(tmpList));
+            tmpList=null;
+            return new JsonArrayImpl(dump);
+        }
+        
     }
 
     private static NullPointerException npe() {
-        throw new NullPointerException("value must not be null");
+        throw new NullPointerException("value/builder must not be null");
     }
 }

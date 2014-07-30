@@ -18,6 +18,16 @@
  */
 package org.apache.fleece.core;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.Writer;
+import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Map;
+
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
@@ -30,18 +40,10 @@ import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Serializable;
-import java.io.Writer;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class JsonProviderImpl extends JsonProvider implements Serializable {
     private static final JsonProvider DELEGATE = new JsonProviderDelegate();
+    
 
     @Override
     public JsonParser createParser(final Reader reader) {
@@ -118,9 +120,11 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         return DELEGATE.createBuilderFactory(stringMap);
     }
 
-    private static class JsonProviderDelegate extends JsonProvider {
+    static class JsonProviderDelegate extends JsonProvider {
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(Collections.<String, Object>emptyMap());
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(Collections.<String, Object>emptyMap());
+        private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(Collections.<String, Object>emptyMap());
+        private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
         @Override
         public JsonParser createParser(final InputStream in) {
@@ -152,14 +156,15 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
             return new JsonReaderFactoryImpl(config);
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public JsonGenerator createGenerator(final Writer writer) {
-            return new JsonGeneratorFacade(new JsonGeneratorImpl(writer, new ConcurrentHashMap<String, String>()));
+            return generatorFactory.createGenerator(writer);
         }
 
         @Override
         public JsonGenerator createGenerator(final OutputStream out) {
-            return createGenerator(new OutputStreamWriter(out));
+            return generatorFactory.createGenerator(out);
         }
 
         @Override
@@ -174,7 +179,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
         @Override
         public JsonWriter createWriter(final OutputStream out) {
-            return createWriter(new OutputStreamWriter(out));
+            return createWriter(new OutputStreamWriter(out, UTF8_CHARSET));
         }
 
         @Override

@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import javax.json.stream.JsonParsingException;
 
-public class Strings implements JsonChars {
+class Strings implements JsonChars {
     private static final BufferStrategy.BufferProvider<StringBuilder> BUILDER_CACHE =
         BufferStrategy.valueOf(System.getProperty("fleece.string-builder.strategy", "QUEUE"))
             .newStringBuilderProvider(Integer.getInteger("org.apache.fleece.default-string-builder", 1024));
@@ -32,7 +32,7 @@ public class Strings implements JsonChars {
     private static final String UNICODE_PREFIX_HELPER = "000";
     private static final ConcurrentMap<Character, String> UNICODE_CACHE = new ConcurrentHashMap<Character, String>();
 
-    public static char asEscapedChar(final char current) {
+    static char asEscapedChar(final char current) {
         switch (current) {
             case 'r':
                 return '\r';
@@ -60,13 +60,18 @@ public class Strings implements JsonChars {
 
     }
 
-    public static String escape(final String value) {
+    static String escape(final String value) {
+        
+        if(value == null || value.length()==0) {
+            return value;
+        }
+        
         final StringBuilder builder = BUILDER_CACHE.newBuffer();
         try {
             for (int i = 0; i < value.length(); i++) {
                 final char c = value.charAt(i);
                 switch (c) {
-                    case QUOTE:
+                    case QUOTE_CHAR:
                     case ESCAPE_CHAR:
                         builder.append(ESCAPE_CHAR).append(c);
                         break;

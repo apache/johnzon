@@ -18,14 +18,15 @@
  */
 package org.apache.fleece.core;
 
-import javax.json.JsonNumber;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-public class JsonLongImpl implements JsonNumber {
+import javax.json.JsonNumber;
+
+final class JsonLongImpl implements JsonNumber {
     private final long value;
 
-    public JsonLongImpl(final long value) {
+    JsonLongImpl(final long value) {
         this.value = value;
     }
 

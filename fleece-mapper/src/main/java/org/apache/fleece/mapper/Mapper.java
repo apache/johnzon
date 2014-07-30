@@ -18,16 +18,18 @@
  */
 package org.apache.fleece.mapper;
 
-import org.apache.fleece.core.JsonObjectImpl;
 import org.apache.fleece.mapper.converter.EnumConverter;
 import org.apache.fleece.mapper.reflection.Mappings;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
@@ -63,7 +65,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.util.Arrays.asList;
 
 public class Mapper {
-    protected static final JsonObjectImpl EMPTY_OBJECT = new JsonObjectImpl();
+    protected static final JsonObject EMPTY_OBJECT = Json.createObjectBuilder().build();
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
 
     protected final Mappings mappings;
@@ -500,7 +502,9 @@ public class Mapper {
             final Mappings.Setter value = setter.getValue();
             final Method setterMethod = value.setter;
             final Object convertedValue = value.converter == null?
-                    toObject(jsonValue, value.paramType) : value.converter.fromString(jsonValue.toString());
+                    toObject(jsonValue, value.paramType) : jsonValue.getValueType() == ValueType.STRING ?
+                                                            value.converter.fromString(JsonString.class.cast(jsonValue).getString()):
+                                                                value.converter.fromString(jsonValue.toString());
                 
             if (convertedValue != null) {
                 try {
@@ -521,6 +525,8 @@ public class Mapper {
             convertedValue = buildObject(type, JsonObject.class.cast(jsonValue));
         } else if (JsonArray.class.isInstance(jsonValue)) {
             convertedValue = buildArray(type, JsonArray.class.cast(jsonValue));
+        } else if (JsonString.class.isInstance(jsonValue)) {
+            convertedValue = JsonString.class.cast(jsonValue).getString();
         } else if (jsonValue != null && JsonValue.NULL != jsonValue) {
             if (JsonNumber.class.isInstance(jsonValue)) {
                 final JsonNumber number = JsonNumber.class.cast(jsonValue);

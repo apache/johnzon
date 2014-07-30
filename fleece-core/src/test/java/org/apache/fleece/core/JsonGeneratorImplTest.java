@@ -21,10 +21,13 @@ package org.apache.fleece.core;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 
 import javax.json.Json;
 import javax.json.JsonValue;
+import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
 
 import org.junit.Test;
@@ -98,6 +101,129 @@ public class JsonGeneratorImplTest {
         Json.createGenerator(baos).writeStartArray().write(JsonValue.FALSE).write(JsonValue.TRUE).writeEnd().close();
         assertEquals("[false,true]", new String(baos.toByteArray()));
     }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail1() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartArray("test");      
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail2() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .write("test",1);      
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail3() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartObject()
+        .writeStartObject();
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail4() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeEnd();
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail5() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .close();
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail6() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartArray()
+        .writeStartObject("test");
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail7() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartArray()
+        .writeNull()
+        .writeStartObject()
+        .write("a", new BigDecimal("123.123"))
+        .write("b", true)
+        .write("c", new BigInteger("3312"))
+        .write("d", new JsonStringImpl("mystring"))
+        .writeEnd()
+        .close();
+        
+    }
+    
+    @Test(expected=JsonGenerationException.class)
+    public void fail9() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartObject()
+        .write("a", new BigDecimal("123.123"))
+        .write("b", true)
+        .write("c", new BigInteger("3312"))
+        .write("d", new JsonStringImpl("mystring"))
+        .writeEnd()
+        .writeStartObject()
+        .close();
+        
+    }
+   
+    @Test
+    public void numbers() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartArray()
+        .writeNull()
+        .writeStartObject()
+        .write("a", new BigDecimal("123.123"))
+        .write("b", true)
+        .write("c", new BigInteger("3312"))
+        .write("d", new JsonStringImpl("Mystring"))
+        .writeEnd()
+        .writeEnd()
+        .close();
+        assertEquals("[null,{\"a\":123.123,\"b\":true,\"c\":3312,\"d\":\"Mystring\"}]", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void numbers2() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartArray()
+        .writeNull()
+        .writeStartObject()
+        .write("a", 999999999L)
+        .write("b", 123)
+        .write("c", -444444444L)
+        .write("d",-123)
+        .writeEnd()
+        .writeEnd()
+        .close();
+        assertEquals("[null,{\"a\":999999999,\"b\":123,\"c\":-444444444,\"d\":-123}]", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void arrayInArray() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .writeStartArray()
+        .writeStartArray()
+        .writeNull()
+        .writeEnd()
+        .writeEnd()
+        .close();
+         assertEquals("[[null]]", new String(baos.toByteArray()));
+    }
+    
 
     @Test
     public void generate() {
