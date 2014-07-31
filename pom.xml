@@ -17,19 +17,18 @@
     specific language governing permissions and limitations
     under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  
+
   <prerequisites>
-		<maven>3.1.0</maven>
-</prerequisites>
+    <maven>3.1.0</maven>
+  </prerequisites>
 
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>13</version>
+    <version>14</version>
   </parent>
 
   <groupId>org.apache.fleece</groupId>
@@ -74,13 +73,13 @@
           <target>1.6</target>
           <encoding>UTF-8</encoding>
           <showDeprecation>true</showDeprecation>
-		  <showWarnings>true</showWarnings>
+          <showWarnings>true</showWarnings>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.7</version>
+        <version>0.10</version>
         <configuration>
           <includes>
             <include>src/**/*</include>
@@ -112,7 +111,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-scm-publish-plugin</artifactId>
-        <version>1.0-beta-2</version>
+        <version>1.1</version>
         <configuration>
           <automaticRemotePathCreation>true</automaticRemotePathCreation>
           <content>${project.reporting.outputDirectory}</content>
@@ -149,7 +148,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.12</version>
+        <version>2.12.1</version>
         <executions>
           <execution>
             <id>verify-style</id>
@@ -163,75 +162,83 @@
           <logViolationsToConsole>true</logViolationsToConsole>
           <checkstyleRules>
             <module name="Checker">
-              <module name="SuppressionCommentFilter" />
+              <module name="SuppressionCommentFilter"/>
               <module name="FileLength">
-                <property name="max" value="3500" />
-                <property name="fileExtensions" value="java" />
+                <property name="max" value="3500"/>
+                <property name="fileExtensions" value="java"/>
               </module>
-              <module name="FileTabCharacter" />
+              <module name="FileTabCharacter"/>
               <module name="TreeWalker">
-                <module name="FileContentsHolder" />
+                <module name="FileContentsHolder"/>
                 <module name="ConstantName">
-                  <property name="format" value="^(([A-Z][A-Z0-9]*(_[A-Z0-9]+)*))$" />
+                  <property name="format" value="^(([A-Z][A-Z0-9]*(_[A-Z0-9]+)*))$"/>
                 </module>
-                <module name="LocalVariableName" />
+                <module name="LocalVariableName"/>
                 <module name="MethodName">
-                  <property name="format" value="^_?[a-z][a-zA-Z0-9]*$" />
+                  <property name="format" value="^_?[a-z][a-zA-Z0-9]*$"/>
                 </module>
-                <module name="PackageName" />
-                <module name="LocalFinalVariableName" />
-                <module name="ParameterName" />
-                <module name="StaticVariableName" />
+                <module name="PackageName"/>
+                <module name="LocalFinalVariableName"/>
+                <module name="ParameterName"/>
+                <module name="StaticVariableName"/>
                 <module name="TypeName">
-                  <property name="format" value="^_?[A-Z][a-zA-Z0-9]*$" />
+                  <property name="format" value="^_?[A-Z][a-zA-Z0-9]*$"/>
                 </module>
                 <module name="AvoidStarImport">
-                  <property name="excludes" value="java.io,java.net,java.util,javax.enterprise.inject.spi,javax.enterprise.context" />
+                  <property name="excludes"
+                            value="java.io,java.net,java.util,javax.enterprise.inject.spi,javax.enterprise.context"/>
                 </module>
-                <module name="IllegalImport" />
-                <module name="RedundantImport" />
-                <module name="UnusedImports" />
+                <module name="IllegalImport"/>
+                <module name="RedundantImport"/>
+                <module name="UnusedImports"/>
                 <module name="LineLength">
-                  <property name="max" value="180" />
-                  <property name="ignorePattern" value="@version|@see" />
+                  <property name="max" value="180"/>
+                  <property name="ignorePattern" value="@version|@see"/>
                 </module>
                 <module name="MethodLength">
-                  <property name="max" value="250" />
+                  <property name="max" value="250"/>
                 </module>
                 <module name="ParameterNumber">
-                  <property name="max" value="10" />
+                  <property name="max" value="10"/>
                 </module>
                 <module name="EmptyBlock">
-                  <property name="option" value="text" />
+                  <property name="option" value="text"/>
                 </module>
-                <module name="NeedBraces" />
+                <module name="NeedBraces"/>
                 <module name="LeftCurly">
-                  <property name="option" value="EOL" />
+                  <property name="option" value="EOL"/>
                 </module>
                 <module name="RightCurly">
-                  <property name="option" value="SAME" />
+                  <property name="option" value="SAME"/>
                 </module>
-                <module name="EmptyStatement" />
-                <module name="EqualsHashCode" />
-                <module name="DefaultComesLast" />
-                <module name="MissingSwitchDefault" />
-                <module name="FallThrough" />
-                <module name="MultipleVariableDeclarations" />
-                <module name="com.puppycrawl.tools.checkstyle.checks.design.DesignForExtensionCheck">
-                  <property name="severity" value="ignore" />
+                <module name="EmptyStatement"/>
+                <module name="EqualsHashCode"/>
+                <module name="DefaultComesLast"/>
+                <module name="MissingSwitchDefault"/>
+                <module name="FallThrough"/>
+                <module name="MultipleVariableDeclarations"/>
+                <module
+                    name="com.puppycrawl.tools.checkstyle.checks.design.DesignForExtensionCheck">
+                  <property name="severity" value="ignore"/>
                 </module>
-                <module name="HideUtilityClassConstructor" />
-                <module name="com.puppycrawl.tools.checkstyle.checks.design.VisibilityModifierCheck">
-                  <property name="packageAllowed" value="false" />
-                  <property name="protectedAllowed" value="true" />
-                  <property name="publicMemberPattern" value="^serialVersionUID" />
-                  <property name="severity" value="warning" />
+                <module name="HideUtilityClassConstructor"/>
+                <module
+                    name="com.puppycrawl.tools.checkstyle.checks.design.VisibilityModifierCheck">
+                  <property name="packageAllowed" value="false"/>
+                  <property name="protectedAllowed" value="true"/>
+                  <property name="publicMemberPattern" value="^serialVersionUID"/>
+                  <property name="severity" value="warning"/>
                 </module>
-                <module name="UpperEll" />
+                <module name="UpperEll"/>
               </module>
             </module>
           </checkstyleRules>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.17</version>
       </plugin>
     </plugins>
   </build>
@@ -258,20 +265,20 @@
   <reporting>
     <plugins>
       <plugin>
-		<groupId>org.codehaus.mojo</groupId>
-		<artifactId>findbugs-maven-plugin</artifactId>
-		<version>2.5.3</version>
-		<configuration>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>findbugs-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
           <xmlOutput>true</xmlOutput>
           <!-- Optional directory to put findbugs xdoc xml report -->
           <xmlOutputDirectory>target/site</xmlOutputDirectory>
         </configuration>
-	  </plugin>
-	  <plugin>
-		<groupId>org.apache.maven.plugins</groupId>
-		<artifactId>maven-pmd-plugin</artifactId>
-		<version>3.1</version>
-	  </plugin>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-pmd-plugin</artifactId>
+        <version>3.1</version>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
@@ -298,14 +305,110 @@
           </reportSet>
         </reportSets>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>2.17</version>
+      </plugin>
     </plugins>
   </reporting>
-  
+
   <licenses>
-		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-			<distribution>repo</distribution>
-		</license>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
   </licenses>
+
+  <mailingLists>
+    <mailingList>
+      <name>Fleece Commits List</name>
+      <subscribe>commits-subscribe@fleece.incubator.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@fleece.incubator.apache.org</unsubscribe>
+      <post>commits@fleece.incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-commits/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Fleece Developer List</name>
+      <subscribe>dev-subscribe@fleece.incubator.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@fleece.incubator.apache.org</unsubscribe>
+      <post>dev@fleece.incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-dev/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <id>jmclean</id>
+      <name>Justin Mclean</name>
+      <email>jmclean AT apache.org</email>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+    </developer>
+
+    <developer>
+      <id>grobmeier</id>
+      <name>Christian Grobmeier</name>
+      <email>grobmeier AT apache.org</email>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+    </developer>
+
+    <developer>
+      <id>dkulp</id>
+      <name>Daniel Kulp</name>
+      <email>dkulp AT apache.org</email>
+      <roles>
+        <role>Mentor</role>
+      </roles>
+    </developer>
+
+    <developer>
+      <id>rmannibucau</id>
+      <name>Romain Manni-Bucau</name>
+      <email>rmannibucau AT apache.org</email>
+    </developer>
+
+    <developer>
+      <id>jlmonteiro</id>
+      <name>Jean-Louis Monteiro</name>
+      <email>jlmonteiro AT apache.org</email>
+    </developer>
+
+    <developer>
+      <id>struberg</id>
+      <name>Mark Struberg</name>
+      <email>struberg AT apache.org</email>
+      <roles>
+        <role>Champion</role>
+      </roles>
+    </developer>
+
+    <developer>
+      <id>gpetracek</id>
+      <name>Gerhard Petracek</name>
+      <email>gpetracek AT apache.org</email>
+    </developer>
+
+    <developer>
+      <id>dblevins</id>
+      <name>David Blevins</name>
+      <email>dblevins AT apache.org</email>
+    </developer>
+
+    <developer>
+      <id>sagara</id>
+      <name>Sagara Gunathunga</name>
+      <email>sagara AT apache.org</email>
+    </developer>
+  </developers>
+
+  <contributors>
+    <contributor>
+      <name>Hendrik Saly</name>
+    </contributor>
+  </contributors>
 </project>
