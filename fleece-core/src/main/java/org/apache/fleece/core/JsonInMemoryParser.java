@@ -51,21 +51,21 @@ class JsonInMemoryParser implements JsonParser {
     }
 
     private static void generateObjectEvents(final List<Entry> events, final JsonObject object) {
-        events.add(new Entry(Event.START_OBJECT, null));
+        events.add(Entry.START_OBJECT_ENTRY);
         for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
             events.add(new Entry(Event.KEY_NAME, new JsonStringImpl(entry.getKey())));
             final JsonValue value = entry.getValue();
             addValueEvents(events, value);
         }
-        events.add(new Entry(Event.END_OBJECT, null));
+        events.add(Entry.END_OBJECT_ENTRY);
     }
 
     private static void generateArrayEvents(final List<Entry> events, final JsonArray array) {
-        events.add(new Entry(Event.START_ARRAY, null));
+        events.add(Entry.START_ARRAY_ENTRY);
         for (final JsonValue value : array) {
             addValueEvents(events, value);
         }
-        events.add(new Entry(Event.END_ARRAY, null));
+        events.add(Entry.END_ARRAY_ENTRY);
     }
 
     private static void addValueEvents(final List<Entry> events, final JsonValue value) {
@@ -84,13 +84,13 @@ class JsonInMemoryParser implements JsonParser {
                 events.add(new Entry(Event.VALUE_STRING, value));
                 break;
             case FALSE:
-                events.add(new Entry(Event.VALUE_FALSE, null));
+                events.add(Entry.VALUE_FALSE_ENTRY);
                 break;
             case NULL:
-                events.add(new Entry(Event.VALUE_NULL, null));
+                events.add(Entry.VALUE_NULL_ENTRY);
                 break;
             case TRUE:
-                events.add(new Entry(Event.VALUE_TRUE, null));
+                events.add(Entry.VALUE_TRUE_ENTRY);
                 break;
             default: throw new IllegalArgumentException(value + " not supported");
                 
@@ -160,6 +160,15 @@ class JsonInMemoryParser implements JsonParser {
     }
 
     private static class Entry {
+        
+        static final Entry VALUE_FALSE_ENTRY = new Entry(Event.VALUE_FALSE, null);
+        static final Entry VALUE_TRUE_ENTRY = new Entry(Event.VALUE_TRUE, null);
+        static final Entry VALUE_NULL_ENTRY = new Entry(Event.VALUE_NULL, null);
+        static final Entry START_OBJECT_ENTRY = new Entry(Event.START_OBJECT, null);
+        static final Entry END_OBJECT_ENTRY = new Entry(Event.END_OBJECT, null);
+        static final Entry START_ARRAY_ENTRY = new Entry(Event.START_ARRAY, null);
+        static final Entry END_ARRAY_ENTRY = new Entry(Event.END_ARRAY, null);
+        
         final Event event;
         final JsonValue value;
 
