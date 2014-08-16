@@ -177,7 +177,7 @@ public class MapperTest {
         
     }
     
-    @Test(expected= IllegalArgumentException.class)
+    @Test(expected= MapperException.class)
     public void literalFail() {
          
         final Bool instance = new MapperBuilder().build()
@@ -187,7 +187,7 @@ public class MapperTest {
         
     }
     
-    /*@Test(expected= IllegalArgumentException.class)
+    @Test(expected= MapperException.class)
     public void literalFail2() {
          
         final Bool2 instance = new MapperBuilder().build()
@@ -195,7 +195,7 @@ public class MapperTest {
        
         
         
-    }*/
+    }
 
     @Test
     public void writeArray() {

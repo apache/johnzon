@@ -160,6 +160,8 @@ public class Mappings {
     public static boolean isPrimitive(final Type type) {
         if (type == String.class) {
             return true;
+        } else if (type == char.class || type == Character.class) {
+            return true;
         } else if (type == long.class || type == Long.class) {
             return true;
         } else if (type == int.class || type == Integer.class

@@ -23,6 +23,7 @@ import org.apache.fleece.mapper.converter.BigIntegerConverter;
 import org.apache.fleece.mapper.converter.BooleanConverter;
 import org.apache.fleece.mapper.converter.ByteConverter;
 import org.apache.fleece.mapper.converter.CachedDelegateConverter;
+import org.apache.fleece.mapper.converter.CharacterConverter;
 import org.apache.fleece.mapper.converter.ClassConverter;
 import org.apache.fleece.mapper.converter.DateConverter;
 import org.apache.fleece.mapper.converter.DoubleConverter;
@@ -35,6 +36,7 @@ import org.apache.fleece.mapper.converter.StringConverter;
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGeneratorFactory;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
@@ -54,6 +56,7 @@ public class MapperBuilder {
         DEFAULT_CONVERTERS.put(BigDecimal.class, new BigDecimalConverter());
         DEFAULT_CONVERTERS.put(BigInteger.class, new BigIntegerConverter());
         DEFAULT_CONVERTERS.put(Byte.class, new CachedDelegateConverter<Byte>(new ByteConverter()));
+        DEFAULT_CONVERTERS.put(Character.class, new CharacterConverter());
         DEFAULT_CONVERTERS.put(Double.class, new DoubleConverter());
         DEFAULT_CONVERTERS.put(Float.class, new FloatConverter());
         DEFAULT_CONVERTERS.put(Integer.class, new IntegerConverter());
@@ -61,6 +64,7 @@ public class MapperBuilder {
         DEFAULT_CONVERTERS.put(Short.class, new ShortConverter());
         DEFAULT_CONVERTERS.put(Boolean.class, new CachedDelegateConverter<Boolean>(new BooleanConverter()));
         DEFAULT_CONVERTERS.put(byte.class, DEFAULT_CONVERTERS.get(Byte.class));
+        DEFAULT_CONVERTERS.put(char.class, new CharacterConverter());
         DEFAULT_CONVERTERS.put(double.class, DEFAULT_CONVERTERS.get(Double.class));
         DEFAULT_CONVERTERS.put(float.class, DEFAULT_CONVERTERS.get(Float.class));
         DEFAULT_CONVERTERS.put(int.class, DEFAULT_CONVERTERS.get(Integer.class));

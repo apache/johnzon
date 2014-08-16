@@ -107,7 +107,13 @@ public class Mapper {
             return generator.write(BigDecimal.class.cast(value));
         } else if (type == BigInteger.class) {
             return generator.write(BigInteger.class.cast(value));
-        }
+        } else if (type == short.class || type == Short.class) {
+            return generator.write(Short.class.cast(value).shortValue());
+        } else if (type == char.class || type == Character.class) {
+            return generator.write(Character.class.cast(value).toString());
+        } else if (type == byte.class || type == Byte.class) {
+            return generator.write(Byte.class.cast(value).byteValue());
+        }        
         return null;
     }
 
@@ -129,7 +135,9 @@ public class Mapper {
             return generator.write(key, BigDecimal.class.cast(value));
         } else if (type == BigInteger.class) {
             return generator.write(key, BigInteger.class.cast(value));
-        }
+        } else if (type == char.class || type == Character.class) {
+            return generator.write(key, Character.class.cast(value).toString());
+        } 
         return generator;
     }
 
@@ -519,41 +527,80 @@ public class Mapper {
     }
 
     private Object toObject(final JsonValue jsonValue, final Type type) throws InstantiationException, IllegalAccessException {
+      
+        if(jsonValue == null || jsonValue == JsonValue.NULL) {           
+            return null;
+        }
         
-        Object convertedValue = null;
+        if (type == Boolean.class || type == boolean.class) {
+            
+            //if this would be commented out than the json string value "true" would pe parsed to a bool literal
+            //but this is according to json spec invalid
+            /*if (JsonString.class.isInstance(jsonValue)) {
+                return Boolean.valueOf(JsonString.class.cast(jsonValue).getString());
+            }*/
+            
+            if(jsonValue == JsonValue.FALSE) {
+                return Boolean.FALSE;
+            }
+            
+            if(jsonValue == JsonValue.TRUE) {
+                return Boolean.TRUE;
+            }
+            
+            throw new MapperException("Unable to parse "+jsonValue+" to boolean");
+        }
+        
+        if (type == Character.class || type == char.class) {
+            
+            return convertTo(Class.class.cast(type), (JsonString.class.cast(jsonValue).getString()));
+        }
+        
         if (JsonObject.class.isInstance(jsonValue)) {
-            convertedValue = buildObject(type, JsonObject.class.cast(jsonValue));
+            return buildObject(type, JsonObject.class.cast(jsonValue));
         } else if (JsonArray.class.isInstance(jsonValue)) {
-            convertedValue = buildArray(type, JsonArray.class.cast(jsonValue));
-        } else if (JsonString.class.isInstance(jsonValue)) {
-            convertedValue = JsonString.class.cast(jsonValue).getString();
-        } else if (jsonValue != null && JsonValue.NULL != jsonValue) {
-            if (JsonNumber.class.isInstance(jsonValue)) {
+            return buildArray(type, JsonArray.class.cast(jsonValue));
+        } else if (JsonNumber.class.isInstance(jsonValue)) {
+                
                 final JsonNumber number = JsonNumber.class.cast(jsonValue);
-                if (type == Integer.class || type == int.class) {
-                    return number.intValue();
-                }
+                
                 if (type == Long.class || type == long.class) {
                     return number.longValue();
                 }
+                
+                if (type == Integer.class || type == int.class) {
+                    return number.intValue();
+                }
+                                
+                if (type == Short.class || type == short.class) {
+                    return (short) number.intValue();
+                }
+                
+                if (type == Byte.class || type == byte.class) {
+                    return (byte) number.intValue();
+                }
+                
+                if (type == Float.class || type == float.class) {
+                    return (float) number.doubleValue();
+                }
+                
                 if (type == Double.class || type == double.class) {
                     return number.doubleValue();
                 }
+                
                 if (type == BigInteger.class) {
                     return number.bigIntegerValue();
                 }
                 if (type == BigDecimal.class) {
                     return number.bigDecimalValue();
                 }
-            }
-
-            final String text = jsonValue.toString();
-            if (text != null) {
-                
-                convertedValue = convertTo(Class.class.cast(type), text);
-            }
+           
+        } else if (JsonString.class.isInstance(jsonValue)) {
+            return convertTo(Class.class.cast(type), (JsonString.class.cast(jsonValue).getString()));
         }
-        return convertedValue;
+
+        
+        throw new MapperException("Unable to parse "+jsonValue+" to "+type);
     }
 
     private Object buildArray(final Type type, final JsonArray jsonArray) throws IllegalAccessException, InstantiationException {
