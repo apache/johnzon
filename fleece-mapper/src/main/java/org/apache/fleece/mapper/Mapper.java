@@ -360,7 +360,7 @@ public class Mapper {
         } else {
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
-                return writeValue(generator, type, true, false, false, false, key,
+                return writeValue(generator, String.class, true, false, false, false, key,
                                     doConverFrom(value, (Converter<Object>) converter));
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
