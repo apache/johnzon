@@ -16,22 +16,22 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-# Apache fleece
+# Apache johnzon
 
-Apache Fleece is a project providing an implementation of JsonProcessing (aka jsr-353) and a set of useful extension
+Apache Johnzon is a project providing an implementation of JsonProcessing (aka jsr-353) and a set of useful extension
 for this specification like an Object mapper and some JAX-RS providers.
 
 ## Get started
 
-Fleece comes with three main modules.
+Johnzon comes with three main modules.
 
 ### Core
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
-  <groupId>org.apache.fleece</groupId>
-  <artifactId>fleece-core</artifactId>
-  <version>${fleece.version}</version>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-core</artifactId>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
@@ -50,9 +50,9 @@ This is the implementation of the specification. You'll surely want to add the A
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
-  <groupId>org.apache.fleece</groupId>
-  <artifactId>fleece-mapper</artifactId>
-  <version>${fleece.version}</version>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-mapper</artifactId>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
@@ -72,14 +72,14 @@ final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.c
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
-  <groupId>org.apache.fleece</groupId>
-  <artifactId>fleece-jaxrs</artifactId>
-  <version>${fleece.version}</version>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-jaxrs</artifactId>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
 JAX-RS module provides two providers (and underlying MessageBodyReaders and MessageBodyWriters):
 
-* org.apache.fleece.jaxrs.FleeceProvider.FleeceProvider: use Fleece Mapper to map Object to Json and the opposite
-* org.apache.fleece.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
+* org.apache.johnzon.jaxrs.JohnzonProvider.JohnzonProvider: use Johnzon Mapper to map Object to Json and the opposite
+* org.apache.johnzon.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
 
