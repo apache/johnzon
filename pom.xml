@@ -31,19 +31,19 @@
     <version>14</version>
   </parent>
 
-  <groupId>org.apache.fleece</groupId>
-  <artifactId>fleece</artifactId>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon</artifactId>
   <packaging>pom</packaging>
   <version>1.0-SNAPSHOT</version>
-  <name>Fleece</name>
-  <description>Apache Fleece is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
+  <name>Johnzon</name>
+  <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
-  <url>http://incubator.apache.org/projects/fleece.html</url>
+  <url>http://incubator.apache.org/projects/johnzon.html</url>
 
   <modules>
-    <module>fleece-core</module>
-    <module>fleece-mapper</module>
-    <module>fleece-jaxrs</module>
+    <module>johnzon-core</module>
+    <module>johnzon-mapper</module>
+    <module>johnzon-jaxrs</module>
   </modules>
 
   <dependencies>
@@ -248,7 +248,7 @@
 
   <issueManagement>
     <system>jira</system>
-    <url>https://issues.apache.org/jira/browse/FLEECE</url>
+    <url>https://issues.apache.org/jira/browse/JOHNZON</url>
   </issueManagement>
 
   <distributionManagement>
@@ -260,8 +260,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <fleece.site.url>https://svn.apache.org/repos/asf/incubator/fleece/site/publish/</fleece.site.url>
-    <pubsub.url>scm:svn:${fleece.site.url}</pubsub.url>
+    <johnzon.site.url>https://svn.apache.org/repos/asf/incubator/johnzon/site/publish/</johnzon.site.url>
+    <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
   </properties>
 
@@ -326,18 +326,18 @@
 
   <mailingLists>
     <mailingList>
-      <name>Fleece Commits List</name>
-      <subscribe>commits-subscribe@fleece.incubator.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@fleece.incubator.apache.org</unsubscribe>
-      <post>commits@fleece.incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-commits/</archive>
+      <name>Johnzon Commits List</name>
+      <subscribe>commits-subscribe@johnzon.incubator.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@johnzon.incubator.apache.org</unsubscribe>
+      <post>commits@johnzon.incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-commits/</archive>
     </mailingList>
     <mailingList>
-      <name>Fleece Developer List</name>
-      <subscribe>dev-subscribe@fleece.incubator.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@fleece.incubator.apache.org</unsubscribe>
-      <post>dev@fleece.incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-dev/</archive>
+      <name>Johnzon Developer List</name>
+      <subscribe>dev-subscribe@johnzon.incubator.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@johnzon.incubator.apache.org</unsubscribe>
+      <post>dev@johnzon.incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-dev/</archive>
     </mailingList>
   </mailingLists>
 

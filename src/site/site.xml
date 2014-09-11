@@ -15,14 +15,14 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project name="Apache Fleece"
+<project name="Apache Johnzon"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/DECORATION/1.0.1"
          xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.1
                              http://maven.apache.org/xsd/decoration-1.0.1.xsd">
   <bannerLeft>
-    <name>Apache Fleece</name>
-    <alt>Apache Fleece logo</alt>
+    <name>Apache Johnzon</name>
+    <alt>Apache Johnzon logo</alt>
     <href>/index.html</href>
   </bannerLeft>
   <bannerRight>
@@ -36,7 +36,7 @@
       <sideBarEnabled>true</sideBarEnabled>
       <sourceLineNumbersEnabled>true</sourceLineNumbersEnabled>
       <ohloh>
-        <projectId>apache-fleece</projectId>
+        <projectId>apache-johnzon</projectId>
         <widget>stats</widget>
       </ohloh>
     </fluidoSkin>
@@ -80,7 +80,7 @@
     </menu>
 
     <footer>
-      <div class="row span16"><div>Apache Fleece, Apache, the Apache feather logo, and the Apache Fleece project logos are trademarks of The Apache Software Foundation.
+      <div class="row span16"><div>Apache Johnzon, Apache, the Apache feather logo, and the Apache Johnzon project logos are trademarks of The Apache Software Foundation.
         All other marks mentioned may be trademarks or registered trademarks of their respective owners.</div>
         <a href="${project.url}/privacy-policy.html">Privacy Policy</a>
       </div>
