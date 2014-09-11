@@ -407,11 +407,16 @@
       <name>Sagara Gunathunga</name>
       <email>sagara AT apache.org</email>
     </developer>
+
+    <developer>
+      <id>salyh</id>
+      <name>Hendrik Saly</name>
+      <email>salyh AT apache.org</email>
+    </developer>
   </developers>
 
   <contributors>
-    <contributor>
-      <name>Hendrik Saly</name>
-    </contributor>
+
+
   </contributors>
 </project>
