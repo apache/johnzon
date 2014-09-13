@@ -264,6 +264,12 @@
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
   </properties>
+  
+  <scm>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-johnzon.git</url>
+  </scm>
 
   <reporting>
     <plugins>
@@ -342,6 +348,9 @@
       <unsubscribe>commits-unsubscribe@johnzon.incubator.apache.org</unsubscribe>
       <post>commits@johnzon.incubator.apache.org</post>
       <archive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-commits/</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-commits/</otherArchive>
+      </otherArchives>
     </mailingList>
     <mailingList>
       <name>Johnzon Developer List</name>
@@ -349,6 +358,9 @@
       <unsubscribe>dev-unsubscribe@johnzon.incubator.apache.org</unsubscribe>
       <post>dev@johnzon.incubator.apache.org</post>
       <archive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-dev/</archive>
+      <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-dev/</otherArchive>
+      </otherArchives>
     </mailingList>
   </mailingLists>
   
@@ -425,6 +437,9 @@
       <id>salyh</id>
       <name>Hendrik Saly</name>
       <email>salyh AT apache.org</email>
+      <properties>
+        <picUrl>http://www.gravatar.com/avatar/af23e69dbed585db0ce6445d0adb4985.png</picUrl>
+      </properties>
     </developer>
   </developers>
 
