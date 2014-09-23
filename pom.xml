@@ -33,7 +33,7 @@
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon</artifactId>
   <packaging>pom</packaging>
-  <version>0.1-incubating</version>
+  <version>0.2-incubating-SNAPSHOT</version>
   <name>Johnzon</name>
   <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
@@ -273,7 +273,7 @@
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</developerConnection>
     <url>https://git-wip-us.apache.org/repos/asf?p=incubator-johnzon.git</url>
-    <tag>johnzon-0.1-incubating</tag>
+    <tag>HEAD</tag>
   </scm>
 
   <reporting>
