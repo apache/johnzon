@@ -96,24 +96,22 @@ public class Mapper {
             return generator.write(value.toString());
         } else if (type == long.class || type == Long.class) {
             return generator.write(Long.class.cast(value).longValue());
-        } else if (type == int.class || type == Integer.class) {
+        } else if (type == int.class || type == Integer.class
+                || type == byte.class || type == Byte.class
+                || type == short.class || type == Short.class) {
             return generator.write(Integer.class.cast(value).intValue());
         } else if (type == double.class || type == Double.class
                 || type == float.class || type == Float.class) {
             return generator.write(Number.class.cast(value).doubleValue());
         } else if (type == boolean.class || type == Boolean.class) {
-            return generator.write(Boolean.class.cast(value).booleanValue());
+            return generator.write(Boolean.class.cast(value));
         } else if (type == BigDecimal.class) {
             return generator.write(BigDecimal.class.cast(value));
         } else if (type == BigInteger.class) {
             return generator.write(BigInteger.class.cast(value));
-        } else if (type == short.class || type == Short.class) {
-            return generator.write(Short.class.cast(value).shortValue());
         } else if (type == char.class || type == Character.class) {
             return generator.write(Character.class.cast(value).toString());
-        } else if (type == byte.class || type == Byte.class) {
-            return generator.write(Byte.class.cast(value).byteValue());
-        }        
+        }
         return null;
     }
 
@@ -130,7 +128,7 @@ public class Mapper {
                 || type == float.class || type == Float.class) {
             return generator.write(key, Number.class.cast(value).doubleValue());
         } else if (type == boolean.class || type == Boolean.class) {
-            return generator.write(key, Boolean.class.cast(value).booleanValue());
+            return generator.write(key, Boolean.class.cast(value));
         } else if (type == BigDecimal.class) {
             return generator.write(key, BigDecimal.class.cast(value));
         } else if (type == BigInteger.class) {
