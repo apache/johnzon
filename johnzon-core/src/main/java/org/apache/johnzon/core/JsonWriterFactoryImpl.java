@@ -36,8 +36,8 @@ class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-        
-        JsonGenerator.PRETTY_PRINTING
+
+    JsonGenerator.PRETTY_PRINTING
 
     };
     private final JsonGeneratorFactory factory;
@@ -50,9 +50,12 @@ class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
                     internalConfig.put(configKey, config.get(configKey));
                 }
             }
+
+            this.factory = new JsonGeneratorFactoryImpl(internalConfig);
+        } else {
+            this.factory = new JsonGeneratorFactoryImpl(null);
         }
 
-        this.factory = new JsonGeneratorFactoryImpl(internalConfig);
     }
 
     @Override

@@ -45,9 +45,13 @@ class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
                     internalConfig.put(configKey, config.get(configKey));
                 }
             }
-        } 
+            
+            this.parserFactory = new JsonParserFactoryImpl(internalConfig);
+            
+        } else {
+            this.parserFactory = new JsonParserFactoryImpl(null);
+        }
         
-        this.parserFactory = new JsonParserFactoryImpl(internalConfig);
     }
 
     @Override
