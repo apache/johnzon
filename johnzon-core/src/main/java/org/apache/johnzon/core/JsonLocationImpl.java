@@ -24,7 +24,7 @@ import javax.json.stream.JsonLocation;
 
 final class JsonLocationImpl implements JsonLocation, Serializable {
     
-    public static final JsonLocation UNKNOW_LOCATION = new JsonLocationImpl(-1, -1, -1);
+    public static final JsonLocation UNKNOWN_LOCATION = new JsonLocationImpl(-1, -1, -1);
     
     private final long lineNumber;
     private final long columnNumber;

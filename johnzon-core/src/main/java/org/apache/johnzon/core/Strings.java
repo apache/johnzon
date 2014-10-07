@@ -55,7 +55,7 @@ class Strings implements JsonChars {
                     return current;
                 }
                 throw new JsonParsingException("Invalid escape sequence '"+current +"' (Codepoint: "+String.valueOf(current).
-                        codePointAt(0),JsonLocationImpl.UNKNOW_LOCATION);
+                        codePointAt(0),JsonLocationImpl.UNKNOWN_LOCATION);
         }
 
     }

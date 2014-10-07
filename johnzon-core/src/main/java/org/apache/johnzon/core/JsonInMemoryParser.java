@@ -20,138 +20,245 @@ package org.apache.johnzon.core;
 
 import java.math.BigDecimal;
 import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
 
-// we don't use visitor pattern to ensure we work with other impl of JsonObject and JsonArray
 class JsonInMemoryParser implements JsonParser {
-    private final Iterator<Entry> iterator;
 
-    private Entry next = null;
+    private final SimpleStack<Iterator<Event>> stack = new SimpleStack<Iterator<Event>>();
+
+    private Event currentEvent;
+    private JsonValue currentValue;
+
+    private class ArrayIterator implements Iterator<Event> {
+
+        private final Iterator<JsonValue> aentries;
+        private Boolean end = null;
+
+        public ArrayIterator(final JsonArray ja) {
+            aentries = ja.iterator();
+
+        }
+
+        @Override
+        public boolean hasNext() {
+            return end != Boolean.TRUE;
+        }
+
+        @Override
+        public Event next() {
+
+            if (end == null) {
+                end = Boolean.FALSE;
+                return Event.START_ARRAY;
+            } else if (!aentries.hasNext()) {
+
+                if (!stack.isEmpty()) {
+                    stack.pop();
+                }
+
+                end = Boolean.TRUE;
+
+                return Event.END_ARRAY;
+            } else {
+
+                final JsonValue val = aentries.next();
+
+                final ValueType vt = val.getValueType();
+
+                if (vt == ValueType.OBJECT) {
+                    stack.push(new ObjectIterator((JsonObject) val));
+                    return stack.peek().next();
+
+                } else if (vt == ValueType.ARRAY) {
+                    stack.push(new ArrayIterator((JsonArray) val));
+                    return stack.peek().next();
+
+                } else {
+                    currentValue = val;
+                    return getEvent(vt);
+                }
+            }
+
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+
+        }
+
+    }
+
+    private class ObjectIterator implements Iterator<Event> {
+
+        private final Iterator<Map.Entry<String, JsonValue>> oentries;
+        private JsonValue jsonValue;
+        private Boolean end = null;
+
+        public ObjectIterator(final JsonObject jo) {
+            oentries = jo.entrySet().iterator();
+
+        }
+
+        @Override
+        public boolean hasNext() {
+            return end != Boolean.TRUE;
+        }
+
+        @Override
+        public Event next() {
+
+            if (end == null) {
+                end = Boolean.FALSE;
+                return Event.START_OBJECT;
+            } else if (jsonValue == null && !oentries.hasNext()) {
+
+                if (!stack.isEmpty()) {
+                    stack.pop();
+                }
+
+                end = Boolean.TRUE;
+
+                return Event.END_OBJECT;
+            } else if (jsonValue == null) {
+
+                final Map.Entry<String, JsonValue> tmp = oentries.next();
+                jsonValue = tmp.getValue();
+                currentValue = new JsonStringImpl(tmp.getKey());
+                return Event.KEY_NAME;
+
+            } else {
+
+                final ValueType vt = jsonValue.getValueType();
+
+                if (vt == ValueType.OBJECT) {
+                    stack.push(new ObjectIterator((JsonObject) jsonValue));
+                    jsonValue = null;
+                    return stack.peek().next();
+
+                } else if (vt == ValueType.ARRAY) {
+                    stack.push(new ArrayIterator((JsonArray) jsonValue));
+                    jsonValue = null;
+                    return stack.peek().next();
+
+                } else {
+
+                    final Event ret = getEvent(vt);
+                    currentValue = jsonValue;
+                    jsonValue = null;
+                    return ret;
+                }
+
+            }
+
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+
+        }
+
+    }
+
+    private static Event getEvent(final ValueType value) {
+
+        switch (value) {
+        case NUMBER:
+            return Event.VALUE_NUMBER;
+        case STRING:
+            return Event.VALUE_STRING;
+        case FALSE:
+            return Event.VALUE_FALSE;
+        case NULL:
+            return Event.VALUE_NULL;
+        case TRUE:
+            return Event.VALUE_TRUE;
+        default:
+            throw new IllegalArgumentException(value + " not supported");
+
+        }
+
+    }
 
     JsonInMemoryParser(final JsonObject object) {
-        final List<Entry> events = new LinkedList<Entry>();
-        generateObjectEvents(events, object);
-        iterator = events.iterator();
+        stack.push(new ObjectIterator(object));
     }
 
     JsonInMemoryParser(final JsonArray array) {
-        final List<Entry> events = new LinkedList<Entry>();
-        generateArrayEvents(events, array);
-        iterator = events.iterator();
-    }
-
-    private static void generateObjectEvents(final List<Entry> events, final JsonObject object) {
-        events.add(Entry.START_OBJECT_ENTRY);
-        for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
-            events.add(new Entry(Event.KEY_NAME, new JsonStringImpl(entry.getKey())));
-            final JsonValue value = entry.getValue();
-            addValueEvents(events, value);
-        }
-        events.add(Entry.END_OBJECT_ENTRY);
-    }
-
-    private static void generateArrayEvents(final List<Entry> events, final JsonArray array) {
-        events.add(Entry.START_ARRAY_ENTRY);
-        for (final JsonValue value : array) {
-            addValueEvents(events, value);
-        }
-        events.add(Entry.END_ARRAY_ENTRY);
-    }
-
-    private static void addValueEvents(final List<Entry> events, final JsonValue value) {
-        
-        switch(value.getValueType()) {
-            case ARRAY:
-                generateArrayEvents(events, JsonArray.class.cast(value));
-                break;
-            case OBJECT:
-                generateObjectEvents(events, JsonObject.class.cast(value));
-                break;
-            case NUMBER:
-                events.add(new Entry(Event.VALUE_NUMBER, value));
-                break;
-            case STRING:
-                events.add(new Entry(Event.VALUE_STRING, value));
-                break;
-            case FALSE:
-                events.add(Entry.VALUE_FALSE_ENTRY);
-                break;
-            case NULL:
-                events.add(Entry.VALUE_NULL_ENTRY);
-                break;
-            case TRUE:
-                events.add(Entry.VALUE_TRUE_ENTRY);
-                break;
-            default: throw new IllegalArgumentException(value + " not supported");
-                
-        }
-        
+        stack.push(new ArrayIterator(array));
     }
 
     @Override
     public boolean hasNext() {
-        return iterator.hasNext();
+        return !stack.isEmpty();
     }
 
     @Override
     public Event next() {
-        next = iterator.next();
-        return next.event;
+
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
+
+        currentEvent = stack.peek().next();
+
+        return currentEvent;
     }
 
     @Override
     public String getString() {
-        if (next.event != Event.KEY_NAME && next.event != Event.VALUE_STRING) {
+        if (currentEvent != Event.KEY_NAME && currentEvent != Event.VALUE_STRING) {
             throw new IllegalStateException("String is for numbers and strings");
         }
-        return JsonString.class.cast(next.value).getString();
+        return JsonString.class.cast(currentValue).getString();
     }
 
     @Override
     public boolean isIntegralNumber() {
-        if (next.event != Event.VALUE_NUMBER) {
+        if (currentEvent != Event.VALUE_NUMBER) {
             throw new IllegalStateException("isIntegralNumber is for numbers");
         }
-        return JsonNumber.class.cast(next.value).isIntegral();
+        return JsonNumber.class.cast(currentValue).isIntegral();
     }
 
     @Override
     public int getInt() {
-        if (next.event != Event.VALUE_NUMBER) {
+        if (currentEvent != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getInt is for numbers");
         }
-        return JsonNumber.class.cast(next.value).intValue();
+        return JsonNumber.class.cast(currentValue).intValue();
     }
 
     @Override
     public long getLong() {
-        if (next.event != Event.VALUE_NUMBER) {
+        if (currentEvent != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getLong is for numbers");
         }
-        return JsonNumber.class.cast(next.value).longValue();
+        return JsonNumber.class.cast(currentValue).longValue();
     }
 
     @Override
     public BigDecimal getBigDecimal() {
-        if (next.event != Event.VALUE_NUMBER) {
+        if (currentEvent != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getBigDecimal is for numbers");
         }
-        return JsonNumber.class.cast(next.value).bigDecimalValue();
+        return JsonNumber.class.cast(currentValue).bigDecimalValue();
     }
 
     @Override
     public JsonLocation getLocation() { // no location for in memory parsers
-        return JsonLocationImpl.UNKNOW_LOCATION;
+        return JsonLocationImpl.UNKNOWN_LOCATION;
     }
 
     @Override
@@ -159,22 +266,4 @@ class JsonInMemoryParser implements JsonParser {
         // no-op
     }
 
-    private static class Entry {
-        
-        static final Entry VALUE_FALSE_ENTRY = new Entry(Event.VALUE_FALSE, null);
-        static final Entry VALUE_TRUE_ENTRY = new Entry(Event.VALUE_TRUE, null);
-        static final Entry VALUE_NULL_ENTRY = new Entry(Event.VALUE_NULL, null);
-        static final Entry START_OBJECT_ENTRY = new Entry(Event.START_OBJECT, null);
-        static final Entry END_OBJECT_ENTRY = new Entry(Event.END_OBJECT, null);
-        static final Entry START_ARRAY_ENTRY = new Entry(Event.START_ARRAY, null);
-        static final Entry END_ARRAY_ENTRY = new Entry(Event.END_ARRAY, null);
-        
-        final Event event;
-        final JsonValue value;
-
-        Entry(final Event event, final JsonValue value) {
-            this.event = event;
-            this.value = value;
-        }
-    }
 }
