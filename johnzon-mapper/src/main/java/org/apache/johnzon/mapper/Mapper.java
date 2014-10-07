@@ -96,12 +96,9 @@ public class Mapper {
             return generator.write(value.toString());
         } else if (type == long.class || type == Long.class) {
             return generator.write(Long.class.cast(value).longValue());
-        } else if (type == int.class || type == Integer.class
-                || type == byte.class || type == Byte.class
-                || type == short.class || type == Short.class) {
+        } else if (isInt(type)) {
             return generator.write(Integer.class.cast(value).intValue());
-        } else if (type == double.class || type == Double.class
-                || type == float.class || type == Float.class) {
+        } else if (isFloat(type)) {
             return generator.write(Number.class.cast(value).doubleValue());
         } else if (type == boolean.class || type == Boolean.class) {
             return generator.write(Boolean.class.cast(value));
@@ -120,12 +117,9 @@ public class Mapper {
             return generator.write(key, value.toString());
         } else if (type == long.class || type == Long.class) {
             return generator.write(key, Long.class.cast(value).longValue());
-        } else if (type == int.class || type == Integer.class
-                    || type == byte.class || type == Byte.class
-                    || type == short.class || type == Short.class) {
+        } else if (isInt(type)) {
             return generator.write(key, Number.class.cast(value).intValue());
-        } else if (type == double.class || type == Double.class
-                || type == float.class || type == Float.class) {
+        } else if (isFloat(type)) {
             return generator.write(key, Number.class.cast(value).doubleValue());
         } else if (type == boolean.class || type == Boolean.class) {
             return generator.write(key, Boolean.class.cast(value));
@@ -137,6 +131,17 @@ public class Mapper {
             return generator.write(key, Character.class.cast(value).toString());
         } 
         return generator;
+    }
+
+    private static boolean isInt(final Class<?> type) {
+        return type == int.class || type == Integer.class
+                || type == byte.class || type == Byte.class
+                || type == short.class || type == Short.class;
+    }
+
+    private static boolean isFloat(final Class<?> type) {
+        return type == double.class || type == Double.class
+                || type == float.class || type == Float.class;
     }
 
     /*private <T> String convertFrom(final Class<T> aClass, final T value) {
