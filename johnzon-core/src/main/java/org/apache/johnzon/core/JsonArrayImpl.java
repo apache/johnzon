@@ -32,13 +32,12 @@ import javax.json.JsonValue;
 class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serializable {
     private Integer hashCode = null;
     private final List<JsonValue> unmodifieableBackingList;
+    private int size = -1;
 
-    JsonArrayImpl(List<JsonValue> backingList) {
+    JsonArrayImpl(final List<JsonValue> backingList) {
         super();
         this.unmodifieableBackingList = backingList;
     }
-
-
 
     private <T> T value(final int idx, final Class<T> type) {
         if (idx > unmodifieableBackingList.size()) {
@@ -46,8 +45,6 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
         }
         return type.cast(unmodifieableBackingList.get(idx));
     }
-    
-    
 
     @Override
     public JsonObject getJsonObject(final int index) {
@@ -81,10 +78,18 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
 
     @Override
     public String getString(final int index, final String defaultValue) {
-        try {
-            return getString(index);
-        } catch (final IndexOutOfBoundsException ioobe) {
+        JsonValue val = null;
+        int s = size;
+
+        if (s == -1) {
+            s = unmodifieableBackingList.size();
+            size = s;
+        }
+
+        if (index > s - 1 || !((val = get(index)) instanceof JsonString)) {
             return defaultValue;
+        } else {
+            return JsonString.class.cast(val).getString();
         }
     }
 
@@ -95,25 +100,59 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
 
     @Override
     public int getInt(final int index, final int defaultValue) {
-        try {
-            return getInt(index);
-        } catch (final IndexOutOfBoundsException ioobe) {
+        JsonValue val = null;
+        int s = size;
+
+        if (s == -1) {
+            s = unmodifieableBackingList.size();
+            size = s;
+        }
+
+        if (index > s - 1 || !((val = get(index)) instanceof JsonNumber)) {
             return defaultValue;
+        } else {
+            return JsonNumber.class.cast(val).intValue();
         }
     }
 
     @Override
     public boolean getBoolean(final int index) {
-        return value(index, JsonValue.class) == JsonValue.TRUE;
+        final JsonValue val = value(index, JsonValue.class);
+
+        if (val == JsonValue.TRUE) {
+            return true;
+        } else if (val == JsonValue.FALSE) {
+            return false;
+        } else {
+            throw new ClassCastException();
+        }
+
     }
 
     @Override
     public boolean getBoolean(final int index, final boolean defaultValue) {
-        try {
-            return getBoolean(index);
-        } catch (final IndexOutOfBoundsException ioobe) {
+
+        int s = size;
+
+        if (s == -1) {
+            s = unmodifieableBackingList.size();
+            size = s;
+        }
+
+        if (index > s - 1) {
             return defaultValue;
         }
+
+        final JsonValue val = get(index);
+
+        if (val == JsonValue.TRUE) {
+            return true;
+        } else if (val == JsonValue.FALSE) {
+            return false;
+        } else {
+            return defaultValue;
+        }
+
     }
 
     @Override
@@ -148,22 +187,22 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonArrayImpl.class.isInstance(obj) && unmodifieableBackingList.equals(JsonArrayImpl.class.cast(obj).unmodifieableBackingList);
+        return JsonArrayImpl.class.isInstance(obj)
+                && unmodifieableBackingList.equals(JsonArrayImpl.class.cast(obj).unmodifieableBackingList);
     }
 
-    
     @Override
     public int hashCode() {
-        Integer h=hashCode;
+        Integer h = hashCode;
         if (h == null) {
             h = unmodifieableBackingList.hashCode();
-            h=hashCode;
+            hashCode = h;
         }
         return h;
     }
 
     @Override
-    public JsonValue get(int index) {
+    public JsonValue get(final int index) {
         return unmodifieableBackingList.get(index);
     }
 

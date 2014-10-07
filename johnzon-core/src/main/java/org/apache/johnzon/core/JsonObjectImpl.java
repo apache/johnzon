@@ -30,7 +30,8 @@ import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
-public final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements JsonObject, Serializable {
+
+final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements JsonObject, Serializable {
     private Integer hashCode = null;
     private final Map<String, JsonValue> unmodifieableBackingMap;
 
@@ -41,12 +42,11 @@ public final class JsonObjectImpl extends AbstractMap<String, JsonValue> impleme
         }
         throw new NullPointerException("no mapping for " + name);
     }
-   
-    public JsonObjectImpl(Map<String, JsonValue> backingMap) {
+
+    JsonObjectImpl(final Map<String, JsonValue> backingMap) {
         super();
         this.unmodifieableBackingMap = backingMap;
     }
-
 
     @Override
     public JsonArray getJsonArray(final String name) {
@@ -70,17 +70,22 @@ public final class JsonObjectImpl extends AbstractMap<String, JsonValue> impleme
 
     @Override
     public String getString(final String name) {
-        final JsonString str = getJsonString(name);
-        return str != null ? str.getString() : null;
+        return getJsonString(name).getString();
     }
 
     @Override
     public String getString(final String name, final String defaultValue) {
-        try {
-            return getJsonString(name).getString();
-        } catch (final NullPointerException npe) {
+        final Object v = unmodifieableBackingMap.get(name);
+        if (v != null) {
+            if (v instanceof JsonString) {
+                return JsonString.class.cast(v).getString();
+            } else {
+                return defaultValue;
+            }
+        } else {
             return defaultValue;
         }
+
     }
 
     @Override
@@ -90,9 +95,14 @@ public final class JsonObjectImpl extends AbstractMap<String, JsonValue> impleme
 
     @Override
     public int getInt(final String name, final int defaultValue) {
-        try {
-            return getJsonNumber(name).intValue();
-        } catch (final NullPointerException npe) {
+        final Object v = unmodifieableBackingMap.get(name);
+        if (v != null) {
+            if (v instanceof JsonNumber) {
+                return JsonNumber.class.cast(v).intValue();
+            } else {
+                return defaultValue;
+            }
+        } else {
             return defaultValue;
         }
     }
@@ -104,9 +114,16 @@ public final class JsonObjectImpl extends AbstractMap<String, JsonValue> impleme
 
     @Override
     public boolean getBoolean(final String name, final boolean defaultValue) {
-        try {
-            return getBoolean(name);
-        } catch (final NullPointerException npe) {
+        final Object v = unmodifieableBackingMap.get(name);
+        if (v != null) {
+            if (v == JsonValue.TRUE) {
+                return true;
+            } else if (v == JsonValue.FALSE) {
+                return false;
+            } else {
+                return defaultValue;
+            }
+        } else {
             return defaultValue;
         }
     }
@@ -148,16 +165,18 @@ public final class JsonObjectImpl extends AbstractMap<String, JsonValue> impleme
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonObjectImpl.class.isInstance(obj) && unmodifieableBackingMap.equals(JsonObjectImpl.class.cast(obj).unmodifieableBackingMap);
+        return JsonObjectImpl.class.isInstance(obj)
+                && unmodifieableBackingMap.equals(JsonObjectImpl.class.cast(obj).unmodifieableBackingMap);
     }
-
 
     @Override
     public int hashCode() {
-        if (hashCode == null) {
-            hashCode = unmodifieableBackingMap.hashCode();
+        Integer h = hashCode;
+        if (h == null) {
+            h = unmodifieableBackingMap.hashCode();
+            hashCode = h;
         }
-        return hashCode;
+        return h;
     }
 
     @Override
