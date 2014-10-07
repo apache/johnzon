@@ -279,6 +279,12 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             bufferPos = 0;
             //end fillbuffer
         } else {
+            
+            //prevent "bufferoverflow
+            if(bufferPos + 1 >= availableCharsInBuffer) {
+                return EOF;
+            }
+            
             bufferPos++;
         }
 

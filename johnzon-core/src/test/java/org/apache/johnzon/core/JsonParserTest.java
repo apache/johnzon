@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -652,6 +653,72 @@ public class JsonParserTest {
         assertEquals("s\"mit\"", parser.getString());
         assertEquals("\"s\\\"mit\\\"\"", new JsonStringImpl(parser.getString()).toString());
         parser.close();
+    }
+    
+    @Test
+    public void bufferOverFlow() {
+        JsonParser parser1 = Json.createParser(new StringReader("{}{}"));
+        
+        try {
+            while(parser1.hasNext()) {
+                parser1.next();
+            }
+            fail();
+        } catch (Exception e1) {
+            //expected
+        } finally {
+            parser1.close();
+        }
+        
+        
+        
+        JsonParser parser2 = Json.createParser(new StringReader("{"));
+        int i=0;
+        try {
+            while(parser2.hasNext()) {
+                    parser2.next();                                
+            }
+            fail();
+        } catch (JsonParsingException e) {
+           //expected
+        } finally {
+            parser2.close();
+        }
+        
+        
+    }
+    
+    @Test
+    public void bufferOverFlow2() {
+        JsonParser parser1 = Json.createParser(new StringReader("{  }{}"));
+        
+        try {
+            while(parser1.hasNext()) {
+                parser1.next();
+            }
+            fail();
+        } catch (Exception e1) {
+            //expected
+        } finally {
+            parser1.close();
+        }
+        
+        
+        
+        JsonParser parser2 = Json.createParser(new StringReader("{"));
+        int i=0;
+        try {
+            while(parser2.hasNext()) {
+                    parser2.next();                                
+            }
+            fail();
+        } catch (JsonParsingException e) {
+           //expected
+        } finally {
+            parser2.close();
+        }
+        
+        
     }
 
     @Test
