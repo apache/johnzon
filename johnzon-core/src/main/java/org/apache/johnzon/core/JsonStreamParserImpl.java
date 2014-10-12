@@ -410,9 +410,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             case TRUE_T: // true
             case NULL_N: // null
 
-                return handleLiteral(c);
+                return handleLiteral();
             default:
-                throw uexc("Excpected structural character or digit or 't' or 'n' or 'f' or '-'");
+                throw uexc("Expected structural character or digit or 't' or 'n' or 'f' or '-'");
 
         }
 
@@ -422,7 +422,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         //last event must one of the following-> : , [
         if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
-            throw uexc("Excpected : , [");
+            throw uexc("Expected : , [");
         }
 
         //push upon the stack
@@ -647,7 +647,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //read a number
     //if a number cross buffer boundary then copy in the value buffer
     //if not then denote string start and end in startOfValueInBuffer and endOfValueInBuffer and read directly from buffer
-    private void readNumber(final char c) {
+    private void readNumber() {
+
+        char c = buffer[bufferPos];
 
         //start can change on any read() if we cross buffer boundary
         startOfValueInBuffer = bufferPos;
@@ -753,17 +755,19 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     }
 
     //handles false, true, null and numbers
-    private Event handleLiteral(final char c) {
+    private Event handleLiteral() {
 
         //last event must one of the following-> : , [
         if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
-            throw uexc("Excpected : , [");
+            throw uexc("Expected : , [");
         }
 
         if (previousEvent == COMMA_EVENT && !currentStructureElement.isArray) {
             //only allowed within array
             throw uexc("Not in an array context");
         }
+
+        char c = buffer[bufferPos];
 
         // probe literals
         switch (c) {
@@ -789,7 +793,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
                 return EVT_MAP[previousEvent = VALUE_NULL];
 
             default:
-                readNumber(c);
+                readNumber();
                 return EVT_MAP[previousEvent = VALUE_NUMBER];
         }
 
