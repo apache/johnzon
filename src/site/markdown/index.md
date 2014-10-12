@@ -83,3 +83,6 @@ JAX-RS module provides two providers (and underlying MessageBodyReaders and Mess
 * org.apache.johnzon.jaxrs.JohnzonProvider.JohnzonProvider: use Johnzon Mapper to map Object to Json and the opposite
 * org.apache.johnzon.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
 
+## Thanks
+
+We would like to thank ej-technologies for their [Java profiler JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html) which helped us a lot optimizing memory footprint and speed. ![JProfiler](http://www.ej-technologies.com/images/banners/jprofiler_small.png)
