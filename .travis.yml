@@ -7,4 +7,4 @@ jdk:
   - oraclejdk8 
 
 after_success:
-  - mvn clean test jacoco:report org.eluder.coveralls:coveralls-maven-plugin:jacoco -DsourceEncoding=UTF-8
+  - mvn clean cobertura:cobertura coveralls:report
