@@ -833,7 +833,27 @@ public class JsonParserTest {
   
         Json.createReader(new CharArrayReader(new char[]{})).read();
     }
-    
+
+    @Test
+    public void testIOException() {
+        final InputStream bin = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("Expected");
+            }
+        };
+        JsonParser parser = null;
+        try {
+            parser = Json.createParser(bin);
+        } catch (JsonException e) {
+            assertEquals("We were expecting another cause", "Expected", e.getCause().getMessage());
+        } finally {
+            if (parser != null) {
+                parser.close();
+            }
+        }
+    }
+
     @Test
     public void testUTF32LEStream() {
         ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF32LE\"]".getBytes(UTF_32LE));
@@ -889,6 +909,79 @@ public class JsonParserTest {
         parser.next();
         parser.next();
         assertEquals("UTF8", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF16Stream() {
+        //this writes UTF 16 with Byte Order Mark (BOM)
+        ByteArrayInputStream bin = new ByteArrayInputStream("[\"UTF16\"]".getBytes(UTF_16));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF16", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF16LEBOMStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF16LEBOM\"]".getBytes(UTF_16LE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF16LEBOM", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF16BEBOMStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF16BEBOM\"]".getBytes(UTF_16BE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF16BEBOM", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF32LEBOMStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF32LEBOM\"]".getBytes(UTF_32LE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF32LEBOM", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF32BEBOMStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF32BEBOM\"]".getBytes(UTF_32BE));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF32BEBOM", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testUTF8BEBOMStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF8BOM\"]".getBytes(UTF_8));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF8BOM", parser.getString());
         parser.next();
         assertTrue(!parser.hasNext());
         parser.close();

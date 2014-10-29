@@ -87,15 +87,13 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
                     UTF-32 (LE)    FF FE 00 00
                     */
                                         
-                    
+                    //We do not check for UTF-32BE because that is already covered above and we
+                    //do not to unread anything.
                     
                     
                     if(first == 0xFE && second == 0xFF) {
                         charset = Charset.forName("UTF-16BE");
                         bomLength=2;
-                    } else if(read > 3 && first == 0x00 && second == 0x00 && (utfBytes[2]&0xff) == 0xFE && (utfBytes[3]&0xff) == 0xFF){
-                        charset = Charset.forName("UTF-32BE");
-                        bomLength=4;
                     } else if(first == 0xFF && second == 0xFE) {
                         
                         if(read > 3 && (utfBytes[2]&0xff) == 0x00 && (utfBytes[3]&0xff) == 0x00) {
@@ -106,19 +104,26 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
                             bomLength=2;
                         }
                         
-                    } 
-                    
-                    //assume UTF8
-                    
-                }
+                    } else if (read > 2 && first == 0xEF && second == 0xBB && (utfBytes[2]&0xff) == 0xBF) {
+                        
+                        //UTF-8 with BOM
+                        bomLength=3;
+                    }
 
+                }
+              
+                //assume UTF8
+                
             }
             
-            if(bomLength < 4) {
-                inputStream.unread(utfBytes,bomLength==2?2:0,read-bomLength);
+            if(bomLength > 0 && bomLength < 4) {             
+                //do not unread BOM, only bytes after BOM        
+                inputStream.unread(utfBytes,bomLength,read-bomLength);               
+            } else {             
+                //no BOM, unread all read bytes
+                inputStream.unread(utfBytes,0,read);
             }
-            
-            
+          
 
         } catch (final IOException e) {
             throw new JsonException("Unable to detect charset due to "+e.getMessage(), e);
