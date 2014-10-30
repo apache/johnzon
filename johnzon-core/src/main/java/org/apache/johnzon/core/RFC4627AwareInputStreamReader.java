@@ -37,6 +37,27 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
        
     }
 
+    /**
+     * According to the Java API "An attempt is made to read as many as len bytes, but a smaller number may be read".
+     * [http://docs.oracle.com/javase/7/docs/api/java/io/InputStream.html#read(byte[],%20int,%20int)]
+     * For this reason we need to ensure that we've read all the bytes that we need out of this stream.
+     */
+    private static byte[] readAllBytes(final PushbackInputStream inputStream) throws IOException {
+        final int first = inputStream.read();
+        final int second = inputStream.read();
+        if(first == -1|| second == -1) {
+            throw new JsonException("Invalid Json. Valid Json has at least 2 bytes");
+        }
+        final int third = inputStream.read();
+        final int fourth = inputStream.read();
+        if(third == -1) {
+            return new byte[] { (byte) first, (byte) second };
+        } else if(fourth == -1) {
+            return new byte[] { (byte) first, (byte) second, (byte) third };
+        } else {
+            return new byte[] { (byte) first, (byte) second, (byte) third, (byte) fourth };
+        }
+    }
 
     /*
         * RFC 4627
@@ -59,24 +80,18 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
     private static Charset getCharset(final PushbackInputStream inputStream) {
         Charset charset = Charset.forName("UTF-8");
-        final byte[] utfBytes = new byte[4];
         int bomLength=0;
         try {
-            final int read = inputStream.read(utfBytes);
-            if (read < 2) {
-                throw new JsonException("Invalid Json. Valid Json has at least 2 bytes");
+            final byte[] utfBytes = readAllBytes(inputStream);
+            int first = (utfBytes[0] & 0xFF);
+            int second = (utfBytes[1] & 0xFF);
+            if (first == 0x00) {
+                charset = (second == 0x00) ? Charset.forName("UTF-32BE") : Charset.forName("UTF-16BE");
+            } else if (utfBytes.length > 2 && second == 0x00) {
+                int third = (utfBytes[2] & 0xFF);
+                charset = (third  == 0x00) ? Charset.forName("UTF-32LE") : Charset.forName("UTF-16LE");
             } else {
 
-                int first = (utfBytes[0] & 0xFF);
-                int second = (utfBytes[1] & 0xFF);
-                
-                if (first == 0x00) {
-                    charset = (second == 0x00) ? Charset.forName("UTF-32BE") : Charset.forName("UTF-16BE");
-                } else if (read > 2 && second == 0x00) {
-                    int third = (utfBytes[2] & 0xFF);
-                    charset = (third  == 0x00) ? Charset.forName("UTF-32LE") : Charset.forName("UTF-16LE");
-                } else {
-                  
                     /*check BOM
 
                     Encoding       hex byte order mark
@@ -86,42 +101,33 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
                     UTF-32 (BE)    00 00 FE FF
                     UTF-32 (LE)    FF FE 00 00
                     */
-                                        
-                    //We do not check for UTF-32BE because that is already covered above and we
-                    //do not to unread anything.
-                    
-                    
-                    if(first == 0xFE && second == 0xFF) {
-                        charset = Charset.forName("UTF-16BE");
-                        bomLength=2;
-                    } else if(first == 0xFF && second == 0xFE) {
-                        
-                        if(read > 3 && (utfBytes[2]&0xff) == 0x00 && (utfBytes[3]&0xff) == 0x00) {
-                            charset = Charset.forName("UTF-32LE");
-                            bomLength=4;
-                        }else {
-                            charset = Charset.forName("UTF-16LE");
-                            bomLength=2;
-                        }
-                        
-                    } else if (read > 2 && first == 0xEF && second == 0xBB && (utfBytes[2]&0xff) == 0xBF) {
-                        
-                        //UTF-8 with BOM
-                        bomLength=3;
-                    }
 
+                //We do not check for UTF-32BE because that is already covered above and we
+                //do not to unread anything.
+
+                if(first == 0xFE && second == 0xFF) {
+                    charset = Charset.forName("UTF-16BE");
+                    bomLength=2;
+                } else if(first == 0xFF && second == 0xFE) {
+                    if(utfBytes.length > 3 && (utfBytes[2]&0xff) == 0x00 && (utfBytes[3]&0xff) == 0x00) {
+                        charset = Charset.forName("UTF-32LE");
+                        bomLength=4;
+                    }else {
+                        charset = Charset.forName("UTF-16LE");
+                        bomLength=2;
+                    }
+                } else if (utfBytes.length > 2 && first == 0xEF && second == 0xBB && (utfBytes[2]&0xff) == 0xBF) {
+                    //UTF-8 with BOM
+                    bomLength=3;
                 }
-              
-                //assume UTF8
-                
             }
-            
+            //assume UTF8
             if(bomLength > 0 && bomLength < 4) {             
                 //do not unread BOM, only bytes after BOM        
-                inputStream.unread(utfBytes,bomLength,read-bomLength);               
+                inputStream.unread(utfBytes,bomLength,utfBytes.length - bomLength);
             } else {             
                 //no BOM, unread all read bytes
-                inputStream.unread(utfBytes,0,read);
+                inputStream.unread(utfBytes);
             }
           
 

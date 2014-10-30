@@ -964,7 +964,29 @@ public class JsonParserTest {
     }
     
     @Test
+    public void testBinaryNullStreamBOM() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0".getBytes(UTF_32LE));
+        JsonParser parser = Json.createParser(bin);
+        
+        try {
+            parser.next();
+            fail();
+        } catch (JsonParsingException e) {
+            //expected
+        }
+       
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void testBinaryNullStream() {
+        ByteArrayInputStream bin = new ByteArrayInputStream("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0".getBytes(UTF_8));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+    }
+    
+    @Test
     public void testUTF32BEBOMStream() {
+        
         ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF32BEBOM\"]".getBytes(UTF_32BE));
         JsonParser parser = Json.createParser(bin);
         parser.next();
@@ -978,6 +1000,18 @@ public class JsonParserTest {
     @Test
     public void testUTF8BEBOMStream() {
         ByteArrayInputStream bin = new ByteArrayInputStream("\ufeff[\"UTF8BOM\"]".getBytes(UTF_8));
+        JsonParser parser = Json.createParser(bin);
+        parser.next();
+        parser.next();
+        assertEquals("UTF8BOM", parser.getString());
+        parser.next();
+        assertTrue(!parser.hasNext());
+        parser.close();
+    }
+    
+    @Test
+    public void testStreamReadNotAllBytes() {       
+        AttemptingInputStream bin = new AttemptingInputStream("\ufeff[\"UTF8BOM\"]".getBytes(UTF_8));
         JsonParser parser = Json.createParser(bin);
         parser.next();
         parser.next();
@@ -1573,6 +1607,34 @@ public class JsonParserTest {
         }
     }
     
-    
-    
+    class AttemptingInputStream extends ByteArrayInputStream {
+
+        public AttemptingInputStream(byte[] buf) {
+            super(buf);
+            
+        }
+
+        @Override
+        public synchronized int read(byte b[], int off, int len) {
+            
+            if (b == null) {
+                throw new NullPointerException();
+            } else if (off < 0 || 1 > b.length - off) {
+                throw new IndexOutOfBoundsException();
+            }
+         
+            if (pos >= count) {
+                return -1;
+            }
+
+            int avail = count - pos;
+            
+            if (avail == 0) {
+                return 0;
+            }
+            System.arraycopy(buf, pos, b, off, 1);
+            pos++;
+            return 1;
+        }
+    }
 }
