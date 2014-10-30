@@ -56,8 +56,17 @@ public class MapperEnhancedTest {
         charClass.setCharArr(new char[]{'G','O'});
         final StringWriter sw = new StringWriter();
         
-        new MapperBuilder().build().writeObject(charClass, sw);
-        assertEquals("{\"charArr\":[\"G\",\"O\"],\"charValue\":\"G\"}", sw.toString());
+        final String expectedJson = "{\"charArr\":[\"G\",\"O\"],\"charValue\":\"G\"}";
+        
+        final Comparator<String> attributeOrder = new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return expectedJson.indexOf(o1) - expectedJson.indexOf(o2);
+            }
+        };
+        
+        new MapperBuilder().setAttributeOrder(attributeOrder).build().writeObject(charClass, sw);
+        assertEquals(expectedJson, sw.toString());
         CharClass  read = new MapperBuilder().build().readObject(new StringReader(sw.toString()), CharClass.class);
         Assert.assertNotNull(read);
         Assert.assertEquals('G', read.getCharValue());

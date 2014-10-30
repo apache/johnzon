@@ -18,9 +18,11 @@
  */
 package org.apache.johnzon.mapper;
 
-import junit.framework.AssertionFailedError;
-
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,51 +32,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import junit.framework.AssertionFailedError;
+
+import org.junit.Test;
 
 public class MapperTest {
-    private static final String BIG_OBJECT_STR = "{" +
-            "\"name\":\"the string\"," +
-            "\"integer\":56," +
-            "\"longnumber\":118," +
-            "\"bool\":true," +
-            "\"nested\":{" +
-            "\"name\":\"another value\"," +
-            "\"integer\":97," +
-            "\"longnumber\":34" +
-            "}," +
-            "\"array\":[" +
-            "{" +
-            "\"name\":\"a1\"," +
-            "\"integer\":1," +
-            "\"longnumber\":2" +
-            "}," +
-            "{" +
-            "\"name\":\"a2\"," +
-            "\"integer\":3," +
-            "\"longnumber\":4" +
-            "}" +
-            "]," +
-            "\"list\":[" +
-            "{" +
-            "\"name\":\"a3\"," +
-            "\"integer\":5," +
-            "\"longnumber\":6" +
-            "}," +
-            "{" +
-            "\"name\":\"a4\"," +
-            "\"integer\":7," +
-            "\"longnumber\":8" +
-            "}" +
-            "]," +
-            "\"primitives\":[1,2,3,4,5]," +
-            "\"collectionWrapper\":[1,2,3,4,5]," +
-            "\"map\":{\"uno\":true,\"duos\":false}" +
-            "}";
+    private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"integer\":56," + "\"longnumber\":118,"
+            + "\"bool\":true," + "\"nested\":{" + "\"name\":\"another value\"," + "\"integer\":97," + "\"longnumber\":34" + "},"
+            + "\"array\":[" + "{" + "\"name\":\"a1\"," + "\"integer\":1," + "\"longnumber\":2" + "}," + "{" + "\"name\":\"a2\","
+            + "\"integer\":3," + "\"longnumber\":4" + "}" + "]," + "\"list\":[" + "{" + "\"name\":\"a3\"," + "\"integer\":5,"
+            + "\"longnumber\":6" + "}," + "{" + "\"name\":\"a4\"," + "\"integer\":7," + "\"longnumber\":8" + "}" + "],"
+            + "\"primitives\":[1,2,3,4,5]," + "\"collectionWrapper\":[1,2,3,4,5]," + "\"map\":{\"uno\":true,\"duos\":false}" + "}";
 
     @Test
     public void writeEmptyObject() {
@@ -100,113 +68,106 @@ public class MapperTest {
     @Test
     public void writeMap() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        new MapperBuilder().build().writeObject(new LinkedHashMap<String, Integer>() {{
-            put("a", 1);
-            put("b", 2);
-        }}, baos);
+        new MapperBuilder().build().writeObject(new LinkedHashMap<String, Integer>() {
+            {
+                put("a", 1);
+                put("b", 2);
+            }
+        }, baos);
         assertEquals("{\"a\":1,\"b\":2}", new String(baos.toByteArray()));
     }
 
     @Test
     public void writeObject() {
-        final TheObject instance = new MapperBuilder().build()
-                .readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()), TheObject.class); // suppose reader writes but this is tested
+        final TheObject instance = new MapperBuilder().build().readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()),
+                TheObject.class); // suppose reader writes but this is tested
         final StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(instance, writer);
         final String serialized = writer.toString();
         assertTrue(serialized.contains("\"primitives\":[1,2,3,4,5]"));
         assertTrue(serialized.contains("\"collectionWrapper\":[1,2,3,4,5]"));
         assertTrue(serialized.contains("\"bool\":true"));
-        
-        //Assert fail with oracle java 1.7.0_45, works well with apple java 1.6.0_65 
+
+        //Assert fail with oracle java 1.7.0_45, works well with apple java 1.6.0_65
         //assertTrue(serialized.contains("\"map\":{\"uno\":true,\"duos\":false}"));
         assertTrue(serialized.contains("\"map\":{"));
         assertTrue(serialized.contains("\"uno\":true"));
         assertTrue(serialized.contains("\"duos\":false"));
-        
-        TheObject instance2 = new MapperBuilder().build()
+
+        final TheObject instance2 = new MapperBuilder().build()
                 .readObject(new ByteArrayInputStream(serialized.getBytes()), TheObject.class); // suppose reader writes but this is tested
-      
+
         assertEquals(instance, instance2);
     }
-    
-    static class Bool{
+
+    static class Bool {
         boolean bool;
 
         public boolean isBool() {
             return bool;
         }
 
-        public void setBool(boolean bool) {
+        public void setBool(final boolean bool) {
             this.bool = bool;
         }
-        
-        
+
     }
-    
-    static class Bool2{
+
+    static class Bool2 {
         Map<String, Boolean> map;
 
         public Map<String, Boolean> getMap() {
             return map;
         }
 
-        public void setMap(Map<String, Boolean> map) {
+        public void setMap(final Map<String, Boolean> map) {
             this.map = map;
         }
 
-        
-        
-        
     }
-    
+
     @Test
     public void literal() {
-        
-        
-        
-        final Bool instance = new MapperBuilder().build()
-                .readObject(new ByteArrayInputStream("{\"bool\":true}".getBytes()), Bool.class);
-        
+
+        final Bool instance = new MapperBuilder().build().readObject(new ByteArrayInputStream("{\"bool\":true}".getBytes()), Bool.class);
+
         assertTrue(instance.bool);
-        
+
         final StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(instance, writer);
         final String serialized = writer.toString();
         assertEquals("{\"bool\":true}", serialized);
-        
+
     }
-    
-    @Test(expected= MapperException.class)
+
+    @Test(expected = MapperException.class)
     public void literalFail() {
-         
+
         final Bool instance = new MapperBuilder().build()
                 .readObject(new ByteArrayInputStream("{\"bool\":\"true\"}".getBytes()), Bool.class);
-        
+
         assertTrue(instance.bool);
-        
+
     }
-    
-    @Test(expected= MapperException.class)
+
+    @Test(expected = MapperException.class)
     public void literalFail2() {
-         
-        final Bool2 instance = new MapperBuilder().build()
-                .readObject(new ByteArrayInputStream("{\"map\":{\"key\":\"true\"}}".getBytes()), Bool2.class);
-       
-        
-        
+
+        final Bool2 instance = new MapperBuilder().build().readObject(new ByteArrayInputStream("{\"map\":{\"key\":\"true\"}}".getBytes()),
+                Bool2.class);
+
     }
 
     @Test
     public void writeArray() {
         { // integer
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new MapperBuilder().build().writeArray(new Integer[]{1, 2}, baos);
+            new MapperBuilder().build().writeArray(new Integer[] { 1, 2 }, baos);
             assertEquals("[1,2]", new String(baos.toByteArray()));
         }
         { // object
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new MapperBuilder().build().writeArray(new Pair[]{new Pair(1, "a"), new Pair(2, "b")}, baos);
+            new MapperBuilder().build().writeArray(new Pair[] { new Pair(1, "a"), new Pair(2, "b") }, baos);
             try {
                 assertEquals("[{\"s\":\"a\",\"i\":1},{\"s\":\"b\",\"i\":2}]", new String(baos.toByteArray()));
             } catch (final AssertionFailedError afe) { // a bit lazy but to avoid field ordering on java > 6
@@ -217,7 +178,8 @@ public class MapperTest {
 
     @Test
     public void readObject() {
-        final TheObject object = new MapperBuilder().build().readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()), TheObject.class);
+        final TheObject object = new MapperBuilder().build().readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()),
+                TheObject.class);
 
         assertNotNull(object);
         assertEquals("the string", object.name);
@@ -261,18 +223,9 @@ public class MapperTest {
 
     @Test
     public void readArray() {
-        final TheObject[] object = new MapperBuilder().build().readArray(new ByteArrayInputStream(("[" +
-                "{" +
-                "\"name\":\"a3\"," +
-                "\"integer\":5," +
-                "\"longnumber\":6" +
-                "}," +
-                "{" +
-                "\"name\":\"a4\"," +
-                "\"integer\":7," +
-                "\"longnumber\":8" +
-                "}" +
-                "]").getBytes()), TheObject.class);
+        final TheObject[] object = new MapperBuilder().build().readArray(
+                new ByteArrayInputStream(("[" + "{" + "\"name\":\"a3\"," + "\"integer\":5," + "\"longnumber\":6" + "}," + "{"
+                        + "\"name\":\"a4\"," + "\"integer\":7," + "\"longnumber\":8" + "}" + "]").getBytes()), TheObject.class);
         assertNotNull(object);
         assertEquals(2, object.length);
         assertEquals("a3", object[0].name);
@@ -410,53 +363,70 @@ public class MapperTest {
         }
 
         @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
+        public boolean equals(final Object obj) {
+            if (this == obj) {
                 return true;
-            if (obj == null)
+            }
+            if (obj == null) {
                 return false;
-            if (getClass() != obj.getClass())
+            }
+            if (getClass() != obj.getClass()) {
                 return false;
-            TheObject other = (TheObject) obj;
-            if (!Arrays.equals(array, other.array))
+            }
+            final TheObject other = (TheObject) obj;
+            if (!Arrays.equals(array, other.array)) {
                 return false;
-            if (bool != other.bool)
+            }
+            if (bool != other.bool) {
                 return false;
+            }
             if (collectionWrapper == null) {
-                if (other.collectionWrapper != null)
+                if (other.collectionWrapper != null) {
                     return false;
-            } else if (!collectionWrapper.equals(other.collectionWrapper))
+                }
+            } else if (!collectionWrapper.equals(other.collectionWrapper)) {
                 return false;
-            if (integer != other.integer)
+            }
+            if (integer != other.integer) {
                 return false;
+            }
             if (list == null) {
-                if (other.list != null)
+                if (other.list != null) {
                     return false;
-            } else if (!list.equals(other.list))
+                }
+            } else if (!list.equals(other.list)) {
                 return false;
-            if (longnumber != other.longnumber)
+            }
+            if (longnumber != other.longnumber) {
                 return false;
+            }
             if (map == null) {
-                if (other.map != null)
+                if (other.map != null) {
                     return false;
-            } else if (!map.equals(other.map))
+                }
+            } else if (!map.equals(other.map)) {
                 return false;
+            }
             if (name == null) {
-                if (other.name != null)
+                if (other.name != null) {
                     return false;
-            } else if (!name.equals(other.name))
+                }
+            } else if (!name.equals(other.name)) {
                 return false;
+            }
             if (nested == null) {
-                if (other.nested != null)
+                if (other.nested != null) {
                     return false;
-            } else if (!nested.equals(other.nested))
+                }
+            } else if (!nested.equals(other.nested)) {
                 return false;
-            if (!Arrays.equals(primitives, other.primitives))
+            }
+            if (!Arrays.equals(primitives, other.primitives)) {
                 return false;
+            }
             return true;
         }
-        
-        
+
     }
 
     public static class Pair {
@@ -486,7 +456,7 @@ public class MapperTest {
         }
 
         @JohnzonConverter(ReverseConverter.class)
-        public void setS(String v) {
+        public void setS(final String v) {
             s = v;
         }
     }

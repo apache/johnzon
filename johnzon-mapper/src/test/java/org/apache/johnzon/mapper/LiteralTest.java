@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -26,12 +26,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Comparator;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class LiteralTest {
     @Test
     public void writeReadNumbers() {
-        NumberClass nc = new NumberClass();
+        final NumberClass nc = new NumberClass();
         final StringWriter sw = new StringWriter();
         nc.setBg(new BigDecimal("123.123"));
         nc.setBi(new BigInteger("123"));
@@ -43,7 +43,8 @@ public class LiteralTest {
         nc.setLongNumber(123L);
         nc.setIntNumber(123);
 
-        final String expectedJson = "{\"shortNumber\":1,\"byteNumber\":1,\"intNumber\":123,\"floatNumber\":123.0,\"bg\":123.123,\"bool\":true,\"bi\":123,\"longNumber\":123,\"doubleNumber\":123.123}";
+        final String expectedJson = "{\"shortNumber\":1,\"byteNumber\":1,\"intNumber\":123,\"floatNumber\":123.0,\"bg\":123.123,\""
+                + "bool\":true,\"bi\":123,\"longNumber\":123,\"doubleNumber\":123.123}";
         final Comparator<String> attributeOrder = new Comparator<String>() {
             @Override
             public int compare(final String o1, final String o2) {
@@ -53,14 +54,14 @@ public class LiteralTest {
         new MapperBuilder().setAttributeOrder(attributeOrder).build().writeObject(nc, sw);
         assertEquals(expectedJson, sw.toString());
         final NumberClass read = new MapperBuilder().setAttributeOrder(attributeOrder).build()
-                    .readObject(new StringReader(sw.toString()), NumberClass.class);
+                .readObject(new StringReader(sw.toString()), NumberClass.class);
         assertEquals(nc, read);
 
     }
 
     @Test(expected = NumberFormatException.class)
     public void writeReadNumbersInf() {
-        NumberClass nc = new NumberClass();
+        final NumberClass nc = new NumberClass();
         final StringWriter sw = new StringWriter();
         nc.setBg(new BigDecimal("123.123"));
         nc.setBi(new BigInteger("123"));
@@ -78,7 +79,7 @@ public class LiteralTest {
 
     @Test(expected = NumberFormatException.class)
     public void writeReadNumbersNaN() {
-        NumberClass nc = new NumberClass();
+        final NumberClass nc = new NumberClass();
         final StringWriter sw = new StringWriter();
         nc.setBg(new BigDecimal("123.123"));
         nc.setBi(new BigInteger("123"));
@@ -109,7 +110,7 @@ public class LiteralTest {
             return bg;
         }
 
-        public void setBg(BigDecimal bg) {
+        public void setBg(final BigDecimal bg) {
             this.bg = bg;
         }
 
@@ -117,7 +118,7 @@ public class LiteralTest {
             return bi;
         }
 
-        public void setBi(BigInteger bi) {
+        public void setBi(final BigInteger bi) {
             this.bi = bi;
         }
 
@@ -125,7 +126,7 @@ public class LiteralTest {
             return intNumber;
         }
 
-        public void setIntNumber(int intNumber) {
+        public void setIntNumber(final int intNumber) {
             this.intNumber = intNumber;
         }
 
@@ -133,7 +134,7 @@ public class LiteralTest {
             return longNumber;
         }
 
-        public void setLongNumber(long longNumber) {
+        public void setLongNumber(final long longNumber) {
             this.longNumber = longNumber;
         }
 
@@ -141,7 +142,7 @@ public class LiteralTest {
             return byteNumber;
         }
 
-        public void setByteNumber(byte byteNumber) {
+        public void setByteNumber(final byte byteNumber) {
             this.byteNumber = byteNumber;
         }
 
@@ -149,7 +150,7 @@ public class LiteralTest {
             return shortNumber;
         }
 
-        public void setShortNumber(short shortNumber) {
+        public void setShortNumber(final short shortNumber) {
             this.shortNumber = shortNumber;
         }
 
@@ -157,7 +158,7 @@ public class LiteralTest {
             return doubleNumber;
         }
 
-        public void setDoubleNumber(double doubleNumber) {
+        public void setDoubleNumber(final double doubleNumber) {
             this.doubleNumber = doubleNumber;
         }
 
@@ -165,7 +166,7 @@ public class LiteralTest {
             return floatNumber;
         }
 
-        public void setFloatNumber(float floatNumber) {
+        public void setFloatNumber(final float floatNumber) {
             this.floatNumber = floatNumber;
         }
 
@@ -173,7 +174,7 @@ public class LiteralTest {
             return bool;
         }
 
-        public void setBool(boolean bool) {
+        public void setBool(final boolean bool) {
             this.bool = bool;
         }
 
@@ -196,7 +197,7 @@ public class LiteralTest {
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(final Object obj) {
             if (this == obj) {
                 return true;
             }
@@ -206,7 +207,7 @@ public class LiteralTest {
             if (getClass() != obj.getClass()) {
                 return false;
             }
-            NumberClass other = (NumberClass) obj;
+            final NumberClass other = (NumberClass) obj;
             if (bg == null) {
                 if (other.bg != null) {
                     return false;
@@ -247,7 +248,9 @@ public class LiteralTest {
 
         @Override
         public String toString() {
-            return "NumberClass [bg=" + bg + ", bi=" + bi + ", intNumber=" + intNumber + ", longNumber=" + longNumber + ", byteNumber=" + byteNumber + ", shortNumber=" + shortNumber + ", doubleNumber=" + doubleNumber + ", floatNumber=" + floatNumber + ", bool=" + bool + "]";
+            return "NumberClass [bg=" + bg + ", bi=" + bi + ", intNumber=" + intNumber + ", longNumber=" + longNumber + ", byteNumber="
+                    + byteNumber + ", shortNumber=" + shortNumber + ", doubleNumber=" + doubleNumber + ", floatNumber=" + floatNumber
+                    + ", bool=" + bool + "]";
         }
     }
 }

@@ -56,6 +56,11 @@ public class WadlDocumentToJsonTest {
                     "</application>").getBytes()));
 
         final String json = new WadlDocumentToJson().convert(doc);
-        assertEquals("{\"application\":{\"xmlns\":\"http://wadl.dev.java.net/2009/02\",\"resources\":[{\"base\":\"http://example.com/api\",\"resource\":[{\"path\":\"books\",\"method\":[{\"name\":\"GET\"}],\"resource\":[{\"path\":\"{bookId}\",\"param\":[{\"name\":\"bookId\",\"required\":\"true\",\"style\":\"template\"}],\"method\":[{\"name\":\"GET\"},{\"name\":\"DELETE\"}],\"resource\":[{\"path\":\"reviews\",\"method\":[{\"name\":\"GET\",\"request\":[{\"param\":[{\"default\":\"1\",\"name\":\"page\",\"required\":\"false\",\"style\":\"query\"},{\"default\":\"20\",\"name\":\"size\",\"required\":\"false\",\"style\":\"query\"}]}]}]}]}]},{\"path\":\"readers\",\"method\":[{\"name\":\"GET\"}]}]}]}}", json);
+        assertEquals("{\"application\":{\"xmlns\":\"http://wadl.dev.java.net/2009/02\",\"resources\":[{\"base\":\"http://example.com/api\""
+                + ",\"resource\":[{\"path\":\"books\",\"method\":[{\"name\":\"GET\"}],\"resource\":[{\"path\":\"{bookId}\",\"param\":[{\"name\""
+                + ":\"bookId\",\"required\":\"true\",\"style\":\"template\"}],\"method\":[{\"name\":\"GET\"},{\"name\":\"DELETE\"}],\"resource\""
+                + ":[{\"path\":\"reviews\",\"method\":[{\"name\":\"GET\",\"request\":[{\"param\":[{\"default\":\"1\",\"name\":\"page\",\"required\""
+                + ":\"false\",\"style\":\"query\"},{\"default\":\"20\",\"name\":\"size\",\"required\":\"false\",\"style\":\"query\"}]}]}]}]}]},{\"path\""
+                + ":\"readers\",\"method\":[{\"name\":\"GET\"}]}]}]}}", json);
     }
 }

@@ -66,7 +66,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
         <configuration>
           <source>1.6</source>
           <target>1.6</target>
@@ -78,7 +77,6 @@
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
-        <version>0.11</version>
         <configuration>
           <includes>
             <include>src/**/*</include>
@@ -110,7 +108,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-scm-publish-plugin</artifactId>
-        <version>1.1</version>
         <configuration>
           <automaticRemotePathCreation>true</automaticRemotePathCreation>
           <content>${project.reporting.outputDirectory}</content>
@@ -132,7 +129,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
-        <version>3.3</version>
         <configuration>
           <stagingDirectory>${staging.directory}</stagingDirectory>
         </configuration>
@@ -147,7 +143,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.12.1</version>
+        <version>2.13</version>
         <executions>
           <execution>
             <id>verify-style</id>
@@ -158,7 +154,13 @@
           </execution>
         </executions>
         <configuration>
-          <logViolationsToConsole>true</logViolationsToConsole>
+         <encoding>UTF-8</encoding>
+         <consoleOutput>true</consoleOutput>
+         <failOnViolation>true</failOnViolation>
+         <includeTestSourceDirectory>true</includeTestSourceDirectory>
+         <failsOnError>true</failsOnError>
+         <linkXRef>true</linkXRef>
+         <logViolationsToConsole>true</logViolationsToConsole>
           <checkstyleRules>
             <module name="Checker">
               <module name="SuppressionCommentFilter" />
@@ -234,7 +236,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>2.17</version>
         <configuration>
           <args>-Dfile.encoding=UTF-8</args>
         </configuration>
@@ -242,8 +243,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.1</version>
-          <configuration>
+        <configuration>
             <tagNameFormat>v@{project.version}</tagNameFormat>
             <pushChanges>false</pushChanges>
             <localCheckout>true</localCheckout>
@@ -389,6 +389,9 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
         <version>2.17</version>
+        <configuration>
+        <aggregate>true</aggregate>
+        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -401,7 +404,19 @@
                 <aggregate>true</aggregate>
             </configuration>
        </plugin>
-    </plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>2.13</version>
+          <reportSets>
+            <reportSet>
+              <reports>
+                <report>checkstyle</report>
+              </reports>
+            </reportSet>
+          </reportSets>
+        </plugin>
+      </plugins>
   </reporting>
 
   <licenses>
@@ -515,7 +530,8 @@
   </developers>
 
   <contributors>
-
-
+	<contributor>
+		<name>Thiago Veronezi</name>
+	</contributor>
   </contributors>
 </project>
