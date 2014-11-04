@@ -33,7 +33,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -70,7 +70,7 @@ public class Mappings {
     }
 
     public static class Getter {
-        public final Method setter;
+        public final Method method;
         public final int version;
         public final Converter<Object> converter;
         public final boolean primitive;
@@ -78,11 +78,11 @@ public class Mappings {
         public final boolean map;
         public final boolean collection;
 
-        public Getter(final Method setter,
+        public Getter(final Method method,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
                       final Converter<Object> converter, final int version) {
-            this.setter = setter;
+            this.method = method;
             this.converter = converter;
             this.version = version;
             this.array = array;
@@ -93,14 +93,14 @@ public class Mappings {
     }
 
     public static class Setter {
-        public final Method setter;
+        public final Method method;
         public final int version;
         public final Type paramType;
         public final Converter<?> converter;
         public final boolean primitive;
 
-        public Setter(final Method setter, final boolean primitive, final Type paramType, final Converter<?> converter, final int version) {
-            this.setter = setter;
+        public Setter(final Method method, final boolean primitive, final Type paramType, final Converter<?> converter, final int version) {
+            this.method = method;
             this.paramType = paramType;
             this.converter = converter;
             this.version = version;
@@ -204,9 +204,9 @@ public class Mappings {
     private ClassMapping createClassMapping(final Class<?> clazz) {
         try {
             final Map<String, Getter> getters = fieldOrdering != null ?
-                new TreeMap<String, Getter>(fieldOrdering) : new HashMap<String, Getter>();
+                new TreeMap<String, Getter>(fieldOrdering) : new LinkedHashMap<String, Getter>();
             final Map<String, Setter> setters = fieldOrdering != null ?
-                new TreeMap<String, Setter>(fieldOrdering) : new HashMap<String, Setter>();
+                new TreeMap<String, Setter>(fieldOrdering) : new LinkedHashMap<String, Setter>();
 
             final PropertyDescriptor[] propertyDescriptors = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
             for (final PropertyDescriptor descriptor : propertyDescriptors) {

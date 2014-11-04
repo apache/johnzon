@@ -74,16 +74,20 @@ public class Mapper {
     protected final boolean close;
     protected final ConcurrentMap<Type, Converter<?>> converters;
     protected final int version;
+    protected boolean skipNull;
+    protected boolean skipEmptyArray;
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
-                  final int version, final Comparator<String> attributeOrder) {
+                  final int version, final Comparator<String> attributeOrder, boolean skipNull, boolean skipEmptyArray) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
         this.mappings = new Mappings(attributeOrder);
+        this.skipNull =  skipNull;
+        this.skipEmptyArray = skipEmptyArray;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -301,9 +305,18 @@ public class Mapper {
         JsonGenerator generator = gen;
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
-            final Object value = getter.setter.invoke(object);
-            if (value == null || (getter.version >= 0 && version >= getter.version)) {
+            final Object value = getter.method.invoke(object);
+            if (getter.version >= 0 && version >= getter.version) {
                 continue;
+            }
+
+            if (value == null) {
+                if(skipNull) {
+                    continue;
+                } else {
+                    gen.writeNull(getterEntry.getKey());
+                    continue;
+                }
             }
 
             generator = writeValue(generator, value.getClass(),
@@ -319,11 +332,17 @@ public class Mapper {
         JsonGenerator generator = gen;
         for (final Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
             final Object value = entry.getValue();
+            final Object key = entry.getKey();
+            
             if (value == null) {
-                continue;
+                if(skipNull) {
+                    continue;
+                } else {
+                    gen.writeNull(key == null ? "null" : key.toString());
+                    continue;
+                }
             }
 
-            final Object key = entry.getKey();
             final Class<?> valueClass = value.getClass();
             final boolean primitive = Mappings.isPrimitive(valueClass);
             final boolean clazz = mappings.getClassMapping(valueClass) != null;
@@ -342,8 +361,12 @@ public class Mapper {
                                      final boolean collection, final boolean map,
                                      final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
         if (array) {
-            JsonGenerator gen = generator.writeStartArray(key);
             final int length = Array.getLength(value);
+            if(length == 0 && skipEmptyArray) {
+                return generator;
+            }
+            
+            JsonGenerator gen = generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
                 gen = writeItem(gen, Array.get(value, i));
             }
@@ -511,7 +534,7 @@ public class Mapper {
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
-            final Method setterMethod = value.setter;
+            final Method setterMethod = value.method;
             final Object convertedValue = value.converter == null?
                     toObject(jsonValue, value.paramType) : jsonValue.getValueType() == ValueType.STRING ?
                                                             value.converter.fromString(JsonString.class.cast(jsonValue).getString()):

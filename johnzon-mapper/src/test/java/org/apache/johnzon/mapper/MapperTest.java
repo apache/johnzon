@@ -169,7 +169,7 @@ public class MapperTest {
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
             new MapperBuilder().build().writeArray(new Pair[] { new Pair(1, "a"), new Pair(2, "b") }, baos);
             try {
-                assertEquals("[{\"s\":\"a\",\"i\":1},{\"s\":\"b\",\"i\":2}]", new String(baos.toByteArray()));
+                assertEquals("[{\"i\":1,\"s\":\"a\"},{\"i\":2,\"s\":\"b\"}]", new String(baos.toByteArray()));
             } catch (final AssertionFailedError afe) { // a bit lazy but to avoid field ordering on java > 6
                 assertEquals("[{\"i\":1,\"s\":\"a\"},{\"i\":2,\"s\":\"b\"}]", new String(baos.toByteArray()));
             }

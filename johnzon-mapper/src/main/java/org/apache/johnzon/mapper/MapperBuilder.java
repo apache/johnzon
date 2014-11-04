@@ -78,6 +78,8 @@ public class MapperBuilder {
     private boolean doCloseOnStreams = false;
     private int version = -1;
     private Comparator<String> attributeOrder = null;
+    private boolean skipNull = true;
+    private boolean skipEmptyArray = false;
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
 
     public Mapper build() {
@@ -92,7 +94,7 @@ public class MapperBuilder {
             }
         }
 
-        return new Mapper(readerFactory, generatorFactory, doCloseOnStreams, converters, version, attributeOrder);
+        return new Mapper(readerFactory, generatorFactory, doCloseOnStreams, converters, version, attributeOrder, skipNull, skipEmptyArray);
     }
 
     public MapperBuilder setAttributeOrder(final Comparator<String> attributeOrder) {
@@ -122,6 +124,16 @@ public class MapperBuilder {
 
     public MapperBuilder setVersion(final int version) {
         this.version = version;
+        return this;
+    }
+    
+    public MapperBuilder setSkipNull(final boolean skipNull) {
+        this.skipNull = skipNull;
+        return this;
+    }
+    
+    public MapperBuilder setSkipEmptyArray(final boolean skipEmptyArray) {
+        this.skipEmptyArray = skipEmptyArray;
         return this;
     }
 }
