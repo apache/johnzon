@@ -242,6 +242,13 @@ public class JsonParserTest {
     }
     
     @Test
+    public void simpleAttempting() {
+        final JsonParser parser = Json.createParser(new AttemptingInputStream("{\"a\":      \"b\",\"c\": 4,\"d\": [1,-2]}".getBytes(UTF_8)));
+        assertNotNull(parser);
+        assertSimple(parser);
+    }
+    
+    @Test
     public void simpleUTF16LE() {
         final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread()
                 .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"),UTF_16LE);
