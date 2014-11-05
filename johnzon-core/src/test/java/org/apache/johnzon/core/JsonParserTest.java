@@ -1056,7 +1056,32 @@ public class JsonParserTest {
   
         assertEquals("\"abcdef", Json.createReader(new ByteArrayInputStream("[\"\\\"abcdef\"]".getBytes())).readArray().getString(0));
     }
-    
+
+    @Test
+    public void testSlowIs() {
+        // using a reader as wrapper of parser
+        class SlowIs extends ByteArrayInputStream {
+            private boolean slowDown = true;
+
+            @Override
+            public synchronized int read(byte[] b, int off, int len) {
+                if(slowDown) {
+                    this.count = 5;
+                    slowDown = false;
+                } else {
+                    this.count = this.buf.length;
+                }
+                return super.read(b, off, len);
+            }
+
+            protected SlowIs() {
+                super("{\"message\":\"Hi REST!\"}".getBytes());
+            }
+        }
+
+        assertEquals("Hi REST!", Json.createReaderFactory(null).createReader(new SlowIs(), UTF_8).readObject().getString("message"));
+    }
+
     @Test
     public void threeLiterals() {
         final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {{

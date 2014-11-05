@@ -42,8 +42,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //-1 would cause a re-read of the first character in the buffer (which is at zero index)
     private int bufferPos = Integer.MIN_VALUE;
 
-    //available character in the buffer
-    //normally this is buffer.length, except for the last buffer page it might be <= buffer.length
+    //available character in the buffer. It might be <= "buffer.length".
     private int availableCharsInBuffer;
 
     //start and end position of values in the buffer
@@ -244,12 +243,12 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     }
 
     //read the next char from the stream and set/increment the bufferPos
-    //will also refill buffer if neccessary
+    //will also refill buffer if necessary
     //if we are currently processing a value (string or number) and buffer 
-    //refill is neccessary copy the already readed value part into the value buffer
+    //refill is necessary copy the already read value part into the value buffer
     private char readNextChar() {
 
-        if ((buffer.length - bufferPos) <= 1) {
+        if ((availableCharsInBuffer - bufferPos) <= 1) {
             //fillbuffer
 
             //copy content from old buffer to valuebuffer
@@ -279,12 +278,12 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             bufferPos = 0;
             //end fillbuffer
         } else {
-            
+
             //prevent "bufferoverflow
             if(bufferPos + 1 >= availableCharsInBuffer) {
                 return EOF;
             }
-            
+
             bufferPos++;
         }
 
