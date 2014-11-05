@@ -32,8 +32,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import junit.framework.AssertionFailedError;
-
 import org.junit.Test;
 
 public class MapperTest {
@@ -160,20 +158,15 @@ public class MapperTest {
 
     @Test
     public void writeArray() {
-        { // integer
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new MapperBuilder().build().writeArray(new Integer[] { 1, 2 }, baos);
-            assertEquals("[1,2]", new String(baos.toByteArray()));
-        }
-        { // object
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            new MapperBuilder().build().writeArray(new Pair[] { new Pair(1, "a"), new Pair(2, "b") }, baos);
-            try {
-                assertEquals("[{\"i\":1,\"s\":\"a\"},{\"i\":2,\"s\":\"b\"}]", new String(baos.toByteArray()));
-            } catch (final AssertionFailedError afe) { // a bit lazy but to avoid field ordering on java > 6
-                assertEquals("[{\"i\":1,\"s\":\"a\"},{\"i\":2,\"s\":\"b\"}]", new String(baos.toByteArray()));
-            }
-        }
+        // integer
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Integer[] { 1, 2 }, baos);
+        assertEquals("[1,2]", new String(baos.toByteArray()));
+
+        // object
+        baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Pair[] { new Pair(1, "a"), new Pair(2, "b") }, baos);
+        assertEquals("[{\"i\":1,\"s\":\"a\"},{\"i\":2,\"s\":\"b\"}]", new String(baos.toByteArray()));
     }
 
     @Test
