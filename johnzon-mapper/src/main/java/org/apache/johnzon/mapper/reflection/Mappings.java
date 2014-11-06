@@ -18,11 +18,6 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
-import org.apache.johnzon.mapper.Converter;
-import org.apache.johnzon.mapper.JohnzonConverter;
-import org.apache.johnzon.mapper.JohnzonIgnore;
-import org.apache.johnzon.mapper.MapperException;
-
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -33,7 +28,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -42,6 +37,11 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.JohnzonIgnore;
+import org.apache.johnzon.mapper.MapperException;
 
 public class Mappings {
     public static class ClassMapping {
@@ -204,9 +204,9 @@ public class Mappings {
     private ClassMapping createClassMapping(final Class<?> clazz) {
         try {
             final Map<String, Getter> getters = fieldOrdering != null ?
-                new TreeMap<String, Getter>(fieldOrdering) : new LinkedHashMap<String, Getter>();
+                new TreeMap<String, Getter>(fieldOrdering) : new HashMap<String, Getter>();
             final Map<String, Setter> setters = fieldOrdering != null ?
-                new TreeMap<String, Setter>(fieldOrdering) : new LinkedHashMap<String, Setter>();
+                new TreeMap<String, Setter>(fieldOrdering) : new HashMap<String, Setter>();
 
             final PropertyDescriptor[] propertyDescriptors = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
             for (final PropertyDescriptor descriptor : propertyDescriptors) {

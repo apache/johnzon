@@ -166,7 +166,7 @@ public class MapperTest {
         // object
         baos = new ByteArrayOutputStream();
         new MapperBuilder().build().writeArray(new Pair[] { new Pair(1, "a"), new Pair(2, "b") }, baos);
-        assertEquals("[{\"i\":1,\"s\":\"a\"},{\"i\":2,\"s\":\"b\"}]", new String(baos.toByteArray()));
+        assertEquals("[{\"s\":\"a\",\"i\":1},{\"s\":\"b\",\"i\":2}]", new String(baos.toByteArray()));
     }
 
     @Test
