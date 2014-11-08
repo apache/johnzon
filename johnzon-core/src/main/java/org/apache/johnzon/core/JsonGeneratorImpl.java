@@ -43,7 +43,7 @@ import javax.json.stream.JsonGenerator;
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
 
-    private final Writer writer;
+    private final transient Writer writer;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final char[] buffer;
     private int bufferPos = 0;
@@ -55,7 +55,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     protected int depth = 0;
 
     //minimal stack implementation
-    private static final class StructureElement {
+    private static final class StructureElement implements Serializable{
         final StructureElement previous;
         final boolean isArray;
 
@@ -156,12 +156,8 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         }
 
         //push upon the stack
-        if (currentStructureElement == null) {
-            currentStructureElement = new StructureElement(null, false);
-        } else {
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
-            currentStructureElement = localStructureElement;
-        }
+        final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
+        currentStructureElement = localStructureElement;
 
         addCommaIfNeeded();
         writeCachedOrEscape(name);
@@ -202,14 +198,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         if (currentStructureElement == null || currentStructureElement.isArray) {
             throw new JsonGenerationException("Method must not be called within an array context");
         }
-
+        
         //push upon the stack
-        if (currentStructureElement == null) {
-            currentStructureElement = new StructureElement(null, true);
-        } else {
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
-            currentStructureElement = localStructureElement;
-        }
+        final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
+        currentStructureElement = localStructureElement;
 
         addCommaIfNeeded();
         writeCachedOrEscape(name);

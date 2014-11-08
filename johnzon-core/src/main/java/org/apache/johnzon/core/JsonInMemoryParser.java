@@ -51,7 +51,7 @@ class JsonInMemoryParser implements JsonParser {
 
         @Override
         public boolean hasNext() {
-            return end != Boolean.TRUE;
+            return !Boolean.TRUE.equals(end);
         }
 
         @Override
@@ -112,7 +112,7 @@ class JsonInMemoryParser implements JsonParser {
 
         @Override
         public boolean hasNext() {
-            return end != Boolean.TRUE;
+            return !Boolean.TRUE.equals(end);
         }
 
         @Override
