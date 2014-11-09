@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.Mappings;
 
 import javax.json.Json;
@@ -32,7 +33,6 @@ import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -425,14 +425,14 @@ public class Mapper {
         }
     }
 
-    public <C extends Collection<T>, T> C readCollection(final InputStream stream, final ParameterizedType genericType, final Class<T> raw) {
+    public <T> Collection<T> readCollection(final InputStream stream, final ParameterizedType genericType) {
         final JsonReader reader = readerFactory.createReader(stream);
-        final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType, raw);
+        final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType);
         if (mapping == null) {
             throw new UnsupportedOperationException("type " + genericType + " not supported");
         }
         try {
-            return (C) mapCollection(mapping, reader.readArray());
+            return mapCollection(mapping, reader.readArray());
         } catch (final InstantiationException e) {
             throw new MapperException(e);
         } catch (final IllegalAccessException e) {
@@ -444,14 +444,22 @@ public class Mapper {
         }
     }
 
-    public <C extends Collection<T>, T> C readCollection(final Reader stream, final ParameterizedType genericType, final Class<T> raw) {
+    public <T> T readJohnzonCollection(final InputStream stream, final JohnzonCollectionType<T> genericType) {
+        return (T) readCollection(stream, genericType);
+    }
+
+    public <T> T readJohnzonCollection(final Reader stream, final JohnzonCollectionType<T> genericType) {
+        return (T) readCollection(stream, genericType);
+    }
+
+    public <T> Collection<T> readCollection(final Reader stream, final ParameterizedType genericType) {
         final JsonReader reader = readerFactory.createReader(stream);
-        final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType, raw);
+        final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType);
         if (mapping == null) {
             throw new UnsupportedOperationException("type " + genericType + " not supported");
         }
         try {
-            return (C) mapCollection(mapping, reader.readArray());
+            return mapCollection(mapping, reader.readArray());
         } catch (final InstantiationException e) {
             throw new MapperException(e);
         } catch (final IllegalAccessException e) {
@@ -639,8 +647,7 @@ public class Mapper {
         }
 
         if (ParameterizedType.class.isInstance(type)) {
-            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(
-                    ParameterizedType.class.cast(type), (Class<Object>) ParameterizedType.class.cast(type).getRawType());
+            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type));
             if (mapping != null) {
                 return mapCollection(mapping, jsonArray);
             }

@@ -18,21 +18,24 @@
  */
 package org.apache.johnzon.mapper;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class MapperTest {
     private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"integer\":56," + "\"longnumber\":118,"
@@ -61,6 +64,20 @@ public class MapperTest {
         final TheObject[] object = new MapperBuilder().build().readArray(new ByteArrayInputStream("[]".getBytes()), TheObject.class);
         assertNotNull(object);
         assertEquals(0, object.length);
+    }
+
+    @Test
+    public void readCollection() { // mainly API test
+        final Collection<TheObject> object = new MapperBuilder().build()
+                .readCollection(new ByteArrayInputStream("[{}]".getBytes()),
+                        new JohnzonParameterizedType(List.class, TheObject.class));
+        assertNotNull(object);
+        assertEquals(1, object.size());
+        final Collection<TheObject> object2 = new MapperBuilder().build()
+                .readJohnzonCollection(new ByteArrayInputStream("[{}]".getBytes()),
+                        new JohnzonCollectionType<List<TheObject>>() {});
+        assertNotNull(object2);
+        assertEquals(1, object2.size());
     }
 
     @Test
@@ -99,7 +116,7 @@ public class MapperTest {
     }
 
     static class Bool {
-        boolean bool;
+        private boolean bool;
 
         public boolean isBool() {
             return bool;
@@ -112,7 +129,7 @@ public class MapperTest {
     }
 
     static class Bool2 {
-        Map<String, Boolean> map;
+        private Map<String, Boolean> map;
 
         public Map<String, Boolean> getMap() {
             return map;

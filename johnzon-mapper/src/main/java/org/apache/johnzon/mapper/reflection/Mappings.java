@@ -18,6 +18,11 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
+import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.JohnzonIgnore;
+import org.apache.johnzon.mapper.MapperException;
+
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -37,11 +42,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.apache.johnzon.mapper.Converter;
-import org.apache.johnzon.mapper.JohnzonConverter;
-import org.apache.johnzon.mapper.JohnzonIgnore;
-import org.apache.johnzon.mapper.MapperException;
 
 public class Mappings {
     public static class ClassMapping {
@@ -116,10 +116,10 @@ public class Mappings {
         this.fieldOrdering = attributeOrder;
     }
 
-    public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType, final Class<T> raw) {
+    public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
         CollectionMapping collectionMapping = collections.get(genericType);
         if (collectionMapping == null) {
-            collectionMapping = createCollectionMapping(genericType, raw);
+            collectionMapping = createCollectionMapping(genericType);
             if (collectionMapping == null) {
                 return null;
             }
@@ -131,19 +131,21 @@ public class Mappings {
         return collectionMapping;
     }
 
-    private <T> CollectionMapping createCollectionMapping(final ParameterizedType aType, final Class<T> raw) {
+    private <T> CollectionMapping createCollectionMapping(final ParameterizedType aType) {
         final Type[] fieldArgTypes = aType.getActualTypeArguments();
-        if (fieldArgTypes.length == 1) {
+        final Type raw = aType.getRawType();
+        if (fieldArgTypes.length == 1 && Class.class.isInstance(raw)) {
+            final Class<?> r = Class.class.cast(raw);
             final Class<?> collectionType;
-            if (List.class.isAssignableFrom(raw)) {
+            if (List.class.isAssignableFrom(r)) {
                 collectionType = List.class;
-            }else if (SortedSet.class.isAssignableFrom(raw)) {
+            }else if (SortedSet.class.isAssignableFrom(r)) {
                 collectionType = SortedSet.class;
-            } else if (Set.class.isAssignableFrom(raw)) {
+            } else if (Set.class.isAssignableFrom(r)) {
                 collectionType = Set.class;
-            } else if (Queue.class.isAssignableFrom(raw)) {
+            } else if (Queue.class.isAssignableFrom(r)) {
                 collectionType = Queue.class;
-            } else if (Collection.class.isAssignableFrom(raw)) {
+            } else if (Collection.class.isAssignableFrom(r)) {
                 collectionType = Collection.class;
             } else {
                 return null;
