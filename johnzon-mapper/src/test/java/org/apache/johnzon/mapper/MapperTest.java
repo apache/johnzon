@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -78,6 +79,19 @@ public class MapperTest {
                         new JohnzonCollectionType<List<TheObject>>() {});
         assertNotNull(object2);
         assertEquals(1, object2.size());
+    }
+
+    @Test
+    public void readMapObject() {
+        final Map<String, Object> data = new MapperBuilder().build()
+                .readObject(new ByteArrayInputStream("{\"a\":1,\"b\":true,\"c\":null,\"d\":[1, 2], \"e\":[\"i\", \"j\"]}".getBytes()),
+                        new JohnzonParameterizedType(Map.class, String.class, Object.class));
+        assertEquals(5, data.size());
+        assertEquals(1, data.get("a"));
+        assertEquals(true, data.get("b"));
+        assertNull(data.get("c"));
+        assertEquals(asList(1, 2), data.get("d"));
+        assertEquals(asList("i", "j"), data.get("e"));
     }
 
     @Test

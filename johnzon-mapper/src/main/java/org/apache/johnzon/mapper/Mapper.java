@@ -20,9 +20,9 @@ package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.apache.johnzon.mapper.reflection.Mappings;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
@@ -65,8 +65,8 @@ import java.util.concurrent.ConcurrentMap;
 import static java.util.Arrays.asList;
 
 public class Mapper {
-    protected static final JsonObject EMPTY_OBJECT = Json.createObjectBuilder().build();
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
+    private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
 
     protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
@@ -86,7 +86,7 @@ public class Mapper {
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
         this.mappings = new Mappings(attributeOrder);
-        this.skipNull =  skipNull;
+        this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
     }
 
@@ -133,7 +133,7 @@ public class Mapper {
             return generator.write(key, BigInteger.class.cast(value));
         } else if (type == char.class || type == Character.class) {
             return generator.write(key, Character.class.cast(value).toString());
-        } 
+        }
         return generator;
     }
 
@@ -177,6 +177,9 @@ public class Mapper {
     }
 
     private Object convertTo(final Type aClass, final String text) {
+        if (Object.class == aClass) {
+            return text;
+        }
         final Converter<?> converter = findConverter(aClass);
         if (converter == null) {
             converters.putIfAbsent(aClass, FALLBACK_CONVERTER);
@@ -265,7 +268,8 @@ public class Mapper {
 
         //JsonGenerator gen = null;
         try {
-            /*gen = */doWriteObject(generator, object);
+            /*gen = */
+            doWriteObject(generator, object);
         } finally {
             doCloseOrFlush(generator);
         }
@@ -311,7 +315,7 @@ public class Mapper {
             }
 
             if (value == null) {
-                if(skipNull) {
+                if (skipNull) {
                     continue;
                 } else {
                     gen.writeNull(getterEntry.getKey());
@@ -320,10 +324,10 @@ public class Mapper {
             }
 
             generator = writeValue(generator, value.getClass(),
-                                    getter.primitive, getter.array,
-                                    getter.collection, getter.map,
-                                    getterEntry.getKey(),
-                                    getter.converter == null ? value : getter.converter.toString(value));
+                    getter.primitive, getter.array,
+                    getter.collection, getter.map,
+                    getterEntry.getKey(),
+                    getter.converter == null ? value : getter.converter.toString(value));
         }
         return generator;
     }
@@ -333,9 +337,9 @@ public class Mapper {
         for (final Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
             final Object value = entry.getValue();
             final Object key = entry.getKey();
-            
+
             if (value == null) {
-                if(skipNull) {
+                if (skipNull) {
                     continue;
                 } else {
                     gen.writeNull(key == null ? "null" : key.toString());
@@ -350,8 +354,8 @@ public class Mapper {
             final boolean collection = clazz || primitive || array ? false : Collection.class.isAssignableFrom(valueClass);
             final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
             generator = writeValue(generator, valueClass,
-                                    primitive, array, collection, map,
-                                    key == null ? "null" : key.toString(), value);
+                    primitive, array, collection, map,
+                    key == null ? "null" : key.toString(), value);
         }
         return generator;
     }
@@ -362,10 +366,10 @@ public class Mapper {
                                      final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
-            if(length == 0 && skipEmptyArray) {
+            if (length == 0 && skipEmptyArray) {
                 return generator;
             }
-            
+
             JsonGenerator gen = generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
                 gen = writeItem(gen, Array.get(value, i));
@@ -387,7 +391,7 @@ public class Mapper {
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
                 return writeValue(generator, String.class, true, false, false, false, key,
-                                    doConverFrom(value, (Converter<Object>) converter));
+                        doConverFrom(value, (Converter<Object>) converter));
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
         }
@@ -504,7 +508,7 @@ public class Mapper {
                 final Type[] fieldArgTypes = aType.getActualTypeArguments();
                 if (fieldArgTypes.length >= 2) {
                     final Class<?> raw = Class.class.cast(aType.getRawType());
-                    
+
                     final Map map;
                     if (SortedMap.class.isAssignableFrom(raw)) {
                         map = new TreeMap();
@@ -517,14 +521,14 @@ public class Mapper {
                     }
 
                     if (map != null) {
-                        
+
                         Type keyType;
                         if (ParameterizedType.class.isInstance(fieldArgTypes[0])) {
                             keyType = fieldArgTypes[0];
                         } else {
                             keyType = fieldArgTypes[0];
                         }
-                         
+
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                             map.put(convertTo(keyType, value.getKey()), toObject(value.getValue(), fieldArgTypes[1]));
                         }
@@ -543,11 +547,11 @@ public class Mapper {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
             final Method setterMethod = value.method;
-            final Object convertedValue = value.converter == null?
+            final Object convertedValue = value.converter == null ?
                     toObject(jsonValue, value.paramType) : jsonValue.getValueType() == ValueType.STRING ?
-                                                            value.converter.fromString(JsonString.class.cast(jsonValue).getString()):
-                                                                value.converter.fromString(jsonValue.toString());
-                
+                    value.converter.fromString(JsonString.class.cast(jsonValue).getString()) :
+                    value.converter.fromString(jsonValue.toString());
+
             if (convertedValue != null) {
                 try {
                     setterMethod.invoke(t, convertedValue);
@@ -561,80 +565,80 @@ public class Mapper {
     }
 
     private Object toObject(final JsonValue jsonValue, final Type type) throws InstantiationException, IllegalAccessException {
-      
-        if(jsonValue == null || jsonValue == JsonValue.NULL) {           
+        if (jsonValue == null || jsonValue == JsonValue.NULL) {
             return null;
         }
-        
+
         if (type == Boolean.class || type == boolean.class) {
-            
-            //if this would be commented out than the json string value "true" would pe parsed to a bool literal
-            //but this is according to json spec invalid
-            /*if (JsonString.class.isInstance(jsonValue)) {
-                return Boolean.valueOf(JsonString.class.cast(jsonValue).getString());
-            }*/
-            
-            if(jsonValue == JsonValue.FALSE) {
-                return Boolean.FALSE;
+            if (jsonValue == JsonValue.TRUE) {
+                return true;
             }
-            
-            if(jsonValue == JsonValue.TRUE) {
-                return Boolean.TRUE;
+            if (jsonValue == JsonValue.FALSE) {
+                return false;
             }
-            
-            throw new MapperException("Unable to parse "+jsonValue+" to boolean");
+            throw new MapperException("Unable to parse " + jsonValue + " to boolean");
         }
-        
+
+        if (Object.class == type) { // handling specific types here to keep exception in standard handling
+            if (jsonValue == JsonValue.TRUE) {
+                return true;
+            }
+            if (jsonValue == JsonValue.FALSE) {
+                return false;
+            }
+            if (JsonNumber.class.isInstance(jsonValue)) {
+                return JsonNumber.class.cast(jsonValue).intValue();
+            }
+        }
+
         if (type == Character.class || type == char.class) {
-            
             return convertTo(Class.class.cast(type), (JsonString.class.cast(jsonValue).getString()));
         }
-        
+
         if (JsonObject.class.isInstance(jsonValue)) {
             return buildObject(type, JsonObject.class.cast(jsonValue));
         } else if (JsonArray.class.isInstance(jsonValue)) {
             return buildArray(type, JsonArray.class.cast(jsonValue));
         } else if (JsonNumber.class.isInstance(jsonValue)) {
-                
-                final JsonNumber number = JsonNumber.class.cast(jsonValue);
-                
-                if (type == Long.class || type == long.class) {
-                    return number.longValue();
-                }
-                
-                if (type == Integer.class || type == int.class) {
-                    return number.intValue();
-                }
-                                
-                if (type == Short.class || type == short.class) {
-                    return (short) number.intValue();
-                }
-                
-                if (type == Byte.class || type == byte.class) {
-                    return (byte) number.intValue();
-                }
-                
-                if (type == Float.class || type == float.class) {
-                    return (float) number.doubleValue();
-                }
-                
-                if (type == Double.class || type == double.class) {
-                    return number.doubleValue();
-                }
-                
-                if (type == BigInteger.class) {
-                    return number.bigIntegerValue();
-                }
-                if (type == BigDecimal.class) {
-                    return number.bigDecimalValue();
-                }
-           
-        } else if (JsonString.class.isInstance(jsonValue)) {
-            return convertTo(Class.class.cast(type), (JsonString.class.cast(jsonValue).getString()));
+
+            final JsonNumber number = JsonNumber.class.cast(jsonValue);
+
+            if (type == Integer.class || type == int.class) {
+                return number.intValue();
+            }
+
+            if (type == Long.class || type == long.class) {
+                return number.longValue();
+            }
+
+            if (type == Short.class || type == short.class) {
+                return (short) number.intValue();
+            }
+
+            if (type == Byte.class || type == byte.class) {
+                return (byte) number.intValue();
+            }
+
+            if (type == Float.class || type == float.class) {
+                return (float) number.doubleValue();
+            }
+
+            if (type == Double.class || type == double.class) {
+                return number.doubleValue();
+            }
+
+            if (type == BigInteger.class) {
+                return number.bigIntegerValue();
+            }
+
+            if (type == BigDecimal.class) {
+                return number.bigDecimalValue();
+            }
+        } else if (JsonString.class.isInstance(jsonValue) || Object.class == type) {
+            return convertTo(Class.class.cast(type), JsonString.class.cast(jsonValue).getString());
         }
 
-        
-        throw new MapperException("Unable to parse "+jsonValue+" to "+type);
+        throw new MapperException("Unable to parse " + jsonValue + " to " + type);
     }
 
     private Object buildArray(final Type type, final JsonArray jsonArray) throws IllegalAccessException, InstantiationException {
@@ -653,19 +657,23 @@ public class Mapper {
             }
         }
 
+        if (Object.class == type) {
+            return buildArray(ANY_LIST, jsonArray);
+        }
+
         throw new UnsupportedOperationException("type " + type + " not supported");
     }
 
     private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray) throws InstantiationException, IllegalAccessException {
         final Collection collection;
-        
+
         if (SortedSet.class == mapping.raw) {
             collection = new TreeSet<T>();
         } else if (Set.class == mapping.raw) {
             collection = new HashSet<T>(jsonArray.size());
         } else if (Queue.class == mapping.raw) {
             collection = new ArrayBlockingQueue<T>(jsonArray.size());
-          //fail fast if collection is not know, assume Collection.class to be compatible with ArrayList is wrong for almost all cases
+            //fail fast if collection is not know, assume Collection.class to be compatible with ArrayList is wrong for almost all cases
         } else if (List.class == mapping.raw /*|| Collection.class == mapping.raw*/) {
             collection = new ArrayList<T>(jsonArray.size());
         } else {
@@ -697,7 +705,7 @@ public class Mapper {
         @Override
         public Object fromString(final String text) {
             throw new UnsupportedOperationException("Using fallback converter, " +
-                "this only works in write mode but not in read. Please register a custom converter to do so.");
+                    "this only works in write mode but not in read. Please register a custom converter to do so.");
         }
     }
 }
