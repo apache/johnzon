@@ -64,7 +64,10 @@ public class FieldAccessMode implements AccessMode {
         while (current != null && current != Object.class) {
             for (final Field f : current.getDeclaredFields()) {
                 final String name = f.getName();
-                if (fields.containsKey(name) || Modifier.isStatic(f.getModifiers())) {
+                final int modifiers = f.getModifiers();
+                if (fields.containsKey(name)
+                        || Modifier.isStatic(modifiers)
+                        || Modifier.isTransient(modifiers)) {
                     continue;
                 }
                 fields.put(name, f);
