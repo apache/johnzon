@@ -31,7 +31,11 @@ public class FieldAccessMode implements AccessMode {
     public Map<String, Reader> findReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
         for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
-            readers.put(f.getKey(), new FieldReader(f.getValue()));
+            final String key = f.getKey();
+            if (isIgnored(key)) {
+                continue;
+            }
+            readers.put(key, new FieldReader(f.getValue()));
         }
         return readers;
     }
@@ -40,9 +44,17 @@ public class FieldAccessMode implements AccessMode {
     public Map<String, Writer> findWriters(final Class<?> clazz) {
         final Map<String, Writer> writers = new HashMap<String, Writer>();
         for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
-            writers.put(f.getKey(), new FieldWriter(f.getValue()));
+            final String key = f.getKey();
+            if (isIgnored(key)) {
+                continue;
+            }
+            writers.put(key, new FieldWriter(f.getValue()));
         }
         return writers;
+    }
+
+    protected boolean isIgnored(final String key) {
+        return "$jacocoData".equals(key);
     }
 
     private Map<String, Field> fields(final Class<?> clazz) {

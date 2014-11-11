@@ -62,7 +62,7 @@ public class MethodAccessMode implements AccessMode {
         return writers;
     }
 
-    private boolean isIgnored(final PropertyDescriptor descriptor) {
+    protected boolean isIgnored(final PropertyDescriptor descriptor) {
         return descriptor.getName().equals("metaClass");
     }
 
