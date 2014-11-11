@@ -26,7 +26,9 @@ import org.apache.johnzon.mapper.MapperException;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -48,12 +50,31 @@ public class Mappings {
         public final Class<?> clazz;
         public final Map<String, Getter> getters;
         public final Map<String, Setter> setters;
+        public final Constructor<?> constructor;
 
         protected ClassMapping(final Class<?> clazz,
-                               final Map<String, Getter> getters, final Map<String, Setter> setters) {
+                               final Map<String, Getter> getters, final Map<String, Setter> setters,
+                               final boolean acceptHiddenConstructor) {
             this.clazz = clazz;
             this.getters = getters;
             this.setters = setters;
+            this.constructor = findConstructor(acceptHiddenConstructor);
+        }
+
+        private Constructor<?> findConstructor(final boolean acceptHiddenConstructor) {
+            for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
+                if (c.getParameterTypes().length == 0) {
+                    if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
+                        c.setAccessible(true);
+                    }
+                    return c;
+                }
+            }
+            try {
+                return clazz.getConstructor();
+            } catch (final NoSuchMethodException e) {
+                return null; // readOnly class
+            }
         }
     }
 
@@ -111,9 +132,11 @@ public class Mappings {
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
+    private final boolean supportHiddenConstructors;
 
-    public Mappings(final Comparator<String> attributeOrder) {
+    public Mappings(final Comparator<String> attributeOrder, final boolean supportHiddenConstructors) {
         this.fieldOrdering = attributeOrder;
+        this.supportHiddenConstructors = supportHiddenConstructors;
     }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
@@ -248,7 +271,7 @@ public class Mappings {
                 }
             }
 
-            return new ClassMapping(clazz, getters, setters);
+            return new ClassMapping(clazz, getters, setters, supportHiddenConstructors);
         } catch (final IntrospectionException e) {
             throw new MapperException(e);
         }

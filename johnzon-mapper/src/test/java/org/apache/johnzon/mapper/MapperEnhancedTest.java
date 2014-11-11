@@ -141,7 +141,7 @@ public class MapperEnhancedTest {
         assertEquals(json, sw.toString());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = MapperException.class)
     public void needConvertersForComplexTypes() {
         final String str = "{" +
             "\"bd\":-456.4567890987654321,\"string\":\"some \\t \\u0001 unicode: ÖÄÜ pppন􏿿\"," +

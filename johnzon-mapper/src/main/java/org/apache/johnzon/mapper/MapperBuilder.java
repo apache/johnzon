@@ -76,6 +76,7 @@ public class MapperBuilder {
     private JsonReaderFactory readerFactory;
     private JsonGeneratorFactory generatorFactory;
     private boolean doCloseOnStreams = false;
+    private boolean supportHiddenConstructor = true;
     private int version = -1;
     private Comparator<String> attributeOrder = null;
     private boolean skipNull = true;
@@ -94,7 +95,19 @@ public class MapperBuilder {
             }
         }
 
-        return new Mapper(readerFactory, generatorFactory, doCloseOnStreams, converters, version, attributeOrder, skipNull, skipEmptyArray);
+        return new Mapper(
+                readerFactory, generatorFactory,
+                doCloseOnStreams,
+                converters,
+                version,
+                attributeOrder,
+                skipNull, skipEmptyArray,
+                supportHiddenConstructor);
+    }
+
+    public MapperBuilder setSupportHiddenConstructor(final boolean supportHiddenConstructor) {
+        this.supportHiddenConstructor = supportHiddenConstructor;
+        return this;
     }
 
     public MapperBuilder setAttributeOrder(final Comparator<String> attributeOrder) {

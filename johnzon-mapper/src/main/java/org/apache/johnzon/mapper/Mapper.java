@@ -74,20 +74,23 @@ public class Mapper {
     protected final boolean close;
     protected final ConcurrentMap<Type, Converter<?>> converters;
     protected final int version;
+    private final boolean hiddenConstructorSupported;
     protected boolean skipNull;
     protected boolean skipEmptyArray;
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
-                  final int version, final Comparator<String> attributeOrder, boolean skipNull, boolean skipEmptyArray) {
+                  final int version, final Comparator<String> attributeOrder, boolean skipNull, boolean skipEmptyArray,
+                  final boolean hiddenConstructorSupported) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder);
+        this.mappings = new Mappings(attributeOrder, hiddenConstructorSupported);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
+        this.hiddenConstructorSupported = hiddenConstructorSupported;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -418,9 +421,7 @@ public class Mapper {
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
         try {
             return (T) buildObject(clazz, reader.readObject());
-        } catch (final InstantiationException e) {
-            throw new MapperException(e);
-        } catch (final IllegalAccessException e) {
+        } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
             if (close) {
@@ -437,9 +438,7 @@ public class Mapper {
         }
         try {
             return mapCollection(mapping, reader.readArray());
-        } catch (final InstantiationException e) {
-            throw new MapperException(e);
-        } catch (final IllegalAccessException e) {
+        } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
             if (close) {
@@ -464,9 +463,7 @@ public class Mapper {
         }
         try {
             return mapCollection(mapping, reader.readArray());
-        } catch (final InstantiationException e) {
-            throw new MapperException(e);
-        } catch (final IllegalAccessException e) {
+        } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
             if (close) {
@@ -488,9 +485,7 @@ public class Mapper {
     private <T> T[] mapArray(final Class<T> clazz, final JsonReader reader) {
         try {
             return (T[]) buildArrayWithComponentType(reader.readArray(), clazz);
-        } catch (final InstantiationException e) {
-            throw new MapperException(e);
-        } catch (final IllegalAccessException e) {
+        } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
             if (close) {
@@ -499,7 +494,7 @@ public class Mapper {
         }
     }
 
-    private Object buildObject(final Type type, final JsonObject object) throws InstantiationException, IllegalAccessException {
+    private Object buildObject(final Type type, final JsonObject object) throws Exception {
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
 
         if (classMapping == null) {
@@ -534,15 +529,18 @@ public class Mapper {
                         }
                         return map;
                     }
-                } else {
-                    throw new MapperException("Can't map " + type + ", not a map and no Mapping found");
                 }
-            } else {
-                throw new MapperException("Can't map " + type);
             }
         }
+        if (classMapping == null) {
+            throw new MapperException("Can't map " + type);
+        }
 
-        final Object t = classMapping.clazz.newInstance();
+        if (classMapping.constructor == null) {
+            throw new IllegalArgumentException(classMapping.clazz.getName() + " can't be nistantiated by Johnzon, this is a write only class");
+        }
+
+        final Object t = classMapping.constructor.newInstance();
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
@@ -564,7 +562,7 @@ public class Mapper {
         return t;
     }
 
-    private Object toObject(final JsonValue jsonValue, final Type type) throws InstantiationException, IllegalAccessException {
+    private Object toObject(final JsonValue jsonValue, final Type type) throws Exception {
         if (jsonValue == null || jsonValue == JsonValue.NULL) {
             return null;
         }
@@ -641,7 +639,7 @@ public class Mapper {
         throw new MapperException("Unable to parse " + jsonValue + " to " + type);
     }
 
-    private Object buildArray(final Type type, final JsonArray jsonArray) throws IllegalAccessException, InstantiationException {
+    private Object buildArray(final Type type, final JsonArray jsonArray) throws Exception {
         if (Class.class.isInstance(type)) {
             final Class clazz = Class.class.cast(type);
             if (clazz.isArray()) {
@@ -664,7 +662,7 @@ public class Mapper {
         throw new UnsupportedOperationException("type " + type + " not supported");
     }
 
-    private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray) throws InstantiationException, IllegalAccessException {
+    private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray) throws Exception {
         final Collection collection;
 
         if (SortedSet.class == mapping.raw) {
@@ -687,7 +685,7 @@ public class Mapper {
         return collection;
     }
 
-    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType) throws InstantiationException, IllegalAccessException {
+    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType) throws Exception {
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {

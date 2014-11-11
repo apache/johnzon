@@ -270,6 +270,13 @@ public class MapperTest {
         assertEquals(json, stream.toString());
     }
 
+    @Test
+    public void privateConstructor() {
+        final HiddenConstructor value = new MapperBuilder().setSupportHiddenConstructor(true).build()
+                .readObject(new ByteArrayInputStream("{\"value\":1}".getBytes()), HiddenConstructor.class);
+        assertEquals(1, value.value);
+    }
+
     public static class TheObject {
         private String name;
         private int integer;
@@ -494,6 +501,18 @@ public class MapperTest {
         @Override
         public String fromString(final String text) {
             return toString(text);
+        }
+    }
+
+    public static class HiddenConstructor {
+        private int value;
+
+        private HiddenConstructor() {
+            // no-op
+        }
+
+        public void setValue(final int value) {
+            this.value = value;
         }
     }
 }
