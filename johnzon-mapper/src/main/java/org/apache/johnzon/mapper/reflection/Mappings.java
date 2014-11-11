@@ -21,13 +21,9 @@ package org.apache.johnzon.mapper.reflection;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.JohnzonIgnore;
-import org.apache.johnzon.mapper.MapperException;
+import org.apache.johnzon.mapper.access.AccessMode;
 
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -91,7 +87,7 @@ public class Mappings {
     }
 
     public static class Getter {
-        public final Method method;
+        public final AccessMode.Reader reader;
         public final int version;
         public final Converter<Object> converter;
         public final boolean primitive;
@@ -99,11 +95,11 @@ public class Mappings {
         public final boolean map;
         public final boolean collection;
 
-        public Getter(final Method method,
+        public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
                       final Converter<Object> converter, final int version) {
-            this.method = method;
+            this.reader = reader;
             this.converter = converter;
             this.version = version;
             this.array = array;
@@ -114,14 +110,14 @@ public class Mappings {
     }
 
     public static class Setter {
-        public final Method method;
+        public final AccessMode.Writer writer;
         public final int version;
         public final Type paramType;
         public final Converter<?> converter;
         public final boolean primitive;
 
-        public Setter(final Method method, final boolean primitive, final Type paramType, final Converter<?> converter, final int version) {
-            this.method = method;
+        public Setter(final AccessMode.Writer writer, final boolean primitive, final Type paramType, final Converter<?> converter, final int version) {
+            this.writer = writer;
             this.paramType = paramType;
             this.converter = converter;
             this.version = version;
@@ -133,9 +129,11 @@ public class Mappings {
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
     private final boolean supportHiddenConstructors;
+    private final AccessMode accessMode;
 
-    public Mappings(final Comparator<String> attributeOrder, final boolean supportHiddenConstructors) {
+    public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode, final boolean supportHiddenConstructors) {
         this.fieldOrdering = attributeOrder;
+        this.accessMode = accessMode;
         this.supportHiddenConstructors = supportHiddenConstructors;
     }
 
@@ -227,57 +225,43 @@ public class Mappings {
     }
 
     private ClassMapping createClassMapping(final Class<?> clazz) {
-        try {
-            final Map<String, Getter> getters = fieldOrdering != null ?
-                new TreeMap<String, Getter>(fieldOrdering) : new HashMap<String, Getter>();
-            final Map<String, Setter> setters = fieldOrdering != null ?
-                new TreeMap<String, Setter>(fieldOrdering) : new HashMap<String, Setter>();
+        final Map<String, Getter> getters = fieldOrdering != null ?
+            new TreeMap<String, Getter>(fieldOrdering) : new HashMap<String, Getter>();
+        final Map<String, Setter> setters = fieldOrdering != null ?
+            new TreeMap<String, Setter>(fieldOrdering) : new HashMap<String, Setter>();
 
-            final PropertyDescriptor[] propertyDescriptors = Introspector.getBeanInfo(clazz).getPropertyDescriptors();
-            for (final PropertyDescriptor descriptor : propertyDescriptors) {
-                final Method writeMethod = descriptor.getWriteMethod();
-                final JohnzonIgnore writeIgnore = writeMethod != null ? writeMethod.getAnnotation(JohnzonIgnore.class) : null;
-                if (writeMethod != null && writeMethod.getDeclaringClass() != Object.class
-                        && (writeIgnore == null || writeIgnore.minVersion() >= 0)) {
-                    if (descriptor.getName().equals("metaClass")) {
-                        continue;
-                    }
-                    final Type param = writeMethod.getGenericParameterTypes()[0];
-                    setters.put(descriptor.getName(), new Setter(
-                            writeMethod,
-                            isPrimitive(param),
-                            param,
-                            findConverter(writeMethod),
-                            writeIgnore != null ? writeIgnore.minVersion() : -1));
-                }
-
-                final Method readMethod = descriptor.getReadMethod();
-                final JohnzonIgnore readIgnore = readMethod != null ? readMethod.getAnnotation(JohnzonIgnore.class) : null;
-                if (readMethod != null && readMethod.getDeclaringClass() != Object.class
-                        && (readIgnore == null || readIgnore.minVersion() >= 0)) {
-                    if (descriptor.getName().equals("metaClass")) {
-                        continue;
-                    }
-
-                    final Class<?> returnType = readMethod.getReturnType();
-                    getters.put(descriptor.getName(), new Getter(
-                            readMethod,
-                            isPrimitive(returnType),
-                            returnType.isArray(),
-                            Collection.class.isAssignableFrom(returnType),
-                            Map.class.isAssignableFrom(returnType),
-                            findConverter(readMethod),
-                            readIgnore != null ? readIgnore.minVersion() : -1));
-                }
+        for (final Map.Entry<String, AccessMode.Reader> reader : accessMode.findReaders(clazz).entrySet()) {
+            final AccessMode.Reader value = reader.getValue();
+            final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
+            if (readIgnore == null || readIgnore.minVersion() >= 0) {
+                final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
+                final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
+                getters.put(reader.getKey(), new Getter(value, isPrimitive(returnType),
+                        returnType != null && returnType.isArray(),
+                        (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                                || (returnType != null && Collection.class.isAssignableFrom(returnType)),
+                        (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                                || (returnType != null && Map.class.isAssignableFrom(returnType)),
+                        findConverter(value),
+                        readIgnore != null ? readIgnore.minVersion() : -1));
             }
-
-            return new ClassMapping(clazz, getters, setters, supportHiddenConstructors);
-        } catch (final IntrospectionException e) {
-            throw new MapperException(e);
         }
+        for (final Map.Entry<String, AccessMode.Writer> writer : accessMode.findWriters(clazz).entrySet()) {
+            final AccessMode.Writer value = writer.getValue();
+            final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
+            if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
+                final String key = writer.getKey();
+                if (key.equals("metaClass")) {
+                    continue;
+                }
+                final Type param = value.getType();
+                setters.put(key, new Setter(value, isPrimitive(param), param, findConverter(value), writeIgnore != null ? writeIgnore.minVersion() : -1));
+            }
+        }
+        return new ClassMapping(clazz, getters, setters, supportHiddenConstructors);
     }
 
-    private static Converter findConverter(final Method method) {
+    private static Converter findConverter(final AccessMode.DecoratedType method) {
         Converter converter = null;
         if (method.getAnnotation(JohnzonConverter.class) != null) {
             try {

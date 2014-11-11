@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
@@ -40,7 +41,6 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -75,21 +75,23 @@ public class Mapper {
     protected final ConcurrentMap<Type, Converter<?>> converters;
     protected final int version;
     private final boolean hiddenConstructorSupported;
+    private final AccessMode accessMode;
     protected boolean skipNull;
     protected boolean skipEmptyArray;
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, boolean skipNull, boolean skipEmptyArray,
-                  final boolean hiddenConstructorSupported) {
+                  final AccessMode accessMode, final boolean hiddenConstructorSupported) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, hiddenConstructorSupported);
+        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
+        this.accessMode = accessMode;
         this.hiddenConstructorSupported = hiddenConstructorSupported;
     }
 
@@ -312,7 +314,7 @@ public class Mapper {
         JsonGenerator generator = gen;
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
-            final Object value = getter.method.invoke(object);
+            final Object value = getter.reader.read(object);
             if (getter.version >= 0 && version >= getter.version) {
                 continue;
             }
@@ -544,18 +546,14 @@ public class Mapper {
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
-            final Method setterMethod = value.method;
+            final AccessMode.Writer setterMethod = value.writer;
             final Object convertedValue = value.converter == null ?
                     toObject(jsonValue, value.paramType) : jsonValue.getValueType() == ValueType.STRING ?
                     value.converter.fromString(JsonString.class.cast(jsonValue).getString()) :
                     value.converter.fromString(jsonValue.toString());
 
             if (convertedValue != null) {
-                try {
-                    setterMethod.invoke(t, convertedValue);
-                } catch (final InvocationTargetException e) {
-                    throw new MapperException(e.getCause());
-                }
+                setterMethod.write(t, convertedValue);
             }
         }
 

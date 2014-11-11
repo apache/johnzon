@@ -272,8 +272,15 @@ public class MapperTest {
 
     @Test
     public void privateConstructor() {
-        final HiddenConstructor value = new MapperBuilder().setSupportHiddenConstructor(true).build()
+        final HiddenConstructor value = new MapperBuilder().setSupportHiddenAccess(true).build()
                 .readObject(new ByteArrayInputStream("{\"value\":1}".getBytes()), HiddenConstructor.class);
+        assertEquals(1, value.value);
+    }
+
+    @Test
+    public void fieldAccess() {
+        final FieldAccess value = new MapperBuilder().setAccessModeName("field").build()
+                .readObject(new ByteArrayInputStream("{\"value\":1}".getBytes()), FieldAccess.class);
         assertEquals(1, value.value);
     }
 
@@ -514,5 +521,10 @@ public class MapperTest {
         public void setValue(final int value) {
             this.value = value;
         }
+    }
+
+
+    public static class FieldAccess {
+        private int value;
     }
 }

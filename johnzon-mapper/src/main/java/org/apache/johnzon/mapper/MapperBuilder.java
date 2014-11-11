@@ -18,6 +18,9 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.BigIntegerConverter;
 import org.apache.johnzon.mapper.converter.BooleanConverter;
@@ -76,11 +79,12 @@ public class MapperBuilder {
     private JsonReaderFactory readerFactory;
     private JsonGeneratorFactory generatorFactory;
     private boolean doCloseOnStreams = false;
-    private boolean supportHiddenConstructor = true;
+    private boolean supportHiddenAccess = true;
     private int version = -1;
     private Comparator<String> attributeOrder = null;
     private boolean skipNull = true;
     private boolean skipEmptyArray = false;
+    private AccessMode accessMode = new MethodAccessMode();
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
 
     public Mapper build() {
@@ -102,11 +106,28 @@ public class MapperBuilder {
                 version,
                 attributeOrder,
                 skipNull, skipEmptyArray,
-                supportHiddenConstructor);
+                accessMode,
+                supportHiddenAccess);
     }
 
-    public MapperBuilder setSupportHiddenConstructor(final boolean supportHiddenConstructor) {
-        this.supportHiddenConstructor = supportHiddenConstructor;
+    public MapperBuilder setAccessMode(final AccessMode mode) {
+        this.accessMode = mode;
+        return this;
+    }
+
+    public MapperBuilder setAccessModeName(final String mode) {
+        if ("field".equalsIgnoreCase(mode)) {
+            this.accessMode = new FieldAccessMode();
+        } else if ("method".equalsIgnoreCase(mode)) {
+            this.accessMode = new MethodAccessMode();
+        } else {
+            throw new IllegalArgumentException("Mode " + mode + " unsupported");
+        }
+        return this;
+    }
+
+    public MapperBuilder setSupportHiddenAccess(final boolean supportHiddenAccess) {
+        this.supportHiddenAccess = supportHiddenAccess;
         return this;
     }
 
