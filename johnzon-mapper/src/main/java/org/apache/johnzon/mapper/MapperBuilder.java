@@ -20,6 +20,7 @@ package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.BigIntegerConverter;
@@ -120,6 +121,8 @@ public class MapperBuilder {
             this.accessMode = new FieldAccessMode();
         } else if ("method".equalsIgnoreCase(mode)) {
             this.accessMode = new MethodAccessMode();
+        } else if ("both".equalsIgnoreCase(mode)) {
+            this.accessMode = new FieldAndMethodAccessMode();
         } else {
             throw new IllegalArgumentException("Mode " + mode + " unsupported");
         }
