@@ -22,6 +22,7 @@ import org.apache.johnzon.mapper.MapperException;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +64,7 @@ public class FieldAccessMode implements AccessMode {
         while (current != null && current != Object.class) {
             for (final Field f : current.getDeclaredFields()) {
                 final String name = f.getName();
-                if (fields.containsKey(name)) {
+                if (fields.containsKey(name) || Modifier.isStatic(f.getModifiers())) {
                     continue;
                 }
                 fields.put(name, f);
