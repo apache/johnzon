@@ -55,7 +55,7 @@ public class FieldAccessMode implements AccessMode {
     }
 
     protected boolean isIgnored(final String key) {
-        return "$jacocoData".equals(key);
+        return key.contains("$");
     }
 
     private Map<String, Field> fields(final Class<?> clazz) {

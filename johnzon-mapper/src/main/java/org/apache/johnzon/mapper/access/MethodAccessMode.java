@@ -37,7 +37,7 @@ public class MethodAccessMode implements AccessMode {
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
             final Method readMethod = descriptor.getReadMethod();
             if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(descriptor)) {
+                if (isIgnored(descriptor.getName())) {
                     continue;
                 }
                 readers.put(descriptor.getName(), new MethodReader(readMethod));
@@ -53,7 +53,7 @@ public class MethodAccessMode implements AccessMode {
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null && writeMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(descriptor)) {
+                if (isIgnored(descriptor.getName())) {
                     continue;
                 }
                 writers.put(descriptor.getName(), new MethodWriter(writeMethod));
@@ -62,8 +62,8 @@ public class MethodAccessMode implements AccessMode {
         return writers;
     }
 
-    protected boolean isIgnored(final PropertyDescriptor descriptor) {
-        return descriptor.getName().equals("metaClass");
+    protected boolean isIgnored(final String name) {
+        return name.equals("metaClass") || name.contains("$");
     }
 
     private PropertyDescriptor[] getPropertyDescriptors(final Class<?> clazz) {
