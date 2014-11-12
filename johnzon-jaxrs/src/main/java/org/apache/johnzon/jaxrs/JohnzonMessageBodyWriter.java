@@ -42,14 +42,15 @@ import static javax.ws.rs.core.MediaType.WILDCARD;
 
 @Provider
 @Produces(WILDCARD)
-public class JohnzonMessageBodyWriter<T> implements MessageBodyWriter<T> {
+public class JohnzonMessageBodyWriter<T> extends IgnorableTypes implements MessageBodyWriter<T> {
     private final Mapper mapper;
 
     public JohnzonMessageBodyWriter() {
-        this(new MapperBuilder().setDoCloseOnStreams(false).build());
+        this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
     }
 
-    public JohnzonMessageBodyWriter(final Mapper mapper) {
+    public JohnzonMessageBodyWriter(final Mapper mapper, final Collection<String> ignoredTypes) {
+        super(ignoredTypes);
         this.mapper = mapper;
     }
 
@@ -63,6 +64,7 @@ public class JohnzonMessageBodyWriter<T> implements MessageBodyWriter<T> {
     public boolean isWriteable(final Class<?> rawType, final Type genericType,
                                final Annotation[] annotations, final MediaType mediaType) {
         return Jsons.isJson(mediaType)
+                && !isIgnored(rawType)
                 && InputStream.class != rawType
                 && OutputStream.class != rawType
                 && Writer.class != rawType

@@ -25,6 +25,7 @@ import javax.json.JsonStructure;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.Provider;
 import java.io.IOException;
@@ -40,14 +41,15 @@ import static org.apache.johnzon.jaxrs.Jsons.isJson;
 
 @Provider
 @Consumes(WILDCARD)
-public class JohnzonMessageBodyReader<T> implements MessageBodyReader<T> {
+public class JohnzonMessageBodyReader<T> extends IgnorableTypes implements MessageBodyReader<T> {
     private final Mapper mapper;
 
     public JohnzonMessageBodyReader() {
-        this(new MapperBuilder().setDoCloseOnStreams(false).build());
+        this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
     }
 
-    public JohnzonMessageBodyReader(final Mapper mapper) {
+    public JohnzonMessageBodyReader(final Mapper mapper, final Collection<String> ignoredTypes) {
+        super(ignoredTypes);
         this.mapper = mapper;
     }
 
@@ -55,7 +57,8 @@ public class JohnzonMessageBodyReader<T> implements MessageBodyReader<T> {
     public boolean isReadable(final Class<?> rawType, final Type genericType,
                               final Annotation[] annotations, final MediaType mediaType) {
         return isJson(mediaType)
-                && InputStream.class != rawType && Reader.class != rawType
+                && !isIgnored(rawType)
+                && InputStream.class != rawType && Reader.class != rawType && Response.class != rawType
                 && String.class != rawType
                 && !JsonStructure.class.isAssignableFrom(rawType);
     }

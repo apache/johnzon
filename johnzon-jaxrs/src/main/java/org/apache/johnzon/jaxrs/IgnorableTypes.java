@@ -18,26 +18,17 @@
  */
 package org.apache.johnzon.jaxrs;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.mapper.MapperBuilder;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
-import javax.ws.rs.ext.Provider;
-
 import java.util.Collection;
+import java.util.HashSet;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
+public class IgnorableTypes {
+    private final Collection<String> ignores;
 
-@Provider
-@Produces(WILDCARD)
-@Consumes(WILDCARD)
-public class JohnzonProvider<T> extends DelegateProvider<T> {
-    public JohnzonProvider(final Mapper mapper, final Collection<String> ignores) {
-        super(new JohnzonMessageBodyReader<T>(mapper, ignores), new JohnzonMessageBodyWriter<T>(mapper, ignores));
+    protected IgnorableTypes(final Collection<String> ignores) {
+        this.ignores = ignores == null ? null : new HashSet<String>(ignores);
     }
 
-    public JohnzonProvider() {
-        this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
+    public boolean isIgnored(final Class<?> type) {
+        return ignores != null && ignores.contains(type.getName());
     }
 }
