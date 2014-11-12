@@ -80,7 +80,8 @@ final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.c
 
 JAX-RS module provides two providers (and underlying MessageBodyReaders and MessageBodyWriters):
 
-* org.apache.johnzon.jaxrs.JohnzonProvider.JohnzonProvider: use Johnzon Mapper to map Object to Json and the opposite
+* org.apache.johnzon.jaxrs.JohnzonProvider: use Johnzon Mapper to map Object to Json and the opposite
+* org.apache.johnzon.jaxrs.ConfigurableJohnzonProvider: same as JohnzonProvider but with setters to ease the configuration of the provider in most servers/containers
 * org.apache.johnzon.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
 
 ## Thanks
