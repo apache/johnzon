@@ -539,7 +539,7 @@ public class Mapper {
         }
 
         if (classMapping.constructor == null) {
-            throw new IllegalArgumentException(classMapping.clazz.getName() + " can't be nistantiated by Johnzon, this is a write only class");
+            throw new IllegalArgumentException(classMapping.clazz.getName() + " can't be instantiated by Johnzon, this is a write only class");
         }
 
         final Object t = classMapping.constructor.newInstance();
