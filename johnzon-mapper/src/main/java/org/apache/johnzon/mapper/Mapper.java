@@ -669,8 +669,7 @@ public class Mapper {
             collection = new HashSet<T>(jsonArray.size());
         } else if (Queue.class == mapping.raw) {
             collection = new ArrayBlockingQueue<T>(jsonArray.size());
-            //fail fast if collection is not know, assume Collection.class to be compatible with ArrayList is wrong for almost all cases
-        } else if (List.class == mapping.raw /*|| Collection.class == mapping.raw*/) {
+        } else if (List.class == mapping.raw || Collection.class == mapping.raw) {
             collection = new ArrayList<T>(jsonArray.size());
         } else {
             throw new IllegalStateException("not supported collection type: " + mapping.raw.getName());
