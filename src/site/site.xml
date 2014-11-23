@@ -20,21 +20,28 @@
          xmlns="http://maven.apache.org/DECORATION/1.0.1"
          xsi:schemaLocation="http://maven.apache.org/DECORATION/1.0.1
                              http://maven.apache.org/xsd/decoration-1.0.1.xsd">
-  <bannerLeft>
+    <bannerLeft>
     <name>Apache Johnzon</name>
-    <alt>Apache Johnzon logo</alt>
+    <alt>Apache Johnzon</alt>
     <href>/index.html</href>
-  </bannerLeft>
-  <bannerRight>
+  </bannerLeft><!--
+  
+<bannerRight>
     <src>http://incubator.apache.org/images/egg-logo.png</src>
     <href>http://incubator.apache.org/</href>
-  </bannerRight>
+  </bannerRight>-->
 
   <custom>
     <fluidoSkin>
       <topBarEnabled>true</topBarEnabled>
       <sideBarEnabled>true</sideBarEnabled>
       <sourceLineNumbersEnabled>true</sourceLineNumbersEnabled>
+      <topBarIcon>
+        <name>Apache Johnzon</name>
+        <alt>Apache Johnzon</alt>
+        <!-- <src>http://incubator.apache.org/images/egg-logo.png</src>  -->
+        <href>/index.html</href>
+      </topBarIcon>
       <ohloh>
         <projectId>apache-johnzon</projectId>
         <widget>stats</widget>
@@ -45,7 +52,7 @@
   <skin>
     <groupId>org.apache.maven.skins</groupId>
     <artifactId>maven-fluido-skin</artifactId>
-    <version>1.3.0</version>
+    <version>1.3.1</version>
   </skin>
 
   <body>
@@ -68,6 +75,15 @@
 
     <menu name="User Guide">
       <item name="Home" href="/index.html"/>
+      <item name="Download" href="http://incubator.apache.org/projects/johnzon.html"/>
+      <item name="Javadoc" href="/apidocs/index.html"/>
+      <item name="Source Code" href="/source-repository.html"/>
+      <item name="Changelog" href="/changelog.html"/>
+      <item name="Mailing Lists" href="/mail-lists.html"/>
+    </menu>
+    
+    <menu name="Site Archives">
+        <item name="Johnzon 0.2-incubating"       href="/archives/0.2-incubating/index.html"/>
     </menu>
 
     <menu ref="reports" inherit="bottom"/>
@@ -78,7 +94,7 @@
       <item name="Sponsoring Apache" href="http://www.apache.org/foundation/sponsorship.html"/>
       <item name="Thanks" href="http://www.apache.org/foundation/thanks.html"/>
     </menu>
-
+    
     <footer>
       <div class="row span16"><div>Apache Johnzon, Apache, the Apache feather logo, and the Apache Johnzon project logos are trademarks of The Apache Software Foundation.
         All other marks mentioned may be trademarks or registered trademarks of their respective owners.</div>

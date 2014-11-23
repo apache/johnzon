@@ -31,7 +31,7 @@ Johnzon comes with three main modules.
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-core</artifactId>
-  <version>${johnzon.version}</version>
+  <version>${project.version}</version>
 </dependency>
 ]]></pre>
 
@@ -41,7 +41,7 @@ This is the implementation of the specification. You'll surely want to add the A
 <dependency>
   <groupId>org.apache.geronimo.specs</groupId>
   <artifactId>geronimo-json_1.0_spec</artifactId>
-  <version>${json-processing.version}</version>
+  <version>${jsonspecversion}</version>
   <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
 </dependency>
 ]]></pre>
@@ -52,7 +52,7 @@ This is the implementation of the specification. You'll surely want to add the A
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-mapper</artifactId>
-  <version>${johnzon.version}</version>
+  <version>${project.version}</version>
 </dependency>
 ]]></pre>
 
@@ -74,7 +74,7 @@ final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.c
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-jaxrs</artifactId>
-  <version>${johnzon.version}</version>
+  <version>${project.version}</version>
 </dependency>
 ]]></pre>
 
