@@ -29,7 +29,7 @@ final class JsonDoubleImpl implements JsonNumber {
     JsonDoubleImpl(final double value) {
         
         if(Double.isInfinite(value) || Double.isNaN(value)) {
-            throw new NumberFormatException("double value must to be NaN or Infinite");
+            throw new NumberFormatException("double value must not be NaN or Infinite");
         }
         
         this.value = value;
