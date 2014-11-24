@@ -122,6 +122,9 @@
           <pubScmUrl>${pubsub.url}</pubScmUrl>
           <tryUpdate>true</tryUpdate>
           <checkoutDirectory>${project.basedir}/.site-content</checkoutDirectory>
+          <ignorePathsToDelete>
+            <ignorePathToDelete>archives**</ignorePathToDelete>
+          </ignorePathsToDelete>
         </configuration>
         <executions>
           <execution>
@@ -277,15 +280,6 @@
          <configuration>
          </configuration>
        </plugin>
-       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-scm-publish-plugin</artifactId>
-        <configuration>
-          <ignorePathsToDelete>
-            <ignorePathToDelete>archives**</ignorePathToDelete>
-          </ignorePathsToDelete>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
   
