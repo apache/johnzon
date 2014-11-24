@@ -284,6 +284,26 @@ public class MapperTest {
         assertEquals(1, value.value);
     }
 
+
+    @Test
+    public void nan() {
+        final String value = new MapperBuilder().build()
+                .writeObjectAsString(new NanHolder());
+        assertEquals("{}", value);
+    }
+
+    public static class NanHolder {
+        private Double nan = Double.NaN;
+
+        public Double getNan() {
+            return nan;
+        }
+
+        public void setNan(Double nan) {
+            this.nan = nan;
+        }
+    }
+
     public static class TheObject {
         private String name;
         private int integer;

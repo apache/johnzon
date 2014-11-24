@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -108,7 +109,11 @@ public class Mapper {
         } else if (isInt(type)) {
             return generator.write(Integer.class.cast(value).intValue());
         } else if (isFloat(type)) {
-            return generator.write(Number.class.cast(value).doubleValue());
+            final double doubleValue = Number.class.cast(value).doubleValue();
+            if (Double.isNaN(doubleValue)) {
+                return generator;
+            }
+            return generator.write(doubleValue);
         } else if (type == boolean.class || type == Boolean.class) {
             return generator.write(Boolean.class.cast(value));
         } else if (type == BigDecimal.class) {
@@ -129,7 +134,11 @@ public class Mapper {
         } else if (isInt(type)) {
             return generator.write(key, Number.class.cast(value).intValue());
         } else if (isFloat(type)) {
-            return generator.write(key, Number.class.cast(value).doubleValue());
+            final double doubleValue = Number.class.cast(value).doubleValue();
+            if (Double.isNaN(doubleValue)) {
+                return generator;
+            }
+            return generator.write(key, doubleValue);
         } else if (type == boolean.class || type == Boolean.class) {
             return generator.write(key, Boolean.class.cast(value));
         } else if (type == BigDecimal.class) {
@@ -263,6 +272,12 @@ public class Mapper {
     public void writeObject(final Object object, final OutputStream stream) {
         final JsonGenerator generator = generatorFactory.createGenerator(stream);
         doWriteHandlingNullObject(object, generator);
+    }
+
+    public String writeObjectAsString(final Object instance) {
+        final StringWriter writer = new StringWriter();
+        writeObject(instance, writer);
+        return writer.toString();
     }
 
     private void doWriteHandlingNullObject(final Object object, final JsonGenerator generator) {

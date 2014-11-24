@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -26,7 +26,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Comparator;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class LiteralTest {
     @Test
@@ -66,24 +66,6 @@ public class LiteralTest {
         nc.setBg(new BigDecimal("123.123"));
         nc.setBi(new BigInteger("123"));
         nc.setDoubleNumber(Double.POSITIVE_INFINITY);
-        nc.setBool(true);
-        nc.setByteNumber((byte) 1);
-        nc.setFloatNumber(123);
-        nc.setShortNumber((short) 1);
-        nc.setLongNumber(123L);
-        nc.setIntNumber(123);
-
-        new MapperBuilder().build().writeObject(nc, sw);
-
-    }
-
-    @Test(expected = NumberFormatException.class)
-    public void writeReadNumbersNaN() {
-        final NumberClass nc = new NumberClass();
-        final StringWriter sw = new StringWriter();
-        nc.setBg(new BigDecimal("123.123"));
-        nc.setBi(new BigInteger("123"));
-        nc.setDoubleNumber(Double.NaN);
         nc.setBool(true);
         nc.setByteNumber((byte) 1);
         nc.setFloatNumber(123);
