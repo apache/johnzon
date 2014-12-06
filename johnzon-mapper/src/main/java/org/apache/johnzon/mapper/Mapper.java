@@ -598,7 +598,11 @@ public class Mapper {
                 return false;
             }
             if (JsonNumber.class.isInstance(jsonValue)) {
-                return JsonNumber.class.cast(jsonValue).intValue();
+                final JsonNumber jsonNumber = JsonNumber.class.cast(jsonValue);
+                if(jsonNumber.isIntegral()) {
+                    return jsonNumber.intValue();
+                }
+                return jsonNumber.doubleValue();
             }
         }
 
