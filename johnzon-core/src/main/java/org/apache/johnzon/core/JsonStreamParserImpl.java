@@ -81,7 +81,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
     //cache (if current value is a number) integral state and the number itself if its only one digit    
     private boolean isCurrentNumberIntegral = true;
-    private Integer currentIntegralNumber; //for number from 0 - 9
+    private int currentIntegralNumber = Integer.MIN_VALUE; //for number from 0 - 9
 
     //maybe we want also cache BigDecimals
     //private BigDecimal currentBigDecimalNumber = null;
@@ -156,8 +156,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
     //append a single char to the value buffer
     private void appendToCopyBuffer(final char c) {
-        fallBackCopyBuffer[fallBackCopyBufferLength] = c;
-        fallBackCopyBufferLength++;
+        fallBackCopyBuffer[fallBackCopyBufferLength++] = c;
     }
 
     //copy content between "start" and "end" from buffer to value buffer 
@@ -279,10 +278,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             //end fillbuffer
         } else {
 
+            //since JOHNZON-18 not longer necessary
             //prevent "bufferoverflow
-            if(bufferPos + 1 >= availableCharsInBuffer) {
-                return EOF;
-            }
+            //if(bufferPos + 1 >= availableCharsInBuffer) {
+            //    return EOF;
+            //}
 
             bufferPos++;
         }
@@ -362,8 +362,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //        if (currentBigDecimalNumber != null) {
         //            currentBigDecimalNumber = null;
         //        }
-        if (currentIntegralNumber != null) {
-            currentIntegralNumber = null;
+        if (currentIntegralNumber != Integer.MIN_VALUE) {
+            currentIntegralNumber = Integer.MIN_VALUE;
         }
 
         if (fallBackCopyBufferLength != 0) {
@@ -824,7 +824,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     public int getInt() {
         if (previousEvent != VALUE_NUMBER) {
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getInt()");
-        } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+        } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return currentIntegralNumber;
         } else if (isCurrentNumberIntegral) {
             //if there a content in the value buffer read from them, if not use main buffer
@@ -844,7 +844,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     public long getLong() {
         if (previousEvent != VALUE_NUMBER) {
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getLong()");
-        } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+        } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return currentIntegralNumber;
         } else if (isCurrentNumberIntegral) {
             //if there a content in the value buffer read from them, if not use main buffer
@@ -867,7 +867,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getBigDecimal()");
             //        } else if (currentBigDecimalNumber != null) {
             //            return currentBigDecimalNumber;
-        } else if (isCurrentNumberIntegral && currentIntegralNumber != null) {
+        } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return new BigDecimal(currentIntegralNumber);
         } else if (isCurrentNumberIntegral) {
             //if there a content in the value buffer read from them, if not use main buffer
