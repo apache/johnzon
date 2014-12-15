@@ -496,78 +496,85 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //if not then denote string start and end in startOfValueInBuffer and endOfValueInBuffer and read directly from buffer
     private void readString() {
 
-        char n = readNextChar();
-        //when first called n its first char after the starting quote
-        //after that its the next character after the while loop below
-
-        if (n == QUOTE_CHAR) {
-            endOfValueInBuffer = startOfValueInBuffer = bufferPos; //->"" case
-            return;
-        } else if (n == EOL) {
-            throw uexc("Unexpected linebreak");
-
-        } else if (n >= '\u0000' && n <= '\u001F') {
-            throw uexc("Unescaped control character");
-
-        } else if (n == ESCAPE_CHAR) {
-
-            n = readNextChar();
-
-            //  \ u XXXX -> unicode char
-            if (n == 'u') {
-                n = parseUnicodeHexChars();
-                appendToCopyBuffer(n);
-
-                // \\ -> \
-            } else if (n == ESCAPE_CHAR) {
-                appendToCopyBuffer(n);
-
-                //another escape chars, for example \t
-            } else {
-                appendToCopyBuffer(Strings.asEscapedChar(n));
-
-            }
-
-        } else {
-
-            startOfValueInBuffer = bufferPos;
-            endOfValueInBuffer = -1;
-
-            while ((n = readNextChar()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE_CHAR) {
-                //read fast
-            }
-
-            endOfValueInBuffer = bufferPos;
+        do {
+            char n = readNextChar();
+            //when first called n its first char after the starting quote
+            //after that its the next character after the while loop below
 
             if (n == QUOTE_CHAR) {
-
-                if (fallBackCopyBufferLength > 0) {
-                    copyCurrentValue();
-                } else {
-                    if ((endOfValueInBuffer - startOfValueInBuffer) > maxValueLength) {
-                        throw tmc();
-                    }
-
-                }
-
+                endOfValueInBuffer = startOfValueInBuffer = bufferPos; //->"" case
                 return;
             } else if (n == EOL) {
                 throw uexc("Unexpected linebreak");
 
             } else if (n >= '\u0000' && n <= '\u001F') {
                 throw uexc("Unescaped control character");
+
+            } else if (n == ESCAPE_CHAR) {
+
+                n = readNextChar();
+
+                //  \ u XXXX -> unicode char
+                if (n == 'u') {
+                    n = parseUnicodeHexChars();
+                    appendToCopyBuffer(n);
+
+                    // \\ -> \
+                } else if (n == ESCAPE_CHAR) {
+                    appendToCopyBuffer(n);
+
+                    //another escape chars, for example \t
+                } else {
+                    appendToCopyBuffer(Strings.asEscapedChar(n));
+
+                }
+
+            } else {
+
+                startOfValueInBuffer = bufferPos;
+                endOfValueInBuffer = -1;
+
+                while ((n = readNextChar()) > '\u001F' && n != ESCAPE_CHAR && n != EOL && n != QUOTE_CHAR) {
+                    //read fast
+                }
+
+                endOfValueInBuffer = bufferPos;
+
+                if (n == QUOTE_CHAR) {
+
+                    if (fallBackCopyBufferLength > 0) {
+                        copyCurrentValue();
+                    } else {
+                        if ((endOfValueInBuffer - startOfValueInBuffer) > maxValueLength) {
+                            throw tmc();
+                        }
+
+                    }
+
+                    return;
+                } else if (n == EOL) {
+                    throw uexc("Unexpected linebreak");
+
+                } else if (n >= '\u0000' && n <= '\u001F') {
+                    throw uexc("Unescaped control character");
+                }
+
+                copyCurrentValue();
+
+                //current n is one of < '\u001F' -OR- ESCAPE_CHAR -OR- EOL -OR- QUOTE
+
+                bufferPos--; //unread one char
+
             }
+        }  while (true);
 
-            copyCurrentValue();
-
-            //current n is one of < '\u001F' -OR- ESCAPE_CHAR -OR- EOL -OR- QUOTE
-
-            bufferPos--; //unread one char
-
-        }
-
+        // before this do while(true) it was:
+        //
         //recurse until string is terminated by a non escaped quote
-        readString();
+        //readString();
+        //
+        //
+        // but recursive = can't read big strings
 
     }
 
