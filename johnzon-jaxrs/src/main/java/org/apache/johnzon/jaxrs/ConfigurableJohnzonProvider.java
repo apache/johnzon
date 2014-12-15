@@ -100,6 +100,10 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         instance().writeTo(t, rawType, genericType, annotations, mediaType, httpHeaders, entityStream);
     }
 
+    public void setPretty(final boolean pretty) {
+        builder.setPretty(pretty);
+    }
+
     public void setIgnores(final String ignores) {
         this.ignores = ignores == null ? null : asList(ignores.split(" *, *"));
     }

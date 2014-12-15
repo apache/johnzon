@@ -39,6 +39,7 @@ import org.apache.johnzon.mapper.converter.StringConverter;
 
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -86,6 +87,7 @@ public class MapperBuilder {
     private Comparator<String> attributeOrder = null;
     private boolean skipNull = true;
     private boolean skipEmptyArray = false;
+    protected boolean pretty;
     private AccessMode accessMode = new MethodAccessMode();
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
 
@@ -101,6 +103,9 @@ public class MapperBuilder {
             }
             if (bufferStrategy != null) {
                 config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
+            }
+            if (pretty) {
+                config.put(JsonGenerator.PRETTY_PRINTING, true);
             }
 
             if (readerFactory == null) {
@@ -120,6 +125,11 @@ public class MapperBuilder {
                 skipNull, skipEmptyArray,
                 accessMode,
                 supportHiddenAccess);
+    }
+
+    public MapperBuilder setPretty(final boolean pretty) {
+        this.pretty = pretty;
+        return this;
     }
 
     public MapperBuilder setBufferSize(final int bufferSize) {
