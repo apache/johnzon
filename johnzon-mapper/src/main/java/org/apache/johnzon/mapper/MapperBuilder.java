@@ -40,10 +40,8 @@ import org.apache.johnzon.mapper.converter.StringConverter;
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGeneratorFactory;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -82,6 +80,9 @@ public class MapperBuilder {
     private boolean doCloseOnStreams = false;
     private boolean supportHiddenAccess = true;
     private int version = -1;
+    private int maxSize = -1;
+    private int bufferSize = -1;
+    private String bufferStrategy;
     private Comparator<String> attributeOrder = null;
     private boolean skipNull = true;
     private boolean skipEmptyArray = false;
@@ -91,7 +92,17 @@ public class MapperBuilder {
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
             final JsonProvider provider = JsonProvider.provider();
-            final Map<String, Object> config = Collections.<String, Object>emptyMap();
+            final Map<String, Object> config = new HashMap<String, Object>();
+            if (maxSize > 0) {
+                config.put("org.apache.johnzon.max-string-length", maxSize);
+            }
+            if (bufferSize > 0) {
+                config.put("org.apache.johnzon.default-char-buffer", bufferSize);
+            }
+            if (bufferStrategy != null) {
+                config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
+            }
+
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
             }
@@ -109,6 +120,21 @@ public class MapperBuilder {
                 skipNull, skipEmptyArray,
                 accessMode,
                 supportHiddenAccess);
+    }
+
+    public MapperBuilder setBufferSize(final int bufferSize) {
+        this.bufferSize = bufferSize;
+        return this;
+    }
+
+    public MapperBuilder setBufferStrategy(final String bufferStrategy) {
+        this.bufferStrategy = bufferStrategy;
+        return this;
+    }
+
+    public MapperBuilder setMaxSize(final int size) {
+        this.maxSize = size;
+        return this;
     }
 
     public MapperBuilder setAccessMode(final AccessMode mode) {

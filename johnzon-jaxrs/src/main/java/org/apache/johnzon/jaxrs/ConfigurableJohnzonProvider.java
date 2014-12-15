@@ -143,4 +143,16 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
     public void setSkipEmptyArray(final boolean skipEmptyArray) {
         builder.setSkipEmptyArray(skipEmptyArray);
     }
+
+    public void setBufferSize(final int bufferSize) {
+        builder.setBufferSize(bufferSize);
+    }
+
+    public void setBufferStrategy(final String bufferStrategy) {
+        builder.setBufferStrategy(bufferStrategy);
+    }
+
+    public void setMaxSize(final int size) {
+        builder.setMaxSize(size);
+    }
 }
