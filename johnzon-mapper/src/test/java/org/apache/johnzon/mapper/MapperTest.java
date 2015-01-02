@@ -84,9 +84,18 @@ public class MapperTest {
     @Test
     public void readMapObject() {
         final Map<String, Object> data = new MapperBuilder().build()
-                .readObject(new ByteArrayInputStream("{\"a\":1,\"b\":true,\"c\":null,\"d\":[1, 2], \"e\":[\"i\", \"j\"]}".getBytes()),
+                .readObject(new ByteArrayInputStream(("{\"a\":1,\"b\":true,\"c\":null,\"d\":[1, 2], " +
+                                "\"e\":[\"i\", \"j\"],\"k\":{\"a\":1,\"b\":true,\"c\":null,\"d\":[1, 2], \"e\":[\"i\", \"j\"]}}").getBytes()),
                         new JohnzonParameterizedType(Map.class, String.class, Object.class));
-        assertEquals(5, data.size());
+        assertOneDimension(data, 6);
+
+        final Map<String, Object> k = (Map<String, Object>) data.get("k");
+        assertNotNull(k);
+        assertOneDimension(k, 5);
+    }
+
+    private void assertOneDimension(final Map<String, Object> data, final int size) {
+        assertEquals(size, data.size());
         assertEquals(1, data.get("a"));
         assertEquals(true, data.get("b"));
         assertNull(data.get("c"));

@@ -511,7 +511,12 @@ public class Mapper {
         }
     }
 
-    private Object buildObject(final Type type, final JsonObject object) throws Exception {
+    private Object buildObject(final Type inType, final JsonObject object) throws Exception {
+        Type type = inType;
+        if (inType == Object.class) {
+            type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
+        }
+
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
 
         if (classMapping == null) {
