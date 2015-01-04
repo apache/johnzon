@@ -1,11 +1,17 @@
-{
+/* super header comment
+dont put the brace on another line
+it is part of the test */{
   "foo": "//bar//but//not//a/comment",
   // a comment
   // on multiple lines
   //even without space at the beginning;
+  /* a long comment */
   "another": 5,
   "//object": {
     // another comment
     "sub": "fdmcd"
+    /*
+    super long comment
+    */
   }
 }

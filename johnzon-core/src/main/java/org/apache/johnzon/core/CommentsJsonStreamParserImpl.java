@@ -48,15 +48,23 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
     @Override
     protected Event defaultHandling(final char c) {
         if (c == '/') {
-            char next = super.readNextChar();
-            if (next != '/') { // fail
+            char next = readNextChar();
+            if (next == '/') { // fail
+                do {
+                    next = readNextChar();
+                } while (next != '\n');
+            } else if (next == '*') {
+                next = 0;
+                char previous;
+                do {
+                    previous = next;
+                    next = readNextChar();
+                } while (next != '/' && previous != '*');
+                readNextNonWhitespaceChar(next);
+            } else {
                 return super.defaultHandling(c);
             }
-
-            do {
-                next = super.readNextChar();
-            } while (next != '\n');
         }
-        return super.next();
+        return next();
     }
 }

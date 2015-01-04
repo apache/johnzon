@@ -187,7 +187,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //detect garbage at the end of the file after last object or array is closed
         if (bufferPos < availableCharsInBuffer - 2) {
 
-            final char c = readNextNonWhitespaceChar();
+            final char c = readNextNonWhitespaceChar(readNextChar());
 
             if (c == EOF) {
                 return false;
@@ -293,10 +293,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //skip whitespaces
     //tracks location informations (line, column)
     //returns the first non whitespace character
-    private char readNextNonWhitespaceChar() {
+    protected final char readNextNonWhitespaceChar(char c) {
 
         int dosCount = 0;
-        char c = readNextChar();
 
         while (c == SPACE || c == TAB || c == CR || c == EOL) {
 
@@ -331,7 +330,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw uexc("Unexpected end of structure");
         }
 
-        final char c = readNextNonWhitespaceChar();
+        final char c = readNextNonWhitespaceChar(readNextChar());
 
         if (c == COMMA_CHAR) {
 
