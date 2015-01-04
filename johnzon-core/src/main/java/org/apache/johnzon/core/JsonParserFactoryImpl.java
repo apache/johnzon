@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -32,6 +33,8 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
+
+import static java.util.Arrays.asList;
 
 class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     private static final Logger LOGGER = Logger.getLogger(JsonParserFactoryImpl.class.getName());
@@ -44,9 +47,9 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     public static final boolean DEFAULT_SUPPORTS_COMMENT = false;
 
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
         BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH, SUPPORTS_COMMENTS
-    };
+    );
       
     private final int maxSize;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -55,9 +58,8 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
 
     JsonParserFactoryImpl(final Map<String, ?> config) {
         if(config != null) {
-            
-            for (String configKey : SUPPORTED_CONFIG_KEYS) {
-                if(config.containsKey(configKey)) {
+            for (String configKey : config.keySet()) {
+                if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
                 } else {
                     LOGGER.warning(configKey + " is not supported by " + getClass().getName());

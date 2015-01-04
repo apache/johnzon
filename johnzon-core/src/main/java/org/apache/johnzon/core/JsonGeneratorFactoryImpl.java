@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -31,15 +32,15 @@ import java.util.concurrent.ConcurrentMap;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
+import static java.util.Arrays.asList;
+
 public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializable {    
     public static final String BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
     public static final int DEFAULT_BUFFER_LENGTH = Integer.getInteger(BUFFER_LENGTH, 1024); //TODO check default string length/buffer size
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-        
-        JsonGenerator.PRETTY_PRINTING, BUFFER_LENGTH, JsonParserFactoryImpl.BUFFER_STRATEGY 
-        
-    };
+    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
+        JsonGenerator.PRETTY_PRINTING, BUFFER_LENGTH, JsonParserFactoryImpl.BUFFER_STRATEGY
+    );
     //key caching currently disabled
     private final ConcurrentMap<String, String> cache = null;//new ConcurrentHashMap<String, String>();
     private final boolean pretty;
@@ -49,8 +50,8 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializa
         
           if(config != null) {
           
-              for (String configKey : SUPPORTED_CONFIG_KEYS) {
-                  if(config.containsKey(configKey)) {
+              for (String configKey : config.keySet()) {
+                  if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
                       internalConfig.put(configKey, config.get(configKey));
                   }
               }

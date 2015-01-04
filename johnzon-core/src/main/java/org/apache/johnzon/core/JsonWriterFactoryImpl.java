@@ -23,6 +23,7 @@ import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -33,21 +34,23 @@ import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
+import static java.util.Arrays.asList;
+
 class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
     private static final Logger LOGGER = Logger.getLogger(JsonWriterFactoryImpl.class.getName());
 
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
         JsonGenerator.PRETTY_PRINTING
-    };
+    );
     private final JsonGeneratorFactory factory;
 
     JsonWriterFactoryImpl(final Map<String, ?> config) {
         if (config != null) {
 
-            for (final String configKey : SUPPORTED_CONFIG_KEYS) {
-                if (config.containsKey(configKey)) {
+            for (final String configKey : config.keySet()) {
+                if (SUPPORTED_CONFIG_KEYS.contains(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
                 } else {
                     LOGGER.warning(configKey + " not supported by " + getClass().getName());
