@@ -87,6 +87,7 @@ public class MapperBuilder {
     private Comparator<String> attributeOrder = null;
     private boolean skipNull = true;
     private boolean skipEmptyArray = false;
+    private boolean supportsComments = false;
     protected boolean pretty;
     private AccessMode accessMode = new MethodAccessMode();
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
@@ -107,6 +108,9 @@ public class MapperBuilder {
             if (pretty) {
                 config.put(JsonGenerator.PRETTY_PRINTING, true);
             }
+            if (supportsComments) {
+                config.put("org.apache.johnzon.supports-comments", "true");
+            }
 
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
@@ -125,6 +129,11 @@ public class MapperBuilder {
                 skipNull, skipEmptyArray,
                 accessMode,
                 supportHiddenAccess);
+    }
+
+    public MapperBuilder setSupportsComments(final boolean supportsComments) {
+        this.supportsComments = supportsComments;
+        return this;
     }
 
     public MapperBuilder setPretty(final boolean pretty) {

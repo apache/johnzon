@@ -104,6 +104,10 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         builder.setPretty(pretty);
     }
 
+    public void setSupportsComments(final boolean supportsComments) {
+        builder.setSupportsComments(supportsComments);
+    }
+
     public void setIgnores(final String ignores) {
         this.ignores = ignores == null ? null : asList(ignores.split(" *, *"));
     }
