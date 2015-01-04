@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -33,30 +34,33 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
 class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
+    private static final Logger LOGGER = Logger.getLogger(JsonParserFactoryImpl.class.getName());
+
     public static final String BUFFER_STRATEGY = "org.apache.johnzon.buffer-strategy";
     public static final String MAX_STRING_LENGTH = "org.apache.johnzon.max-string-length";
     public static final String BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer";
+    public static final String SUPPORTS_COMMENTS = "org.apache.johnzon.supports-comments";
     public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192*32); //TODO check default string length/buffer size
+    public static final boolean DEFAULT_SUPPORTS_COMMENT = false;
 
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-        
-        BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH
-        
+        BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH, SUPPORTS_COMMENTS
     };
       
     private final int maxSize;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final BufferStrategy.BufferProvider<char[]> valueBufferProvider;
+    private final boolean supportsComments;
 
     JsonParserFactoryImpl(final Map<String, ?> config) {
-        
-
         if(config != null) {
             
             for (String configKey : SUPPORTED_CONFIG_KEYS) {
                 if(config.containsKey(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
+                } else {
+                    LOGGER.warning(configKey + " is not supported by " + getClass().getName());
                 }
             }
         } 
@@ -70,6 +74,7 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         this.maxSize = getInt(MAX_STRING_LENGTH);
         this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
         this.valueBufferProvider = getBufferProvider().newCharProvider(maxSize);
+        this.supportsComments = getBool(SUPPORTS_COMMENTS);
     }
 
     private BufferStrategy getBufferProvider() {
@@ -90,17 +95,36 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
         return Integer.parseInt(maxStringSize.toString());
     }
 
+    private boolean getBool(final String key) {
+        final Object maxStringSize = internalConfig.get(key);
+        if (maxStringSize == null) {
+            return DEFAULT_SUPPORTS_COMMENT;
+        } else if (Boolean.class.isInstance(maxStringSize)) {
+            return Boolean.class.cast(maxStringSize);
+        }
+        return Boolean.parseBoolean(maxStringSize.toString());
+    }
+
     private JsonParser getDefaultJsonParserImpl(final InputStream in) {
+        if (supportsComments) {
+            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
+        }
         //UTF Auto detection RFC 4627
         return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
     private JsonParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
+        if (supportsComments) {
+            return new CommentsJsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider);
+        }
         //use provided charset
         return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider);
     }
 
     private JsonParser getDefaultJsonParserImpl(final Reader in) {
+        if (supportsComments) {
+            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
+        }
         //no charset necessary
         return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
@@ -122,11 +146,13 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
 
     @Override
     public JsonParser createParser(final JsonObject obj) {
+        // no need of a comment version since JsonObject has no comment event
         return new JsonInMemoryParser(obj);
     }
 
     @Override
     public JsonParser createParser(final JsonArray array) {
+        // no need of a comment version since JsonObject has no comment event
         return new JsonInMemoryParser(array);
     }
 

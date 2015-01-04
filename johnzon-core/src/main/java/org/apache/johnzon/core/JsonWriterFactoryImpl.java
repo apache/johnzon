@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
@@ -33,12 +34,12 @@ import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
 class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
+    private static final Logger LOGGER = Logger.getLogger(JsonWriterFactoryImpl.class.getName());
+
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-
-    JsonGenerator.PRETTY_PRINTING
-
+        JsonGenerator.PRETTY_PRINTING
     };
     private final JsonGeneratorFactory factory;
 
@@ -48,6 +49,8 @@ class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
             for (final String configKey : SUPPORTED_CONFIG_KEYS) {
                 if (config.containsKey(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
+                } else {
+                    LOGGER.warning(configKey + " not supported by " + getClass().getName());
                 }
             }
 

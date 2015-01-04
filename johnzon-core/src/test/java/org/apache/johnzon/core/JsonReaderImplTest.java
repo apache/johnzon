@@ -433,8 +433,8 @@ public class JsonReaderImplTest {
         final int[] buffersizes = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
                 26, 27, 28, 32, 64, 128, 1024, 8192 };
 
-        for (int i = 0; i < buffersizes.length; i++) {
-            final String value = String.valueOf(buffersizes[i]);
+        for (final int buffersize : buffersizes) {
+            final String value = String.valueOf(buffersize);
             final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {
                 {
                     put("org.apache.johnzon.default-char-buffer", value);
@@ -448,5 +448,20 @@ public class JsonReaderImplTest {
             assertEquals("s\"mit\"", object.getString("name"));
             reader.close();
         }
+    }
+
+    @Test
+    public void comments() {
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.johnzon.supports-comments", true);
+        }}).createReader(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/comments.json"));
+        final JsonObject object = reader.readObject();
+        assertNotNull(object);
+        assertEquals(3, object.size());
+        assertEquals("//bar//but//not//a/comment", object.getString("foo"));
+        assertEquals(5, object.getInt("another"));
+        assertEquals(1, object.getJsonObject("//object").size());
+        assertEquals("fdmcd", object.getJsonObject("//object").getString("sub"));
+        reader.close();
     }
 }

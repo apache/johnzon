@@ -245,7 +245,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //will also refill buffer if necessary
     //if we are currently processing a value (string or number) and buffer 
     //refill is necessary copy the already read value part into the value buffer
-    private char readNextChar() {
+    protected final char readNextChar() {
 
         if ((availableCharsInBuffer - bufferPos) <= 1) {
             //fillbuffer
@@ -410,11 +410,15 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             case NULL_N: // null
 
                 return handleLiteral();
+
             default:
-                throw uexc("Expected structural character or digit or 't' or 'n' or 'f' or '-'");
 
+                return defaultHandling(c);
         }
+    }
 
+    protected Event defaultHandling(char c) {
+        throw uexc("Expected structural character or digit or 't' or 'n' or 'f' or '-'");
     }
 
     private Event handleStartObject() {
@@ -507,7 +511,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             } else if (n == EOL) {
                 throw uexc("Unexpected linebreak");
 
-            } else if (n >= '\u0000' && n <= '\u001F') {
+            } else if (/* n >= '\u0000' && */ n <= '\u001F') {
                 throw uexc("Unescaped control character");
 
             } else if (n == ESCAPE_CHAR) {

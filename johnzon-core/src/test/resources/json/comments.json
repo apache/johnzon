@@ -1,0 +1,11 @@
+{
+  "foo": "//bar//but//not//a/comment",
+  // a comment
+  // on multiple lines
+  //even without space at the beginning;
+  "another": 5,
+  "//object": {
+    // another comment
+    "sub": "fdmcd"
+  }
+}

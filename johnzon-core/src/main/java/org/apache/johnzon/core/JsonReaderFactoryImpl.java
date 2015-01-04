@@ -32,7 +32,8 @@ import javax.json.JsonReaderFactory;
 class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-        JsonParserFactoryImpl.BUFFER_STRATEGY, JsonParserFactoryImpl.MAX_STRING_LENGTH, JsonParserFactoryImpl.BUFFER_LENGTH
+        JsonParserFactoryImpl.BUFFER_STRATEGY, JsonParserFactoryImpl.MAX_STRING_LENGTH,
+        JsonParserFactoryImpl.BUFFER_LENGTH, JsonParserFactoryImpl.SUPPORTS_COMMENTS
     };
     private final JsonParserFactoryImpl parserFactory;
 
