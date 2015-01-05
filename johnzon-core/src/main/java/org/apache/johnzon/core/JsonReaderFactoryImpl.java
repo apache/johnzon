@@ -18,49 +18,27 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Arrays.asList;
+
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 
-import static java.util.Arrays.asList;
+class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFactory {
+    static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
 
-class JsonReaderFactoryImpl implements JsonReaderFactory, Serializable {
-    private static final Logger LOGGER = Logger.getLogger(JsonReaderFactoryImpl.class.getName());
-
-    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonParserFactoryImpl.BUFFER_STRATEGY, JsonParserFactoryImpl.MAX_STRING_LENGTH,
-        JsonParserFactoryImpl.BUFFER_LENGTH, JsonParserFactoryImpl.SUPPORTS_COMMENTS
     );
     private final JsonParserFactoryImpl parserFactory;
 
     JsonReaderFactoryImpl(final Map<String, ?> config) {
-
-        if(config != null) {
-            
-            for (String configKey : config.keySet()) {
-                if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
-                    internalConfig.put(configKey, config.get(configKey));
-                } else {
-                    LOGGER.warning(configKey + " not supported by " + getClass().getName());
-                }
-            }
-            
-            this.parserFactory = new JsonParserFactoryImpl(internalConfig);
-            
-        } else {
-            this.parserFactory = new JsonParserFactoryImpl(null);
-        }
-        
+        super(config, SUPPORTED_CONFIG_KEYS, JsonParserFactoryImpl.SUPPORTED_CONFIG_KEYS);
+        this.parserFactory = new JsonParserFactoryImpl(internalConfig);
     }
 
     @Override

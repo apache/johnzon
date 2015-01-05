@@ -18,28 +18,25 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Arrays.asList;
+
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
-import static java.util.Arrays.asList;
-
-public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializable {    
-    public static final String BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
-    public static final int DEFAULT_BUFFER_LENGTH = Integer.getInteger(BUFFER_LENGTH, 1024); //TODO check default string length/buffer size
-    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, BUFFER_LENGTH, JsonParserFactoryImpl.BUFFER_STRATEGY
+public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {    
+    public static final String GENERATOR_BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
+    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
+   
+    static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
+        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY
     );
     //key caching currently disabled
     private final ConcurrentMap<String, String> cache = null;//new ConcurrentHashMap<String, String>();
@@ -48,45 +45,16 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializa
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
         
-          if(config != null) {
+          super(config, SUPPORTED_CONFIG_KEYS, null); 
           
-              for (String configKey : config.keySet()) {
-                  if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
-                      internalConfig.put(configKey, config.get(configKey));
-                  }
-              }
-          } 
-
-          if(internalConfig.containsKey(JsonGenerator.PRETTY_PRINTING)) {
-              this.pretty = Boolean.TRUE.equals(internalConfig.get(JsonGenerator.PRETTY_PRINTING)) || "true".equals(internalConfig.get(JsonGenerator.PRETTY_PRINTING));
-          } else {
-              this.pretty = false;
-          }
+          this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
           
-          final int bufferSize = getInt(BUFFER_LENGTH);
+          final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
           if (bufferSize <= 0) {
               throw new IllegalArgumentException("buffer length must be greater than zero");
           }
 
           this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
-    }
-    
-    private BufferStrategy getBufferProvider() {
-        final Object name = internalConfig.get(JsonParserFactoryImpl.BUFFER_STRATEGY);
-        if (name != null) {
-            return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
-        }
-        return BufferStrategy.QUEUE;
-    }
-
-    private int getInt(final String key) {
-        final Object maxStringSize = internalConfig.get(key);
-        if (maxStringSize == null) {
-            return DEFAULT_BUFFER_LENGTH;
-        } else if (Number.class.isInstance(maxStringSize)) {
-            return Number.class.cast(maxStringSize).intValue();
-        }
-        return Integer.parseInt(maxStringSize.toString());
     }
 
     @Override
@@ -96,8 +64,6 @@ public class JsonGeneratorFactoryImpl implements JsonGeneratorFactory, Serializa
         }
         return new JsonGeneratorImpl(writer, bufferProvider, cache);
     }
-
-   
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {

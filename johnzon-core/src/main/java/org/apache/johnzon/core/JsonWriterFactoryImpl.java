@@ -18,50 +18,30 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Arrays.asList;
+
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Serializable;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
-import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
-import static java.util.Arrays.asList;
-
-class JsonWriterFactoryImpl implements JsonWriterFactory, Serializable {
-    private static final Logger LOGGER = Logger.getLogger(JsonWriterFactoryImpl.class.getName());
-
+class JsonWriterFactoryImpl extends AbstractJsonFactory implements JsonWriterFactory{
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING
+    static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
+
     );
     private final JsonGeneratorFactory factory;
 
     JsonWriterFactoryImpl(final Map<String, ?> config) {
-        if (config != null) {
-
-            for (final String configKey : config.keySet()) {
-                if (SUPPORTED_CONFIG_KEYS.contains(configKey)) {
-                    internalConfig.put(configKey, config.get(configKey));
-                } else {
-                    LOGGER.warning(configKey + " not supported by " + getClass().getName());
-                }
-            }
-
-            this.factory = new JsonGeneratorFactoryImpl(internalConfig);
-        } else {
-            this.factory = new JsonGeneratorFactoryImpl(null);
-        }
-
+        super(config, SUPPORTED_CONFIG_KEYS, JsonGeneratorFactoryImpl.SUPPORTED_CONFIG_KEYS);
+        this.factory = new JsonGeneratorFactoryImpl(internalConfig);
     }
 
     @Override

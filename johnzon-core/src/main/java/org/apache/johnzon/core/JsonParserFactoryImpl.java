@@ -18,36 +18,31 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Arrays.asList;
+
 import java.io.InputStream;
 import java.io.Reader;
-import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
-import java.util.logging.Logger;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
-import static java.util.Arrays.asList;
-
-class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
-    private static final Logger LOGGER = Logger.getLogger(JsonParserFactoryImpl.class.getName());
-
-    public static final String BUFFER_STRATEGY = "org.apache.johnzon.buffer-strategy";
+class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonParserFactory {
     public static final String MAX_STRING_LENGTH = "org.apache.johnzon.max-string-length";
+    public static final int DEFAULT_MAX_STRING_LENGTH = Integer.getInteger(MAX_STRING_LENGTH, 10 * 1024 * 1024); //10m
+    
     public static final String BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer";
+    public static final int DEFAULT_BUFFER_LENGTH = Integer.getInteger(BUFFER_LENGTH, 64 * 1024); //64k
+    
     public static final String SUPPORTS_COMMENTS = "org.apache.johnzon.supports-comments";
-    public static final int DEFAULT_MAX_SIZE = Integer.getInteger(MAX_STRING_LENGTH, 8192*32); //TODO check default string length/buffer size
-    public static final boolean DEFAULT_SUPPORTS_COMMENT = false;
+    public static final boolean DEFAULT_SUPPORTS_COMMENT = Boolean.getBoolean(SUPPORTS_COMMENTS); //default is false;
 
-    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
+    static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
         BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH, SUPPORTS_COMMENTS
     );
       
@@ -57,54 +52,17 @@ class JsonParserFactoryImpl implements JsonParserFactory, Serializable {
     private final boolean supportsComments;
 
     JsonParserFactoryImpl(final Map<String, ?> config) {
-        if(config != null) {
-            for (String configKey : config.keySet()) {
-                if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
-                    internalConfig.put(configKey, config.get(configKey));
-                } else {
-                    LOGGER.warning(configKey + " is not supported by " + getClass().getName());
-                }
-            }
-        } 
-        
+        super(config, SUPPORTED_CONFIG_KEYS, null);
 
-        final int bufferSize = getInt(BUFFER_LENGTH);
+        final int bufferSize = getInt(BUFFER_LENGTH, DEFAULT_BUFFER_LENGTH);
         if (bufferSize <= 0) {
             throw new IllegalArgumentException("buffer length must be greater than zero");
         }
 
-        this.maxSize = getInt(MAX_STRING_LENGTH);
+        this.maxSize = getInt(MAX_STRING_LENGTH, DEFAULT_MAX_STRING_LENGTH);
         this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
         this.valueBufferProvider = getBufferProvider().newCharProvider(maxSize);
-        this.supportsComments = getBool(SUPPORTS_COMMENTS);
-    }
-
-    private BufferStrategy getBufferProvider() {
-        final Object name = internalConfig.get(BUFFER_STRATEGY);
-        if (name != null) {
-            return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
-        }
-        return BufferStrategy.QUEUE;
-    }
-
-    private int getInt(final String key) {
-        final Object maxStringSize = internalConfig.get(key);
-        if (maxStringSize == null) {
-            return DEFAULT_MAX_SIZE;
-        } else if (Number.class.isInstance(maxStringSize)) {
-            return Number.class.cast(maxStringSize).intValue();
-        }
-        return Integer.parseInt(maxStringSize.toString());
-    }
-
-    private boolean getBool(final String key) {
-        final Object maxStringSize = internalConfig.get(key);
-        if (maxStringSize == null) {
-            return DEFAULT_SUPPORTS_COMMENT;
-        } else if (Boolean.class.isInstance(maxStringSize)) {
-            return Boolean.class.cast(maxStringSize);
-        }
-        return Boolean.parseBoolean(maxStringSize.toString());
+        this.supportsComments = getBool(SUPPORTS_COMMENTS, DEFAULT_SUPPORTS_COMMENT);
     }
 
     private JsonParser getDefaultJsonParserImpl(final InputStream in) {
