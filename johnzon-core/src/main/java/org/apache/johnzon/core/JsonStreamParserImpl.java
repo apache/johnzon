@@ -331,9 +331,6 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         }
 
         final char c = readNextNonWhitespaceChar(readNextChar());
-        if (c == EOF) {
-            throw uexc("End of file hit too early");
-        }
 
         if (c == COMMA_CHAR) {
 
@@ -420,6 +417,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     }
 
     protected Event defaultHandling(char c) {
+        if (c == EOF) {
+            throw uexc("End of file hit too early");
+        }
         throw uexc("Expected structural character or digit or 't' or 'n' or 'f' or '-'");
     }
 

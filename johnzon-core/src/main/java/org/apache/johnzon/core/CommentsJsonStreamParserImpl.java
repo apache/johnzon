@@ -53,6 +53,7 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
                 do {
                     next = readNextChar();
                 } while (next != '\n');
+                return next();
             } else if (next == '*') {
                 next = 0;
                 char previous;
@@ -61,10 +62,9 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
                     next = readNextChar();
                 } while (next != '/' && previous != '*');
                 readNextNonWhitespaceChar(next);
-            } else {
-                return super.defaultHandling(c);
+                return next();
             }
         }
-        return next();
+        return super.defaultHandling(c);
     }
 }
