@@ -680,7 +680,6 @@ public class JsonParserTest {
         
         
         JsonParser parser2 = Json.createParser(new StringReader("{"));
-        int i=0;
         try {
             while(parser2.hasNext()) {
                     parser2.next();                                
@@ -713,7 +712,6 @@ public class JsonParserTest {
         
         
         JsonParser parser2 = Json.createParser(new StringReader("{"));
-        int i=0;
         try {
             while(parser2.hasNext()) {
                     parser2.next();                                
