@@ -21,7 +21,6 @@ package org.apache.johnzon.core;
 import java.io.InputStream;
 import java.io.Reader;
 import java.nio.charset.Charset;
-import java.util.NoSuchElementException;
 
 public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
     public CommentsJsonStreamParserImpl(final InputStream inputStream,
