@@ -331,6 +331,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         }
 
         final char c = readNextNonWhitespaceChar(readNextChar());
+        if (c == EOF) {
+            throw uexc("End of file hit too early");
+        }
 
         if (c == COMMA_CHAR) {
 
