@@ -52,15 +52,15 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
             if (next == '/') { // fail
                 do {
                     next = readNextChar();
-                } while (next != '\n');
+                } while (next != EOL);
                 return next();
             } else if (next == '*') {
                 next = 0;
                 char previous;
                 do {
                     previous = next;
-                    next = readNextChar();
-                } while (next != '/' && previous != '*');
+                    next = readNextNonWhitespaceChar(readNextChar());
+                } while (next != '/' || previous != '*');
                 readNextNonWhitespaceChar(next);
                 return next();
             }

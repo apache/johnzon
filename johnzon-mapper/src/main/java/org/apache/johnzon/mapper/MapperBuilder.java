@@ -108,15 +108,17 @@ public class MapperBuilder {
             if (pretty) {
                 config.put(JsonGenerator.PRETTY_PRINTING, true);
             }
+
+            if (generatorFactory == null) {
+                generatorFactory = provider.createGeneratorFactory(config);
+            }
+
+            config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
             if (supportsComments) {
                 config.put("org.apache.johnzon.supports-comments", "true");
             }
-
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
-            }
-            if (generatorFactory == null) {
-                generatorFactory = provider.createGeneratorFactory(config);
             }
         }
 
