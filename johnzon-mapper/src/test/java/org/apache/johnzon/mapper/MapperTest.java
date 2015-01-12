@@ -137,6 +137,21 @@ public class MapperTest {
 
         assertEquals(instance, instance2);
     }
+    
+    
+   @Test
+   public void writeShortArray() {
+        StringWriter writer = new StringWriter();
+        new MapperBuilder().build().writeArray(new Short[]{(short)1,(short)2,(short)3},writer);
+        assertEquals("[1,2,3]", writer.toString());
+   }
+   
+   @Test
+   public void writeByteArray() {
+       StringWriter writer = new StringWriter();
+       new MapperBuilder().build().writeArray(new Byte[]{(byte)1,(byte)2,(byte)3},writer);
+       assertEquals("[1,2,3]", writer.toString());
+   }
 
     static class Bool {
         private boolean bool;
