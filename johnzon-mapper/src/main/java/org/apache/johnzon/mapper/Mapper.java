@@ -107,7 +107,7 @@ public class Mapper {
         } else if (type == long.class || type == Long.class) {
             return generator.write(Long.class.cast(value).longValue());
         } else if (isInt(type)) {
-            return generator.write(Integer.class.cast(value).intValue());
+            return generator.write(Number.class.cast(value).intValue());
         } else if (isFloat(type)) {
             final double doubleValue = Number.class.cast(value).doubleValue();
             if (Double.isNaN(doubleValue)) {
