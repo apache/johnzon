@@ -18,6 +18,18 @@
  */
 package org.apache.johnzon.mapper;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.json.JsonReaderFactory;
+import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
@@ -36,17 +48,6 @@ import org.apache.johnzon.mapper.converter.IntegerConverter;
 import org.apache.johnzon.mapper.converter.LongConverter;
 import org.apache.johnzon.mapper.converter.ShortConverter;
 import org.apache.johnzon.mapper.converter.StringConverter;
-
-import javax.json.JsonReaderFactory;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MapperBuilder {
     private static final Map<Class<?>, Converter<?>> DEFAULT_CONVERTERS = new HashMap<Class<?>, Converter<?>>();
@@ -90,6 +91,7 @@ public class MapperBuilder {
     private boolean supportsComments = false;
     protected boolean pretty;
     private AccessMode accessMode = new MethodAccessMode();
+    private boolean treatByteArrayAsBase64;
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
 
     public Mapper build() {
@@ -130,7 +132,8 @@ public class MapperBuilder {
                 attributeOrder,
                 skipNull, skipEmptyArray,
                 accessMode,
-                supportHiddenAccess);
+                supportHiddenAccess,
+                treatByteArrayAsBase64);
     }
 
     public MapperBuilder setSupportsComments(final boolean supportsComments) {
@@ -220,4 +223,10 @@ public class MapperBuilder {
         this.skipEmptyArray = skipEmptyArray;
         return this;
     }
+    
+    public MapperBuilder setTreatByteArrayAsBase64(final boolean treatByteArrayAsBase64) {
+        this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
+        return this;
+    }
+
 }

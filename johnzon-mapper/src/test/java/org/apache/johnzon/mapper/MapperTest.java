@@ -18,25 +18,27 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
-import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import org.junit.Test;
 
 public class MapperTest {
     private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"integer\":56," + "\"longnumber\":118,"
@@ -152,6 +154,98 @@ public class MapperTest {
        new MapperBuilder().build().writeArray(new Byte[]{(byte)1,(byte)2,(byte)3},writer);
        assertEquals("[1,2,3]", writer.toString());
    }
+   
+   
+   @Test
+   public void shortAndByte() {
+       ByteShort bs = new ByteShort();
+       bs.setNumByte((byte) 6);
+       bs.setNumShort((short) -1);
+       bs.setNumByteA(new byte[]{(byte) 1, (byte) -1, (byte) 2});
+       bs.setNumShortA(new short[]{(short) 4, (short) -2});
+       
+       bs.setByteW(new Byte((byte)7));
+       bs.setShortW(new Short((short)22));
+       bs.setByteWA(new Byte[]{new Byte((byte) 4), new Byte((byte) -12), new Byte((byte) 2)});
+       bs.setShortWA(new Short[]{new Short((short) 7), new Short((short) -2)});
+       
+       final String expectedJson = "{\"byteW\":7,\"byteWA\":[4,-12,2],\"numByte\":6,\"numByteA\":[1,-1,2],\"numShort\":-1,\"numShortA\":[4,-2],\"shortW\":22,\"shortWA\":[7,-2]}";
+       final Comparator<String> attributeOrder = new Comparator<String>() {
+           @Override
+           public int compare(final String o1, final String o2) {
+               return o1.compareTo(o2);
+           }
+       };
+       
+       Mapper mapper = new MapperBuilder().setAttributeOrder(attributeOrder).build();
+
+       StringWriter writer = new StringWriter();
+       mapper.writeObject(bs, writer);
+       assertEquals(expectedJson, writer.toString());
+   
+       ByteShort bsr = mapper.readObject(new StringReader(expectedJson), ByteShort.class);
+       
+       writer = new StringWriter();
+       mapper.writeObject(bsr, writer);
+       assertEquals(expectedJson, writer.toString());
+   }
+   
+   @Test
+   public void shortAndByteBase64() {
+       ByteShort bs = new ByteShort();
+       bs.setNumByte((byte) 6);
+       bs.setNumShort((short) -1);
+       bs.setNumByteA(new byte[]{(byte) 1, (byte) -1, (byte) 2});
+       bs.setNumShortA(new short[]{(short) 4, (short) -2});
+       
+       bs.setByteW(new Byte((byte)7));
+       bs.setShortW(new Short((short)22));
+       bs.setByteWA(new Byte[]{new Byte((byte) 4), new Byte((byte) -12), new Byte((byte) 2)});
+       bs.setShortWA(new Short[]{new Short((short) 7), new Short((short) -2)});
+       
+       final String expectedJson = "{\"byteW\":7,\"byteWA\":[4,-12,2],\"numByte\":6,\"numByteA\":\"Af8C\",\"numShort\":-1,\"numShortA\":[4,-2],\"shortW\":22,\"shortWA\":[7,-2]}";
+       
+       
+       final Comparator<String> attributeOrder = new Comparator<String>() {
+           @Override
+           public int compare(final String o1, final String o2) {
+               return o1.compareTo(o2);
+           }
+       };
+       
+       Mapper mapper = new MapperBuilder().setAttributeOrder(attributeOrder).setTreatByteArrayAsBase64(true).build();
+       
+       StringWriter writer = new StringWriter();
+       mapper.writeObject(bs, writer);
+       assertEquals(expectedJson, writer.toString());
+   
+       ByteShort bsr = mapper.readObject(new StringReader(expectedJson), ByteShort.class);
+       
+       writer = new StringWriter();
+       mapper.writeObject(bsr, writer);
+       assertEquals(expectedJson, writer.toString());
+   }
+   
+   /*@Test
+   public void byteArrayBase64Converter() {
+       
+       Mapper mapper = new MapperBuilder().setTreatByteArrayAsBase64(false).build();
+       
+       ByteArray ba = new ByteArray();
+       ba.setByteArray(new byte[]{(byte) 1,(byte) 1,(byte) 1 });
+       
+       final String expectedJson = "{\"shortW\":22,\"shortWA\":[7,-2],\"byteW\":7,\"numShortA\":[4,-2],\"numByteA\":\"Af8C\",\"byteWA\":[4,-12,2],\"numByte\":6,\"numShort\":-1}";
+       
+       StringWriter writer = new StringWriter();
+       mapper.writeObject(ba, writer);
+       assertEquals(expectedJson, writer.toString());
+   
+       ByteShort bsr = mapper.readObject(new StringReader(expectedJson), ByteArray.class);
+       
+       writer = new StringWriter();
+       mapper.writeObject(bsr, writer);
+       assertEquals(expectedJson, writer.toString());
+   }*/
 
     static class Bool {
         private boolean bool;
@@ -571,4 +665,88 @@ public class MapperTest {
     public static class FieldAccess {
         private int value;
     }
+    
+    public static class ByteShort {
+        
+        private byte numByte;
+        private short numShort;
+        
+        private byte[] numByteA;
+        private short[] numShortA;
+        
+        private Byte byteW;
+        private Short shortW;
+        
+        private Byte[] byteWA;
+        private Short[] shortWA;
+        
+        public byte[] getNumByteA() {
+            return numByteA;
+        }
+        public void setNumByteA(byte[] numByteA) {
+            this.numByteA = numByteA;
+        }
+        public short[] getNumShortA() {
+            return numShortA;
+        }
+        public void setNumShortA(short[] numShortA) {
+            this.numShortA = numShortA;
+        }
+        public byte getNumByte() {
+            return numByte;
+        }
+        public void setNumByte(byte numByte) {
+            this.numByte = numByte;
+        }
+        public Byte getByteW() {
+            return byteW;
+        }
+        public void setByteW(Byte byteW) {
+            this.byteW = byteW;
+        }
+        public Short getShortW() {
+            return shortW;
+        }
+        public void setShortW(Short shortW) {
+            this.shortW = shortW;
+        }
+        public Byte[] getByteWA() {
+            return byteWA;
+        }
+        public void setByteWA(Byte[] byteWA) {
+            this.byteWA = byteWA;
+        }
+        public Short[] getShortWA() {
+            return shortWA;
+        }
+        public void setShortWA(Short[] shortWA) {
+            this.shortWA = shortWA;
+        }
+        public short getNumShort() {
+            return numShort;
+        }
+        public void setNumShort(short numShort) {
+            this.numShort = numShort;
+        }
+        
+        
+        
+    }
+    
+    /*public static class ByteArray {
+        
+        public byte[] byteArray;
+
+        @JohnzonConverter(ByteArrayBase64Converter.class)
+        public byte[] getByteArray() {
+            return byteArray;
+        }
+
+        @JohnzonConverter(ByteArrayBase64Converter.class)
+        public void setByteArray(byte[] byteArray) {
+            this.byteArray = byteArray;
+        }
+        
+        
+    }*/
 }

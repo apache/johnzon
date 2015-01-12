@@ -18,22 +18,8 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.converter.EnumConverter;
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
-import org.apache.johnzon.mapper.reflection.Mappings;
+import static java.util.Arrays.asList;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.JsonValue.ValueType;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -63,7 +49,23 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.util.Arrays.asList;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+import javax.xml.bind.DatatypeConverter;
+
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import org.apache.johnzon.mapper.reflection.Mappings;
 
 public class Mapper {
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
@@ -75,15 +77,16 @@ public class Mapper {
     protected final boolean close;
     protected final ConcurrentMap<Type, Converter<?>> converters;
     protected final int version;
-    private final boolean hiddenConstructorSupported;
-    private final AccessMode accessMode;
+    //private final boolean hiddenConstructorSupported;
+    //private final AccessMode accessMode;
     protected boolean skipNull;
     protected boolean skipEmptyArray;
+    protected boolean treatByteArrayAsBase64;
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, boolean skipNull, boolean skipEmptyArray,
-                  final AccessMode accessMode, final boolean hiddenConstructorSupported) {
+                  final AccessMode accessMode, final boolean hiddenConstructorSupported, boolean treatByteArrayAsBase64) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
@@ -92,8 +95,9 @@ public class Mapper {
         this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
-        this.accessMode = accessMode;
-        this.hiddenConstructorSupported = hiddenConstructorSupported;
+        //this.accessMode = accessMode;
+        //this.hiddenConstructorSupported = hiddenConstructorSupported;
+        this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -389,6 +393,12 @@ public class Mapper {
             if (length == 0 && skipEmptyArray) {
                 return generator;
             }
+            
+            if(treatByteArrayAsBase64 && (type == byte[].class /*|| type == Byte[].class*/)) {
+                String base64EncodedByteArray = DatatypeConverter.printBase64Binary((byte[]) value);
+                generator.write(key, base64EncodedByteArray);
+                return generator;
+            }
 
             JsonGenerator gen = generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
@@ -593,6 +603,10 @@ public class Mapper {
                 return false;
             }
             throw new MapperException("Unable to parse " + jsonValue + " to boolean");
+        }
+
+        if(treatByteArrayAsBase64 && jsonValue.getValueType() == ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
+            return DatatypeConverter.parseBase64Binary(((JsonString)jsonValue).getString());
         }
 
         if (Object.class == type) { // handling specific types here to keep exception in standard handling
