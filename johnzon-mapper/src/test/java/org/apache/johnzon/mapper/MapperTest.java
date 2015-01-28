@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -78,7 +79,8 @@ public class MapperTest {
         assertEquals(1, object.size());
         final Collection<TheObject> object2 = new MapperBuilder().build()
                 .readJohnzonCollection(new ByteArrayInputStream("[{}]".getBytes()),
-                        new JohnzonCollectionType<List<TheObject>>() {});
+                        new JohnzonCollectionType<List<TheObject>>() {
+                        });
         assertNotNull(object2);
         assertEquals(1, object2.size());
     }
@@ -115,6 +117,23 @@ public class MapperTest {
             }
         }, baos);
         assertEquals("{\"a\":1,\"b\":2}", new String(baos.toByteArray()));
+    }
+
+    @Test
+    public void writeArrayOfArray() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new String[][]{new String[]{"a", "b"}, new String[]{"c", "d"}}, baos);
+        assertEquals("[[\"a\",\"b\"],[\"c\",\"d\"]]", new String(baos.toByteArray()));
+    }
+
+    @Test
+    public void writeListOfList() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new ArrayList<List<String>>(){{
+            add(new ArrayList<String>(){{ add("a");add("b"); }});
+            add(new ArrayList<String>(){{ add("c");add("d"); }});
+        }}, baos);
+        assertEquals("[[\"a\",\"b\"],[\"c\",\"d\"]]", new String(baos.toByteArray()));
     }
 
     @Test

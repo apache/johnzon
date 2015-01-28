@@ -225,21 +225,27 @@ public class Mapper {
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream);
         try {
-            if (object == null) {
-                generator = generator.writeStartArray().writeEnd();
-            } else {
-                generator = generator.writeStartArray();
-                for (final T t : object) {
-                    generator = writeItem(generator, t);
-                }
-                generator = generator.writeEnd();
-            }
+            generator = doWriteArray(object, generator);
         } finally {
             doCloseOrFlush(generator);
         }
     }
 
-    private void doCloseOrFlush(JsonGenerator generator) {
+    private <T> JsonGenerator doWriteArray(final Collection<T> object, final JsonGenerator inGenerator) {
+        JsonGenerator generator = inGenerator;
+        if (object == null) {
+            generator = generator.writeStartArray().writeEnd();
+        } else {
+            generator = generator.writeStartArray();
+            for (final T t : object) {
+                generator = writeItem(generator, t);
+            }
+            generator = generator.writeEnd();
+        }
+        return generator;
+    }
+
+    private void doCloseOrFlush(final JsonGenerator generator) {
         if (close) {
             generator.close();
         } else {
@@ -428,9 +434,22 @@ public class Mapper {
     }
 
     private JsonGenerator writeItem(final JsonGenerator generator, final Object o) {
-        final JsonGenerator newGen = writePrimitives(generator, o);
+        JsonGenerator newGen = writePrimitives(generator, o);
         if (newGen == null) {
-            return doWriteObject(generator, o);
+            if (Collection.class.isInstance(o)) {
+                newGen = doWriteArray(Collection.class.cast(o), generator);
+            } else if (o != null && o.getClass().isArray()) {
+                final int length = Array.getLength(o);
+                if (length > 0 || !skipEmptyArray) {
+                    newGen = generator.writeStartArray();
+                    for (int i = 0; i < length; i++) {
+                        newGen = writeItem(newGen, Array.get(o, i));
+                    }
+                    newGen = newGen.writeEnd();
+                }
+            } else {
+                newGen = doWriteObject(generator, o);
+            }
         }
         return newGen;
     }
