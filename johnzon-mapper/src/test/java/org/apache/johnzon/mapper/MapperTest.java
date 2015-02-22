@@ -18,12 +18,9 @@
  */
 package org.apache.johnzon.mapper;
 
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -37,9 +34,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
-import org.junit.Test;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class MapperTest {
     private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"integer\":56," + "\"longnumber\":118,"
@@ -429,6 +429,30 @@ public class MapperTest {
         assertEquals("{}", value);
     }
 
+    @Test
+    public void aliases() {
+        {
+            final Aliases aliases = new MapperBuilder().build().readObject(
+                    new ByteArrayInputStream("{\"super_long_property\":\"ok\"}".getBytes()), Aliases.class);
+            assertEquals("ok", aliases.superLongProperty);
+        }
+        {
+            final Aliases aliases = new Aliases();
+            aliases.setSuperLongProperty("ok");
+            assertEquals("{\"super_long_property\":\"ok\"}", new MapperBuilder().build().writeObjectAsString(aliases));
+        }
+        {
+            final AliasesOnField aliases = new MapperBuilder().setAccessModeName("field").build().readObject(
+                    new ByteArrayInputStream("{\"super_long_property\":\"ok\"}".getBytes()), AliasesOnField.class);
+            assertEquals("ok", aliases.superLongProperty);
+        }
+        {
+            final AliasesOnField aliases = new AliasesOnField();
+            aliases.setSuperLongProperty("ok");
+            assertEquals("{\"super_long_property\":\"ok\"}", new MapperBuilder().setAccessModeName("field").build().writeObjectAsString(aliases));
+        }
+    }
+
     public static class NanHolder {
         private Double nan = Double.NaN;
 
@@ -750,6 +774,32 @@ public class MapperTest {
         
         
         
+    }
+
+    public static class Aliases {
+        private String superLongProperty;
+
+        @JohnzonProperty("super_long_property")
+        public String getSuperLongProperty() {
+            return superLongProperty;
+        }
+
+        public void setSuperLongProperty(final String superLongProperty) {
+            this.superLongProperty = superLongProperty;
+        }
+    }
+
+    public static class AliasesOnField {
+        @JohnzonProperty("super_long_property")
+        private String superLongProperty;
+
+        public String getSuperLongProperty() {
+            return superLongProperty;
+        }
+
+        public void setSuperLongProperty(final String superLongProperty) {
+            this.superLongProperty = superLongProperty;
+        }
     }
     
     /*public static class ByteArray {

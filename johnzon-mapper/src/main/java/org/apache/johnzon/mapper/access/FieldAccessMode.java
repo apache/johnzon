@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 
 import java.lang.annotation.Annotation;
@@ -36,7 +37,8 @@ public class FieldAccessMode implements AccessMode {
             if (isIgnored(key)) {
                 continue;
             }
-            readers.put(key, new FieldReader(f.getValue()));
+
+            readers.put(extractKey(f.getValue(), key), new FieldReader(f.getValue()));
         }
         return readers;
     }
@@ -49,9 +51,14 @@ public class FieldAccessMode implements AccessMode {
             if (isIgnored(key)) {
                 continue;
             }
-            writers.put(key, new FieldWriter(f.getValue()));
+            writers.put(extractKey(f.getValue(), key), new FieldWriter(f.getValue()));
         }
         return writers;
+    }
+
+    private String extractKey(final Field f, final String key) {
+        final JohnzonProperty property = f.getAnnotation(JohnzonProperty.class);
+        return property != null ? property.value() : key;
     }
 
     protected boolean isIgnored(final String key) {

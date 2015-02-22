@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 
 import java.beans.IntrospectionException;
@@ -40,7 +41,7 @@ public class MethodAccessMode implements AccessMode {
                 if (isIgnored(descriptor.getName())) {
                     continue;
                 }
-                readers.put(descriptor.getName(), new MethodReader(readMethod));
+                readers.put(extractKey(descriptor), new MethodReader(readMethod));
             }
         }
         return readers;
@@ -56,10 +57,15 @@ public class MethodAccessMode implements AccessMode {
                 if (isIgnored(descriptor.getName())) {
                     continue;
                 }
-                writers.put(descriptor.getName(), new MethodWriter(writeMethod));
+                writers.put(extractKey(descriptor), new MethodWriter(writeMethod));
             }
         }
         return writers;
+    }
+
+    private String extractKey(final PropertyDescriptor f) {
+        final JohnzonProperty property = f.getReadMethod() == null ? null : f.getReadMethod().getAnnotation(JohnzonProperty.class);
+        return property != null ? property.value() : f.getName();
     }
 
     protected boolean isIgnored(final String name) {
