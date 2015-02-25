@@ -84,13 +84,14 @@ public class Mapper {
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
-                  final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean treatByteArrayAsBase64) {
+                  final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean useConstructors,
+                  final boolean treatByteArrayAsBase64) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported);
+        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
@@ -587,15 +588,13 @@ public class Mapper {
             throw new IllegalArgumentException(classMapping.clazz.getName() + " can't be instantiated by Johnzon, this is a write only class");
         }
 
-        final Object t = classMapping.constructor.newInstance();
+        final Object t = !classMapping.constructorHasArguments ?
+                classMapping.constructor.newInstance() : classMapping.constructor.newInstance(createParameters(classMapping, object));
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
             final AccessMode.Writer setterMethod = value.writer;
-            final Object convertedValue = value.converter == null ?
-                    toObject(jsonValue, value.paramType) : jsonValue.getValueType() == ValueType.STRING ?
-                    value.converter.fromString(JsonString.class.cast(jsonValue).getString()) :
-                    value.converter.fromString(jsonValue.toString());
+            final Object convertedValue = toValue(jsonValue, value.converter, value.paramType);
 
             if (convertedValue != null) {
                 setterMethod.write(t, convertedValue);
@@ -603,6 +602,21 @@ public class Mapper {
         }
 
         return t;
+    }
+
+    private Object toValue(final JsonValue jsonValue, final Converter<?> converter, final Type type) throws Exception {
+        return converter == null ?
+                toObject(jsonValue, type) : jsonValue.getValueType() == ValueType.STRING ?
+                converter.fromString(JsonString.class.cast(jsonValue).getString()) :
+                converter.fromString(jsonValue.toString());
+    }
+
+    private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object) throws Exception {
+        final Object[] objects = new Object[mapping.constructorParameters.length];
+        for (int i = 0; i < mapping.constructorParameters.length; i++) {
+            objects[i] = toValue(object.get(mapping.constructorParameters[i]), mapping.constructorParameterConverters[i], mapping.constructorParameterTypes[i]);
+        }
+        return objects;
     }
 
     private Object toObject(final JsonValue jsonValue, final Type type) throws Exception {

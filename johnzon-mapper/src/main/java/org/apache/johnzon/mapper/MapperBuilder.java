@@ -94,6 +94,7 @@ public class MapperBuilder {
     private AccessMode accessMode = new MethodAccessMode(false);
     private boolean treatByteArrayAsBase64;
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
+    private boolean supportConstructors;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -134,6 +135,7 @@ public class MapperBuilder {
                 skipNull, skipEmptyArray,
                 accessMode,
                 supportHiddenAccess,
+                supportConstructors,
                 treatByteArrayAsBase64);
     }
 
@@ -240,4 +242,8 @@ public class MapperBuilder {
         return this;
     }
 
+    public MapperBuilder setSupportConstructors(final boolean supportConstructors) {
+        this.supportConstructors = supportConstructors;
+        return this;
+    }
 }

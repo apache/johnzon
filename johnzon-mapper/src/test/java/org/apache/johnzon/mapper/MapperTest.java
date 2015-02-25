@@ -22,6 +22,7 @@ import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.junit.Test;
 
+import java.beans.ConstructorProperties;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
@@ -438,6 +439,18 @@ public class MapperTest {
         assertEquals(asList("a", "b"), value.getTheCollection());
     }
 
+
+    @Test
+    public void constructor() {
+        final ConstructorUsage value = new MapperBuilder().setSupportConstructors(true).build()
+                .readObject(
+                    new ByteArrayInputStream(
+                        "{\"converted\":\"yeah\",\"value\":\"test\",\"collection\":[\"a\",\"b\"]}".getBytes()),
+                        ConstructorUsage.class);
+        assertEquals("test", value.aValue);
+        assertEquals(asList("a", "b"), value.theCollection);
+    }
+
     @Test
     public void aliases() {
         {
@@ -819,6 +832,31 @@ public class MapperTest {
                 theCollection = new LinkedList<String>();
             }
             return theCollection;
+        }
+    }
+
+    public static class ConstructorUsage {
+        private final String foo;
+        private final String aValue;
+        private final Collection<String> theCollection;
+
+        @ConstructorProperties({ "value", "collection", "converted" })
+        public ConstructorUsage(final String aValue, final Collection<String> theCollection, @JohnzonConverter(YeahConverter.class) final String foo) {
+            this.aValue = aValue;
+            this.foo = foo;
+            this.theCollection = theCollection;
+        }
+
+        public static class YeahConverter implements Converter<String> {
+            @Override
+            public String toString(final String instance) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public String fromString(final String text) {
+                return "yeah";
+            }
         }
     }
     

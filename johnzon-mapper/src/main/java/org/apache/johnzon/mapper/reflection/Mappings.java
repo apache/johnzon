@@ -23,6 +23,8 @@ import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.JohnzonIgnore;
 import org.apache.johnzon.mapper.access.AccessMode;
 
+import java.beans.ConstructorProperties;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -47,24 +49,64 @@ public class Mappings {
         public final Map<String, Getter> getters;
         public final Map<String, Setter> setters;
         public final Constructor<?> constructor;
+        public final boolean constructorHasArguments;
+        public final String[] constructorParameters;
+        public final Converter<?>[] constructorParameterConverters;
+        public final Type[] constructorParameterTypes;
 
         protected ClassMapping(final Class<?> clazz,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
-                               final boolean acceptHiddenConstructor) {
+                               final boolean acceptHiddenConstructor, final boolean useConstructor) {
             this.clazz = clazz;
             this.getters = getters;
             this.setters = setters;
-            this.constructor = findConstructor(acceptHiddenConstructor);
+            this.constructor = findConstructor(acceptHiddenConstructor, useConstructor);
+
+            this.constructorHasArguments = this.constructor.getGenericParameterTypes().length > 0;
+            if (this.constructorHasArguments) {
+                this.constructorParameterTypes = this.constructor.getGenericParameterTypes();
+
+                this.constructorParameters = new String[this.constructor.getGenericParameterTypes().length];
+                final ConstructorProperties constructorProperties = this.constructor.getAnnotation(ConstructorProperties.class);
+                System.arraycopy(constructorProperties.value(), 0, this.constructorParameters, 0, this.constructorParameters.length);
+
+                this.constructorParameterConverters = new Converter<?>[this.constructor.getGenericParameterTypes().length];
+                for (int i = 0; i < this.constructorParameters.length; i++) {
+                    for (final Annotation a : this.constructor.getParameterAnnotations()[i]) {
+                        if (a.annotationType() == JohnzonConverter.class) {
+                            try {
+                                this.constructorParameterConverters[i] = JohnzonConverter.class.cast(a).value().newInstance();
+                            } catch (final Exception e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        }
+                    }
+                }
+            } else {
+                this.constructorParameterTypes = null;
+                this.constructorParameters = null;
+                this.constructorParameterConverters = null;
+            }
         }
 
-        private Constructor<?> findConstructor(final boolean acceptHiddenConstructor) {
+        private Constructor<?> findConstructor(final boolean acceptHiddenConstructor, final boolean useConstructor) {
+            Constructor<?> found = null;
             for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
                 if (c.getParameterTypes().length == 0) {
                     if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
                         c.setAccessible(true);
                     }
-                    return c;
+                    found = c;
+                    if (!useConstructor) {
+                        break;
+                    }
+                } else if (c.getAnnotation(ConstructorProperties.class) != null) {
+                    found = c;
+                    break;
                 }
+            }
+            if (found != null) {
+                return found;
             }
             try {
                 return clazz.getConstructor();
@@ -129,12 +171,15 @@ public class Mappings {
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
     private final boolean supportHiddenConstructors;
+    private final boolean supportConstructors;
     private final AccessMode accessMode;
 
-    public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode, final boolean supportHiddenConstructors) {
+    public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
+                    final boolean supportHiddenConstructors, final boolean supportConstructors) {
         this.fieldOrdering = attributeOrder;
         this.accessMode = accessMode;
         this.supportHiddenConstructors = supportHiddenConstructors;
+        this.supportConstructors = supportConstructors;
     }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
@@ -258,7 +303,7 @@ public class Mappings {
                 setters.put(key, new Setter(value, isPrimitive(param), param, findConverter(value), writeIgnore != null ? writeIgnore.minVersion() : -1));
             }
         }
-        return new ClassMapping(clazz, getters, setters, supportHiddenConstructors);
+        return new ClassMapping(clazz, getters, setters, supportHiddenConstructors, supportConstructors);
     }
 
     private static Converter findConverter(final AccessMode.DecoratedType method) {

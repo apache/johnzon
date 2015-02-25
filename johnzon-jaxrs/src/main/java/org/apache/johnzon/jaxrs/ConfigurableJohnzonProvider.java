@@ -100,6 +100,10 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         instance().writeTo(t, rawType, genericType, annotations, mediaType, httpHeaders, entityStream);
     }
 
+    public void setSupportConstructors(final boolean supportConstructors) {
+        builder.setSupportConstructors(supportConstructors);
+    }
+
     public void setPretty(final boolean pretty) {
         builder.setPretty(pretty);
     }
