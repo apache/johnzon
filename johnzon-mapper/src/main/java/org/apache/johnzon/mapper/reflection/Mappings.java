@@ -62,7 +62,7 @@ public class Mappings {
             this.setters = setters;
             this.constructor = findConstructor(acceptHiddenConstructor, useConstructor);
 
-            this.constructorHasArguments = this.constructor.getGenericParameterTypes().length > 0;
+            this.constructorHasArguments = this.constructor != null && this.constructor.getGenericParameterTypes().length > 0;
             if (this.constructorHasArguments) {
                 this.constructorParameterTypes = this.constructor.getGenericParameterTypes();
 

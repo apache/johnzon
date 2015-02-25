@@ -84,8 +84,8 @@ public class FieldAccessMode implements AccessMode {
         return fields;
     }
 
-    public static abstract class FieldDecoratedType implements DecoratedType {
-        public final Field field;
+    protected static abstract class FieldDecoratedType implements DecoratedType {
+        protected final Field field;
 
         public FieldDecoratedType(final Field field) {
             this.field = field;

@@ -81,11 +81,13 @@ public class Mapper {
     protected final boolean skipEmptyArray;
     protected final boolean treatByteArrayAsBase64;
 
+    // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
                   final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean useConstructors,
                   final boolean treatByteArrayAsBase64) {
+    // CHECKSTYLE:ON
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;

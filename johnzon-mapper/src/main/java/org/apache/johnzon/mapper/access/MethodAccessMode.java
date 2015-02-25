@@ -93,8 +93,8 @@ public class MethodAccessMode implements AccessMode {
         return propertyDescriptors;
     }
 
-    public static abstract class MethodDecoratedType implements DecoratedType {
-        public final Method method;
+    protected static abstract class MethodDecoratedType implements DecoratedType {
+        protected final Method method;
 
         public MethodDecoratedType(final Method method) {
             this.method = method;
