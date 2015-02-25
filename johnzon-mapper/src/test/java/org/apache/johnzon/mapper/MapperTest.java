@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -429,6 +430,14 @@ public class MapperTest {
         assertEquals("{}", value);
     }
 
+
+    @Test
+    public void noSetterCollection() {
+        final NoSetterCollection value = new MapperBuilder().setSupportGetterForCollections(true).build()
+                .readObject(new ByteArrayInputStream("{\"theCollection\":[\"a\",\"b\"]}".getBytes()), NoSetterCollection.class);
+        assertEquals(asList("a", "b"), value.getTheCollection());
+    }
+
     @Test
     public void aliases() {
         {
@@ -799,6 +808,17 @@ public class MapperTest {
 
         public void setSuperLongProperty(final String superLongProperty) {
             this.superLongProperty = superLongProperty;
+        }
+    }
+
+    public static class NoSetterCollection {
+        private Collection<String> theCollection;
+
+        public Collection<String> getTheCollection() {
+            if (theCollection == null) {
+                theCollection = new LinkedList<String>();
+            }
+            return theCollection;
         }
     }
     

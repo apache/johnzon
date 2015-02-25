@@ -77,16 +77,14 @@ public class Mapper {
     protected final boolean close;
     protected final ConcurrentMap<Type, Converter<?>> converters;
     protected final int version;
-    //private final boolean hiddenConstructorSupported;
-    //private final AccessMode accessMode;
-    protected boolean skipNull;
-    protected boolean skipEmptyArray;
-    protected boolean treatByteArrayAsBase64;
+    protected final boolean skipNull;
+    protected final boolean skipEmptyArray;
+    protected final boolean treatByteArrayAsBase64;
 
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
-                  final int version, final Comparator<String> attributeOrder, boolean skipNull, boolean skipEmptyArray,
-                  final AccessMode accessMode, final boolean hiddenConstructorSupported, boolean treatByteArrayAsBase64) {
+                  final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
+                  final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean treatByteArrayAsBase64) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
@@ -95,8 +93,6 @@ public class Mapper {
         this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
-        //this.accessMode = accessMode;
-        //this.hiddenConstructorSupported = hiddenConstructorSupported;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
     }
 

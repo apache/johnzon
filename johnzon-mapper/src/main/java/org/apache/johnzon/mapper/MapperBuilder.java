@@ -81,6 +81,7 @@ public class MapperBuilder {
     private JsonGeneratorFactory generatorFactory;
     private boolean doCloseOnStreams = false;
     private boolean supportHiddenAccess = true;
+    private boolean supportGetterForCollections = false;
     private int version = -1;
     private int maxSize = -1;
     private int bufferSize = -1;
@@ -90,7 +91,7 @@ public class MapperBuilder {
     private boolean skipEmptyArray = false;
     private boolean supportsComments = false;
     protected boolean pretty;
-    private AccessMode accessMode = new MethodAccessMode();
+    private AccessMode accessMode = new MethodAccessMode(false);
     private boolean treatByteArrayAsBase64;
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
 
@@ -136,6 +137,14 @@ public class MapperBuilder {
                 treatByteArrayAsBase64);
     }
 
+    public MapperBuilder setSupportGetterForCollections(final boolean useGetterForCollections) {
+        this.supportGetterForCollections = useGetterForCollections;
+        if (supportGetterForCollections) {
+            accessMode = new MethodAccessMode(supportGetterForCollections);
+        }
+        return this;
+    }
+
     public MapperBuilder setSupportsComments(final boolean supportsComments) {
         this.supportsComments = supportsComments;
         return this;
@@ -170,7 +179,9 @@ public class MapperBuilder {
         if ("field".equalsIgnoreCase(mode)) {
             this.accessMode = new FieldAccessMode();
         } else if ("method".equalsIgnoreCase(mode)) {
-            this.accessMode = new MethodAccessMode();
+            this.accessMode = new MethodAccessMode(true);
+        } else if ("strict-method".equalsIgnoreCase(mode)) {
+            this.accessMode = new MethodAccessMode(false);
         } else if ("both".equalsIgnoreCase(mode)) {
             this.accessMode = new FieldAndMethodAccessMode();
         } else {

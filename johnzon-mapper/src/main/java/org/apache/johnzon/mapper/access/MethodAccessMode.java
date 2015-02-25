@@ -27,10 +27,17 @@ import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MethodAccessMode implements AccessMode {
+    private final boolean supportGetterAsWritter;
+
+    public MethodAccessMode(final boolean supportGetterAsWritter) {
+        this.supportGetterAsWritter = supportGetterAsWritter;
+    }
+
     @Override
     public Map<String, Reader> findReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
@@ -52,12 +59,16 @@ public class MethodAccessMode implements AccessMode {
         final Map<String, Writer> writers = new HashMap<String, Writer>();
         final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
+            if (descriptor.getPropertyType() == Class.class || isIgnored(descriptor.getName())) {
+                continue;
+            }
             final Method writeMethod = descriptor.getWriteMethod();
-            if (writeMethod != null && writeMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(descriptor.getName())) {
-                    continue;
-                }
+            if (writeMethod != null) {
                 writers.put(extractKey(descriptor), new MethodWriter(writeMethod));
+            } else if (supportGetterAsWritter
+                    && Collection.class.isAssignableFrom(descriptor.getPropertyType())
+                    && descriptor.getReadMethod() != null) {
+                writers.put(extractKey(descriptor), new MethodGetterAsWriter(descriptor.getReadMethod()));
             }
         }
         return writers;
@@ -134,6 +145,26 @@ public class MethodAccessMode implements AccessMode {
                 return method.invoke(instance);
             } catch (final Exception e) {
                 throw new MapperException(e);
+            }
+        }
+    }
+
+    private class MethodGetterAsWriter extends MethodReader implements Writer {
+        public MethodGetterAsWriter(final Method readMethod) {
+            super(readMethod);
+        }
+
+        @Override
+        public void write(final Object instance, final Object value) {
+            if (value != null) {
+                try {
+                    final Collection<?> collection = Collection.class.cast(method.invoke(instance));
+                    if (collection != null) {
+                        collection.addAll(Collection.class.cast(value));
+                    }
+                } catch (final Exception e) {
+                    throw new MapperException(e);
+                }
             }
         }
     }

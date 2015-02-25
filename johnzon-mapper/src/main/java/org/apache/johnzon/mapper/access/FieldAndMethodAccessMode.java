@@ -24,7 +24,7 @@ import java.util.Map;
 // methods override fields
 public class FieldAndMethodAccessMode implements AccessMode {
     private final FieldAccessMode fields = new FieldAccessMode();
-    private final MethodAccessMode methods = new MethodAccessMode();
+    private final MethodAccessMode methods = new MethodAccessMode(false);
 
     @Override
     public Map<String, Reader> findReaders(final Class<?> clazz) {
