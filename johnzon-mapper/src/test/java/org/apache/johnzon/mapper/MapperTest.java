@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.junit.Test;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -475,6 +477,31 @@ public class MapperTest {
         }
     }
 
+    @Test
+    public void fakedObject() {
+        final ChildOfFakedObject source = new ChildOfFakedObject();
+        source.a = 1;
+        source.b = 2;
+        source.c = new String[] { "3", "4" };
+        source.children = asList("5", "6");
+
+        final Mapper mapper = new MapperBuilder().setAttributeOrder(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return o1.compareTo(o2);
+            }
+        }).setAccessMode(new FieldAccessMode()).build();
+
+        final String asString = mapper.writeObjectAsString(source);
+        assertEquals("{\"children\":[\"5\",\"6\"],\"nested\":{\"b\":2,\"sub\":{\"a\":1,\"c\":[\"3\",\"4\"]}}}", asString);
+
+        final ChildOfFakedObject childOfFakedObject = mapper.readObject(asString, ChildOfFakedObject.class);
+        assertEquals(source.a, childOfFakedObject.a);
+        assertEquals(source.b, childOfFakedObject.b);
+        assertArrayEquals(source.c, childOfFakedObject.c);
+        assertEquals(source.children, childOfFakedObject.children);
+    }
+
     public static class NanHolder {
         private Double nan = Double.NaN;
 
@@ -858,6 +885,28 @@ public class MapperTest {
                 return "yeah";
             }
         }
+    }
+
+    public static class FakeNestedObject {
+        protected int a;
+        protected int b;
+        protected String[] c;
+    }
+
+    @JohnzonVirtualObjects({
+            @JohnzonVirtualObject(
+                    path = "nested",
+                    fields = @JohnzonVirtualObject.Field("b")
+            ),
+            @JohnzonVirtualObject(
+                    path = { "nested", "sub" },
+                    fields = {
+                            @JohnzonVirtualObject.Field("a"), @JohnzonVirtualObject.Field("c")
+                    }
+            )
+    })
+    public static class ChildOfFakedObject extends FakeNestedObject {
+        protected List<String> children;
     }
     
     /*public static class ByteArray {

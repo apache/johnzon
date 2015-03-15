@@ -21,10 +21,13 @@ package org.apache.johnzon.mapper.reflection;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.JohnzonIgnore;
+import org.apache.johnzon.mapper.JohnzonVirtualObject;
+import org.apache.johnzon.mapper.JohnzonVirtualObjects;
 import org.apache.johnzon.mapper.access.AccessMode;
 
 import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -34,6 +37,9 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -42,6 +48,8 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.util.Arrays.asList;
 
 public class Mappings {
     public static class ClassMapping {
@@ -157,15 +165,20 @@ public class Mappings {
         public final Type paramType;
         public final Converter<?> converter;
         public final boolean primitive;
+        public final boolean array;
 
-        public Setter(final AccessMode.Writer writer, final boolean primitive, final Type paramType, final Converter<?> converter, final int version) {
+        public Setter(final AccessMode.Writer writer, final boolean primitive, final boolean array,
+                      final Type paramType, final Converter<?> converter, final int version) {
             this.writer = writer;
             this.paramType = paramType;
             this.converter = converter;
             this.version = version;
             this.primitive = primitive;
+            this.array = array;
         }
     }
+
+    private static final JohnzonParameterizedType VIRTUAL_TYPE = new JohnzonParameterizedType(Map.class, String.class, Object.class);
 
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
@@ -173,13 +186,16 @@ public class Mappings {
     private final boolean supportHiddenConstructors;
     private final boolean supportConstructors;
     private final AccessMode accessMode;
+    private final int version;
 
     public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
-                    final boolean supportHiddenConstructors, final boolean supportConstructors) {
+                    final boolean supportHiddenConstructors, final boolean supportConstructors,
+                    final int version) {
         this.fieldOrdering = attributeOrder;
         this.accessMode = accessMode;
         this.supportHiddenConstructors = supportHiddenConstructors;
         this.supportConstructors = supportConstructors;
+        this.version = version;
     }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
@@ -270,40 +286,131 @@ public class Mappings {
     }
 
     private ClassMapping createClassMapping(final Class<?> clazz) {
-        final Map<String, Getter> getters = fieldOrdering != null ?
-            new TreeMap<String, Getter>(fieldOrdering) : new HashMap<String, Getter>();
-        final Map<String, Setter> setters = fieldOrdering != null ?
-            new TreeMap<String, Setter>(fieldOrdering) : new HashMap<String, Setter>();
+        final Map<String, Getter> getters = newOrderedMap();
+        final Map<String, Setter> setters = newOrderedMap();
 
-        for (final Map.Entry<String, AccessMode.Reader> reader : accessMode.findReaders(clazz).entrySet()) {
-            final AccessMode.Reader value = reader.getValue();
-            final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
-            if (readIgnore == null || readIgnore.minVersion() >= 0) {
-                final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
-                final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
-                getters.put(reader.getKey(), new Getter(value, isPrimitive(returnType),
-                        returnType != null && returnType.isArray(),
-                        (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
-                                || (returnType != null && Collection.class.isAssignableFrom(returnType)),
-                        (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
-                                || (returnType != null && Map.class.isAssignableFrom(returnType)),
-                        findConverter(value),
-                        readIgnore != null ? readIgnore.minVersion() : -1));
+        final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
+        final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
+
+        final Collection<String> virtualFields = new HashSet<String>();
+        {
+            final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
+            if (virtualObjects != null) {
+                for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
+                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers);
+                }
+            }
+
+            final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
+            if (virtualObject != null) {
+                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers);
             }
         }
-        for (final Map.Entry<String, AccessMode.Writer> writer : accessMode.findWriters(clazz).entrySet()) {
-            final AccessMode.Writer value = writer.getValue();
-            final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
-            if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
-                final String key = writer.getKey();
-                if (key.equals("metaClass")) {
-                    continue;
-                }
-                final Type param = value.getType();
-                setters.put(key, new Setter(value, isPrimitive(param), param, findConverter(value), writeIgnore != null ? writeIgnore.minVersion() : -1));
+
+        for (final Map.Entry<String, AccessMode.Reader> reader : readers.entrySet()) {
+            final String key = reader.getKey();
+            if (virtualFields.contains(key)) {
+                continue;
             }
+            addGetterIfNeeded(getters, key, reader.getValue());
+        }
+
+        for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
+            final String key = writer.getKey();
+            if (virtualFields.contains(key)) {
+                continue;
+            }
+            addSetterIfNeeded(setters, key, writer.getValue());
         }
         return new ClassMapping(clazz, getters, setters, supportHiddenConstructors, supportConstructors);
+    }
+
+    private <T> Map<String, T> newOrderedMap() {
+        return fieldOrdering != null ? new TreeMap<String, T>(fieldOrdering) : new HashMap<String, T>();
+    }
+
+    private void addSetterIfNeeded(final Map<String, Setter> setters,
+                                   final String key,
+                                   final AccessMode.Writer value) {
+        final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
+        if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
+            if (key.equals("metaClass")) {
+                return;
+            }
+            final Type param = value.getType();
+            final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
+            final Setter setter = new Setter(
+                    value, isPrimitive(param), returnType != null && returnType.isArray(), param,
+                    findConverter(value), writeIgnore != null ? writeIgnore.minVersion() : -1);
+            setters.put(key, setter);
+        }
+    }
+
+    private void addGetterIfNeeded(final Map<String, Getter> getters,
+                                   final String key,
+                                   final AccessMode.Reader value) {
+        final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
+        if (readIgnore == null || readIgnore.minVersion() >= 0) {
+            final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
+            final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
+            final Getter getter = new Getter(value, isPrimitive(returnType),
+                    returnType != null && returnType.isArray(),
+                    (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                            || (returnType != null && Collection.class.isAssignableFrom(returnType)),
+                    (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                            || (returnType != null && Map.class.isAssignableFrom(returnType)),
+                    findConverter(value),
+                    readIgnore != null ? readIgnore.minVersion() : -1);
+            getters.put(key, getter);
+        }
+    }
+
+    // idea is quite trivial, simulate an object with a Map<String, Object>
+    private void handleVirtualObject(final Collection<String> virtualFields,
+                                     final JohnzonVirtualObject o,
+                                     final Map<String, Getter> getters,
+                                     final Map<String, Setter> setters,
+                                     final Map<String, AccessMode.Reader> readers,
+                                     final Map<String, AccessMode.Writer> writers) {
+        final String[] path = o.path();
+        if (path.length < 1) {
+            throw new IllegalArgumentException("@JohnzonVirtualObject need a path");
+        }
+
+        // add them to ignored fields
+        for (final JohnzonVirtualObject.Field f : o.fields()) {
+            virtualFields.add(f.value());
+        }
+
+        // build "this" model
+        final Map<String, Getter> objectGetters = newOrderedMap();
+        final Map<String, Setter> objectSetters = newOrderedMap();
+
+        for (final JohnzonVirtualObject.Field f : o.fields()) {
+            final String name = f.value();
+            if (f.read()) {
+                final AccessMode.Reader reader = readers.get(name);
+                if (reader != null) {
+                    addGetterIfNeeded(objectGetters, name, reader);
+                }
+            }
+            if (f.write()) {
+                final AccessMode.Writer writer = writers.get(name);
+                if (writer != null) {
+                    addSetterIfNeeded(objectSetters, name, writer);
+                }
+            }
+        }
+
+        final String key = path[0];
+
+        final Getter getter = getters.get(key);
+        final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, version);
+        getters.put(key, new Getter(getter == null ? newReader : new CompositeReader(getter.reader, newReader), false, false, false, true, null, -1));
+
+        final Setter newSetter = setters.get(key);
+        final MapUnwrapperWriter newWriter = new MapUnwrapperWriter(objectSetters, path);
+        setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, -1));
     }
 
     private static Converter findConverter(final AccessMode.DecoratedType method) {
@@ -316,5 +423,196 @@ public class Mappings {
             }
         }
         return converter;
+    }
+
+    private static class MapBuilderReader implements AccessMode.Reader {
+        private final Map<String, Getter> getters;
+        private final Map<String, Object> template;
+        private final String[] paths;
+        private final int version;
+
+        public MapBuilderReader(final Map<String, Getter> objectGetters, final String[] paths, final int version) {
+            this.getters = objectGetters;
+            this.paths = paths;
+            this.template = new LinkedHashMap<String, Object>();
+            this.version = version;
+
+            Map<String, Object> last = this.template;
+            for (int i = 1; i < paths.length; i++) {
+                final Map<String, Object> newLast = new LinkedHashMap<String, Object>();
+                last.put(paths[i], newLast);
+                last = newLast;
+            }
+        }
+
+        @Override
+        public Object read(final Object instance) {
+            final Map<String, Object> map = new LinkedHashMap<String, Object>(template);
+            Map<String, Object> nested = map;
+            for (int i = 1; i < paths.length; i++) {
+                nested = Map.class.cast(nested.get(paths[i]));
+            }
+            for (final Map.Entry<String, Getter> g : getters.entrySet()) {
+                final Mappings.Getter getter = g.getValue();
+                final Object value = getter.reader.read(instance);
+                final Object val = value == null || getter.converter == null ? value : getter.converter.toString(value);
+                if (val == null) {
+                    continue;
+                }
+                if (getter.version >= 0 && version >= getter.version) {
+                    continue;
+                }
+
+                nested.put(g.getKey(), val);
+            }
+            return map;
+        }
+
+        @Override
+        public Type getType() {
+            return VIRTUAL_TYPE;
+        }
+
+        @Override
+        public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
+            throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
+        }
+    }
+
+    private static class MapUnwrapperWriter implements AccessMode.Writer {
+        private final Map<String, Setter> writers;
+        private final Map<String, Class<?>> componentTypes;
+        private final String[] paths;
+
+        public MapUnwrapperWriter(final Map<String, Setter> writers, final String[] paths) {
+            this.writers = writers;
+            this.paths = paths;
+            this.componentTypes = new HashMap<String, Class<?>>();
+
+            for (final Map.Entry<String, Setter> setter : writers.entrySet()) {
+                if (setter.getValue().array) {
+                    componentTypes.put(setter.getKey(), Class.class.cast(setter.getValue().paramType).getComponentType());
+                }
+            }
+        }
+
+        @Override
+        public void write(final Object instance, final Object value) {
+            Map<String, Object> nested = null;
+            for (final String path : paths) {
+                nested = Map.class.cast(nested == null ? value : nested.get(path));
+                if (nested == null) {
+                    return;
+                }
+            }
+
+            for (final Map.Entry<String, Setter> setter : writers.entrySet()) {
+                final Setter setterValue = setter.getValue();
+                final String key = setter.getKey();
+                final Object rawValue = nested.get(key);
+                Object val = value == null || setterValue.converter == null ?
+                        rawValue : Converter.class.cast(setterValue.converter).toString(rawValue);
+                if (val == null) {
+                    continue;
+                }
+
+                if (setterValue.array && Collection.class.isInstance(val)) {
+                    final Collection<?> collection = Collection.class.cast(val);
+                    final Object[] array = (Object[]) Array.newInstance(componentTypes.get(key), collection.size());
+                    val = collection.toArray(array);
+                }
+
+                final AccessMode.Writer setterMethod = setterValue.writer;
+                setterMethod.write(instance, val);
+            }
+        }
+
+        @Override
+        public Type getType() {
+            return VIRTUAL_TYPE;
+        }
+
+        @Override
+        public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
+            throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
+        }
+    }
+
+    private static class CompositeReader implements AccessMode.Reader {
+        private final AccessMode.Reader[] delegates;
+
+        public CompositeReader(final AccessMode.Reader... delegates) {
+            final Collection<AccessMode.Reader> all = new LinkedList<AccessMode.Reader>();
+            for (final AccessMode.Reader r : delegates) {
+                if (CompositeReader.class.isInstance(r)) {
+                    all.addAll(asList(CompositeReader.class.cast(r).delegates));
+                } else {
+                    all.add(r);
+                }
+            }
+            this.delegates = all.toArray(new AccessMode.Reader[all.size()]);
+        }
+
+        @Override
+        public Object read(final Object instance) {
+            final Map<String, Object> map = new LinkedHashMap<String, Object>();
+            for (final AccessMode.Reader reader : delegates) {
+                final Map<String, Object> readerMap = (Map<String, Object>) reader.read(instance);
+                for (final Map.Entry<String, Object> entry :readerMap.entrySet()) {
+                    final Object o = map.get(entry.getKey());
+                    if (o == null) {
+                        map.put(entry.getKey(), entry.getValue());
+                    } else  if (Map.class.isInstance(o)) {
+                        // TODO
+                    } else {
+                        throw new IllegalStateException(entry.getKey() + " is ambiguous");
+                    }
+                }
+            }
+            return map;
+        }
+
+        @Override
+        public Type getType() {
+            return VIRTUAL_TYPE;
+        }
+
+        @Override
+        public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
+            throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
+        }
+    }
+
+    private static class CompositeWriter implements AccessMode.Writer {
+        private final AccessMode.Writer[] delegates;
+
+        public CompositeWriter(final AccessMode.Writer... writers) {
+            final Collection<AccessMode.Writer> all = new LinkedList<AccessMode.Writer>();
+            for (final AccessMode.Writer r : writers) {
+                if (CompositeWriter.class.isInstance(r)) {
+                    all.addAll(asList(CompositeWriter.class.cast(r).delegates));
+                } else {
+                    all.add(r);
+                }
+            }
+            this.delegates = all.toArray(new AccessMode.Writer[all.size()]);
+        }
+
+        @Override
+        public void write(final Object instance, final Object value) {
+            for (final AccessMode.Writer w : delegates) {
+                w.write(instance, value);
+            }
+        }
+
+        @Override
+        public Type getType() {
+            return VIRTUAL_TYPE;
+        }
+
+        @Override
+        public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
+            throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
+        }
     }
 }

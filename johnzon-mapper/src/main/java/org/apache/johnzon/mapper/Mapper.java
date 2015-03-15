@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.Array;
@@ -93,7 +94,7 @@ public class Mapper {
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors);
+        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors, version);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
@@ -352,11 +353,13 @@ public class Mapper {
                 }
             }
 
+            final Object val = getter.converter == null ? value : getter.converter.toString(value);
+
             generator = writeValue(generator, value.getClass(),
                     getter.primitive, getter.array,
                     getter.collection, getter.map,
                     getterEntry.getKey(),
-                    getter.converter == null ? value : getter.converter.toString(value));
+                    val);
         }
         return generator;
     }
@@ -453,14 +456,16 @@ public class Mapper {
         return newGen;
     }
 
+    public <T> T readObject(final String string, final Type clazz) {
+        return readObject(new StringReader(string), clazz);
+    }
+
     public <T> T readObject(final Reader stream, final Type clazz) {
-        final JsonReader reader = readerFactory.createReader(stream);
-        return mapObject(clazz, reader);
+        return mapObject(clazz, readerFactory.createReader(stream));
     }
 
     public <T> T readObject(final InputStream stream, final Type clazz) {
-        final JsonReader reader = readerFactory.createReader(stream);
-        return mapObject(clazz, reader);
+        return mapObject(clazz, readerFactory.createReader(stream));
     }
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
