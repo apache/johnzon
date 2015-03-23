@@ -31,7 +31,7 @@
   </parent>
 
   <groupId>org.apache.johnzon</groupId>
-  <artifactId>johnzon</artifactId>
+  <artifactId>apache-johnzon</artifactId>
   <packaging>pom</packaging>
   <version>0.8-incubating-SNAPSHOT</version>
   <name>Apache Johnzon</name>
@@ -70,7 +70,6 @@
   </dependencies>
 
   <build>
-    <finalName>apache-${project.artifactId}-${project.version}</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

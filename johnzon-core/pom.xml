@@ -19,14 +19,14 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>johnzon</artifactId>
+    <artifactId>apache-johnzon</artifactId>
     <groupId>org.apache.johnzon</groupId>
     <version>0.8-incubating-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>johnzon-core</artifactId>
-  <name>Johnzon :: Core</name>
+  <artifactId>apache-johnzon-core</artifactId>
+  <name>Apache Johnzon :: Core</name>
 
   <properties>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
