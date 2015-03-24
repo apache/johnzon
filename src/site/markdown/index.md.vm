@@ -84,6 +84,101 @@ JAX-RS module provides two providers (and underlying MessageBodyReaders and Mess
 * org.apache.johnzon.jaxrs.ConfigurableJohnzonProvider: same as JohnzonProvider but with setters to ease the configuration of the provider in most servers/containers
 * org.apache.johnzon.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
 
+
+### Websocket
+
+<pre class="prettyprint linenums"><![CDATA[
+<dependency>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-websocket</artifactId>
+  <version>${project.version}</version>
+</dependency>
+]]></pre>
+
+WebSocket module provides a basic integration with Java WebSocket API (JSR 356).
+
+Integration is at codec level (encoder/decoder). There are two families of codecs:
+
+* The ones based on JSON-P (JsonObject, JsonArray, JsonStructure)
+* The ones based on Johnzon Mapper
+
+#### JSON-P integration
+
+Encoders:
+
+*  `org.apache.johnzon.websocket.jsr.JsrObjectEncoder`
+*  `org.apache.johnzon.websocket.jsr.JsrArrayEncoder`
+*  `org.apache.johnzon.websocket.jsr.JsrStructureEncoder`
+
+Decoders:
+
+*  `org.apache.johnzon.websocket.jsr.JsrObjectDecoder`
+*  `org.apache.johnzon.websocket.jsr.JsrArrayDecoder`
+*  `org.apache.johnzon.websocket.jsr.JsrStructureDecoder`
+
+#### Mapper integration
+
+Encoder:
+
+*  `org.apache.johnzon.websocket.mapper.JohnzonTextEncoder`
+
+Decoder:
+
+*  `org.apache.johnzon.websocket.mapper.JohnzonTextDecoder`
+
+#### Sample
+
+##### JSON-P Samples
+
+On server and client side configuration is easy: just provide the `encoders` and `decoders` parameters to `@[Server|Client]Endpoint`
+(or `EndpointConfig` if you use programmatic API)):
+
+    @ClientEndpoint(encoders = JsrObjectEncoder.class, decoders = JsrObjectDecoder.class)
+    public class JsrClientEndpointImpl {
+        @OnMessage
+        public void on(final JsonObject message) {
+            // ...
+        }
+    }
+
+    @ServerEndpoint(value = "/my-server", encoders = JsrObjectEncoder.class, decoders = JsrObjectDecoder.class)
+    public class JsrClientEndpointImpl {
+        @OnMessage
+        public void on(final JsonObject message) {
+            // ...
+        }
+    }
+
+##### Mapper Samples
+
+Server configuration is as simple as providing `encoders` and `decoders` parameters to `@ServerEndpoint`:
+
+    @ServerEndpoint(value = "/server", encoders = JohnzonTextEncoder.class, decoders = JohnzonTextDecoder.class)
+    public class ServerEndpointImpl {
+        @OnMessage
+        public void on(final Session session, final Message message) {
+            // ...
+        }
+    }
+
+Client configuration is almost the same excepted in this case it is not possible for Johnzon
+to guess the type you expect so you'll need to provide it. In next sample it is done just extending `JohnzonTextDecoder`
+in `MessageDecoder`.
+
+    @ClientEndpoint(encoders = JohnzonTextEncoder.class, decoders = ClientEndpointImpl.MessageDecoder.class)
+    public class ClientEndpointImpl {
+        @OnMessage
+        public void on(final Message message) {
+            // ...
+        }
+    
+        public static class MessageDecoder extends JohnzonTextDecoder {
+            public MessageDecoder() {
+                super(Message.class);
+            }
+        }
+    }
+
 ## Thanks
 
 We would like to thank ej-technologies for their [Java profiler JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html) which helped us a lot optimizing memory footprint and speed. ![JProfiler](http://www.ej-technologies.com/images/banners/jprofiler_small.png)

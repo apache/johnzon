@@ -25,19 +25,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import javax.websocket.ClientEndpoint;
-import javax.websocket.EndpointConfig;
 import javax.websocket.OnMessage;
-import javax.websocket.OnOpen;
 
 @ClientEndpoint(encoders = JohnzonTextEncoder.class, decoders = ClientEndpointImpl.MessageDecoder.class)
 public class ClientEndpointImpl {
     public static final List<Message> MESSAGES = new LinkedList<Message>();
     public static final Semaphore SEMAPHORE = new Semaphore(0);
-
-    @OnOpen
-    public void init(final EndpointConfig config) {
-
-    }
 
     @OnMessage
     public synchronized void on(final Message message) {
@@ -47,7 +40,7 @@ public class ClientEndpointImpl {
 
     public static class MessageDecoder extends JohnzonTextDecoder {
         public MessageDecoder() {
-            type = Message.class;
+            super(Message.class);
         }
     }
 }
