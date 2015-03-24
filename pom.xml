@@ -51,6 +51,7 @@
     <module>johnzon-core</module>
     <module>johnzon-mapper</module>
     <module>johnzon-jaxrs</module>
+    <module>johnzon-websocket</module>
   </modules>
 
   <dependencies>
