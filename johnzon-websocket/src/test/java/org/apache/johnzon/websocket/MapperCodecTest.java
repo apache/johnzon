@@ -58,11 +58,10 @@ public class MapperCodecTest {
                 .addClasses(ServerEndpointImpl.class, ServerReport.class, Message.class)
                 .addAsLibrary(
                         ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
-                            .addClasses(MapperLocator.class, JohnzonTextDecoder.class, JohnzonTextEncoder.class))
-                .addAsLibraries(
-                        jarLocation(Json.class),
-                        jarLocation(JsonProviderImpl.class),
-                        jarLocation(Mapper.class));
+                            .addClasses(MapperLocator.class, JohnzonTextDecoder.class, JohnzonTextEncoder.class)
+                            .addPackages(true, JsonProviderImpl.class.getPackage())
+                            .addPackages(true, Mapper.class.getPackage()))
+                .addAsLibrary(jarLocation(Json.class));
     }
 
     @ArquillianResource

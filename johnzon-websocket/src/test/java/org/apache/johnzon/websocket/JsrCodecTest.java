@@ -56,12 +56,11 @@ public class JsrCodecTest {
     public static WebArchive war() {
         return ShrinkWrap.create(WebArchive.class, "jsr-codec.war")
                 .addClasses(JsrServerEndpointImpl.class, ServerReport.class, Message.class /* for report endpoint */)
-                .addAsLibrary(
-                        ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
-                                .addClasses(FactoryLocator.class, JsrDecoder.class, JsrEncoder.class, JsrObjectDecoder.class, JsrObjectEncoder.class))
                 .addAsLibraries(
-                        jarLocation(Json.class),
-                        jarLocation(JsonProviderImpl.class));
+                        ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
+                                .addClasses(FactoryLocator.class, JsrDecoder.class, JsrEncoder.class, JsrObjectDecoder.class, JsrObjectEncoder.class)
+                                .addPackages(true, JsonProviderImpl.class.getPackage()))
+                .addAsLibrary(jarLocation(Json.class));
     }
 
     @ArquillianResource
