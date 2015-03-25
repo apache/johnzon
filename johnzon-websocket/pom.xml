@@ -21,7 +21,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <artifactId>apache-johnzon</artifactId>
+    <artifactId>johnzon</artifactId>
     <groupId>org.apache.johnzon</groupId>
     <version>0.8-incubating-SNAPSHOT</version>
   </parent>
@@ -73,12 +73,6 @@
       <version>${tomee.version}</version>
       <type>zip</type>
       <classifier>jaxrs</classifier>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.12</version>
       <scope>test</scope>
     </dependency>
     <dependency>
