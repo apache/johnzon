@@ -175,4 +175,8 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
     public void setTreatByteArrayAsBase64(final boolean treatByteArrayAsBase64) {
         builder.setTreatByteArrayAsBase64(treatByteArrayAsBase64);
     }
+
+    public void setEncoding(final String encoding) {
+        builder.setEncoding(encoding);
+    }
 }

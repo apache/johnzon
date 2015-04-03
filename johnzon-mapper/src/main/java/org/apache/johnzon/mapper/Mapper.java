@@ -33,6 +33,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -81,13 +82,15 @@ public class Mapper {
     protected final boolean skipNull;
     protected final boolean skipEmptyArray;
     protected final boolean treatByteArrayAsBase64;
+    protected final Charset encoding;
 
     // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Class<?>, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
                   final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean useConstructors,
-                  final boolean treatByteArrayAsBase64) {
+                  final boolean treatByteArrayAsBase64,
+                  final Charset encoding) {
     // CHECKSTYLE:ON
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
@@ -98,6 +101,7 @@ public class Mapper {
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
+        this.encoding = encoding;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -219,7 +223,7 @@ public class Mapper {
     }
 
     public <T> void writeArray(final Collection<T> object, final OutputStream stream) {
-        writeArray(object, new OutputStreamWriter(stream));
+        writeArray(object, new OutputStreamWriter(stream, encoding));
     }
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
@@ -254,7 +258,7 @@ public class Mapper {
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
-        writeIterable(object, new OutputStreamWriter(stream));
+        writeIterable(object, new OutputStreamWriter(stream, encoding));
     }
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
@@ -280,7 +284,7 @@ public class Mapper {
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
-        final JsonGenerator generator = generatorFactory.createGenerator(stream);
+        final JsonGenerator generator = generatorFactory.createGenerator(stream, encoding);
         doWriteHandlingNullObject(object, generator);
     }
 

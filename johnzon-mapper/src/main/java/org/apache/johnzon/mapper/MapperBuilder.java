@@ -20,6 +20,7 @@ package org.apache.johnzon.mapper;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -81,7 +82,6 @@ public class MapperBuilder {
     private JsonGeneratorFactory generatorFactory;
     private boolean doCloseOnStreams = false;
     private boolean supportHiddenAccess = true;
-    private boolean supportGetterForCollections = false;
     private int version = -1;
     private int maxSize = -1;
     private int bufferSize = -1;
@@ -95,6 +95,7 @@ public class MapperBuilder {
     private boolean treatByteArrayAsBase64;
     private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
     private boolean supportConstructors;
+    private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -136,14 +137,12 @@ public class MapperBuilder {
                 accessMode,
                 supportHiddenAccess,
                 supportConstructors,
-                treatByteArrayAsBase64);
+                treatByteArrayAsBase64,
+                encoding);
     }
 
     public MapperBuilder setSupportGetterForCollections(final boolean useGetterForCollections) {
-        this.supportGetterForCollections = useGetterForCollections;
-        if (supportGetterForCollections) {
-            accessMode = new MethodAccessMode(supportGetterForCollections);
-        }
+        accessMode = new MethodAccessMode(useGetterForCollections);
         return this;
     }
 
@@ -244,6 +243,11 @@ public class MapperBuilder {
 
     public MapperBuilder setSupportConstructors(final boolean supportConstructors) {
         this.supportConstructors = supportConstructors;
+        return this;
+    }
+
+    public MapperBuilder setEncoding(final String encoding) {
+        this.encoding = Charset.forName(encoding);
         return this;
     }
 }

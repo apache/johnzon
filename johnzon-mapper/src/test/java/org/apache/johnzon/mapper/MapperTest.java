@@ -41,6 +41,7 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -502,6 +503,16 @@ public class MapperTest {
         assertEquals(source.children, childOfFakedObject.children);
     }
 
+    @Test
+    public void encodingTest() {
+        final ByteArrayOutputStream utf8 = new ByteArrayOutputStream();
+        final ByteArrayOutputStream latin = new ByteArrayOutputStream();
+
+        new MapperBuilder().setEncoding("UTF-8").build().writeObject(new StringHolder("摩"), utf8);
+        new MapperBuilder().setEncoding("Latin1").build().writeObject(new StringHolder("摩"), latin);
+        assertNotEquals(utf8, latin); // means encoding was considered, we don't need more here
+    }
+
     public static class NanHolder {
         private Double nan = Double.NaN;
 
@@ -908,7 +919,23 @@ public class MapperTest {
     public static class ChildOfFakedObject extends FakeNestedObject {
         protected List<String> children;
     }
-    
+
+    public static class StringHolder {
+        private String value;
+
+        public StringHolder(final String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+    }
+
     /*public static class ByteArray {
         
         public byte[] byteArray;
