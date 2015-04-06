@@ -75,15 +75,19 @@
 
     <menu name="User Guide">
       <item name="Home" href="/index.html"/>
-      <item name="Download" href="http://incubator.apache.org/projects/johnzon.html"/>
+      <item name="Download" href="http://www.apache.org/dyn/closer.cgi/incubator/johnzon"/>
       <item name="Javadoc" href="/apidocs/index.html"/>
       <item name="Source Code" href="/source-repository.html"/>
       <item name="Changelog" href="/changelog.html"/>
       <item name="Mailing Lists" href="/mail-lists.html"/>
     </menu>
     
-    <menu name="Site Archives">
+    <menu name="Releases">
+        <item name="Johnzon 0.1-incubating"       href="/archives/0.1-incubating/index.html"/>
         <item name="Johnzon 0.2-incubating"       href="/archives/0.2-incubating/index.html"/>
+        <item name="Johnzon 0.5-incubating"       href="/archives/0.5-incubating/index.html"/>
+        <item name="Johnzon 0.6-incubating"       href="/archives/0.6-incubating/index.html"/>
+        <item name="Johnzon 0.7-incubating"       href="/archives/0.7-incubating/index.html"/>
     </menu>
 
     <menu ref="reports" inherit="bottom"/>

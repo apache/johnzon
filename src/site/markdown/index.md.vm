@@ -16,14 +16,14 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-# Apache johnzon
+# Apache Johnzon
 
 Apache Johnzon is a project providing an implementation of JsonProcessing (aka jsr-353) and a set of useful extension
-for this specification like an Object mapper and some JAX-RS providers.
+for this specification like an Object mapper, some JAX-RS providers and a WebSocket module provides a basic integration with Java WebSocket API (JSR 356).
 
 ## Get started
 
-Johnzon comes with three main modules.
+Johnzon comes with four main modules.
 
 ### Core
 
