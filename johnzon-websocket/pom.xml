@@ -94,4 +94,5 @@
       </plugin>
     </plugins>
   </build>
+  <packaging>bundle</packaging>
 </project>
