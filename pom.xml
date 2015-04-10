@@ -45,6 +45,8 @@
     <johnzon.site.url>https://svn.apache.org/repos/asf/incubator/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
+    <felix.plugin.version>2.5.4-SNAPSHOT</felix.plugin.version>
+    <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
   </properties>
 
   <modules>
@@ -319,6 +321,20 @@
          <configuration>
          </configuration>
        </plugin>
+       <plugin>
+         <groupId>org.apache.felix</groupId>
+         <artifactId>maven-bundle-plugin</artifactId>
+         <version>${felix.plugin.version}</version>
+         <inherited>true</inherited>
+         <extensions>true</extensions>
+         <configuration>
+             <instructions>
+                 <_removeheaders>Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool</_removeheaders>
+                 <_versionpolicy>${bnd.version.policy}</_versionpolicy>
+                 <Bundle-DocURL>http://johnzon.incubator.apache.org/</Bundle-DocURL>
+             </instructions>
+         </configuration>
+        </plugin>
     </plugins>
   </build>
 
