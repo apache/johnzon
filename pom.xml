@@ -53,7 +53,6 @@
     <module>johnzon-core</module>
     <module>johnzon-mapper</module>
     <module>johnzon-jaxrs</module>
-    <module>johnzon-websocket</module>
     <module>johnzon-distribution</module>
   </modules>
 
@@ -335,6 +334,29 @@
              </instructions>
          </configuration>
         </plugin>
+        <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.1,)</version>
+                </requireMavenVersion>
+                <requireJavaVersion>
+                  <version>[1.6,)</version>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
@@ -609,4 +631,17 @@
 		<name>Thiago Veronezi</name>
 	</contributor>
   </contributors>
+
+    <profiles>
+        <profile>
+            <!-- Websocket module needs java 1.7 or higher -->
+            <id>jdk1.7+</id>
+            <activation>
+                <jdk>[1.7,)</jdk>
+            </activation>
+            <modules>
+                <module>johnzon-websocket</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
