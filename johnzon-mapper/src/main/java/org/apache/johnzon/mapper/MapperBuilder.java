@@ -101,12 +101,6 @@ public class MapperBuilder {
         if (readerFactory == null || generatorFactory == null) {
             final JsonProvider provider = JsonProvider.provider();
             final Map<String, Object> config = new HashMap<String, Object>();
-            if (maxSize > 0) {
-                config.put("org.apache.johnzon.max-string-length", maxSize);
-            }
-            if (bufferSize > 0) {
-                config.put("org.apache.johnzon.default-char-buffer", bufferSize);
-            }
             if (bufferStrategy != null) {
                 config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
             }
@@ -121,6 +115,12 @@ public class MapperBuilder {
             config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
             if (supportsComments) {
                 config.put("org.apache.johnzon.supports-comments", "true");
+            }
+            if (maxSize > 0) {
+                config.put("org.apache.johnzon.max-string-length", maxSize);
+            }
+            if (bufferSize > 0) {
+                config.put("org.apache.johnzon.default-char-buffer", bufferSize);
             }
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
