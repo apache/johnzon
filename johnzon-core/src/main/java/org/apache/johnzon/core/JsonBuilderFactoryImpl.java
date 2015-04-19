@@ -18,9 +18,12 @@
  */
 package org.apache.johnzon.core;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
@@ -32,13 +35,16 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
     //nothing yet
 
     };
+    protected final Logger logger = Logger.getLogger(this.getClass().getName());
 
     JsonBuilderFactoryImpl(final Map<String, ?> config) {
-        if (config != null) {
-
-            for (final String configKey : SUPPORTED_CONFIG_KEYS) {
-                if (config.containsKey(configKey)) {
+        if (config != null && config.size() > 0) {
+            final List<String> supportedConfigKeys = Arrays.asList(SUPPORTED_CONFIG_KEYS);
+            for (String configKey : config.keySet()) {
+                if(supportedConfigKeys.contains(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
+                } else {
+                    logger.warning(configKey + " is not supported by " + getClass().getName());
                 }
             }
         }
