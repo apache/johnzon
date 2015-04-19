@@ -18,14 +18,22 @@
  */
 package org.apache.johnzon.mapper;
 
+import java.io.ByteArrayOutputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.json.Json;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.contrib.java.lang.system.StandardErrorStreamLog;
 import org.junit.contrib.java.lang.system.StandardOutputStreamLog;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class NoWarningTest {
+    
     @Rule
     public final StandardOutputStreamLog out = new StandardOutputStreamLog();
 
@@ -48,5 +56,16 @@ public class NoWarningTest {
         // no warn log
         assertTrue(out.getLog().isEmpty());
         assertTrue(err.getLog().isEmpty());
+    }
+    
+    @Test
+    public void warn() {
+        Map<String, Object> unsupportedConfig = new HashMap<String, Object>();
+        unsupportedConfig.put("xxx.yyy.zzz", "");
+        Json.createGeneratorFactory(unsupportedConfig).createGenerator(new ByteArrayOutputStream());
+        //warn log
+        String log = out.getLog()+err.getLog();
+        assertFalse(log.isEmpty());
+        assertTrue(log.contains("xxx.yyy.zzz"));
     }
 }
