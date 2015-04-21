@@ -25,7 +25,7 @@ for this specification like an Object mapper, some JAX-RS providers and a WebSoc
 
 Johnzon comes with four main modules.
 
-### Core
+### Core (stable)
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
@@ -46,7 +46,7 @@ This is the implementation of the specification. You'll surely want to add the A
 </dependency>
 ]]></pre>
 
-### Mapper
+### Mapper (stable)
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
@@ -68,7 +68,7 @@ mapper.writeObject(object, outputStream);
 final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.class);
 ]]></pre>
 
-### JAX-RS
+### JAX-RS (stable)
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
@@ -85,7 +85,7 @@ JAX-RS module provides two providers (and underlying MessageBodyReaders and Mess
 * org.apache.johnzon.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
 
 
-### Websocket
+### Websocket (beta)
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
