@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper;
+package org.apache.johnzon.core;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
