@@ -24,6 +24,7 @@ import org.apache.johnzon.mapper.JohnzonIgnore;
 import org.apache.johnzon.mapper.JohnzonVirtualObject;
 import org.apache.johnzon.mapper.JohnzonVirtualObjects;
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 
 import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
@@ -36,6 +37,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -183,6 +185,7 @@ public class Mappings {
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
+    protected final Map<Class<?>, Converter<?>> converters;
     private final boolean supportHiddenConstructors;
     private final boolean supportConstructors;
     private final AccessMode accessMode;
@@ -190,12 +193,13 @@ public class Mappings {
 
     public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
                     final boolean supportHiddenConstructors, final boolean supportConstructors,
-                    final int version) {
+                    final int version, final Map<Class<?>, Converter<?>> converters) {
         this.fieldOrdering = attributeOrder;
         this.accessMode = accessMode;
         this.supportHiddenConstructors = supportHiddenConstructors;
         this.supportConstructors = supportConstructors;
         this.version = version;
+        this.converters = converters;
     }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
@@ -285,7 +289,16 @@ public class Mappings {
         return classMapping;
     }
 
-    private ClassMapping createClassMapping(final Class<?> clazz) {
+    private ClassMapping createClassMapping(final Class<?> inClazz) {
+        boolean copyDate = false;
+        for (final Class<?> itf : inClazz.getInterfaces()) {
+            if ("org.apache.openjpa.enhance.PersistenceCapable".equals(itf.getName())) {
+                copyDate = true;
+                break;
+            }
+        }
+        final Class<?> clazz = findModelClass(inClazz);
+
         final Map<String, Getter> getters = newOrderedMap();
         final Map<String, Setter> setters = newOrderedMap();
 
@@ -297,13 +310,13 @@ public class Mappings {
             final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
             if (virtualObjects != null) {
                 for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
-                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers);
+                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate);
                 }
             }
 
             final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
             if (virtualObject != null) {
-                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers);
+                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate);
             }
         }
 
@@ -312,7 +325,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addGetterIfNeeded(getters, key, reader.getValue());
+            addGetterIfNeeded(getters, key, reader.getValue(), copyDate);
         }
 
         for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
@@ -320,9 +333,23 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addSetterIfNeeded(setters, key, writer.getValue());
+            addSetterIfNeeded(setters, key, writer.getValue(), copyDate);
         }
         return new ClassMapping(clazz, getters, setters, supportHiddenConstructors, supportConstructors);
+    }
+
+    protected Class<?> findModelClass(final Class<?> inClazz) {
+        Class<?> clazz = inClazz;
+        // unproxy to get a clean model
+        while (clazz != null && clazz != Object.class
+                && (clazz.getName().contains("$$") || clazz.getName().contains("$proxy")
+                || clazz.getName().startsWith("org.apache.openjpa.enhance.") /* subclassing mode, not the default */ )) {
+            clazz = clazz.getSuperclass();
+        }
+        if (clazz == null || clazz == Object.class) { // shouldn't occur but a NPE protection
+            clazz = inClazz;
+        }
+        return clazz;
     }
 
     private <T> Map<String, T> newOrderedMap() {
@@ -331,7 +358,8 @@ public class Mappings {
 
     private void addSetterIfNeeded(final Map<String, Setter> setters,
                                    final String key,
-                                   final AccessMode.Writer value) {
+                                   final AccessMode.Writer value,
+                                   final boolean copyDate) {
         final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
         if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
             if (key.equals("metaClass")) {
@@ -341,14 +369,15 @@ public class Mappings {
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
                     value, isPrimitive(param), returnType != null && returnType.isArray(), param,
-                    findConverter(value), writeIgnore != null ? writeIgnore.minVersion() : -1);
+                    findConverter(copyDate, value), writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
         }
     }
 
     private void addGetterIfNeeded(final Map<String, Getter> getters,
                                    final String key,
-                                   final AccessMode.Reader value) {
+                                   final AccessMode.Reader value,
+                                   final boolean copyDate) {
         final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
@@ -359,7 +388,7 @@ public class Mappings {
                             || (returnType != null && Collection.class.isAssignableFrom(returnType)),
                     (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Map.class.isAssignableFrom(returnType)),
-                    findConverter(value),
+                    findConverter(copyDate, value),
                     readIgnore != null ? readIgnore.minVersion() : -1);
             getters.put(key, getter);
         }
@@ -371,7 +400,8 @@ public class Mappings {
                                      final Map<String, Getter> getters,
                                      final Map<String, Setter> setters,
                                      final Map<String, AccessMode.Reader> readers,
-                                     final Map<String, AccessMode.Writer> writers) {
+                                     final Map<String, AccessMode.Writer> writers,
+                                     final boolean copyDate) {
         final String[] path = o.path();
         if (path.length < 1) {
             throw new IllegalArgumentException("@JohnzonVirtualObject need a path");
@@ -391,13 +421,13 @@ public class Mappings {
             if (f.read()) {
                 final AccessMode.Reader reader = readers.get(name);
                 if (reader != null) {
-                    addGetterIfNeeded(objectGetters, name, reader);
+                    addGetterIfNeeded(objectGetters, name, reader,copyDate);
                 }
             }
             if (f.write()) {
                 final AccessMode.Writer writer = writers.get(name);
                 if (writer != null) {
-                    addSetterIfNeeded(objectSetters, name, writer);
+                    addSetterIfNeeded(objectSetters, name, writer, copyDate);
                 }
             }
         }
@@ -413,14 +443,17 @@ public class Mappings {
         setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, -1));
     }
 
-    private static Converter findConverter(final AccessMode.DecoratedType method) {
+    private Converter findConverter(final boolean copyDate, final AccessMode.DecoratedType method) {
         Converter converter = null;
-        if (method.getAnnotation(JohnzonConverter.class) != null) {
+        final JohnzonConverter annotation = method.getAnnotation(JohnzonConverter.class);
+        if (annotation != null) {
             try {
-                converter = method.getAnnotation(JohnzonConverter.class).value().newInstance();
+                converter = annotation.value().newInstance();
             } catch (final Exception e) {
                 throw new IllegalArgumentException(e);
             }
+        } else if (Class.class.isInstance(method.getType()) && Date.class.isAssignableFrom(Class.class.cast(method.getType())) && copyDate) {
+            converter = new DateWithCopyConverter(Converter.class.cast(converters.get(Date.class)));
         }
         return converter;
     }

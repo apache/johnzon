@@ -18,7 +18,11 @@
  */
 package org.apache.johnzon.mapper;
 
-import static java.util.Arrays.asList;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import org.apache.johnzon.mapper.reflection.Mappings;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -50,7 +54,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
@@ -63,11 +66,7 @@ import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 import javax.xml.bind.DatatypeConverter;
 
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.converter.EnumConverter;
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
-import org.apache.johnzon.mapper.reflection.Mappings;
+import static java.util.Arrays.asList;
 
 public class Mapper {
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
@@ -97,7 +96,7 @@ public class Mapper {
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors, version);
+        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors, version, converters);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
@@ -172,10 +171,10 @@ public class Mapper {
 
     /*private <T> String convertFrom(final Class<T> aClass, final T value) {
         final Converter<T> converter = (Converter<T>) findConverter(aClass);
-        return doConverFrom(value, converter);
+        return doConvertFrom(value, converter);
     }*/
 
-    private static <T> String doConverFrom(final T value, final Converter<T> converter) {
+    private static <T> String doConvertFrom(final T value, final Converter<T> converter) {
         if (converter == null) {
             throw new MapperException("can't convert " + value + " to String");
         }
@@ -359,7 +358,7 @@ public class Mapper {
 
             final Object val = getter.converter == null ? value : getter.converter.toString(value);
 
-            generator = writeValue(generator, value.getClass(),
+            generator = writeValue(generator, val.getClass(),
                     getter.primitive, getter.array,
                     getter.collection, getter.map,
                     getterEntry.getKey(),
@@ -433,7 +432,7 @@ public class Mapper {
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
                 return writeValue(generator, String.class, true, false, false, false, key,
-                        doConverFrom(value, (Converter<Object>) converter));
+                        doConvertFrom(value, (Converter<Object>) converter));
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
         }
