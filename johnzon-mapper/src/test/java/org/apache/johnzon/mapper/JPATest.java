@@ -67,13 +67,13 @@ public class JPATest {
     public void ensureStateIsIgnoredAndDateIsCorrect() {
         final AnEntity entity = em.find(AnEntity.class, id);
         assertEquals(
-                "{\"date\":\"19700101000000+0100\",\"id\":" + id + "}",
+                "{\"date\":\"19700101000000\",\"id\":" + id + "}",
                 new MapperBuilder().setAttributeOrder(new Comparator<String>() {
                     @Override
                     public int compare(final String o1, final String o2) {
                         return o1.compareTo(o2);
                     }
-                }).build().writeObjectAsString(entity));
+                }).build().writeObjectAsString(entity).replaceAll("\\+[^\"]*", ""));
     }
 
     @Entity
