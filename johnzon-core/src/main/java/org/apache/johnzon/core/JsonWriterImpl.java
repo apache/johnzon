@@ -23,6 +23,7 @@ import java.io.Serializable;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
 
@@ -69,5 +70,11 @@ class JsonWriterImpl implements JsonWriter, Serializable{
             throw new IllegalStateException("writeArray(), writeObject(), write() or close() method was already called");
         }
            
+    }
+
+    @Override
+    public void write(JsonValue value) {
+        // TODO Auto-generated method stub
+        
     }
 }

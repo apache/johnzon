@@ -25,11 +25,18 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>johnzon-core</artifactId>
-  <name>Johnzon :: Core</name>
+  <artifactId>johnzon-mutable</artifactId>
+  <name>Johnzon :: Mutable/DSL</name>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.johnzon</groupId>
+      <artifactId>johnzon-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+  </dependencies>
 
   <properties>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
-  <packaging>bundle</packaging>
 </project>

@@ -128,4 +128,16 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         
         
     }
+
+    @Override
+    public JsonObjectBuilder addAll(JsonObjectBuilder builder) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonObjectBuilder remove(String name) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

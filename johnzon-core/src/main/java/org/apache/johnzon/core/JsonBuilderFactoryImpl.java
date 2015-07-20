@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 class JsonBuilderFactoryImpl implements JsonBuilderFactory {
@@ -63,5 +65,17 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
+    }
+
+    @Override
+    public JsonObjectBuilder createObjectBuilder(JsonObject object) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder createArrayBuilder(JsonArray array) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

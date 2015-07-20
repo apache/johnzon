@@ -127,4 +127,148 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private static NullPointerException npe() {
         throw new NullPointerException("value/builder must not be null");
     }
+
+    @Override
+    public JsonArrayBuilder addAll(JsonArrayBuilder builder) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, JsonValue value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, String value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, BigDecimal value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, BigInteger value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, int value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, long value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, double value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, boolean value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder addNull(int index) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, JsonObjectBuilder builder) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder add(int index, JsonArrayBuilder builder) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, JsonValue value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, String value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, BigDecimal value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, BigInteger value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, int value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, long value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, double value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, boolean value) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder setNull(int index) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, JsonObjectBuilder builder) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder set(int index, JsonArrayBuilder builder) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public JsonArrayBuilder remove(int index) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
