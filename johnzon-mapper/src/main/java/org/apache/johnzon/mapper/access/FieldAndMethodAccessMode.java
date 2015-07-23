@@ -35,12 +35,6 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
     @Override
     public Map<String, Writer> doFindWriters(final Class<?> clazz) {
-        {
-            final Map<String, Writer> specific = super.findWriters(clazz);
-            if (specific != null) {
-                return specific;
-            }
-        }
         final Map<String, Writer> writers = new HashMap<String, Writer>(fields.findWriters(clazz));
         writers.putAll(methods.findWriters(clazz));
         return writers;
