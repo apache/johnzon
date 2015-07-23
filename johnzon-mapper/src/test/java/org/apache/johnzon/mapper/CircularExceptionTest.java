@@ -16,26 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper.access;
+package org.apache.johnzon.mapper;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
-import java.util.Map;
+import org.junit.Test;
 
-public interface AccessMode {
-    interface DecoratedType {
-        Type getType();
-        <T extends Annotation> T getAnnotation(Class<T> clazz);
+import static org.junit.Assert.assertTrue;
+
+public class CircularExceptionTest {
+    @Test
+    public void dontStackOverFlow() {
+        final Throwable oopsImVicous = new Exception("circular");
+        oopsImVicous.getStackTrace(); // fill it
+        oopsImVicous.initCause(new IllegalArgumentException(oopsImVicous));
+        final String serialized = new MapperBuilder().setAccessModeName("field").build().writeObjectAsString(oopsImVicous);
+        assertTrue(serialized.contains("\"detailMessage\":\"circular\""));
+        assertTrue(serialized.contains("\"stackTrace\":[{"));
     }
-
-    interface Writer extends DecoratedType {
-        void write(Object instance, Object value);
-    }
-
-    interface Reader extends DecoratedType {
-        Object read(Object instance);
-    }
-
-    Map<String, Reader> findReaders(Class<?> clazz);
-    Map<String, Writer> findWriters(Class<?> clazz);
 }

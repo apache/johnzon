@@ -24,6 +24,17 @@ import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.apache.johnzon.mapper.reflection.Mappings;
 
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+import javax.xml.bind.DatatypeConverter;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -54,17 +65,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.JsonValue.ValueType;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
-import javax.xml.bind.DatatypeConverter;
 
 import static java.util.Arrays.asList;
 

@@ -32,6 +32,7 @@ import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
@@ -139,6 +140,19 @@ public class MapperBuilder {
                 supportConstructors,
                 treatByteArrayAsBase64,
                 encoding);
+    }
+
+    public MapperBuilder setIgnoreFieldsForType(final Class<?> type, final String... fields) {
+        if (BaseAccessMode.class.isInstance(accessMode)) {
+            if (fields == null || fields.length == 0) {
+                BaseAccessMode.class.cast(accessMode).getFieldsToRemove().remove(type);
+            } else {
+                BaseAccessMode.class.cast(accessMode).getFieldsToRemove().put(type, fields);
+            }
+        } else {
+            throw new IllegalStateException("AccessMode is not an BaseAccessMode");
+        }
+        return this;
     }
 
     public MapperBuilder setSupportGetterForCollections(final boolean useGetterForCollections) {

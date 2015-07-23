@@ -22,19 +22,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 // methods override fields
-public class FieldAndMethodAccessMode implements AccessMode {
+public class FieldAndMethodAccessMode extends BaseAccessMode {
     private final FieldAccessMode fields = new FieldAccessMode();
     private final MethodAccessMode methods = new MethodAccessMode(false);
 
     @Override
-    public Map<String, Reader> findReaders(final Class<?> clazz) {
+    public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>(fields.findReaders(clazz));
         readers.putAll(methods.findReaders(clazz));
         return readers;
     }
 
     @Override
-    public Map<String, Writer> findWriters(final Class<?> clazz) {
+    public Map<String, Writer> doFindWriters(final Class<?> clazz) {
+        {
+            final Map<String, Writer> specific = super.findWriters(clazz);
+            if (specific != null) {
+                return specific;
+            }
+        }
         final Map<String, Writer> writers = new HashMap<String, Writer>(fields.findWriters(clazz));
         writers.putAll(methods.findWriters(clazz));
         return writers;

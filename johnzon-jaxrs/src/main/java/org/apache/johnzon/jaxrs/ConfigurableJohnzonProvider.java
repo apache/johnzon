@@ -100,6 +100,23 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         instance().writeTo(t, rawType, genericType, annotations, mediaType, httpHeaders, entityStream);
     }
 
+    // type=a,b,c|type2=d,e
+    public void setIgnoreFieldsForType(final String mapping) {
+        for (final String config : mapping.split(" *| *")) {
+            final String[] parts = config.split(" *= *");
+            try {
+                final Class<?> type = Thread.currentThread().getContextClassLoader().loadClass(parts[0]);
+                if (parts.length == 1) {
+                    builder.setIgnoreFieldsForType(type);
+                } else {
+                    builder.setIgnoreFieldsForType(type, parts[1].split(" *, *"));
+                }
+            } catch (final ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+    }
+
     public void setSupportConstructors(final boolean supportConstructors) {
         builder.setSupportConstructors(supportConstructors);
     }

@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MethodAccessMode implements AccessMode {
+public class MethodAccessMode extends BaseAccessMode {
     private final boolean supportGetterAsWritter;
 
     public MethodAccessMode(final boolean supportGetterAsWritter) {
@@ -39,7 +39,7 @@ public class MethodAccessMode implements AccessMode {
     }
 
     @Override
-    public Map<String, Reader> findReaders(final Class<?> clazz) {
+    public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
         final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
@@ -55,7 +55,7 @@ public class MethodAccessMode implements AccessMode {
     }
 
     @Override
-    public Map<String, Writer> findWriters(final Class<?> clazz) {
+    public Map<String, Writer> doFindWriters(final Class<?> clazz) {
         final Map<String, Writer> writers = new HashMap<String, Writer>();
         final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
         for (final PropertyDescriptor descriptor : propertyDescriptors) {

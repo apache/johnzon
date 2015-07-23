@@ -28,9 +28,9 @@ import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public class FieldAccessMode implements AccessMode {
+public class FieldAccessMode extends BaseAccessMode {
     @Override
-    public Map<String, Reader> findReaders(final Class<?> clazz) {
+    public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
         for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
             final String key = f.getKey();
@@ -44,7 +44,7 @@ public class FieldAccessMode implements AccessMode {
     }
 
     @Override
-    public Map<String, Writer> findWriters(final Class<?> clazz) {
+    public Map<String, Writer> doFindWriters(final Class<?> clazz) {
         final Map<String, Writer> writers = new HashMap<String, Writer>();
         for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
             final String key = f.getKey();
