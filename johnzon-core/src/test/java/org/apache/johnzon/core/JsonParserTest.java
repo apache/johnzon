@@ -1636,7 +1636,82 @@ public class JsonParserTest {
             
         }
     }
-    
+
+    @Test(expected=JsonParsingException.class)
+    public void rfc7159MustFailForLiteral() {
+        Json.createReader(new ByteArrayInputStream("null ".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void rfc7159MustFailForString() {
+        Json.createReader(new ByteArrayInputStream("\"hello\"".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void rfc7159MustFailForNumber() {
+        Json.createReader(new ByteArrayInputStream("  12  ".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void arrayFollowedByGarbage() {
+        Json.createReader(new ByteArrayInputStream("[12],".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void arrayFollowedByGarbage1() {
+        Json.createReader(new ByteArrayInputStream("[12]:".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void arrayFollowedByGarbage2() {
+        Json.createReader(new ByteArrayInputStream("[12]:,".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2},".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage1() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2}:".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage2() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2},:".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage3() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2}-".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage4() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2}------------".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage5() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2}{\"a\":2}".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage6() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2}\"".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectFollowedByGarbage7() {
+        Json.createReader(new ByteArrayInputStream("{\"a\":2} \"".getBytes())).read();
+    }
+
+    @Test(expected=JsonParsingException.class)
+    public void objectPrependedByGarbage7() {
+        Json.createReader(new ByteArrayInputStream("-{\"a\":2}".getBytes())).read();
+    }
+
     class AttemptingInputStream extends ByteArrayInputStream {
 
         public AttemptingInputStream(byte[] buf) {

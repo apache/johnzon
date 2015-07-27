@@ -185,7 +185,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         }
 
         //detect garbage at the end of the file after last object or array is closed
-        if (bufferPos < availableCharsInBuffer - 2) {
+        if (bufferPos < availableCharsInBuffer) {
 
             final char c = readNextNonWhitespaceChar(readNextChar());
 
