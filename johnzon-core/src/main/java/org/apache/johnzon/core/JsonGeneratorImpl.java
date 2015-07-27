@@ -734,8 +734,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     private void checkArray() {
-        if (currentStructureElement == null || !currentStructureElement.isArray) {
+        if (currentStructureElement != null && !currentStructureElement.isArray) {
             throw new JsonGenerationException("write(param) is only valid in arrays");
+        } else {
+        	valid = true;
         }
     }
 

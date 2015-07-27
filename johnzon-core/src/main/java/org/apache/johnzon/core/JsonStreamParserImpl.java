@@ -24,12 +24,25 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.util.Map.Entry;
+import java.util.AbstractMap;
 import java.util.NoSuchElementException;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonException;
+import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonValue;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
+import javax.json.stream.JsonParser.Event;
 
 //This class represents either the Json tokenizer and the Json parser.
 public class JsonStreamParserImpl implements JsonChars, JsonParser{
@@ -65,7 +78,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //we use a byte here, because comparing bytes
     //is more efficient than comparing enums
     //Additionally we handle internally two more event: COMMA_EVENT and KEY_SEPARATOR_EVENT
-    private byte previousEvent;
+    private byte previousEvent = -1;
 
     //this buffer is used to store current String or Number value in case that
     //within the value a buffer boundary is crossed or the string contains escaped characters
@@ -105,6 +118,14 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             this.previous = previous;
             this.isArray = isArray;
         }
+        
+        int getDepth() {
+        	if(previous == null) {
+        		return 1;
+        	} else {
+        		return previous.getDepth()+1; 
+        	}
+        }
     }
 
     //detect charset according to RFC 4627
@@ -138,6 +159,10 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         if (fallBackCopyBuffer.length < maxStringLength) {
             throw cust("Size of value buffer cannot be smaller than maximum string length");
+        }
+        
+        if(reader == null && inputStream == null) {
+        	throw new NullPointerException("input must not be null");
         }
 
         if (reader != null) {
@@ -176,21 +201,15 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
     }
-
-    @Override
-    public final boolean hasNext() {
-
-        if (currentStructureElement != null || (previousEvent != END_ARRAY && previousEvent != END_OBJECT) || previousEvent == 0) {
-            return true;
-        }
-
-        //detect garbage at the end of the file after last object or array is closed
-        if (bufferPos < availableCharsInBuffer - 2) {
+    
+    private void scanForTrailingGarbage(int offset) {
+    	//detect garbage at the end of the file after last object or array is closed
+        if (bufferPos < availableCharsInBuffer - offset) {
 
             final char c = readNextNonWhitespaceChar(readNextChar());
 
             if (c == EOF) {
-                return false;
+                return;
             }
 
             if (bufferPos < availableCharsInBuffer) {
@@ -198,6 +217,25 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             }
 
         }
+    }
+
+    @Override
+    public final boolean hasNext() {
+
+    	if(currentStructureElement == null && (previousEvent == VALUE_FALSE
+        		|| previousEvent == VALUE_TRUE
+        		|| previousEvent == VALUE_NULL
+        		|| previousEvent == VALUE_NUMBER
+        		|| previousEvent == VALUE_STRING)) {
+    		scanForTrailingGarbage(0);
+    		return false;
+    	}
+    	
+        if (currentStructureElement != null || previousEvent == -1) {
+            return true;
+        }
+
+        scanForTrailingGarbage(2);
 
         return false;
 
@@ -326,10 +364,6 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw new NoSuchElementException();
         }
 
-        if (previousEvent != 0 && currentStructureElement == null) {
-            throw uexc("Unexpected end of structure");
-        }
-
         final char c = readNextNonWhitespaceChar(readNextChar());
 
         if (c == COMMA_CHAR) {
@@ -426,7 +460,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private Event handleStartObject() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -463,7 +497,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private Event handleStartArray() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -625,7 +659,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //always the beginning quote of a key or value  
 
         //last event must one of the following-> : { [ ,
-        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
+        if (previousEvent != -1 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
                 && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : { [ ,");
         }
@@ -634,7 +668,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //end quote already consumed
 
         //make the decision if its an key or value
-        if (previousEvent == KEY_SEPARATOR_EVENT) {
+        if (previousEvent == KEY_SEPARATOR_EVENT || previousEvent == -1) {
             //must be value
 
             if (currentStructureElement != null && currentStructureElement.isArray) {
@@ -770,7 +804,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private Event handleLiteral() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -982,5 +1016,181 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         final JsonLocation location = createLocation();
         return new JsonParsingException("General exception on " + location + ". Reason is [[" + message + "]]", location);
     }
+    
+    private IllegalStateException is(final String message) {
+        final JsonLocation location = createLocation();
+        return new IllegalStateException("Illegal parser state exception on " + location + ". Reason is [[" + message + "]]");
+    }
+
+	@Override
+	public JsonObject getObject() {
+		JsonReaderImpl reader = new JsonReaderImpl(this, false);
+		JsonObject obj;
+		try {
+			obj = reader.readObject();
+		} catch (JsonParsingException e) {
+			throw is(e.getMessage());
+		} finally {
+			reader.close();
+		}
+
+		return obj;
+	}
+
+	@Override
+	public JsonValue getValue() {
+		if(previousEvent == VALUE_TRUE) {
+			return JsonValue.TRUE;
+		}
+		
+		if(previousEvent == VALUE_FALSE) {
+			return JsonValue.FALSE;
+		}
+		
+		if(previousEvent == VALUE_NULL) {
+			return JsonValue.NULL;
+		}
+		
+		if(previousEvent == VALUE_NUMBER) {
+			if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
+	            return Json.createValue(currentIntegralNumber);
+	        } else if (isCurrentNumberIntegral) {
+	            return Json.createValue(getLong());
+	        } else {
+	        	return Json.createValue(getBigDecimal());
+	        }
+		}
+		
+		if(previousEvent == VALUE_STRING) {
+			return Json.createValue(getString());
+		}
+		
+		//never happen
+		return null;
+	}
+
+	@Override
+	public JsonArray getArray() {
+		JsonReaderImpl reader = new JsonReaderImpl(this, false);
+		JsonArray ar;
+		try {
+			ar = reader.readArray();
+		} catch (JsonParsingException e) {
+			throw is(e.getMessage());
+		} finally {
+			reader.close();
+		}
+
+		return ar;
+	}
+
+	@Override
+	public Stream<JsonValue> getArrayStream() {
+        //TODO check for beginning of an array
+        Spliterator<JsonValue> spliterator = new Spliterators.AbstractSpliterator<JsonValue>(Long.MAX_VALUE, Spliterator.ORDERED) {
+            @Override
+            public Spliterator<JsonValue> trySplit() {
+                return null;
+            }
+            @Override
+            public boolean tryAdvance(Consumer<? super JsonValue> action) {
+                if (action == null) {
+                    throw new NullPointerException();
+                }
+                if (!hasNext()) {
+                    return false;
+                }
+                if (next() == Event.END_ARRAY) {
+                    return false;
+                }
+                action.accept(getValue());
+                return true;
+            }
+        };
+        
+        return StreamSupport.stream(spliterator, false);
+	}
+
+	@Override
+	public Stream<Entry<String, JsonValue>> getObjectStream() {
+		//TODO check for beginning of an object
+        Spliterator<Entry<String, JsonValue>> spliterator = new Spliterators.AbstractSpliterator<Entry<String, JsonValue>>(Long.MAX_VALUE, Spliterator.ORDERED) {
+            @Override
+            public Spliterator<Entry<String, JsonValue>> trySplit() {
+                return null;
+            }
+            @Override
+            public boolean tryAdvance(Consumer<? super Entry<String, JsonValue>> action) {
+            	 if (action == null) {
+                     throw new NullPointerException();
+                 }
+                 if (!hasNext()) {
+                     return false;
+                 }
+                 Event event = next();
+                 if (event == Event.END_OBJECT) {
+                     return false;
+                 }
+                 if (event != Event.KEY_NAME) {
+                     throw new JsonException("error generating stream, key name token expected");
+                 }
+                 String key = getString();
+                 if (!hasNext()) {
+                     throw new JsonException("error generating stream, more tokens expected");
+                 }
+                 next();
+                 JsonValue value = getValue();
+                 action.accept(new AbstractMap.SimpleImmutableEntry<String, JsonValue>(key, value));
+                 return true;
+            }
+        };
+        
+        return StreamSupport.stream(spliterator, false);
+	}
+
+	@Override
+	public Stream<JsonValue> getValueStream() {
+		//TODO check for value
+        Spliterator<JsonValue> spliterator = new Spliterators.AbstractSpliterator<JsonValue>(Long.MAX_VALUE, Spliterator.ORDERED) {
+            @Override
+            public Spliterator<JsonValue> trySplit() {
+                return null;
+            }
+            @Override
+            public boolean tryAdvance(Consumer<? super JsonValue> action) {
+                if (action == null) {
+                    throw new NullPointerException();
+                }
+                if (!hasNext()) {
+                    return false;
+                }
+                next();
+                action.accept(getValue());
+                return true;
+            }
+        };
+        
+        return StreamSupport.stream(spliterator, false);
+	}
+
+	@Override
+	public void skipArray() {
+		if(currentStructureElement != null && currentStructureElement.isArray) {
+			int depth = currentStructureElement.getDepth();
+			while(next() != Event.END_ARRAY || currentStructureElement.getDepth() != depth);
+		}
+	}
+
+	@Override
+	public void skipObject() {
+		if(currentStructureElement != null && !currentStructureElement.isArray) {
+			int depth = currentStructureElement.getDepth();
+			while(next() != Event.END_OBJECT || currentStructureElement.getDepth() != depth);
+		}
+	}
+    
+    //1.1
+    
+    
 
 }

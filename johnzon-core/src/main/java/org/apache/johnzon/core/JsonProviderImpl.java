@@ -23,13 +23,19 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Map;
 
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 import javax.json.spi.JsonProvider;
@@ -115,8 +121,52 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> stringMap) {
         return DELEGATE.createBuilderFactory(stringMap);
     }
+    
+    
 
-    static class JsonProviderDelegate extends JsonProvider {
+    @Override
+	public JsonObjectBuilder createObjectBuilder(JsonObject object) {
+    	return DELEGATE.createObjectBuilder(object);
+	}
+
+	@Override
+	public JsonArrayBuilder createArrayBuilder(JsonArray array) {
+		return DELEGATE.createArrayBuilder(array);
+	}
+
+	@Override
+	public JsonString createValue(String value) {
+		return DELEGATE.createValue(value);
+	}
+
+	@Override
+	public JsonNumber createValue(int value) {
+		return DELEGATE.createValue(value);
+	}
+
+	@Override
+	public JsonNumber createValue(long value) {
+		return DELEGATE.createValue(value);
+	}
+
+	@Override
+	public JsonNumber createValue(double value) {
+		return DELEGATE.createValue(value);
+	}
+
+	@Override
+	public JsonNumber createValue(BigDecimal value) {
+		return DELEGATE.createValue(value);
+	}
+
+	@Override
+	public JsonNumber createValue(BigInteger value) {
+		return DELEGATE.createValue(value);
+	}
+
+
+
+	static class JsonProviderDelegate extends JsonProvider {
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
         private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
@@ -197,5 +247,47 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
             return (config == null || config.isEmpty()) ? builderFactory : new JsonBuilderFactoryImpl(config);
         }
+
+		@Override
+		public JsonObjectBuilder createObjectBuilder(JsonObject object) {
+			return builderFactory.createObjectBuilder(object);
+		}
+
+		@Override
+		public JsonArrayBuilder createArrayBuilder(JsonArray array) {
+			return builderFactory.createArrayBuilder(array);
+		}
+
+		@Override
+		public JsonString createValue(String value) {
+			return new JsonStringImpl(value);
+		}
+
+		@Override
+		public JsonNumber createValue(int value) {
+			return new JsonLongImpl(value);
+		}
+
+		@Override
+		public JsonNumber createValue(long value) {
+			return new JsonLongImpl(value);
+		}
+
+		@Override
+		public JsonNumber createValue(double value) {
+			return new JsonDoubleImpl(value);
+		}
+
+		@Override
+		public JsonNumber createValue(BigDecimal value) {
+			return new JsonNumberImpl(value);
+		}
+
+		@Override
+		public JsonNumber createValue(BigInteger value) {
+			return new JsonNumberImpl(new BigDecimal(value));
+		}
+        
+        
     }
 }

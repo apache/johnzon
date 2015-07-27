@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
@@ -130,145 +131,146 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     @Override
     public JsonArrayBuilder addAll(JsonArrayBuilder builder) {
-        // TODO Auto-generated method stub
-        return null;
+        tmpList.addAll(builder.build()); //TODO is it ok to call build() here and destry the builder?
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, JsonValue value) {
-        // TODO Auto-generated method stub
-        return null;
+        tmpList.add(index, value);
+        return this;
+        
     }
 
     @Override
     public JsonArrayBuilder add(int index, String value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, BigDecimal value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, BigInteger value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, int value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, long value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, double value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, boolean value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, value?JsonValue.TRUE:JsonValue.FALSE);
+        return this;
     }
 
     @Override
     public JsonArrayBuilder addNull(int index) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, JsonValue.NULL);
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, JsonObjectBuilder builder) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, builder.build()); //TODO ok to call build()?
+        return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, JsonArrayBuilder builder) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.add(index, builder.build()); //TODO ok to call build()?
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, JsonValue value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, value);
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, String value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, BigDecimal value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, BigInteger value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, int value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, long value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, double value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, Json.createValue(value));
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, boolean value) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, value?JsonValue.TRUE:JsonValue.FALSE);
+        return this;
     }
 
     @Override
     public JsonArrayBuilder setNull(int index) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, JsonValue.NULL);
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, JsonObjectBuilder builder) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, builder.build()); //TODO ok here to call build?
+        return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, JsonArrayBuilder builder) {
-        // TODO Auto-generated method stub
-        return null;
+    	tmpList.set(index, builder.build()); //TODO ok here to call build?
+        return this;
     }
 
     @Override
     public JsonArrayBuilder remove(int index) {
-        // TODO Auto-generated method stub
-        return null;
+        tmpList.remove(index);
+        return this;
     }
 }

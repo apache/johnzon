@@ -69,13 +69,11 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
 
     @Override
     public JsonObjectBuilder createObjectBuilder(JsonObject object) {
-        // TODO Auto-generated method stub
-        return null;
+    	return new JsonObjectBuilderImpl().addAll(object);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder(JsonArray array) {
-        // TODO Auto-generated method stub
-        return null;
+    	return new JsonArrayBuilderImpl().add(array);
     }
 }

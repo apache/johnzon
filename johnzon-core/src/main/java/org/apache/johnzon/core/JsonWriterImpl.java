@@ -74,7 +74,8 @@ class JsonWriterImpl implements JsonWriter, Serializable{
 
     @Override
     public void write(JsonValue value) {
-        // TODO Auto-generated method stub
-        
+    	checkClosed();
+        generator.write(value);
+        close();
     }
 }

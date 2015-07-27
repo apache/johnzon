@@ -99,14 +99,18 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         return this;
     }
     
+    private void ensureMapCreated() {
+    	 if(tmpMap==null){
+             tmpMap=new LinkedHashMap<String, JsonValue>();
+         }
+    }
+    
     private void putValue(String name, JsonValue value){
         if(name == null || value == null) {
             throw npe();
         }
         
-        if(tmpMap==null){
-            tmpMap=new LinkedHashMap<String, JsonValue>();
-        }
+        ensureMapCreated();
         
         tmpMap.put(name, value);
     }
@@ -131,13 +135,22 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     @Override
     public JsonObjectBuilder addAll(JsonObjectBuilder builder) {
-        // TODO Auto-generated method stub
-        return null;
+    	ensureMapCreated();
+        tmpMap.putAll(builder.build()); //TODO is it ok to build() here and destroy the builder?
+        return this;
+    }
+    
+    JsonObjectBuilder addAll(JsonObject object) {
+    	ensureMapCreated();
+        tmpMap.putAll(object); //TODO missing in spec?
+        return this;
     }
 
     @Override
     public JsonObjectBuilder remove(String name) {
-        // TODO Auto-generated method stub
-        return null;
+    	if(tmpMap != null) {
+    		tmpMap.remove(name);
+    	}
+        return this;
     }
 }

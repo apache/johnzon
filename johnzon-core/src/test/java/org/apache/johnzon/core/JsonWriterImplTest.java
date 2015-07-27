@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 
 import javax.json.Json;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 import javax.json.JsonWriter;
 
 import org.junit.Test;
@@ -38,5 +39,32 @@ public class JsonWriterImplTest {
         writer.write(ob.build());
         writer.close();
         assertEquals("{\"a\":\"b\"}", new String(out.toByteArray()));
+    }
+    
+    @Test
+    public void writerSimpleNumber() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        writer.write(Json.createValue(1));
+        writer.close();
+        assertEquals("1", new String(out.toByteArray()));
+    }
+    
+    @Test
+    public void writerSimpleString() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        writer.write(Json.createValue("simple string"));
+        writer.close();
+        assertEquals("\"simple string\"", new String(out.toByteArray()));
+    }
+    
+    @Test
+    public void writerSimpleTrue() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        writer.write(JsonValue.TRUE);
+        writer.close();
+        assertEquals("true", new String(out.toByteArray()));
     }
 }

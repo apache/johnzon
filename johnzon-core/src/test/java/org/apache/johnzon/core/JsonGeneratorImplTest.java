@@ -278,4 +278,49 @@ public class JsonGeneratorImplTest {
                         "  ]\n" +
                         "}", new String(baos.toByteArray()));
     }
+    
+    @Test
+    public void testSimpleNumber() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .write(1)
+        .close();
+         assertEquals("1", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void testSimpleNumberAsJsonValue() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .write(Json.createValue(1))
+        .close();
+         assertEquals("1", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void testSimpleString() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .write("a string")
+        .close();
+         assertEquals("\"a string\"", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void testSimpleStringAsJsonValue() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .write(Json.createValue("a string"))
+        .close();
+         assertEquals("\"a string\"", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void testSimpleTrue() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos)
+        .write(JsonValue.TRUE)
+        .close();
+         assertEquals("true", new String(baos.toByteArray()));
+    }
 }

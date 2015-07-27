@@ -41,6 +41,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
@@ -1635,6 +1636,225 @@ public class JsonParserTest {
             parser.close();
             
         }
+    }
+    
+    @Test
+    public void simpleValueTrue() {
+        final JsonParser parser = Json.createParser(new StringReader("  true"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_TRUE, event);
+        assertEquals(JsonValue.TRUE, parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test
+    public void simpleValueFalse() {
+        final JsonParser parser = Json.createParser(new StringReader("  false  "));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_FALSE, event);
+        assertEquals(JsonValue.FALSE, parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test
+    public void simpleValueNumber() {
+        final JsonParser parser = Json.createParser(new StringReader("  2.162  "));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+        assertEquals(Json.createValue(2.162), parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test
+    public void simpleValueString() {
+        final JsonParser parser = Json.createParser(new StringReader("\"astring\""));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_STRING, event);
+        assertEquals(Json.createValue("astring"), parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test
+    public void simpleValueNull() {
+        final JsonParser parser = Json.createParser(new StringReader("\t\tnull"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_NULL, event);
+        assertEquals(JsonValue.NULL, parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValueWrongLiteral() {
+        final JsonParser parser = Json.createParser(new StringReader("nuull"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValuePlusGarbage() {
+        final JsonParser parser = Json.createParser(new StringReader("null,"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValuePlusGarbage1() {
+        final JsonParser parser = Json.createParser(new StringReader("null:"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValuePlusMoreGarbage() {
+        final JsonParser parser = Json.createParser(new StringReader("null[1,2,3]"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValuePlusMoreGarbage2() {
+        final JsonParser parser = Json.createParser(new StringReader("null,[1,2,3]"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValuePlusMoreGarbage3() {
+        final JsonParser parser = Json.createParser(new StringReader("12{\"a\":5}"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void simpleValuePlusMoreGarbage4() {
+        final JsonParser parser = Json.createParser(new StringReader("12 true"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
+    }
+    
+    @Test
+    public void getObjectFromParser() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10}, \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.next();
+        assertEquals("{\"c\":9,\"d\":10}", parser.getObject().toString());
+        assertTrue(parser.next() == Event.KEY_NAME);
+    }
+    
+    @Test
+    public void getObjectFromParserNested() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10, \"r\":{\"q\":19, \"s\":144}}, \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.next();
+        assertEquals("{\"c\":9,\"d\":10,\"r\":{\"q\":19,\"s\":144}}", parser.getObject().toString());
+        assertTrue(parser.next() == Event.KEY_NAME);
+    }
+    
+    @Test(expected=IllegalStateException.class)
+    public void getObjectFromParserWrongState() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10}, \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        assertEquals("{\"c\":9,\"d\":10}", parser.getObject().toString());
+        assertTrue(parser.next() == Event.KEY_NAME);
+    }
+    
+    @Test
+    public void getArrayFromParser() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5], \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        assertEquals("[1,2,3,4,5]", parser.getArray().toString());
+        assertTrue(parser.next() == Event.KEY_NAME);
+    }
+    
+    @Test
+    public void getArrayFromParserNested() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        assertEquals("[1,2,3,4,5,[2,2,3,4,5]]", parser.getArray().toString());
+        assertTrue(parser.next() == Event.KEY_NAME);
+    }
+    
+    @Test(expected=IllegalStateException.class)
+    public void getArrayFromParserWrogState() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        assertEquals("[1,2,3,4,5,[2,2,3,4,5]]", parser.getArray().toString());
+        assertTrue(parser.next() == Event.KEY_NAME);
+    }
+    
+    @Test
+    public void skipObject() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10, \"r\":{\"q\":19, \"s\":144}}, \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.skipObject();
+        parser.next();
+        assertEquals(Event.KEY_NAME, parser.next());
+        assertEquals("z",parser.getString());
+    }
+    
+    @Test
+    public void skipArray() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8"));
+        assertNotNull(parser);
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.next();
+        parser.skipArray();
+        parser.next();
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertEquals("z",parser.getString());
     }
     
     class AttemptingInputStream extends ByteArrayInputStream {

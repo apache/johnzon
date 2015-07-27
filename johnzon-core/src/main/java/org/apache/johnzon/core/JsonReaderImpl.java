@@ -30,9 +30,16 @@ import javax.json.stream.JsonParsingException;
 class JsonReaderImpl implements JsonReader {
     private final JsonParser parser;
     private boolean closed = false;
+    private final boolean readUntiltheEnd;
 
     JsonReaderImpl(final JsonParser parser) {
         this.parser = parser;
+        this.readUntiltheEnd = true;
+    }
+    
+    JsonReaderImpl(final JsonParser parser, boolean readUntiltheEnd) {
+        this.parser = parser;
+        this.readUntiltheEnd = readUntiltheEnd;
     }
 
     @Override
@@ -47,7 +54,7 @@ class JsonReaderImpl implements JsonReader {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl();
                 parseObject(objectBuilder);
-                if (parser.hasNext()) {
+                if (readUntiltheEnd && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
@@ -55,7 +62,7 @@ class JsonReaderImpl implements JsonReader {
             case START_ARRAY:
                 final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl();
                 parseArray(arrayBuilder);
-                if (parser.hasNext()) {
+                if (readUntiltheEnd && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
