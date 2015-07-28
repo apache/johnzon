@@ -24,7 +24,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ObjectConverterTest {
 
@@ -33,6 +35,8 @@ public class ObjectConverterTest {
         Contact contact = new Contact();
         contact.linkedPersons.addAll(Arrays.asList(new Person("f1", "l1"), new Person("f2", "l2")));
         contact.linkedPersonsArray = new Person[] { new Person("f3", "l3"), new Person("f4", "l4") };
+        contact.personMap.put("cinq", new Person("f5", "l5"));
+        contact.personMap.put("six", new Person("f6", "l6"));
 
         MapperBuilder mapperBuilder = new MapperBuilder();
         mapperBuilder.addConverter(Person.class, new PersonConverter());
@@ -45,7 +49,7 @@ public class ObjectConverterTest {
 
         String s = mapper.writeObjectAsString(contact);
         Contact c = mapper.readObject(s, Contact.class);
-        String expected = "{\"linkedPersons\":[\"f1|l1\",\"f2|l2\"],\"linkedPersonsArray\":[\"f3|l3\",\"f4|l4\"]}";
+        String expected = "{\"linkedPersons\":[\"f1|l1\",\"f2|l2\"],\"linkedPersonsArray\":[\"f3|l3\",\"f4|l4\"],\"personMap\":{\"six\":\"f6|l6\",\"cinq\":\"f5|l5\"}}";
         Assert.assertEquals(expected, s);
         Assert.assertEquals(contact, c);
     }
@@ -80,6 +84,9 @@ public class ObjectConverterTest {
         @JohnzonConverter(PersonConverter.class)
         private Person[] linkedPersonsArray;
 
+        @JohnzonConverter(PersonConverter.class)
+        private Map<String, Person> personMap = new HashMap<String, Person>();
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -90,7 +97,8 @@ public class ObjectConverterTest {
             }
 
             final Contact contact = Contact.class.cast(o);
-            return linkedPersons.equals(contact.linkedPersons) && Arrays.equals(linkedPersonsArray, contact.linkedPersonsArray);
+            return linkedPersons.equals(contact.linkedPersons) && personMap.equals(contact.personMap)
+                && Arrays.equals(linkedPersonsArray, contact.linkedPersonsArray);
 
         }
 

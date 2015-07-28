@@ -317,7 +317,7 @@ public class Mapper {
 
             if (Map.class.isInstance(object)) {
                 gen = gen.writeStartObject();
-                gen = writeMapBody((Map<?, ?>) object, gen);
+                gen = writeMapBody((Map<?, ?>) object, gen, null);
                 gen = gen.writeEnd();
                 return gen;
             }
@@ -368,7 +368,7 @@ public class Mapper {
         return generator;
     }
 
-    private JsonGenerator writeMapBody(final Map<?, ?> object, final JsonGenerator gen) throws InvocationTargetException, IllegalAccessException {
+    private JsonGenerator writeMapBody(final Map<?, ?> object, final JsonGenerator gen, final Converter itemConverter) throws InvocationTargetException, IllegalAccessException {
         JsonGenerator generator = gen;
         for (final Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
             final Object value = entry.getValue();
@@ -390,7 +390,7 @@ public class Mapper {
             final boolean collection = clazz || primitive || array ? false : Collection.class.isAssignableFrom(valueClass);
             final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
             generator = writeValue(generator, valueClass,
-                    primitive, array, collection, map, null /* TODO? */,
+                    primitive, array, collection, map, itemConverter,
                     key == null ? "null" : key.toString(), value);
         }
         return generator;
@@ -427,7 +427,7 @@ public class Mapper {
             return gen.writeEnd();
         } else if (map) {
             JsonGenerator gen = generator.writeStartObject(key);
-            gen = writeMapBody((Map<?, ?>) value, gen);
+            gen = writeMapBody((Map<?, ?>) value, gen, itemConverter);
             return gen.writeEnd();
         } else if (primitive) {
             return writePrimitives(generator, key, type, value);

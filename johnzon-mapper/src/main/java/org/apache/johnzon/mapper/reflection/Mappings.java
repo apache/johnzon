@@ -168,7 +168,6 @@ public class Mappings {
             this.reader = reader;
             this.version = version;
             this.array = array;
-            this.map = map && converter == null;
             this.collection = collection;
             this.primitive = primitive;
             if (converter != null && matches(reader.getType(), converter)) {
@@ -181,6 +180,7 @@ public class Mappings {
                 this.converter = null;
                 this.itemConverter = null;
             }
+            this.map = map && this.converter == null;
         }
 
         @Override
