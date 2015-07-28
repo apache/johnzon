@@ -24,9 +24,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public class ObjectConverterTest {
 
@@ -49,7 +49,7 @@ public class ObjectConverterTest {
 
         String s = mapper.writeObjectAsString(contact);
         Contact c = mapper.readObject(s, Contact.class);
-        String expected = "{\"linkedPersons\":[\"f1|l1\",\"f2|l2\"],\"linkedPersonsArray\":[\"f3|l3\",\"f4|l4\"],\"personMap\":{\"six\":\"f6|l6\",\"cinq\":\"f5|l5\"}}";
+        String expected = "{\"linkedPersons\":[\"f1|l1\",\"f2|l2\"],\"linkedPersonsArray\":[\"f3|l3\",\"f4|l4\"],\"personMap\":{\"cinq\":\"f5|l5\",\"six\":\"f6|l6\"}}";
         Assert.assertEquals(expected, s);
         Assert.assertEquals(contact, c);
     }
@@ -85,7 +85,7 @@ public class ObjectConverterTest {
         private Person[] linkedPersonsArray;
 
         @JohnzonConverter(PersonConverter.class)
-        private Map<String, Person> personMap = new HashMap<String, Person>();
+        private SortedMap<String, Person> personMap = new TreeMap<String, Person>();
 
         @Override
         public boolean equals(Object o) {
