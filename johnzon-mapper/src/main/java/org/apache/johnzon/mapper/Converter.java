@@ -18,7 +18,15 @@
  */
 package org.apache.johnzon.mapper;
 
+import java.lang.reflect.Type;
+
 public interface Converter<T> {
     String toString(T instance);
     T fromString(String text);
+
+    // for generic converters it allows to explicitely provide the converted type (ex: enum converter)
+    // typically useful when generic type get resolved to a TypeVariable
+    interface TypeAccess {
+        Type type();
+    }
 }

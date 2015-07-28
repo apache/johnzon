@@ -18,19 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.charset.Charset;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.json.JsonReaderFactory;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
-
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -50,6 +37,19 @@ import org.apache.johnzon.mapper.converter.IntegerConverter;
 import org.apache.johnzon.mapper.converter.LongConverter;
 import org.apache.johnzon.mapper.converter.ShortConverter;
 import org.apache.johnzon.mapper.converter.StringConverter;
+
+import javax.json.JsonReaderFactory;
+import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.charset.Charset;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MapperBuilder {
     private static final Map<Class<?>, Converter<?>> DEFAULT_CONVERTERS = new HashMap<Class<?>, Converter<?>>();
@@ -94,7 +94,7 @@ public class MapperBuilder {
     protected boolean pretty;
     private AccessMode accessMode = new MethodAccessMode(false);
     private boolean treatByteArrayAsBase64;
-    private final Map<Class<?>, Converter<?>> converters = new HashMap<Class<?>, Converter<?>>(DEFAULT_CONVERTERS);
+    private final Map<Type, Converter<?>> converters = new HashMap<Type, Converter<?>>(DEFAULT_CONVERTERS);
     private boolean supportConstructors;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
 
@@ -230,7 +230,13 @@ public class MapperBuilder {
         return this;
     }
 
+    @Deprecated // use addConverter
     public MapperBuilder addPropertyEditor(final Class<?> clazz, final Converter<?> converter) {
+        this.converters.put(clazz, converter);
+        return this;
+    }
+
+    public MapperBuilder addConverter(final Type clazz, final Converter<?> converter) {
         this.converters.put(clazz, converter);
         return this;
     }

@@ -25,6 +25,7 @@ import org.apache.johnzon.mapper.JohnzonVirtualObject;
 import org.apache.johnzon.mapper.JohnzonVirtualObjects;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
+import org.apache.johnzon.mapper.converter.EnumConverter;
 
 import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
@@ -62,6 +63,7 @@ public class Mappings {
         public final boolean constructorHasArguments;
         public final String[] constructorParameters;
         public final Converter<?>[] constructorParameterConverters;
+        public final Converter<?>[] constructorItemParameterConverters;
         public final Type[] constructorParameterTypes;
 
         protected ClassMapping(final Class<?> clazz,
@@ -76,16 +78,25 @@ public class Mappings {
             if (this.constructorHasArguments) {
                 this.constructorParameterTypes = this.constructor.getGenericParameterTypes();
 
+                // TODO: java 8 gives access to it without annotation
                 this.constructorParameters = new String[this.constructor.getGenericParameterTypes().length];
                 final ConstructorProperties constructorProperties = this.constructor.getAnnotation(ConstructorProperties.class);
                 System.arraycopy(constructorProperties.value(), 0, this.constructorParameters, 0, this.constructorParameters.length);
 
                 this.constructorParameterConverters = new Converter<?>[this.constructor.getGenericParameterTypes().length];
+                this.constructorItemParameterConverters = new Converter<?>[this.constructorParameterConverters.length];
                 for (int i = 0; i < this.constructorParameters.length; i++) {
                     for (final Annotation a : this.constructor.getParameterAnnotations()[i]) {
                         if (a.annotationType() == JohnzonConverter.class) {
                             try {
-                                this.constructorParameterConverters[i] = JohnzonConverter.class.cast(a).value().newInstance();
+                                final Converter<?> converter = JohnzonConverter.class.cast(a).value().newInstance();
+                                if (matches(this.constructor.getParameterTypes()[i], converter)) {
+                                    this.constructorParameterConverters[i] = converter;
+                                    this.constructorItemParameterConverters[i] = null;
+                                } else {
+                                    this.constructorParameterConverters[i] = null;
+                                    this.constructorItemParameterConverters[i] = converter;
+                                }
                             } catch (final Exception e) {
                                 throw new IllegalArgumentException(e);
                             }
@@ -96,6 +107,7 @@ public class Mappings {
                 this.constructorParameterTypes = null;
                 this.constructorParameters = null;
                 this.constructorParameterConverters = null;
+                this.constructorItemParameterConverters = null;
             }
         }
 
@@ -142,6 +154,7 @@ public class Mappings {
         public final AccessMode.Reader reader;
         public final int version;
         public final Converter<Object> converter;
+        public final Converter<Object> itemConverter;
         public final boolean primitive;
         public final boolean array;
         public final boolean map;
@@ -150,14 +163,38 @@ public class Mappings {
         public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
-                      final Converter<Object> converter, final int version) {
+                      final Converter<Object> converter,
+                      final int version) {
             this.reader = reader;
-            this.converter = converter;
             this.version = version;
             this.array = array;
             this.map = map && converter == null;
             this.collection = collection;
             this.primitive = primitive;
+            if (converter != null && matches(reader.getType(), converter)) {
+                this.converter = converter;
+                this.itemConverter = null;
+            } else if (converter != null) {
+                this.converter = null;
+                this.itemConverter = converter;
+            } else {
+                this.converter = null;
+                this.itemConverter = null;
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "Getter{" +
+                "reader=" + reader +
+                ", version=" + version +
+                ", converter=" + converter +
+                ", itemConverter=" + itemConverter +
+                ", primitive=" + primitive +
+                ", array=" + array +
+                ", map=" + map +
+                ", collection=" + collection +
+                '}';
         }
     }
 
@@ -166,18 +203,88 @@ public class Mappings {
         public final int version;
         public final Type paramType;
         public final Converter<?> converter;
+        public final Converter<?> itemConverter;
         public final boolean primitive;
         public final boolean array;
 
         public Setter(final AccessMode.Writer writer, final boolean primitive, final boolean array,
-                      final Type paramType, final Converter<?> converter, final int version) {
+                      final Type paramType, final Converter<?> converter,
+                      final int version) {
             this.writer = writer;
             this.paramType = paramType;
-            this.converter = converter;
             this.version = version;
             this.primitive = primitive;
             this.array = array;
+            if (converter != null && matches(writer.getType(), converter)) {
+                this.converter = converter;
+                this.itemConverter = null;
+            } else if (converter != null) {
+                this.converter = null;
+                this.itemConverter = converter;
+            } else {
+                this.converter = null;
+                this.itemConverter = null;
+            }
         }
+
+        @Override
+        public String toString() {
+            return "Setter{" +
+                "writer=" + writer +
+                ", version=" + version +
+                ", paramType=" + paramType +
+                ", converter=" + converter +
+                ", itemConverter=" + itemConverter +
+                ", primitive=" + primitive +
+                ", array=" + array +
+                '}';
+        }
+    }
+
+    // TODO: more ParameterizedType and maybe TypeClosure support
+    private static boolean matches(final Type type, final Converter<?> converter) {
+        Type convertType = null;
+        if (Converter.TypeAccess.class.isInstance(converter)) {
+            convertType = Converter.TypeAccess.class.cast(converter).type();
+        } else {
+            for (final Type pt : converter.getClass().getGenericInterfaces()) {
+                if (ParameterizedType.class.isInstance(pt) && ParameterizedType.class.cast(pt).getRawType() == Converter.class) {
+                    convertType = ParameterizedType.class.cast(pt).getActualTypeArguments()[0];
+                    break;
+                }
+            }
+        }
+
+        if (convertType == null) { // compatibility, previously nested converter were not supported
+            return true;
+        }
+
+        if (ParameterizedType.class.isInstance(type)) {
+            final ParameterizedType parameterizedType = ParameterizedType.class.cast(type);
+            final Type rawType = parameterizedType.getRawType();
+            if (Class.class.isInstance(rawType)) {
+                final Class<?> clazz = Class.class.cast(rawType);
+                if (Collection.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 1) {
+                    final Type argType = parameterizedType.getActualTypeArguments()[0];
+                    if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
+                        return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
+                    }
+                } else if (Map.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 2) {
+                    final Type argType = parameterizedType.getActualTypeArguments()[1];
+                    if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
+                        return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
+                    }
+                }
+                return true; // actually here we suppose we dont know
+            }
+        }
+        if (Class.class.isInstance(type)) {
+            final Class<?> clazz = Class.class.cast(type);
+            if (clazz.isArray()) {
+                return !Class.class.cast(convertType).isAssignableFrom(clazz.getComponentType());
+            }
+        }
+        return true;
     }
 
     private static final JohnzonParameterizedType VIRTUAL_TYPE = new JohnzonParameterizedType(Map.class, String.class, Object.class);
@@ -185,7 +292,7 @@ public class Mappings {
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
-    protected final Map<Class<?>, Converter<?>> converters;
+    protected final ConcurrentMap<Type, Converter<?>> converters;
     private final boolean supportHiddenConstructors;
     private final boolean supportConstructors;
     private final AccessMode accessMode;
@@ -193,7 +300,7 @@ public class Mappings {
 
     public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
                     final boolean supportHiddenConstructors, final boolean supportConstructors,
-                    final int version, final Map<Class<?>, Converter<?>> converters) {
+                    final int version, final ConcurrentMap<Type, Converter<?>> converters) {
         this.fieldOrdering = attributeOrder;
         this.accessMode = accessMode;
         this.supportHiddenConstructors = supportHiddenConstructors;
@@ -446,14 +553,35 @@ public class Mappings {
     private Converter findConverter(final boolean copyDate, final AccessMode.DecoratedType method) {
         Converter converter = null;
         final JohnzonConverter annotation = method.getAnnotation(JohnzonConverter.class);
+
+
+        Type typeToTest = method.getType();
         if (annotation != null) {
             try {
                 converter = annotation.value().newInstance();
             } catch (final Exception e) {
                 throw new IllegalArgumentException(e);
             }
-        } else if (Class.class.isInstance(method.getType()) && Date.class.isAssignableFrom(Class.class.cast(method.getType())) && copyDate) {
-            converter = new DateWithCopyConverter(Converter.class.cast(converters.get(Date.class)));
+        } else if (ParameterizedType.class.isInstance(method.getType())) {
+            final ParameterizedType type = ParameterizedType.class.cast(method.getType());
+            final Type rawType = type.getRawType();
+            if (Class.class.isInstance(rawType)
+                    && Collection.class.isAssignableFrom(Class.class.cast(rawType))
+                    && type.getActualTypeArguments().length >= 1) {
+                typeToTest = type.getActualTypeArguments()[0];
+            } // TODO: map
+        }
+        if (converter == null && Class.class.isInstance(typeToTest)) {
+            final Class type = Class.class.cast(typeToTest);
+            if (Date.class.isAssignableFrom(type) && copyDate) {
+                converter = new DateWithCopyConverter(Converter.class.cast(converters.get(Date.class)));
+            } else if (type.isEnum()) {
+                converter = converters.get(type); // first ensure user didnt override it
+                if (converter == null) {
+                    converter = new EnumConverter(type);
+                    converters.put(type, converter);
+                }
+            }
         }
         return converter;
     }

@@ -20,13 +20,17 @@ package org.apache.johnzon.mapper.converter;
 
 import org.apache.johnzon.mapper.Converter;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EnumConverter<T extends Enum<T>> implements Converter<T> {
+public class EnumConverter<T extends Enum<T>> implements Converter<T>, Converter.TypeAccess {
     private final Map<String, T> values;
+    private final Class<T> enumType;
 
     public EnumConverter(final Class<T> aClass) {
+        this.enumType = aClass;
+
         final T[] enumConstants = aClass.getEnumConstants();
         values = new HashMap<String, T>(enumConstants.length);
         for (final T t : enumConstants) {
@@ -42,5 +46,15 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T> {
     @Override
     public T fromString(final String text) {
         return values.get(text);
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + values.keySet();
+    }
+
+    @Override
+    public Type type() {
+        return enumType;
     }
 }

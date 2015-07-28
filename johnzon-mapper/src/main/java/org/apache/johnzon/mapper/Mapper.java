@@ -85,7 +85,7 @@ public class Mapper {
 
     // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
-                  final boolean doClose, final Map<Class<?>, Converter<?>> converters,
+                  final boolean doClose, final Map<Type, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
                   final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean useConstructors,
                   final boolean treatByteArrayAsBase64,
@@ -96,7 +96,7 @@ public class Mapper {
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors, version, converters);
+        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors, version, this.converters);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
@@ -361,6 +361,7 @@ public class Mapper {
             generator = writeValue(generator, val.getClass(),
                     getter.primitive, getter.array,
                     getter.collection, getter.map,
+                    getter.itemConverter,
                     getterEntry.getKey(),
                     val);
         }
@@ -389,7 +390,7 @@ public class Mapper {
             final boolean collection = clazz || primitive || array ? false : Collection.class.isAssignableFrom(valueClass);
             final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
             generator = writeValue(generator, valueClass,
-                    primitive, array, collection, map,
+                    primitive, array, collection, map, null /* TODO? */,
                     key == null ? "null" : key.toString(), value);
         }
         return generator;
@@ -398,6 +399,7 @@ public class Mapper {
     private JsonGenerator writeValue(final JsonGenerator generator, final Class<?> type,
                                      final boolean primitive, final boolean array,
                                      final boolean collection, final boolean map,
+                                     final Converter itemConverter,
                                      final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
@@ -413,13 +415,14 @@ public class Mapper {
 
             JsonGenerator gen = generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
-                gen = writeItem(gen, Array.get(value, i));
+                final Object o = Array.get(value, i);
+                gen = writeItem(gen, itemConverter != null ? itemConverter.toString(o) : o);
             }
             return gen.writeEnd();
         } else if (collection) {
             JsonGenerator gen = generator.writeStartArray(key);
             for (final Object o : Collection.class.cast(value)) {
-                gen = writeItem(gen, o);
+                gen = writeItem(gen, itemConverter != null ? itemConverter.toString(o) : o);
             }
             return gen.writeEnd();
         } else if (map) {
@@ -431,7 +434,7 @@ public class Mapper {
         } else {
             final Converter<?> converter = findConverter(type);
             if (converter != null) {
-                return writeValue(generator, String.class, true, false, false, false, key,
+                return writeValue(generator, String.class, true, false, false, false, null, key,
                         doConvertFrom(value, (Converter<Object>) converter));
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
@@ -490,7 +493,7 @@ public class Mapper {
             throw new UnsupportedOperationException("type " + genericType + " not supported");
         }
         try {
-            return mapCollection(mapping, reader.readArray());
+            return mapCollection(mapping, reader.readArray(), null);
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
@@ -515,7 +518,7 @@ public class Mapper {
             throw new UnsupportedOperationException("type " + genericType + " not supported");
         }
         try {
-            return mapCollection(mapping, reader.readArray());
+            return mapCollection(mapping, reader.readArray(), null);
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
@@ -537,7 +540,7 @@ public class Mapper {
 
     private <T> T[] mapArray(final Class<T> clazz, final JsonReader reader) {
         try {
-            return (T[]) buildArrayWithComponentType(reader.readArray(), clazz);
+            return (T[]) buildArrayWithComponentType(reader.readArray(), clazz, null);
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
@@ -583,7 +586,7 @@ public class Mapper {
                         }
 
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
-                            map.put(convertTo(keyType, value.getKey()), toObject(value.getValue(), fieldArgTypes[1]));
+                            map.put(convertTo(keyType, value.getKey()), toObject(value.getValue(), fieldArgTypes[1], null));
                         }
                         return map;
                     }
@@ -604,7 +607,7 @@ public class Mapper {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
             final AccessMode.Writer setterMethod = value.writer;
-            final Object convertedValue = toValue(jsonValue, value.converter, value.paramType);
+            final Object convertedValue = toValue(jsonValue, value.converter, value.itemConverter, value.paramType);
 
             if (convertedValue != null) {
                 setterMethod.write(t, convertedValue);
@@ -614,9 +617,9 @@ public class Mapper {
         return t;
     }
 
-    private Object toValue(final JsonValue jsonValue, final Converter<?> converter, final Type type) throws Exception {
+    private Object toValue(final JsonValue jsonValue, final Converter<?> converter, final Converter<?> itemConverter, final Type type) throws Exception {
         return converter == null ?
-                toObject(jsonValue, type) : jsonValue.getValueType() == ValueType.STRING ?
+                toObject(jsonValue, type, itemConverter) : jsonValue.getValueType() == ValueType.STRING ?
                 converter.fromString(JsonString.class.cast(jsonValue).getString()) :
                 converter.fromString(jsonValue.toString());
     }
@@ -624,12 +627,14 @@ public class Mapper {
     private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object) throws Exception {
         final Object[] objects = new Object[mapping.constructorParameters.length];
         for (int i = 0; i < mapping.constructorParameters.length; i++) {
-            objects[i] = toValue(object.get(mapping.constructorParameters[i]), mapping.constructorParameterConverters[i], mapping.constructorParameterTypes[i]);
+            objects[i] = toValue(
+                object.get(mapping.constructorParameters[i]), mapping.constructorParameterConverters[i],
+                mapping.constructorItemParameterConverters[i], mapping.constructorParameterTypes[i]);
         }
         return objects;
     }
 
-    private Object toObject(final JsonValue jsonValue, final Type type) throws Exception {
+    private Object toObject(final JsonValue jsonValue, final Type type, final Converter<?> itemConverter) throws Exception {
         if (jsonValue == null || jsonValue == JsonValue.NULL) {
             return null;
         }
@@ -671,7 +676,7 @@ public class Mapper {
         if (JsonObject.class.isInstance(jsonValue)) {
             return buildObject(type, JsonObject.class.cast(jsonValue));
         } else if (JsonArray.class.isInstance(jsonValue)) {
-            return buildArray(type, JsonArray.class.cast(jsonValue));
+            return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter);
         } else if (JsonNumber.class.isInstance(jsonValue)) {
 
             final JsonNumber number = JsonNumber.class.cast(jsonValue);
@@ -708,36 +713,41 @@ public class Mapper {
                 return number.bigDecimalValue();
             }
         } else if (JsonString.class.isInstance(jsonValue) || Object.class == type) {
-            return convertTo(Class.class.cast(type), JsonString.class.cast(jsonValue).getString());
+            final String string = JsonString.class.cast(jsonValue).getString();
+            if (itemConverter == null) {
+                return convertTo(Class.class.cast(type), string);
+            } else {
+                return itemConverter.fromString(string);
+            }
         }
 
         throw new MapperException("Unable to parse " + jsonValue + " to " + type);
     }
 
-    private Object buildArray(final Type type, final JsonArray jsonArray) throws Exception {
+    private Object buildArray(final Type type, final JsonArray jsonArray, final Converter<?> itemConverter) throws Exception {
         if (Class.class.isInstance(type)) {
             final Class clazz = Class.class.cast(type);
             if (clazz.isArray()) {
                 final Class<?> componentType = clazz.getComponentType();
-                return buildArrayWithComponentType(jsonArray, componentType);
+                return buildArrayWithComponentType(jsonArray, componentType, itemConverter);
             }
         }
 
         if (ParameterizedType.class.isInstance(type)) {
             final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type));
             if (mapping != null) {
-                return mapCollection(mapping, jsonArray);
+                return mapCollection(mapping, jsonArray, itemConverter);
             }
         }
 
         if (Object.class == type) {
-            return buildArray(ANY_LIST, jsonArray);
+            return buildArray(ANY_LIST, jsonArray, null);
         }
 
         throw new UnsupportedOperationException("type " + type + " not supported");
     }
 
-    private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray) throws Exception {
+    private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray, final Converter<?> itemConverter) throws Exception {
         final Collection collection;
 
         if (SortedSet.class == mapping.raw) {
@@ -753,17 +763,16 @@ public class Mapper {
         }
 
         for (final JsonValue value : jsonArray) {
-            final Object element = toObject(value, mapping.arg);
-            collection.add(element);
+            collection.add(toObject(value, mapping.arg, itemConverter));
         }
         return collection;
     }
 
-    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType) throws Exception {
+    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType, final Converter<?> itemConverter) throws Exception {
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {
-            Array.set(array, i++, toObject(value, componentType));
+            Array.set(array, i++, toObject(value, componentType, itemConverter));
         }
         return array;
     }
