@@ -1712,6 +1712,100 @@ public class JsonParserTest {
         Json.createReader(new ByteArrayInputStream("-{\"a\":2}".getBytes())).read();
     }
 
+    @Test(expected = JsonParsingException.class)
+    // TODO read key and : in once
+    public void invalidArrayMissingSeparator() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"a\"[1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidArray() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidEmptyObject() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, {}, \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidObject() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, {\"w\":1}, \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidLiteral() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, true, \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidString() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"a\", \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidKeyWithoutValue() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"a\":, \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        parser.next();
+
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void invalidArrayMissingKeyname() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, :[1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void missingClosingObject() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"d\": {\"m\":6}, \"z\":true"));
+        assertNotNull(parser);
+        while (parser.hasNext()) {
+            parser.next();
+        }
+    }
+
     class AttemptingInputStream extends ByteArrayInputStream {
 
         public AttemptingInputStream(byte[] buf) {

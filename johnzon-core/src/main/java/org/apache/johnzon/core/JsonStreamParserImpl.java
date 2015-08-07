@@ -333,9 +333,10 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         final char c = readNextNonWhitespaceChar(readNextChar());
 
         if (c == COMMA_CHAR) {
-
             //last event must one of the following-> " ] } LITERAL
-            if (previousEvent == START_ARRAY || previousEvent == START_OBJECT || previousEvent == COMMA_EVENT || previousEvent == KEY_NAME) {
+            if (previousEvent == KEY_SEPARATOR_EVENT || previousEvent == START_ARRAY 
+                    || previousEvent == START_OBJECT || previousEvent == COMMA_EVENT 
+                    || previousEvent == KEY_NAME) {
                 throw uexc("Expected \" ] } LITERAL");
             }
 
@@ -434,6 +435,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, false);
         } else {
+            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
+                throw uexc("Expected :");
+            }
             final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
             currentStructureElement = localStructureElement;
         }
@@ -471,6 +475,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, true);
         } else {
+            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
+                throw uexc("Expected \"");
+            }
             final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
             currentStructureElement = localStructureElement;
         }

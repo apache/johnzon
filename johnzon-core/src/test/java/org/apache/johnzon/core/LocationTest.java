@@ -224,9 +224,9 @@ public class LocationTest {
             // Expected
             if (expectedLocation != null) {
                 JsonLocation loc = je.getLocation();
-                assertEquals(expectedLocation.getLineNumber(), loc.getLineNumber());
-                assertEquals(expectedLocation.getColumnNumber(), loc.getColumnNumber());
-                assertEquals(expectedLocation.getStreamOffset(), loc.getStreamOffset());
+                assertEquals("for line number", expectedLocation.getLineNumber(), loc.getLineNumber());
+                assertEquals("for column number", expectedLocation.getColumnNumber(), loc.getColumnNumber());
+                assertEquals("for stream offset", expectedLocation.getStreamOffset(), loc.getStreamOffset());
             }
         } finally {
             parser.close();

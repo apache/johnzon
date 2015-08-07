@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
@@ -36,6 +37,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
 import javax.json.JsonStructure;
 
 import org.junit.Test;
@@ -463,5 +465,65 @@ public class JsonReaderImplTest {
         assertEquals(1, object.getJsonObject("//object").size());
         assertEquals("fdmcd", object.getJsonObject("//object").getString("sub"));
         reader.close();
+    }
+
+    @Test
+    public void testGrowingString() throws Throwable {
+        JsonReaderFactory factory = Json.createReaderFactory(null);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 40000; i++) {
+            sb.append('x');
+            String growingString = sb.toString();
+            String str = "[4, \"\", \"" + growingString + "\", \"\", \"" + growingString + "\", \"\", 400]";
+            try {
+                JsonReader reader = factory.createReader(new StringReader(str));
+                JsonArray array = reader.readArray();
+                assertEquals(4, array.getInt(0));
+                assertEquals("", array.getString(1));
+                assertEquals(growingString, array.getString(2));
+                assertEquals("", array.getString(3));
+                assertEquals(growingString, array.getString(4));
+                assertEquals("", array.getString(5));
+                assertEquals(400, array.getInt(6));
+                reader.close();
+            } catch (Throwable t) {
+                throw new Throwable("Failed for growingString with length: " + i, t);
+            }
+        }
+    }
+
+    @Test
+    public void testGrowingStringWithDiferentBufferSizes() throws Throwable {
+        for (int size = 20; size < 500; size++) {
+            final int k = size;
+            Map<String, Object> config = new HashMap<String, Object>() {
+                {
+                    put("org.apache.johnzon.default-char-buffer", k);
+                }
+            };
+            JsonReaderFactory factory = Json.createReaderFactory(config);
+
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 1000; i++) {
+                sb.append('x');
+                String name = sb.toString();
+                String str = "[4, \"\", \"" + name + "\", \"\", \"" + name + "\", \"\", 400]";
+                try {
+                    JsonReader reader = factory.createReader(new StringReader(str));
+                    JsonArray array = reader.readArray();
+                    assertEquals(4, array.getInt(0));
+                    assertEquals("", array.getString(1));
+                    assertEquals(name, array.getString(2));
+                    assertEquals("", array.getString(3));
+                    assertEquals(name, array.getString(4));
+                    assertEquals("", array.getString(5));
+                    assertEquals(400, array.getInt(6));
+                    reader.close();
+
+                } catch (Throwable t) {
+                    throw new Throwable("Failed for buffer size=" + size + " growingString with length: " + i, t);
+                }
+            }
+        }
     }
 }
