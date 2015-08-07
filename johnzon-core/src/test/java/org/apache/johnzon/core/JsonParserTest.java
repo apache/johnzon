@@ -33,15 +33,21 @@ import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.stream.JsonCollectors;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
@@ -1639,7 +1645,67 @@ public class JsonParserTest {
     }
     
     @Test
+    public void simpleShortNumber() {
+        final JsonParser parser = Json.createParser(new StringReader("1"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+        assertEquals(Json.createValue(1), parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test
+    public void simpleENumber() {
+        final JsonParser parser = Json.createParser(new StringReader("-4.9e-4"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+        assertEquals(Json.createValue(new BigDecimal("-4.9e-4")), parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    
+    @Test
+    public void simpleENumberMinBuffer() {
+    	
+    	for(int i=1; i<=10; i++) {
+    	final int bufflen=i;
+    	final JsonParser parser = Json.createParserFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.johnzon.default-char-buffer", bufflen);
+            }
+        }).createParser(new StringReader("-4.9e-4"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_NUMBER, event);
+        assertEquals(Json.createValue(new BigDecimal("-4.9e-4")), parser.getValue());
+        assertFalse(parser.hasNext());
+        
+    	}
+    }
+    
+    
+    
+    @Test
     public void simpleValueTrue() {
+        final JsonParser parser = Json.createParser(new StringReader("true"));
+        assertNotNull(parser);
+        assertTrue(parser.hasNext());
+        final JsonParser.Event event = parser.next();
+        assertNotNull(event);
+        assertEquals(JsonParser.Event.VALUE_TRUE, event);
+        assertEquals(JsonValue.TRUE, parser.getValue());
+        assertFalse(parser.hasNext());
+    }
+    
+    @Test
+    public void simpleValueTrueWithWS() {
         final JsonParser parser = Json.createParser(new StringReader("  true"));
         assertNotNull(parser);
         assertTrue(parser.hasNext());
@@ -1763,8 +1829,9 @@ public class JsonParserTest {
     
     @Test
     public void getObjectFromParser() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10}, \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10}, \"z\":8}"));
         assertNotNull(parser);
+        parser.next();
         parser.next();
         parser.next();
         parser.next();
@@ -1775,19 +1842,20 @@ public class JsonParserTest {
     
     @Test
     public void getObjectFromParserNested() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10, \"r\":{\"q\":19, \"s\":144}}, \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10, \"r\":{\"q\":19, \"s\":144}}, \"z\":8}"));
         assertNotNull(parser);
-        parser.next();
-        parser.next();
-        parser.next();
-        parser.next();
+        assertEquals(Event.START_OBJECT, parser.next());
+        assertEquals(Event.KEY_NAME, parser.next());
+        assertEquals(Event.VALUE_NUMBER, parser.next());
+        assertEquals(Event.KEY_NAME, parser.next());
+        assertEquals(Event.START_OBJECT, parser.next());
         assertEquals("{\"c\":9,\"d\":10,\"r\":{\"q\":19,\"s\":144}}", parser.getObject().toString());
         assertTrue(parser.next() == Event.KEY_NAME);
     }
     
     @Test(expected=IllegalStateException.class)
     public void getObjectFromParserWrongState() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10}, \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10}, \"z\":8}"));
         assertNotNull(parser);
         parser.next();
         parser.next();
@@ -1798,8 +1866,10 @@ public class JsonParserTest {
     
     @Test
     public void getArrayFromParser() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5], \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"r\":[1,2,3,4,5], \"z\":8}"));
         assertNotNull(parser);
+        parser.next();
+        parser.next();
         parser.next();
         parser.next();
         parser.next();
@@ -1809,8 +1879,10 @@ public class JsonParserTest {
     
     @Test
     public void getArrayFromParserNested() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"r\":[1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
         assertNotNull(parser);
+        parser.next();
+        parser.next();
         parser.next();
         parser.next();
         parser.next();
@@ -1820,7 +1892,7 @@ public class JsonParserTest {
     
     @Test(expected=IllegalStateException.class)
     public void getArrayFromParserWrogState() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
         assertNotNull(parser);
         parser.next();
         parser.next();
@@ -1830,7 +1902,7 @@ public class JsonParserTest {
     
     @Test
     public void skipObject() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10, \"r\":{\"q\":19, \"s\":144}}, \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"b\":{\"c\":9, \"d\":10, \"r\":{\"q\":19, \"s\":144}}, \"z\":8}"));
         assertNotNull(parser);
         parser.next();
         parser.next();
@@ -1845,16 +1917,88 @@ public class JsonParserTest {
     
     @Test
     public void skipArray() {
-        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8"));
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"r\": [1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
         assertNotNull(parser);
+        parser.next();
         parser.next();
         parser.next();
         parser.next();
         parser.next();
         parser.skipArray();
         parser.next();
-        assertTrue(parser.next() == Event.KEY_NAME);
+        assertEquals(Event.KEY_NAME, parser.next());
         assertEquals("z",parser.getString());
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void invalidArray() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, [1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void invalidArrayMissingKeyname() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, :[1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        parser.next();
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    //TODO read key and : in once
+    public void invalidArrayMissingSeparator() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"a\"[1,2,3,4,5,[2,2,3,4,5]], \"z\":8}"));
+        assertNotNull(parser);
+        assertTrue(parser.next() == Event.START_OBJECT);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        assertTrue(parser.next() == Event.VALUE_NUMBER);
+        assertTrue(parser.next() == Event.KEY_NAME);
+        parser.next();
+    }
+    
+    @Test
+    public void testGetValue() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":false, \"d\": {\"m\":6}, \"z\":true}"));
+        assertNotNull(parser);
+        parser.next();
+        JsonObject obj = parser.getValue().asJsonObject();
+        assertEquals(3, obj.size());
+    }
+    
+    @Test
+    public void testGetValue2() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":false, \"d\": {\"m\":6}, \"z\":true}"));
+        assertNotNull(parser);
+        assertEquals(Event.START_OBJECT, parser.next());
+        assertEquals(Event.KEY_NAME, parser.next());
+        JsonString obj = (JsonString) parser.getValue();
+        assertEquals("a", obj.getString());
+    }
+    
+    @Test
+    public void objectStream() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":false, \"d\": {\"m\":6}, \"z\":true}"));
+        assertNotNull(parser);
+        parser.next();
+        Stream<Map.Entry<String,JsonValue>> ostream = parser.getObjectStream();
+        assertEquals(3,ostream.count());
+        //System.out.println(parser.getValue());
+        
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void missingClosingObject() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":5, \"d\": {\"m\":6}, \"z\":true"));
+        assertNotNull(parser);
+        while(parser.hasNext()) {
+        	parser.next();
+        }
     }
     
     class AttemptingInputStream extends ByteArrayInputStream {

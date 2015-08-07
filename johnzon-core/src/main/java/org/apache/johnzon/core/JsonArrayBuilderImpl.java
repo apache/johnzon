@@ -111,6 +111,31 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         
         tmpList.add(value);
     }
+    
+    
+    private void addValue(int index, JsonValue value){
+        if (value == null) {
+            throw npe();
+        }
+        
+        if(tmpList==null){
+            tmpList=new ArrayList<JsonValue>();
+        }
+        
+        tmpList.add(index, value);
+    }
+    
+    private void setValue(int index, JsonValue value){
+        if (value == null) {
+            throw npe();
+        }
+        
+        if(tmpList==null){
+            tmpList=new ArrayList<JsonValue>();
+        }
+        
+        tmpList.set(index, value);
+    }
 
     @Override
     public JsonArray build() {
@@ -130,146 +155,149 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     }
 
     @Override
-    public JsonArrayBuilder addAll(JsonArrayBuilder builder) {
-        tmpList.addAll(builder.build()); //TODO is it ok to call build() here and destry the builder?
+    public JsonArrayBuilder addAll(JsonArrayBuilder builder) {    	
+        addValue(builder.build()); //TODO is it ok to call build() here and destry the builder?
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, JsonValue value) {
-        tmpList.add(index, value);
+        addValue(index, value);
         return this;
         
     }
 
     @Override
     public JsonArrayBuilder add(int index, String value) {
-    	tmpList.add(index, Json.createValue(value));
+    	addValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, BigDecimal value) {
-    	tmpList.add(index, Json.createValue(value));
+    	addValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, BigInteger value) {
-    	tmpList.add(index, Json.createValue(value));
+    	addValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, int value) {
-    	tmpList.add(index, Json.createValue(value));
+    	addValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, long value) {
-    	tmpList.add(index, Json.createValue(value));
+    	addValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, double value) {
-    	tmpList.add(index, Json.createValue(value));
+    	addValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, boolean value) {
-    	tmpList.add(index, value?JsonValue.TRUE:JsonValue.FALSE);
+    	addValue(index, value?JsonValue.TRUE:JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull(int index) {
-    	tmpList.add(index, JsonValue.NULL);
+    	addValue(index, JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, JsonObjectBuilder builder) {
-    	tmpList.add(index, builder.build()); //TODO ok to call build()?
+    	addValue(index, builder.build()); //TODO ok to call build()?
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(int index, JsonArrayBuilder builder) {
-    	tmpList.add(index, builder.build()); //TODO ok to call build()?
+    	addValue(index, builder.build()); //TODO ok to call build()?
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, JsonValue value) {
-    	tmpList.set(index, value);
+    	setValue(index, value);
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, String value) {
-    	tmpList.set(index, Json.createValue(value));
+    	setValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, BigDecimal value) {
-    	tmpList.set(index, Json.createValue(value));
+    	setValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, BigInteger value) {
-    	tmpList.set(index, Json.createValue(value));
+    	setValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, int value) {
-    	tmpList.set(index, Json.createValue(value));
+    	setValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, long value) {
-    	tmpList.set(index, Json.createValue(value));
+    	setValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, double value) {
-    	tmpList.set(index, Json.createValue(value));
+    	setValue(index, Json.createValue(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, boolean value) {
-    	tmpList.set(index, value?JsonValue.TRUE:JsonValue.FALSE);
+    	setValue(index, value?JsonValue.TRUE:JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder setNull(int index) {
-    	tmpList.set(index, JsonValue.NULL);
+    	setValue(index, JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, JsonObjectBuilder builder) {
-    	tmpList.set(index, builder.build()); //TODO ok here to call build?
+    	setValue(index, builder.build()); //TODO ok here to call build?
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(int index, JsonArrayBuilder builder) {
-    	tmpList.set(index, builder.build()); //TODO ok here to call build?
+    	setValue(index, builder.build()); //TODO ok here to call build?
         return this;
     }
 
     @Override
     public JsonArrayBuilder remove(int index) {
+    	
+    	if(tmpList == null) return this;
+    	
         tmpList.remove(index);
         return this;
     }

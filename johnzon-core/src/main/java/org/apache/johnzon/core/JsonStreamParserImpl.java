@@ -38,6 +38,7 @@ import javax.json.JsonArray;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
@@ -192,7 +193,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             if ((endOfValueInBuffer - startOfValueInBuffer) > maxValueLength) {
                 throw tmc();
             }
-
+//System.out.println("copy from "+startOfValueInBuffer+" with length "+(endOfValueInBuffer - startOfValueInBuffer));
+//System.out.println("endOfValueInBuffer "+endOfValueInBuffer);
             System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength,
                     (endOfValueInBuffer - startOfValueInBuffer));
             fallBackCopyBufferLength += (endOfValueInBuffer - startOfValueInBuffer);
@@ -505,7 +507,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, true);
         } else {
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
+            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
+            	throw uexc("Expected \"");
+            }
+        	
+        	final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
             currentStructureElement = localStructureElement;
         }
 
@@ -763,7 +769,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         endOfValueInBuffer = bufferPos;
 
-        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR) {
+        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR || y == EOF) {
 
             bufferPos--;//unread one char
 
@@ -784,7 +790,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             if (fallBackCopyBufferLength > 0) {
 
                 //we crossed a buffer boundary, use value buffer
-                copyCurrentValue();
+                //copyCurrentValue();
+            	
+            	if (fallBackCopyBufferLength >= maxValueLength) {
+                    throw tmc();
+                }
 
             } else {
                 if ((endOfValueInBuffer - startOfValueInBuffer) >= maxValueLength) {
@@ -929,6 +939,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             }
         } else {
             //if there a content in the value buffer read from them, if not use main buffer
+        	//System.out.println(new String(fallBackCopyBuffer, 0,
+            //        fallBackCopyBufferLength));
             return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
                     fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer)));
         }
@@ -1022,12 +1034,12 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         return new IllegalStateException("Illegal parser state exception on " + location + ". Reason is [[" + message + "]]");
     }
 
-	@Override
-	public JsonObject getObject() {
-		JsonReaderImpl reader = new JsonReaderImpl(this, false);
-		JsonObject obj;
+    
+	private JsonStructure getStructure(Event start) {
+		JsonReaderImpl reader = new JsonReaderImpl(this, false, start);
+		JsonStructure obj;
 		try {
-			obj = reader.readObject();
+			obj = reader.read();
 		} catch (JsonParsingException e) {
 			throw is(e.getMessage());
 		} finally {
@@ -1035,6 +1047,22 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 		}
 
 		return obj;
+	}
+    
+	@Override
+	public JsonObject getObject() {
+		if(previousEvent != START_OBJECT) {
+			throw is("Parser state must be START_OBJECT");
+		}
+		return getStructure(Event.START_OBJECT).asJsonObject();
+	}
+	
+	@Override
+	public JsonArray getArray() {
+		if(previousEvent != START_ARRAY) {
+			throw is("Parser state must be START_ARRAY");
+		}
+		return getStructure(Event.START_ARRAY).asJsonArray();
 	}
 
 	@Override
@@ -1065,24 +1093,48 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 			return Json.createValue(getString());
 		}
 		
-		//never happen
-		return null;
-	}
-
-	@Override
-	public JsonArray getArray() {
-		JsonReaderImpl reader = new JsonReaderImpl(this, false);
-		JsonArray ar;
-		try {
-			ar = reader.readArray();
-		} catch (JsonParsingException e) {
-			throw is(e.getMessage());
-		} finally {
-			reader.close();
+		//
+		if(previousEvent == START_OBJECT) {
+			return getObject();
 		}
-
-		return ar;
+		
+		if(previousEvent == END_OBJECT) {
+			next();
+			return getValue();
+		}
+		
+		if(previousEvent == START_ARRAY) {
+			return getArray();
+		}
+		
+		if(previousEvent == END_ARRAY) {
+			next();
+			return getValue();
+		}
+		
+		if(previousEvent == KEY_NAME) {
+			return Json.createValue(getString());
+		}
+		
+		/* if(previousEvent == KEY_SEPARATOR_EVENT) {
+			next();
+			return getValue();
+		}
+		
+		if(previousEvent == COMMA_EVENT) {
+			next();
+			return getValue();
+		}*/
+		
+		/*if(previousEvent == -1) {
+			return getStructure();
+		}*/
+		
+		throw cust("Internal parsing error: Unknown state");
+	
 	}
+
+	
 
 	@Override
 	public Stream<JsonValue> getArrayStream() {
@@ -1132,7 +1184,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
                      return false;
                  }
                  if (event != Event.KEY_NAME) {
-                     throw new JsonException("error generating stream, key name token expected");
+                     throw new JsonException("error generating stream, key name token expected (was: "+event+")");
                  }
                  String key = getString();
                  if (!hasNext()) {

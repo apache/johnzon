@@ -24,6 +24,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
@@ -31,26 +32,37 @@ class JsonReaderImpl implements JsonReader {
     private final JsonParser parser;
     private boolean closed = false;
     private final boolean readUntiltheEnd;
+    private final JsonParser.Event startEvent;
 
     JsonReaderImpl(final JsonParser parser) {
         this.parser = parser;
         this.readUntiltheEnd = true;
+        this.startEvent = null;
     }
     
-    JsonReaderImpl(final JsonParser parser, boolean readUntiltheEnd) {
+    JsonReaderImpl(final JsonParser parser, boolean readUntiltheEnd, JsonParser.Event startEvent) {
         this.parser = parser;
         this.readUntiltheEnd = readUntiltheEnd;
+        this.startEvent = startEvent;
     }
 
     @Override
     public JsonStructure read() {
+    	return (JsonStructure) read(true);
+    }
+    
+
+    private JsonValue read(boolean throwExceptionIfNotStructure) {
 
         checkClosed();
 
         if (!parser.hasNext()) {
             throw new IllegalStateException("Nothing to read");
         }
-        switch (parser.next()) {
+        
+        JsonParser.Event evt = startEvent==null?parser.next():startEvent;
+        
+        switch (evt) {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl();
                 parseObject(objectBuilder);
@@ -68,8 +80,19 @@ class JsonReaderImpl implements JsonReader {
                 close();
                 return arrayBuilder.build();
             default:
-                close();
-                throw new JsonParsingException("Unknown structure: " + parser.next(), parser.getLocation());
+                if(throwExceptionIfNotStructure) {
+                	throw new JsonParsingException("Unknown structure: " + (parser.hasNext()?parser.next():"<EOF>"), parser.getLocation());
+                } else {
+                	try {
+						JsonValue value = parser.getValue();
+						if(parser.hasNext()) {
+							throw new JsonParsingException("Expected end of file", parser.getLocation());
+						}
+						return value;
+					} finally {
+		                close();
+					}
+                }
         }
 
     }
@@ -212,4 +235,11 @@ class JsonReaderImpl implements JsonReader {
         }
 
     }
+
+	@Override
+	public JsonValue readValue() {
+		return read(false);
+	}
+    
+    
 }

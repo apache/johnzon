@@ -27,6 +27,8 @@ import static org.junit.Assert.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.io.StringReader;
+import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,6 +39,8 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
 
@@ -413,6 +417,22 @@ public class JsonReaderImplTest {
         assertEquals(0, object.size());
         reader.close();
     }
+    
+    @Test
+    public void bug() {
+        final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {
+            {
+                put("org.apache.johnzon.default-char-buffer", "1");
+            }
+        }).createReader(new StringReader("[1, \"\", \"aaaaaaa\", \"\", \"aaaaaaa\", \"\", 100]"));
+        assertNotNull(reader);
+        final JsonArray ar = reader.readArray();
+        assertNotNull(ar);
+        assertEquals(100, ar.getInt(6));
+        reader.close();
+    }
+    
+    
 
     @Test
     public void emptyArrayOneCharBufferSize() {
@@ -463,5 +483,50 @@ public class JsonReaderImplTest {
         assertEquals(1, object.getJsonObject("//object").size());
         assertEquals("fdmcd", object.getJsonObject("//object").getString("sub"));
         reader.close();
+    }
+    
+    @Test
+    public void singleTrueValue() {
+    	assertEquals(JsonValue.TRUE, Json.createReader(new StringReader("true")).readValue());
+    }
+    
+    @Test
+    public void singleFalseValue() {
+    	assertEquals(JsonValue.FALSE, Json.createReader(new StringReader("false")).readValue());
+    }
+    
+    @Test
+    public void singleNullValue() {
+    	assertEquals(JsonValue.NULL, Json.createReader(new StringReader("null")).readValue());
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void singleBadValue() {
+    	assertEquals(JsonValue.NULL, Json.createReader(new StringReader("nullll")).readValue());
+    }
+    
+    @Test
+    public void singleStringValue() {
+    	assertEquals(Json.createValue("astring"), Json.createReader(new StringReader("\"astring\"")).readValue());
+    }
+    
+    @Test
+    public void singleNumberValue() {
+    	assertEquals(Json.createValue(1), Json.createReader(new StringReader("1")).readValue());
+    }
+    
+    @Test
+    public void singleENumberValue() {
+    	assertEquals(Json.createValue(new BigDecimal("-4.9e-4")), Json.createReader(new StringReader("-4.9e-4")).readValue());
+    }
+    
+    @Test
+    public void singleENumberValueA() {
+    	assertEquals(Json.createArrayBuilder().add(new BigDecimal("-4.9e-4")).build(), Json.createReader(new StringReader("[-4.9e-4]")).readArray());
+    }
+    
+    @Test(expected=JsonParsingException.class)
+    public void singleNumberAsStructure() {
+    	Json.createReader(new StringReader("112")).read();
     }
 }
