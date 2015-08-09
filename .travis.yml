@@ -6,6 +6,6 @@ jdk:
   - openjdk7
   - oraclejdk7
   - oraclejdk8 
-script: mvn clean install
+before_install: mvn clean install -DskipTests=true
 after_success:
   - mvn clean cobertura:cobertura coveralls:report
