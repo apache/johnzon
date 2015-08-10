@@ -23,11 +23,17 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.ext.Provider;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-
 @Provider
-@Produces(WILDCARD)
-@Consumes(WILDCARD)
+@Produces({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+@Consumes({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class JsrProvider extends DelegateProvider<JsonStructure> {
     public JsrProvider() {
         super(new JsrMessageBodyReader(), new JsrMessageBodyWriter());

@@ -38,10 +38,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-
 @Provider
-@Produces(WILDCARD)
+@Produces({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class JohnzonMessageBodyWriter<T> extends IgnorableTypes implements MessageBodyWriter<T> {
     private final Mapper mapper;
 
@@ -63,8 +65,7 @@ public class JohnzonMessageBodyWriter<T> extends IgnorableTypes implements Messa
     @Override
     public boolean isWriteable(final Class<?> rawType, final Type genericType,
                                final Annotation[] annotations, final MediaType mediaType) {
-        return Jsons.isJson(mediaType)
-                && !isIgnored(rawType)
+        return !isIgnored(rawType)
                 && InputStream.class != rawType
                 && OutputStream.class != rawType
                 && Writer.class != rawType

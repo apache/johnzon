@@ -21,6 +21,7 @@ package org.apache.johnzon.jaxrs;
 import org.apache.johnzon.jaxrs.xml.WadlDocumentToJson;
 import org.w3c.dom.Document;
 
+import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
@@ -31,15 +32,18 @@ import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import static org.apache.johnzon.jaxrs.Jsons.isJson;
-
+@Produces({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class WadlDocumentMessageBodyWriter implements MessageBodyWriter<Document> {
     private final WadlDocumentToJson converter = new WadlDocumentToJson();
 
     @Override
     public boolean isWriteable(final Class<?> aClass, final Type type,
                                final Annotation[] annotations, final MediaType mediaType) {
-        return isJson(mediaType) && Document.class.isAssignableFrom(aClass);
+        return Document.class.isAssignableFrom(aClass);
     }
 
     @Override

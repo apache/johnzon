@@ -40,11 +40,18 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Arrays.asList;
-import static javax.ws.rs.core.MediaType.WILDCARD;
 
 @Provider
-@Produces(WILDCARD)
-@Consumes(WILDCARD)
+@Produces({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+@Consumes({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
     // build/configuration
     private MapperBuilder builder = new MapperBuilder();
@@ -188,7 +195,7 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
     public void setMaxSize(final int size) {
         builder.setMaxSize(size);
     }
-    
+
     public void setTreatByteArrayAsBase64(final boolean treatByteArrayAsBase64) {
         builder.setTreatByteArrayAsBase64(treatByteArrayAsBase64);
     }

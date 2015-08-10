@@ -35,10 +35,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-
 @Provider
-@Produces(WILDCARD)
+@Produces({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class JsrMessageBodyWriter implements MessageBodyWriter<JsonStructure> {
     private final JsonWriterFactory factory;
     private final boolean close;

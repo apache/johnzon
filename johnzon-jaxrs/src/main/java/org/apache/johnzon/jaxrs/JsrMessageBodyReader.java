@@ -34,10 +34,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-
 @Provider
-@Consumes(WILDCARD)
+@Consumes({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class JsrMessageBodyReader implements MessageBodyReader<JsonStructure> {
     private final JsonReaderFactory factory;
     private final boolean closeStream;

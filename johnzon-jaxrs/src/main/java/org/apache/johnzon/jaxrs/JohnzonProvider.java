@@ -24,14 +24,19 @@ import org.apache.johnzon.mapper.MapperBuilder;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.ext.Provider;
-
 import java.util.Collection;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-
 @Provider
-@Produces(WILDCARD)
-@Consumes(WILDCARD)
+@Produces({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+@Consumes({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class JohnzonProvider<T> extends DelegateProvider<T> {
     public JohnzonProvider(final Mapper mapper, final Collection<String> ignores) {
         super(new JohnzonMessageBodyReader<T>(mapper, ignores), new JohnzonMessageBodyWriter<T>(mapper, ignores));

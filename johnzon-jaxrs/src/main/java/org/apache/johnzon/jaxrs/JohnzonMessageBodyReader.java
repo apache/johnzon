@@ -36,11 +36,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 
-import static javax.ws.rs.core.MediaType.WILDCARD;
-import static org.apache.johnzon.jaxrs.Jsons.isJson;
-
 @Provider
-@Consumes(WILDCARD)
+@Consumes({
+    "application/json", "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
 public class JohnzonMessageBodyReader<T> extends IgnorableTypes implements MessageBodyReader<T> {
     private final Mapper mapper;
 
@@ -56,8 +57,7 @@ public class JohnzonMessageBodyReader<T> extends IgnorableTypes implements Messa
     @Override
     public boolean isReadable(final Class<?> rawType, final Type genericType,
                               final Annotation[] annotations, final MediaType mediaType) {
-        return isJson(mediaType)
-                && !isIgnored(rawType)
+        return !isIgnored(rawType)
                 && InputStream.class != rawType && Reader.class != rawType && Response.class != rawType
                 && String.class != rawType
                 && !JsonStructure.class.isAssignableFrom(rawType);
