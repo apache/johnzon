@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -84,10 +85,63 @@ public class MapperTest {
         assertEquals(1, object.size());
         final Collection<TheObject> object2 = new MapperBuilder().build()
                 .readJohnzonCollection(new ByteArrayInputStream("[{}]".getBytes()),
-                        new JohnzonCollectionType<List<TheObject>>() {
-                        });
+                    new JohnzonCollectionType<List<TheObject>>() {
+                    });
         assertNotNull(object2);
         assertEquals(1, object2.size());
+    }
+
+    @Test
+    public void testShouldMapACollection() throws Exception {
+        final Mapper mapper = new MapperBuilder().setAttributeOrder(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return o1.compareTo(o2);
+            }
+        }).build();
+        final String json = "[" +
+            "{\"name\":\"addKey\"}," +
+            "{\"action\":\"REMOVE\",\"name\":\"removeKey\"}]";
+
+        final ParameterizedType type = new JohnzonParameterizedType(List.class, Command.class);
+        final List<Command> properties = new ArrayList(mapper.readCollection(new StringReader(json), type));
+
+        assertNotNull(properties);
+        assertEquals(2, properties.size());
+        assertEquals("addKey", properties.get(0).getName());
+        assertEquals("removeKey", properties.get(1).getName());
+        assertEquals(Command.Action.REMOVE, properties.get(1).getAction());
+        assertEquals(json, mapper.writeArrayAsString(properties));
+    }
+
+    @Test
+    public void enumCollection() throws Exception {
+        final Mapper mapper = new MapperBuilder().build();
+        final String json = "[\"REMOVE\",\"ADD\"]";
+
+        final ParameterizedType type = new JohnzonParameterizedType(List.class, Command.Action.class);
+        final List<Command.Action> properties = new ArrayList(mapper.readCollection(new StringReader(json), type));
+
+        assertNotNull(properties);
+        assertEquals(2, properties.size());
+        assertEquals(Command.Action.ADD, properties.get(1));
+        assertEquals(Command.Action.REMOVE, properties.get(0));
+        assertEquals(json, mapper.writeArrayAsString(properties));
+    }
+
+    @Test
+    public void primitiveCollection() throws Exception {
+        final Mapper mapper = new MapperBuilder().build();
+        final String json = "[1,2]";
+
+        final ParameterizedType type = new JohnzonParameterizedType(List.class, Integer.class);
+        final List<Integer> properties = new ArrayList(mapper.readCollection(new StringReader(json), type));
+
+        assertNotNull(properties);
+        assertEquals(2, properties.size());
+        assertEquals(2, properties.get(1).intValue());
+        assertEquals(1, properties.get(0).intValue());
+        assertEquals(json, mapper.writeArrayAsString(properties));
     }
 
     @Test
@@ -933,6 +987,29 @@ public class MapperTest {
 
         public void setValue(final String value) {
             this.value = value;
+        }
+    }
+
+    public static class Command {
+        public enum Action { ADD, REMOVE }
+
+        private Action action;
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public Action getAction() {
+            return action;
+        }
+
+        public void setAction(final Action action) {
+            this.action = action;
         }
     }
 

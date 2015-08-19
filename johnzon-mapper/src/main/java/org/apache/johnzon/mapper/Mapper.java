@@ -287,6 +287,18 @@ public class Mapper {
         doWriteHandlingNullObject(object, generator);
     }
 
+    public String writeArrayAsString(final Collection<?> instance) {
+        final StringWriter writer = new StringWriter();
+        writeArray(instance, writer);
+        return writer.toString();
+    }
+
+    public <T> String writeArrayAsString(final T[] instance) {
+        final StringWriter writer = new StringWriter();
+        writeArray(instance, writer);
+        return writer.toString();
+    }
+
     public String writeObjectAsString(final Object instance) {
         final StringWriter writer = new StringWriter();
         writeObject(instance, writer);
@@ -320,6 +332,16 @@ public class Mapper {
                 gen = writeMapBody((Map<?, ?>) object, gen, null);
                 gen = gen.writeEnd();
                 return gen;
+            }
+
+            final JsonGenerator jsonGenerator = writePrimitives(generator, object);
+            if (jsonGenerator != null) {
+                return jsonGenerator;
+            }
+
+            final Class<?> objectClass = object.getClass();
+            if (objectClass.isEnum()) {
+                return gen.write(findConverter(objectClass).toString(object));
             }
 
             gen = gen.writeStartObject();
@@ -605,10 +627,13 @@ public class Mapper {
                 classMapping.constructor.newInstance() : classMapping.constructor.newInstance(createParameters(classMapping, object));
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
+            if (jsonValue == null) {
+                continue;
+            }
+
             final Mappings.Setter value = setter.getValue();
             final AccessMode.Writer setterMethod = value.writer;
             final Object convertedValue = toValue(jsonValue, value.converter, value.itemConverter, value.paramType);
-
             if (convertedValue != null) {
                 setterMethod.write(t, convertedValue);
             }
