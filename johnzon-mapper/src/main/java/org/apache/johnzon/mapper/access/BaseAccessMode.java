@@ -18,8 +18,16 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 // handle some specific types
 public abstract class BaseAccessMode implements AccessMode {
@@ -57,5 +65,46 @@ public abstract class BaseAccessMode implements AccessMode {
             }
         }
         return delegate;
+    }
+
+    protected Type fixType(final Class<?> clazz, final Type type) { // to enhance
+        if (TypeVariable.class.isInstance(type)) { // we need to handle it on deserialization side, not needed on serialization side
+            return fixTypeVariable(clazz, type);
+        }
+        if (ParameterizedType.class.isInstance(type)) {
+            final ParameterizedType pt = ParameterizedType.class.cast(type);
+            final Type[] actualTypeArguments = pt.getActualTypeArguments();
+            if (actualTypeArguments.length == 1 && Class.class.isInstance(pt.getRawType())
+                && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType()))
+                && Class.class.cast(pt.getRawType()).getName().startsWith("java.util.")
+                && TypeVariable.class.isInstance(actualTypeArguments[0])) {
+                return new JohnzonParameterizedType(pt.getRawType(), fixTypeVariable(clazz, actualTypeArguments[0]));
+            } else if (actualTypeArguments.length == 2 && Class.class.isInstance(pt.getRawType())
+                && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType()))
+                && Class.class.cast(pt.getRawType()).getName().startsWith("java.util.")
+                && TypeVariable.class.isInstance(actualTypeArguments[1])) {
+                return new JohnzonParameterizedType(pt.getRawType(), actualTypeArguments[0], fixTypeVariable(clazz, actualTypeArguments[1]));
+            }
+        }
+        return type;
+    }
+
+    private Type fixTypeVariable(final Class<?> clazz, final Type type) {
+        final TypeVariable typeVariable = TypeVariable.class.cast(type);
+        if (typeVariable.getGenericDeclaration() == clazz.getSuperclass()) {
+            // try to match generic
+            final TypeVariable<? extends Class<?>>[] typeParameters = clazz.getSuperclass().getTypeParameters();
+            final int idx = asList(typeParameters).indexOf(typeVariable);
+            if (idx >= 0) {
+                final Type genParent = clazz.getGenericSuperclass();
+                if (ParameterizedType.class.isInstance(genParent)) {
+                    final ParameterizedType pt = ParameterizedType.class.cast(genParent);
+                    if (pt.getActualTypeArguments().length == typeParameters.length) {
+                        return pt.getActualTypeArguments()[idx];
+                    }
+                }
+            }
+        }
+        return type;
     }
 }

@@ -38,7 +38,8 @@ public class FieldAccessMode extends BaseAccessMode {
                 continue;
             }
 
-            readers.put(extractKey(f.getValue(), key), new FieldReader(f.getValue()));
+            final Field field = f.getValue();
+            readers.put(extractKey(field, key), new FieldReader(field, fixType(clazz, field.getGenericType())));
         }
         return readers;
     }
@@ -51,7 +52,9 @@ public class FieldAccessMode extends BaseAccessMode {
             if (isIgnored(key)) {
                 continue;
             }
-            writers.put(extractKey(f.getValue(), key), new FieldWriter(f.getValue()));
+
+            final Field field = f.getValue();
+            writers.put(extractKey(field, key), new FieldWriter(field, fixType(clazz, field.getGenericType())));
         }
         return writers;
     }
@@ -86,17 +89,19 @@ public class FieldAccessMode extends BaseAccessMode {
 
     protected static abstract class FieldDecoratedType implements DecoratedType {
         protected final Field field;
+        protected final Type type;
 
-        public FieldDecoratedType(final Field field) {
+        public FieldDecoratedType(final Field field, final Type type) {
             this.field = field;
             if (!field.isAccessible()) {
                 this.field.setAccessible(true);
             }
+            this.type = type;
         }
 
         @Override
         public Type getType() {
-            return field.getGenericType();
+            return type;
         }
 
         @Override
@@ -106,8 +111,8 @@ public class FieldAccessMode extends BaseAccessMode {
     }
 
     public static class FieldWriter extends FieldDecoratedType implements Writer {
-        public FieldWriter(final Field field) {
-            super(field);
+        public FieldWriter(final Field field, final Type type) {
+            super(field, type);
         }
 
         @Override
@@ -121,8 +126,8 @@ public class FieldAccessMode extends BaseAccessMode {
     }
 
     public static class FieldReader extends FieldDecoratedType  implements Reader {
-        public FieldReader(final Field field) {
-            super(field);
+        public FieldReader(final Field field, final Type type) {
+            super(field, type);
         }
 
         @Override
@@ -132,6 +137,11 @@ public class FieldAccessMode extends BaseAccessMode {
             } catch (final Exception e) {
                 throw new MapperException(e);
             }
+        }
+
+        @Override
+        public Type getType() {
+            return type;
         }
     }
 }

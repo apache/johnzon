@@ -48,7 +48,7 @@ public class MethodAccessMode extends BaseAccessMode {
                 if (isIgnored(descriptor.getName())) {
                     continue;
                 }
-                readers.put(extractKey(descriptor), new MethodReader(readMethod));
+                readers.put(extractKey(descriptor), new MethodReader(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
             }
         }
         return readers;
@@ -64,11 +64,12 @@ public class MethodAccessMode extends BaseAccessMode {
             }
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null) {
-                writers.put(extractKey(descriptor), new MethodWriter(writeMethod));
+                writers.put(extractKey(descriptor), new MethodWriter(writeMethod, fixType(clazz, writeMethod.getGenericParameterTypes()[0])));
             } else if (supportGetterAsWritter
                     && Collection.class.isAssignableFrom(descriptor.getPropertyType())
                     && descriptor.getReadMethod() != null) {
-                writers.put(extractKey(descriptor), new MethodGetterAsWriter(descriptor.getReadMethod()));
+                final Method readMethod = descriptor.getReadMethod();
+                writers.put(extractKey(descriptor), new MethodGetterAsWriter(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
             }
         }
         return writers;
@@ -95,12 +96,19 @@ public class MethodAccessMode extends BaseAccessMode {
 
     protected static abstract class MethodDecoratedType implements DecoratedType {
         protected final Method method;
+        protected final Type type;
 
-        public MethodDecoratedType(final Method method) {
+        public MethodDecoratedType(final Method method, final Type type) {
             this.method = method;
             if (!method.isAccessible()) {
                 method.setAccessible(true);
             }
+            this.type = type;
+        }
+
+        @Override
+        public Type getType() {
+            return type;
         }
 
         @Override
@@ -110,13 +118,8 @@ public class MethodAccessMode extends BaseAccessMode {
     }
 
     public static class MethodWriter extends MethodDecoratedType implements Writer {
-        public MethodWriter(final Method method) {
-            super(method);
-        }
-
-        @Override
-        public Type getType() {
-            return method.getGenericParameterTypes()[0];
+        public MethodWriter(final Method method, final Type type) {
+            super(method, type);
         }
 
         @Override
@@ -130,13 +133,8 @@ public class MethodAccessMode extends BaseAccessMode {
     }
 
     public static class MethodReader extends MethodDecoratedType implements Reader {
-        public MethodReader(final Method method) {
-            super(method);
-        }
-
-        @Override
-        public Type getType() {
-            return method.getGenericReturnType();
+        public MethodReader(final Method method, final Type type) {
+            super(method, type);
         }
 
         @Override
@@ -150,8 +148,8 @@ public class MethodAccessMode extends BaseAccessMode {
     }
 
     private class MethodGetterAsWriter extends MethodReader implements Writer {
-        public MethodGetterAsWriter(final Method readMethod) {
-            super(readMethod);
+        public MethodGetterAsWriter(final Method readMethod, final Type type) {
+            super(readMethod, type);
         }
 
         @Override
