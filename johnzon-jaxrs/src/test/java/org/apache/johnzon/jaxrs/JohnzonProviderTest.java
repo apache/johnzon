@@ -30,8 +30,12 @@ import org.junit.Test;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.StreamingOutput;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
@@ -70,6 +74,12 @@ public class JohnzonProviderTest {
     public void object() {
         final Johnzon johnzon = client().path("johnzon").get(Johnzon.class);
         assertEquals("johnzon", johnzon.getName());
+    }
+
+    @Test
+    public void streamOutput() {
+        final String stream = client().path("johnzon/stream").get(String.class);
+        assertEquals("ok", stream);
     }
 
     @Test
@@ -156,6 +166,17 @@ public class JohnzonProviderTest {
         @POST
         public String asParam(final Johnzon f) {
             return Boolean.toString("client".equals(f.getName()));
+        }
+
+        @GET
+        @Path("stream")
+        public StreamingOutput out() {
+            return new StreamingOutput() {
+                @Override
+                public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+                    outputStream.write("ok".getBytes());
+                }
+            };
         }
     }
 }

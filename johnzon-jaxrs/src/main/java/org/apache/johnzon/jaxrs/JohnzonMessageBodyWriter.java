@@ -66,12 +66,12 @@ public class JohnzonMessageBodyWriter<T> extends IgnorableTypes implements Messa
     public boolean isWriteable(final Class<?> rawType, final Type genericType,
                                final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(rawType)
-                && InputStream.class != rawType
-                && OutputStream.class != rawType
-                && Writer.class != rawType
-                && StreamingOutput.class != rawType
-                && String.class != rawType
-                && Response.class != rawType
+                && InputStream.class != genericType
+                && OutputStream.class != genericType
+                && Writer.class != genericType
+                && StreamingOutput.class != genericType
+                && String.class != genericType
+                && Response.class != genericType
                 && !JsonStructure.class.isAssignableFrom(rawType);
     }
 
