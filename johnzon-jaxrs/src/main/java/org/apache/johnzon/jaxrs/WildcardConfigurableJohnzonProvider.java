@@ -42,9 +42,17 @@ import java.util.concurrent.atomic.AtomicReference;
 import static java.util.Arrays.asList;
 
 @Provider
-@Produces("application/json")
-@Consumes("application/json")
-public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
+@Produces({
+    "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+@Consumes({
+    "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
     // build/configuration
     private MapperBuilder builder = new MapperBuilder();
     private List<String> ignores;

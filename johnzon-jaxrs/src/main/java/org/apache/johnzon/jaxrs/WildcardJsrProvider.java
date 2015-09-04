@@ -24,10 +24,18 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.ext.Provider;
 
 @Provider
-@Produces("application/json")
-@Consumes("application/json")
-public class JsrProvider extends DelegateProvider<JsonStructure> {
-    public JsrProvider() {
+@Produces({
+    "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+@Consumes({
+    "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+public class WildcardJsrProvider extends DelegateProvider<JsonStructure> {
+    public WildcardJsrProvider() {
         super(new JsrMessageBodyReader(), new JsrMessageBodyWriter());
     }
 }

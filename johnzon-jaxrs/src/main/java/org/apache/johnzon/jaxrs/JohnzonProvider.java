@@ -27,16 +27,8 @@ import javax.ws.rs.ext.Provider;
 import java.util.Collection;
 
 @Provider
-@Produces({
-    "application/json", "*/json",
-    "*/*+json", "*/x-json",
-    "*/javascript", "*/x-javascript"
-})
-@Consumes({
-    "application/json", "*/json",
-    "*/*+json", "*/x-json",
-    "*/javascript", "*/x-javascript"
-})
+@Produces("application/json")
+@Consumes("application/json")
 public class JohnzonProvider<T> extends DelegateProvider<T> {
     public JohnzonProvider(final Mapper mapper, final Collection<String> ignores) {
         super(new JohnzonMessageBodyReader<T>(mapper, ignores), new JohnzonMessageBodyWriter<T>(mapper, ignores));

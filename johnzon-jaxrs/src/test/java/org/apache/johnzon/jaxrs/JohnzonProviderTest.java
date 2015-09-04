@@ -30,6 +30,7 @@ import org.junit.Test;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
@@ -41,6 +42,7 @@ import java.lang.reflect.Type;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -52,7 +54,7 @@ public class JohnzonProviderTest {
     public static void bindEndpoint() throws Exception {
         final JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         sf.setResourceClasses(JohnzonResource.class);
-        sf.setProviders(asList(new JohnzonProvider<Object>()));
+        sf.setProviders(singletonList(new JohnzonProvider<Object>()));
         sf.setResourceProvider(JohnzonResource.class, new SingletonResourceProvider(new JohnzonResource(), false));
         sf.setAddress(ENDPOINT_ADDRESS);
         server = sf.create();
@@ -80,6 +82,12 @@ public class JohnzonProviderTest {
     public void streamOutput() {
         final String stream = client().path("johnzon/stream").get(String.class);
         assertEquals("ok", stream);
+    }
+
+    @Test
+    public void primitive() {
+        final String val = client(MediaType.TEXT_PLAIN_TYPE).path("johnzon/primitive").get(String.class);
+        assertEquals("1986", val);
     }
 
     @Test
@@ -119,7 +127,11 @@ public class JohnzonProviderTest {
     }
 
     private static WebClient client() {
-        final WebClient client = WebClient.create(ENDPOINT_ADDRESS, asList(new JohnzonProvider<Object>())).accept(MediaType.APPLICATION_JSON_TYPE);
+        return client(MediaType.APPLICATION_JSON_TYPE);
+    }
+
+    private static WebClient client(final MediaType mediaType) {
+        final WebClient client = WebClient.create(ENDPOINT_ADDRESS, singletonList(new JohnzonProvider<Object>())).accept(mediaType);
         WebClient.getConfig(client).getRequestContext().put(LocalConduit.DIRECT_DISPATCH, Boolean.TRUE);
         return client;
     }
@@ -177,6 +189,13 @@ public class JohnzonProviderTest {
                     outputStream.write("ok".getBytes());
                 }
             };
+        }
+
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        @Path("primitive")
+        public Integer primitive() {
+            return 1986;
         }
     }
 }

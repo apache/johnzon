@@ -80,10 +80,12 @@ final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.c
 
 JAX-RS module provides two providers (and underlying MessageBodyReaders and MessageBodyWriters):
 
-* org.apache.johnzon.jaxrs.JohnzonProvider: use Johnzon Mapper to map Object to Json and the opposite
-* org.apache.johnzon.jaxrs.ConfigurableJohnzonProvider: same as JohnzonProvider but with setters to ease the configuration of the provider in most servers/containers
-* org.apache.johnzon.jaxrs.JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
+* org.apache.johnzon.jaxrs.[Wildcard]JohnzonProvider: use Johnzon Mapper to map Object to Json and the opposite
+* org.apache.johnzon.jaxrs.[Wildcard]ConfigurableJohnzonProvider: same as JohnzonProvider but with setters to ease the configuration of the provider in most servers/containers
+* org.apache.johnzon.jaxrs.[Wildcard]JsrProvider: allows you to use JsrArray, JsrObject (more generally JsonStructure)
 
+Note: Wildcard providers are basically the same as other provider but instead of application/json they support */json, */*+json, */x-json, */javascript, */x-javascript. This
+split makes it easier to mix json and other MediaType in the same resource (like text/plain, xml etc since JAX-RS API always matches as true wildcard type in some version whatever the subtype is).
 
 ### Websocket (beta)
 

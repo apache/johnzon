@@ -18,16 +18,31 @@
  */
 package org.apache.johnzon.jaxrs;
 
-import javax.json.JsonStructure;
+import org.apache.johnzon.mapper.Mapper;
+import org.apache.johnzon.mapper.MapperBuilder;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.ext.Provider;
+import java.util.Collection;
 
 @Provider
-@Produces("application/json")
-@Consumes("application/json")
-public class JsrProvider extends DelegateProvider<JsonStructure> {
-    public JsrProvider() {
-        super(new JsrMessageBodyReader(), new JsrMessageBodyWriter());
+@Produces({
+    "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+@Consumes({
+    "*/json",
+    "*/*+json", "*/x-json",
+    "*/javascript", "*/x-javascript"
+})
+public class WildcardJohnzonProvider<T> extends DelegateProvider<T> {
+    public WildcardJohnzonProvider(final Mapper mapper, final Collection<String> ignores) {
+        super(new JohnzonMessageBodyReader<T>(mapper, ignores), new JohnzonMessageBodyWriter<T>(mapper, ignores));
+    }
+
+    public WildcardJohnzonProvider() {
+        this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
     }
 }
