@@ -24,12 +24,12 @@
     <name>Apache Johnzon</name>
     <alt>Apache Johnzon</alt>
     <href>/index.html</href>
-  </bannerLeft><!--
+  </bannerLeft>
   
-<bannerRight>
-    <src>http://incubator.apache.org/images/egg-logo.png</src>
-    <href>http://incubator.apache.org/</href>
-  </bannerRight>-->
+  <bannerRight>
+		<src>http://people.apache.org/~salyh/aj_logo_vote.png</src>
+		<width>180</width>
+  </bannerRight>
 
   <custom>
     <fluidoSkin>
@@ -39,7 +39,6 @@
       <topBarIcon>
         <name>Apache Johnzon</name>
         <alt>Apache Johnzon</alt>
-        <!-- <src>http://incubator.apache.org/images/egg-logo.png</src>  -->
         <href>/index.html</href>
       </topBarIcon>
       <ohloh>
