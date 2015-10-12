@@ -493,7 +493,7 @@ public class JsonReaderImplTest {
     }
 
     @Test
-    public void testGrowingStringWithDiferentBufferSizes() throws Throwable {
+    public void testGrowingStringWithDifferentBufferSizes() throws Throwable {
         for (int size = 20; size < 500; size++) {
             final int k = size;
             Map<String, Object> config = new HashMap<String, Object>() {

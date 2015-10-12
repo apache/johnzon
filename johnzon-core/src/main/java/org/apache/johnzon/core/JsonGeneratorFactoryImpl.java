@@ -59,26 +59,17 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        if (pretty) {
-            return new JsonPrettyGeneratorImpl(writer, bufferProvider, cache);
-        }
-        return new JsonGeneratorImpl(writer, bufferProvider, cache);
+        return new JsonGeneratorImpl(writer, bufferProvider, cache, pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        if (pretty) {
-            return new JsonPrettyGeneratorImpl(out, bufferProvider, cache);
-        }
-        return new JsonGeneratorImpl(out, bufferProvider, cache);
+        return new JsonGeneratorImpl(out, bufferProvider, cache, pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        if (pretty) {
-            return new JsonPrettyGeneratorImpl(out,charset, bufferProvider, cache);
-        }
-        return new JsonGeneratorImpl(out,charset, bufferProvider, cache);
+        return new JsonGeneratorImpl(out,charset, bufferProvider, cache, pretty);
     }
 
     @Override

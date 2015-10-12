@@ -35,7 +35,6 @@ import javax.json.JsonException;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
-import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
@@ -47,71 +46,80 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final char[] buffer;
     private int bufferPos = 0;
+    private final boolean prettyPrint;
+    private static final String INDENT = "  ";
     //private final ConcurrentMap<String, String> cache;
-    protected boolean needComma = false;
+    private int depth = 0;
 
-    private StructureElement currentStructureElement = null;
-    private boolean valid = false;
-    protected int depth = 0;
+    private final HStack<GeneratorState> state = new HStack<GeneratorState>();
 
-    //minimal stack implementation
-    private static final class StructureElement implements Serializable{
-        final StructureElement previous;
-        final boolean isArray;
+    private enum GeneratorState {
+        INITIAL(false, true), START_OBJECT(true, false), IN_OBJECT(true, false), AFTER_KEY(false, true), START_ARRAY(false, true), IN_ARRAY(
+                false, true), END(false, false);
 
-        StructureElement(final StructureElement previous, final boolean isArray) {
-            super();
-            this.previous = previous;
-            this.isArray = isArray;
+        private final boolean acceptsKey;
+        private final boolean acceptsValue;
+
+        private GeneratorState(final boolean acceptsKey, final boolean acceptsValue) {
+            this.acceptsKey = acceptsKey;
+            this.acceptsValue = acceptsValue;
         }
     }
 
     JsonGeneratorImpl(final Writer writer, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache) {
+            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
         this.writer = writer;
         //this.cache = cache;
         this.buffer = bufferProvider.newBuffer();
         this.bufferProvider = bufferProvider;
+        this.prettyPrint = prettyPrint;
+        state.push(GeneratorState.INITIAL);
     }
 
     JsonGeneratorImpl(final OutputStream out, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache) {
-        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, cache);
+            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
+        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, cache, prettyPrint);
     }
 
     JsonGeneratorImpl(final OutputStream out, final Charset encoding, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache) {
-        this(new OutputStreamWriter(out, encoding), bufferProvider, cache);
+            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
+        this(new OutputStreamWriter(out, encoding), bufferProvider, cache, prettyPrint);
     }
 
-    protected void addCommaIfNeeded() {
-        if (needComma) {
-            justWrite(COMMA_CHAR);
-            needComma = false;
+    private void writeEol() {
+        if (prettyPrint) {
+            justWrite(EOL);
         }
+    }
 
+    private void writeIndent() {
+        if (prettyPrint && depth > 0) {
+            for (int i = 0; i < depth; i++) {
+                justWrite(INDENT);
+            }
+        }
     }
 
     //caching currently disabled
     //two problems:
-    // 1) not easy to get the escaped value efficiently wen its streamed and the buffer is full and needs to be flushed
+    // 1) not easy to get the escaped value efficiently when its streamed and the buffer is full and needs to be flushed
     // 2) we have to use a kind of bounded threadsafe map to let the cache not grow indefinitely
-    private void writeCachedOrEscape(final String name) {
-      /*  String k = cache.get(name);
-        
-        if (k == null) {
-                
-                justWrite(QUOTE_CHAR);
-                int start = bufferPos;
-                writeEscaped0(name);
-                int end = bufferPos;
-                String escaped= get from buffer
-                ---
-                //FIXME if buffer is flushed this will not work here
-                cache.putIfAbsent(name, escaped);
-                justWrite(QUOTE_CHAR);
-                justWrite(KEY_SEPARATOR);
-        }else*/
+    private void writeCachedKey(final String name) {
+        /*  String k = cache.get(name);
+
+          if (k == null) {
+
+                  justWrite(QUOTE_CHAR);
+                  int start = bufferPos;
+                  writeEscaped0(name);
+                  int end = bufferPos;
+                  String escaped= get from buffer
+                  ---
+                  //FIXME if buffer is flushed this will not work here
+                  cache.putIfAbsent(name, escaped);
+                  justWrite(QUOTE_CHAR);
+                  justWrite(KEY_SEPARATOR);
+          }else*/
         {
             justWrite(QUOTE_CHAR);
             writeEscaped0(name);
@@ -123,97 +131,52 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator writeStartObject() {
+        prepareValue();
+        state.push(GeneratorState.START_OBJECT);
 
-        if (currentStructureElement == null && valid) {
-            throw new JsonGenerationException("Method must not be called more than once in no context");
-        }
-
-        if (currentStructureElement != null && !currentStructureElement.isArray) {
-            throw new JsonGenerationException("Method must not be called within an object context");
-        }
-
-        //push upon the stack
-        if (currentStructureElement == null) {
-            currentStructureElement = new StructureElement(null, false);
-        } else {
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
-            currentStructureElement = localStructureElement;
-        }
-
-        if (!valid) {
-            valid = true;
-        }
-
-        noCheckWrite(START_OBJECT_CHAR);
+        writeIndent();
         depth++;
+        justWrite(START_OBJECT_CHAR);
+
+        writeEol();
         return this;
     }
 
     @Override
     public JsonGenerator writeStartObject(final String name) {
-        if (currentStructureElement == null || currentStructureElement.isArray) {
-            throw new JsonGenerationException("Method must not be called within an array context");
-        }
-
-        //push upon the stack
-        final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
-        currentStructureElement = localStructureElement;
-
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWrite(START_OBJECT_CHAR);
+        checkObject(false);
+        writeKey(name);
+        justWrite(START_OBJECT_CHAR);
+        writeEol();
+        state.push(GeneratorState.START_OBJECT);
         depth++;
         return this;
     }
 
     @Override
     public JsonGenerator writeStartArray() {
-        if (currentStructureElement == null && valid) {
-            throw new JsonGenerationException("Method must not be called more than once in no context");
-        }
-
-        if (currentStructureElement != null && !currentStructureElement.isArray) {
-            throw new JsonGenerationException("Method must not be called within an object context");
-        }
-
-        //push upon the stack
-        if (currentStructureElement == null) {
-            currentStructureElement = new StructureElement(null, true);
-        } else {
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
-            currentStructureElement = localStructureElement;
-        }
-
-        if (!valid) {
-            valid = true;
-        }
-
-        noCheckWrite(START_ARRAY_CHAR);
+        prepareValue();
+        state.push(GeneratorState.START_ARRAY);
         depth++;
+        writeIndent();
+        justWrite(START_ARRAY_CHAR);
+        writeEol();
         return this;
     }
 
     @Override
     public JsonGenerator writeStartArray(final String name) {
-        if (currentStructureElement == null || currentStructureElement.isArray) {
-            throw new JsonGenerationException("Method must not be called within an array context");
-        }
-        
-        //push upon the stack
-        final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
-        currentStructureElement = localStructureElement;
-
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWrite(START_ARRAY_CHAR);
+        checkObject(false);
+        writeKey(name);
+        justWrite(START_ARRAY_CHAR);
+        writeEol();
+        state.push(GeneratorState.START_ARRAY);
         depth++;
         return this;
     }
 
     private void writeJsonValue(final String name, final JsonValue value) {
-        if (currentStructureElement != null) {
-            checkObject();
-        }
+        checkObject(false);
         //TODO check null handling
         switch (value.getValueType()) {
             case ARRAY:
@@ -264,9 +227,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     private void writeJsonValue(final JsonValue value) {
-        if (currentStructureElement != null) {
-            checkArray();
-        }
+        checkArray(true);
         //TODO check null handling
         switch (value.getValueType()) {
             case ARRAY:
@@ -318,217 +279,176 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final JsonValue value) {
+        checkObject(false);
         writeJsonValue(name, value);
         return this;
     }
 
-
     @Override
     public JsonGenerator write(final String name, final String value) {
-        checkObject();
-
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-
-        addCommaIfNeeded();
-        justWrite(QUOTE_CHAR);
-        writeEscaped0(value);
-        justWrite(QUOTE_CHAR);
-        needComma = true;
+        checkObject(false);
+        writeKey(name);
+        writeValueAsJsonString(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final BigInteger value) {
-        checkObject();
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWriteAndForceComma(String.valueOf(value));
+        checkObject(false);
+        writeKey(name);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final BigDecimal value) {
-        checkObject();
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWriteAndForceComma(String.valueOf(value));
+        checkObject(false);
+        writeKey(name);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final int value) {
-        checkObject();
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        addCommaIfNeeded();
-        writeInt0(value);
-        needComma = true;
+        checkObject(false);
+        writeKey(name);
+        writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final long value) {
-        checkObject();
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        addCommaIfNeeded();
-        writeLong0(value);
-        needComma = true;
+        checkObject(false);
+        writeKey(name);
+        writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final double value) {
-        checkObject();
+        checkObject(false);
         checkDoubleRange(value);
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWriteAndForceComma(String.valueOf(value));
+        writeKey(name);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final boolean value) {
-        checkObject();
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWriteAndForceComma(String.valueOf(value));
+        checkObject(false);
+        writeKey(name);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator writeNull(final String name) {
-        checkObject();
-        addCommaIfNeeded();
-        writeCachedOrEscape(name);
-        noCheckWriteAndForceComma(NULL);
+        checkObject(false);
+        writeKey(name);
+        writeValue(NULL);
         return this;
     }
 
     @Override
     public JsonGenerator writeEnd() {
-        if (currentStructureElement == null) {
-            throw new JsonGenerationException("Method must not be called in no context");
-        }
-
-        writeEnd(currentStructureElement.isArray ? END_ARRAY_CHAR : END_OBJECT_CHAR);
-
-        //pop from stack
-        currentStructureElement = currentStructureElement.previous;
+        checkArrayOrObject(false);
+        final GeneratorState last = state.pop();
         depth--;
-
+        writeEol();
+        writeIndent();
+        if (last == GeneratorState.IN_ARRAY || last == GeneratorState.START_ARRAY) {
+            justWrite(END_ARRAY_CHAR);
+        } else {
+            justWrite(END_OBJECT_CHAR);
+        }
+        alignState();
         return this;
     }
 
     @Override
     public JsonGenerator write(final JsonValue value) {
+        checkArray(true);
         writeJsonValue(value);
-
-        if (JsonStructure.class.isInstance(value)) {
-            valid = true;
-        }
         return this;
     }
 
     @Override
     public JsonGenerator write(final String value) {
-        checkArray();
-        addCommaIfNeeded();
-        justWrite(QUOTE_CHAR);
-        writeEscaped0(value);
-        justWrite(QUOTE_CHAR);
-        needComma = true;
+        checkArray(false);
+        writeValueAsJsonString(value);
         return this;
     }
 
-
     @Override
     public JsonGenerator write(final BigDecimal value) {
-        checkArray();
-        noCheckWrite(String.valueOf(value));
-        needComma = true;
+        checkArray(false);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigInteger value) {
-        checkArray();
-        noCheckWrite(String.valueOf(value));
-        needComma = true;
+        checkArray(false);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final int value) {
-        checkArray();
-        addCommaIfNeeded();
-        writeInt0(value);
-        needComma = true;
+        checkArray(false);
+        writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final long value) {
-        checkArray();
-        addCommaIfNeeded();
-        writeLong0(value);
-        needComma = true;
+        checkArray(false);
+        writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final double value) {
-        checkArray();
+        checkArray(false);
         checkDoubleRange(value);
-        noCheckWrite(Double.toString(value));
-        needComma = true;
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final boolean value) {
-        checkArray();
-        noCheckWrite(Boolean.toString(value));
-        needComma = true;
+        checkArray(false);
+        writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator writeNull() {
-        checkArray();
-        noCheckWriteAndForceComma(NULL);
-        needComma = true;
+        checkArray(false);
+        writeValue(NULL);
         return this;
     }
 
     @Override
     public void close() {
-
         try {
-            if (currentStructureElement != null || !valid) {
-
-                throw new JsonGenerationException("Invalid json " + currentStructureElement + " " + valid);
+            if (currentState() != GeneratorState.END) {
+                throw new JsonGenerationException("Invalid json");
             }
         } finally {
-
             flushBuffer();
-
             try {
                 writer.close();
             } catch (final IOException e) {
                 throw new JsonException(e.getMessage(), e);
             }
-
             bufferProvider.release(buffer);
         }
     }
 
     @Override
     public void flush() {
-
         flushBuffer();
-
         try {
             writer.flush();
         } catch (final IOException e) {
@@ -536,39 +456,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         }
     }
 
-    private JsonGenerator noCheckWriteAndForceComma(final String value) {
-        noCheckWrite(value);
-        needComma = true;
-        return this;
-    }
-
-    protected JsonGenerator writeEnd(final char value) {
-        justWrite(value);
-        needComma = true;
-        return this;
-    }
-
-    protected void noCheckWrite(final String value) {
-        addCommaIfNeeded();
-        justWrite(value);
-    }
-
-    protected void noCheckWrite(final char value) {
-        addCommaIfNeeded();
-        justWrite(value);
-    }
-
     private void flushBuffer() {
-
         if (bufferPos > 0) {
-
             try {
                 writer.write(buffer, 0, bufferPos);
                 bufferPos = 0;
             } catch (final IOException e) {
                 throw new JsonException(e.getMessage(), e);
             }
-
         }
     }
 
@@ -582,7 +477,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             char c = value.charAt(i);
 
             while (c != ESCAPE_CHAR && c != QUOTE_CHAR && c >= SPACE) {
-                
+
                 //read fast
                 justWrite(c);
 
@@ -628,58 +523,18 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                     }
             }
         }
-
     }
 
     private static final String UNICODE_PREFIX = "\\u";
     private static final String UNICODE_PREFIX_HELPER = "000";
 
     private static String toUnicode(final char c) {
-
         final String hex = UNICODE_PREFIX_HELPER + Integer.toHexString(c);
         final String s = UNICODE_PREFIX + hex.substring(hex.length() - 4);
-
         return s;
     }
 
-    protected void justWrite(final char[] chars) {
-
-        if (bufferPos + chars.length >= buffer.length) {
-
-            int start = 0;
-            int len = buffer.length - bufferPos;
-
-            while (true) {
-                int end = start + len;
-                if (end > chars.length) {
-                    end = chars.length;
-                }
-
-                System.arraycopy(chars, start, buffer, bufferPos, end - start);
-
-                bufferPos += (end - start);
-                start += (len);
-
-                if (start >= chars.length) {
-                    return;
-                }
-
-                if (bufferPos >= buffer.length) {
-                    flushBuffer();
-                    len = buffer.length;
-                }
-
-            }
-
-        } else {
-            //fits completely into the buffer
-            System.arraycopy(chars, 0, buffer, bufferPos, chars.length);
-            bufferPos += chars.length;
-        }
-
-    }
-
-    protected void justWrite(final String value) {
+    private void justWrite(final String value) {
         final int valueLength = value.length();
 
         if (bufferPos + valueLength >= buffer.length) {
@@ -706,36 +561,46 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                     flushBuffer();
                     len = buffer.length;
                 }
-
             }
-
         } else {
             //fits completely into the buffer
             value.getChars(0, valueLength, buffer, bufferPos);
             bufferPos += valueLength;
         }
-
     }
 
-    protected void justWrite(final char value) {
-
+    private void justWrite(final char value) {
         if (bufferPos >= buffer.length) {
             flushBuffer();
         }
-
         buffer[bufferPos++] = value;
-
     }
-    
-    private void checkObject() {
-        if (currentStructureElement == null || currentStructureElement.isArray) {
-            throw new JsonGenerationException("write(name, param) is only valid in objects");
+
+    private void checkObject(final boolean allowInitial) {
+        final GeneratorState currentState = currentState();
+        if (currentState != GeneratorState.IN_OBJECT && currentState != GeneratorState.START_OBJECT) {
+            if (!allowInitial || currentState != GeneratorState.INITIAL) {
+                throw new JsonGenerationException("write(name, param) is only valid in objects");
+            }
         }
     }
 
-    private void checkArray() {
-        if (currentStructureElement == null || !currentStructureElement.isArray) {
-            throw new JsonGenerationException("write(param) is only valid in arrays");
+    private void checkArray(final boolean allowInitial) {
+        final GeneratorState currentState = currentState();
+        if (currentState != GeneratorState.IN_ARRAY && currentState != GeneratorState.START_ARRAY) {
+            if (!allowInitial || currentState != GeneratorState.INITIAL) {
+                throw new JsonGenerationException("write(param) is only valid in arrays");
+            }
+        }
+    }
+
+    private void checkArrayOrObject(final boolean allowInitial) {
+        final GeneratorState currentState = currentState();
+        if (currentState != GeneratorState.IN_ARRAY && currentState != GeneratorState.START_ARRAY
+                && currentState != GeneratorState.IN_OBJECT && currentState != GeneratorState.START_OBJECT) {
+            if (!allowInitial || currentState != GeneratorState.INITIAL) {
+                throw new JsonGenerationException("only valid within array or object");
+            }
         }
     }
 
@@ -744,119 +609,197 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             throw new NumberFormatException("double can't be infinite or NaN");
         }
     }
-    
-    
-    //unopitimized, see below
-    private void writeLong0(final long i) {
 
-        justWrite(String.valueOf(i));
+    private void prepareValue() {
+        final GeneratorState currentState = currentState();
+        if (!currentState.acceptsValue) {
+            throw new JsonGenerationException("state " + currentState + " does not accept a value");
+        }
+        if (currentState == GeneratorState.IN_ARRAY) {
+            justWrite(',');
+            writeEol();
+        }
     }
 
-    //unopitimized, see below
-    private void writeInt0(final int i) {
+    private void alignState() {
 
-        justWrite(String.valueOf(i));
-    }
-    
-    //optimized number optimizations
-/*
-    private void writeLong0(final long i) {
-        if (i == Long.MIN_VALUE) {
-            justWrite("-9223372036854775808");
-            return;
+        if (currentState() == GeneratorState.AFTER_KEY) {
+            state.pop();
         }
-        final int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
-        final char[] buf = new char[size];
-        getChars(i, size, buf);
-        justWrite(buf);
-    }
-
-    private void writeInt0(final int i) {
-        if (i == Integer.MIN_VALUE) {
-            justWrite("-2147483648");
-            return;
-        }
-        final int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
-        final char[] buf = new char[size];
-        getChars(i, size, buf);
-        justWrite(buf);
-    }
-
-    private final static char[] DIGIT_TENS = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1',
-            '1', '1', '2', '2', '2', '2', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4',
-            '4', '4', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '5', '5', '5', '5', '5', '6', '6', '6', '6', '6', '6', '6', '6',
-            '6', '6', '7', '7', '7', '7', '7', '7', '7', '7', '7', '7', '8', '8', '8', '8', '8', '8', '8', '8', '8', '8', '9', '9', '9',
-            '9', '9', '9', '9', '9', '9', '9', };
-
-    private final static char[] DIGIT_ONES = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
-            '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
-            '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
-            '3', '4', '5', '6', '7', '8', '9', };
-
-    private final static char[] DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-            'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
-
-    // Requires positive x
-    private static int stringSize(final long x) {
-        long p = 10;
-        for (int i = 1; i < 19; i++) {
-            if (x < p) {
-                return i;
-            }
-            p = 10 * p;
-        }
-        return 19;
-    }
-
-    private static void getChars(long i, final int index, final char[] buf) {
-        long q;
-        int r;
-        int charPos = index;
-        char sign = 0;
-
-        if (i < 0) {
-            sign = '-';
-            i = -i;
-        }
-
-        // Get 2 digits/iteration using longs until quotient fits into an int
-        while (i > Integer.MAX_VALUE) {
-            q = i / 100;
-            // really: r = i - (q * 100);
-            r = (int) (i - ((q << 6) + (q << 5) + (q << 2)));
-            i = q;
-            buf[--charPos] = DIGIT_ONES[r];
-            buf[--charPos] = DIGIT_TENS[r];
-        }
-
-        // Get 2 digits/iteration using ints
-        int q2;
-        int i2 = (int) i;
-        while (i2 >= 65536) {
-            q2 = i2 / 100;
-            // really: r = i2 - (q * 100);
-            r = i2 - ((q2 << 6) + (q2 << 5) + (q2 << 2));
-            i2 = q2;
-            buf[--charPos] = DIGIT_ONES[r];
-            buf[--charPos] = DIGIT_TENS[r];
-        }
-
-        // Fall thru to fast mode for smaller numbers
-        // assert(i2 <= 65536, i2);
-        for (;;) {
-            q2 = (i2 * 52429) >>> (16 + 3);
-            r = i2 - ((q2 << 3) + (q2 << 1)); // r = i2-(q2*10) ...
-            buf[--charPos] = DIGITS[r];
-            i2 = q2;
-            if (i2 == 0) {
+        switch (currentState()) {
+            case START_ARRAY:
+                swapState(GeneratorState.IN_ARRAY);
                 break;
-            }
-        }
-        if (sign != 0) {
-            buf[--charPos] = sign;
+            case START_OBJECT:
+                swapState(GeneratorState.IN_OBJECT);
+                break;
+            case INITIAL:
+                swapState(GeneratorState.END);
+                break;
+            default:
         }
     }
-*/
-   
+
+    private void swapState(final GeneratorState newState) {
+        state.pop();
+        state.push(newState);
+    }
+
+    private GeneratorState currentState() {
+        return state.peek();
+    }
+
+    private void writeKey(final String key) {
+        final GeneratorState currentState = currentState();
+        if (!currentState.acceptsKey) {
+            throw new IllegalStateException("state " + currentState + " does not accept a key");
+        }
+        if (currentState == GeneratorState.IN_OBJECT) {
+            justWrite(COMMA_CHAR);
+            writeEol();
+        }
+
+        writeIndent();
+
+        writeCachedKey(key);
+        state.push(GeneratorState.AFTER_KEY);
+    }
+
+    private void writeValueAsJsonString(final String value) {
+        prepareValue();
+        justWrite(QUOTE_CHAR);
+        writeEscaped0(value);
+        justWrite(QUOTE_CHAR);
+        alignState();
+    }
+
+    private void writeValue(final String value) {
+        prepareValue();
+        justWrite(String.valueOf(value));
+        alignState();
+    }
+
+    private void writeValue(final int value) {
+        prepareValue();
+        writeInt0(value);
+        alignState();
+    }
+
+    private void writeValue(final long value) {
+        prepareValue();
+        writeLong0(value);
+        alignState();
+    }
+
+    //unoptimized, see below
+    private void writeLong0(final long i) {
+        justWrite(String.valueOf(i));
+    }
+
+    //unoptimized, see below
+    private void writeInt0(final int i) {
+        justWrite(String.valueOf(i));
+    }
+
+    //optimized number optimizations
+    /*
+        private void writeLong0(final long i) {
+            if (i == Long.MIN_VALUE) {
+                justWrite("-9223372036854775808");
+                return;
+            }
+            final int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
+            final char[] buf = new char[size];
+            getChars(i, size, buf);
+            justWrite(buf);
+        }
+
+        private void writeInt0(final int i) {
+            if (i == Integer.MIN_VALUE) {
+                justWrite("-2147483648");
+                return;
+            }
+            final int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
+            final char[] buf = new char[size];
+            getChars(i, size, buf);
+            justWrite(buf);
+        }
+
+        private final static char[] DIGIT_TENS = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1',
+                '1', '1', '2', '2', '2', '2', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4',
+                '4', '4', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '5', '5', '5', '5', '5', '6', '6', '6', '6', '6', '6', '6', '6',
+                '6', '6', '7', '7', '7', '7', '7', '7', '7', '7', '7', '7', '8', '8', '8', '8', '8', '8', '8', '8', '8', '8', '9', '9', '9',
+                '9', '9', '9', '9', '9', '9', '9', };
+
+        private final static char[] DIGIT_ONES = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
+                '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
+                '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
+                '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
+                '3', '4', '5', '6', '7', '8', '9', };
+
+        private final static char[] DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
+                'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
+
+        // Requires positive x
+        private static int stringSize(final long x) {
+            long p = 10;
+            for (int i = 1; i < 19; i++) {
+                if (x < p) {
+                    return i;
+                }
+                p = 10 * p;
+            }
+            return 19;
+        }
+
+        private static void getChars(long i, final int index, final char[] buf) {
+            long q;
+            int r;
+            int charPos = index;
+            char sign = 0;
+
+            if (i < 0) {
+                sign = '-';
+                i = -i;
+            }
+
+            // Get 2 digits/iteration using longs until quotient fits into an int
+            while (i > Integer.MAX_VALUE) {
+                q = i / 100;
+                // really: r = i - (q * 100);
+                r = (int) (i - ((q << 6) + (q << 5) + (q << 2)));
+                i = q;
+                buf[--charPos] = DIGIT_ONES[r];
+                buf[--charPos] = DIGIT_TENS[r];
+            }
+
+            // Get 2 digits/iteration using ints
+            int q2;
+            int i2 = (int) i;
+            while (i2 >= 65536) {
+                q2 = i2 / 100;
+                // really: r = i2 - (q * 100);
+                r = i2 - ((q2 << 6) + (q2 << 5) + (q2 << 2));
+                i2 = q2;
+                buf[--charPos] = DIGIT_ONES[r];
+                buf[--charPos] = DIGIT_TENS[r];
+            }
+
+            // Fall thru to fast mode for smaller numbers
+            // assert(i2 <= 65536, i2);
+            for (;;) {
+                q2 = (i2 * 52429) >>> (16 + 3);
+                r = i2 - ((q2 << 3) + (q2 << 1)); // r = i2-(q2*10) ...
+                buf[--charPos] = DIGITS[r];
+                i2 = q2;
+                if (i2 == 0) {
+                    break;
+                }
+            }
+            if (sign != 0) {
+                buf[--charPos] = sign;
+            }
+        }
+     */
+
 }

@@ -20,13 +20,18 @@ package org.apache.johnzon.core;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 
 import javax.json.Json;
+import javax.json.JsonReader;
 import javax.json.JsonValue;
+import javax.json.JsonWriter;
+import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
 
@@ -277,5 +282,56 @@ public class JsonGeneratorImplTest {
                         "    }\n" +
                         "  ]\n" +
                         "}", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void prettySimple() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
+            put(JsonGenerator.PRETTY_PRINTING, true);
+        }}).createGenerator(baos);
+
+        generator.writeStartObject().write("firstName", "John").writeEnd().close();
+
+        assertEquals("{\n" +
+                        "  \"firstName\":\"John\"\n" +
+                        "}", new String(baos.toByteArray()));
+    }
+    
+    @Test
+    public void prettySimpleStructure() {
+        final JsonWriterFactory writerFactory = Json.createWriterFactory(new HashMap<String, Object>() {
+            {
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }
+        });
+
+        StringWriter buffer = new StringWriter();
+
+        final JsonWriter writer = writerFactory.createWriter(buffer);
+        writer.write(Json.createObjectBuilder().add("firstName", "John").build());
+        writer.close();
+
+        assertEquals("{\n" + "  \"firstName\":\"John\"\n" + "}", buffer.toString());
+    }
+
+    @Test
+    public void prettySimpleWriter() {
+
+        final JsonWriterFactory writerFactory = Json.createWriterFactory(new HashMap<String, Object>() {
+            {
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }
+        });
+
+        StringWriter buffer = new StringWriter();
+
+        final JsonReader reader = Json.createReader(new ByteArrayInputStream("{\"firstName\":\"John\"}".getBytes()));
+        final JsonWriter writer = writerFactory.createWriter(buffer);
+        writer.write(reader.read());
+        writer.close();
+        reader.close();
+
+        assertEquals("{\n" + "  \"firstName\":\"John\"\n" + "}", buffer.toString());
     }
 }
