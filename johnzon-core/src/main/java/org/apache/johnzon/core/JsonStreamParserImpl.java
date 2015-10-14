@@ -24,6 +24,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
 import java.util.NoSuchElementException;
 
 import javax.json.JsonException;
@@ -93,19 +94,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //This can only be determined by build up a stack which tracks the trail of Json objects and arrays
     //This stack here is only needed for validating the above mentioned case, if we want to be lenient we can skip suing the stack.
     //Stack can cause out of memory issues when the nesting depth of a Json stream is too deep.
-    private StructureElement currentStructureElement = null;
-
-    //minimal stack implementation
-    private static final class StructureElement {
-        final StructureElement previous;
-        final boolean isArray;
-
-        StructureElement(final StructureElement previous, final boolean isArray) {
-            super();
-            this.previous = previous;
-            this.isArray = isArray;
-        }
-    }
+    private ArrayDeque<Boolean> stack = new ArrayDeque<Boolean>(100);
 
     //detect charset according to RFC 4627
     public JsonStreamParserImpl(final InputStream inputStream, final int maxStringLength,
@@ -180,7 +169,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     @Override
     public final boolean hasNext() {
 
-        if (currentStructureElement != null || (previousEvent != END_ARRAY && previousEvent != END_OBJECT) || previousEvent == 0) {
+        if (stack.peek() != null || (previousEvent != END_ARRAY && previousEvent != END_OBJECT) || previousEvent == 0) {
             return true;
         }
 
@@ -326,7 +315,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw new NoSuchElementException();
         }
 
-        if (previousEvent != 0 && currentStructureElement == null) {
+        if (previousEvent != 0 && stack.peek() == null) {
             throw uexc("Unexpected end of structure");
         }
 
@@ -431,35 +420,29 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw uexc("Expected : , [");
         }
 
-        //push upon the stack
-        if (currentStructureElement == null) {
-            currentStructureElement = new StructureElement(null, false);
-        } else {
-            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
-                throw uexc("Expected :");
-            }
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
-            currentStructureElement = localStructureElement;
+        if(stack.peek() == Boolean.FALSE && previousEvent != KEY_SEPARATOR_EVENT) {
+            throw uexc("Expected \"");
         }
 
-        return EVT_MAP[previousEvent = START_OBJECT];
+        stack.push(Boolean.FALSE);
 
+        return EVT_MAP[previousEvent = START_OBJECT];
     }
 
     private Event handleEndObject() {
 
         //last event must one of the following-> " ] { } LITERAL
         if (previousEvent == START_ARRAY || previousEvent == COMMA_EVENT || previousEvent == KEY_NAME
-                || previousEvent == KEY_SEPARATOR_EVENT || currentStructureElement == null) {
+                || previousEvent == KEY_SEPARATOR_EVENT || stack.peek() == null) {
             throw uexc("Expected \" ] { } LITERAL");
         }
 
-        if (currentStructureElement.isArray) {
+        if (stack.peek() == Boolean.TRUE) {
             throw uexc("Expected : ]");
         }
 
         //pop from stack
-        currentStructureElement = currentStructureElement.previous;
+        stack.pop();
 
         return EVT_MAP[previousEvent = END_OBJECT];
     }
@@ -472,15 +455,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         }
 
         //push upon the stack
-        if (currentStructureElement == null) {
-            currentStructureElement = new StructureElement(null, true);
-        } else {
-            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
-                throw uexc("Expected \"");
-            }
-            final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
-            currentStructureElement = localStructureElement;
+        if(stack.peek() == Boolean.FALSE && previousEvent != KEY_SEPARATOR_EVENT) {
+            throw uexc("Expected \"");
         }
+        
+        stack.push(Boolean.TRUE);
 
         return EVT_MAP[previousEvent = START_ARRAY];
     }
@@ -489,16 +468,16 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         //last event must one of the following-> [ ] } " LITERAL
         if (previousEvent == START_OBJECT || previousEvent == COMMA_EVENT || previousEvent == KEY_SEPARATOR_EVENT
-                || currentStructureElement == null) {
+                || stack.peek() == null) {
             throw uexc("Expected [ ] } \" LITERAL");
         }
 
-        if (!currentStructureElement.isArray) {
+        if (stack.peek() == Boolean.FALSE) {
             throw uexc("Expected : }");
         }
 
         //pop from stack
-        currentStructureElement = currentStructureElement.previous;
+        stack.pop();
 
         return EVT_MAP[previousEvent = END_ARRAY];
     }
@@ -639,12 +618,13 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //starting quote already consumed
         readString();
         //end quote already consumed
-
+        Boolean state = stack.peek();
         //make the decision if its an key or value
         if (previousEvent == KEY_SEPARATOR_EVENT) {
             //must be value
 
-            if (currentStructureElement != null && currentStructureElement.isArray) {
+            
+            if (state != null && state == Boolean.TRUE) {
                 //not in array, only allowed within array
                 throw uexc("Key value pair not allowed in an array");
             }
@@ -654,7 +634,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         } else { //Event is  START_OBJECT  OR START_ARRAY OR COMMA_EVENT
             //must be a key if we are in an object, if not its a value 
 
-            if (currentStructureElement != null && currentStructureElement.isArray) {
+            if (state != null && state == Boolean.TRUE) {
                 return EVT_MAP[previousEvent = VALUE_STRING];
             }
 
@@ -781,7 +761,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw uexc("Expected : , [");
         }
 
-        if (previousEvent == COMMA_EVENT && !currentStructureElement.isArray) {
+        if (previousEvent == COMMA_EVENT && stack.peek() == Boolean.FALSE) {
             //only allowed within array
             throw uexc("Not in an array context");
         }
