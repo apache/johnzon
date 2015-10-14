@@ -45,7 +45,7 @@ public class HStack<T> implements Serializable{
     
     T pop() {
         
-        if(topElement == null) return null;
+        if(topElement == null) { return null; }
         
         T tmp = topElement.object;
         topElement = topElement.previous;
