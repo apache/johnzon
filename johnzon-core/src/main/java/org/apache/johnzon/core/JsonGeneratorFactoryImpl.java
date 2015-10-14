@@ -31,45 +31,44 @@ import java.util.concurrent.ConcurrentMap;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 
-public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {    
+public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {
     public static final String GENERATOR_BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
-    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
-   
-    static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY
-    );
+    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH = Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
+
+    static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY);
     //key caching currently disabled
     private final ConcurrentMap<String, String> cache = null;//new ConcurrentHashMap<String, String>();
     private final boolean pretty;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
-        
-          super(config, SUPPORTED_CONFIG_KEYS, null); 
-          
-          this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
-          
-          final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
-          if (bufferSize <= 0) {
-              throw new IllegalArgumentException("buffer length must be greater than zero");
-          }
 
-          this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
+        super(config, SUPPORTED_CONFIG_KEYS, null);
+
+        this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
+
+        final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("buffer length must be greater than zero");
+        }
+
+        this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
     }
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorImpl(writer, bufferProvider, cache, pretty);
+        return pretty ? new JsonPrettyGeneratorImpl(writer, bufferProvider, cache) : new JsonGeneratorImpl(writer, bufferProvider, cache);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return new JsonGeneratorImpl(out, bufferProvider, cache, pretty);
+        return pretty ? new JsonPrettyGeneratorImpl(out, bufferProvider, cache) : new JsonGeneratorImpl(out, bufferProvider, cache);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        return new JsonGeneratorImpl(out,charset, bufferProvider, cache, pretty);
+        return pretty ? new JsonPrettyGeneratorImpl(out, charset, bufferProvider, cache) : new JsonGeneratorImpl(out, charset,
+                bufferProvider, cache);
     }
 
     @Override

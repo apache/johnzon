@@ -26,6 +26,7 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -46,12 +47,9 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final char[] buffer;
     private int bufferPos = 0;
-    private final boolean prettyPrint;
-    private static final String INDENT = "  ";
     //private final ConcurrentMap<String, String> cache;
-    private int depth = 0;
 
-    private final HStack<GeneratorState> state = new HStack<GeneratorState>();
+    private final ArrayDeque<GeneratorState> state = new ArrayDeque<JsonGeneratorImpl.GeneratorState>(100);
 
     private enum GeneratorState {
         INITIAL(false, true), START_OBJECT(true, false), IN_OBJECT(true, false), AFTER_KEY(false, true), START_ARRAY(false, true), IN_ARRAY(
@@ -67,37 +65,38 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     JsonGeneratorImpl(final Writer writer, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
+            final ConcurrentMap<String, String> cache) {
         this.writer = writer;
         //this.cache = cache;
         this.buffer = bufferProvider.newBuffer();
         this.bufferProvider = bufferProvider;
-        this.prettyPrint = prettyPrint;
         state.push(GeneratorState.INITIAL);
     }
 
     JsonGeneratorImpl(final OutputStream out, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
-        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, cache, prettyPrint);
+            final ConcurrentMap<String, String> cache) {
+        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, cache);
     }
 
     JsonGeneratorImpl(final OutputStream out, final Charset encoding, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
-        this(new OutputStreamWriter(out, encoding), bufferProvider, cache, prettyPrint);
+            final ConcurrentMap<String, String> cache) {
+        this(new OutputStreamWriter(out, encoding), bufferProvider, cache);
     }
 
-    private void writeEol() {
-        if (prettyPrint) {
-            justWrite(EOL);
-        }
+    protected void incrementDepth() {
+
     }
 
-    private void writeIndent() {
-        if (prettyPrint && depth > 0) {
-            for (int i = 0; i < depth; i++) {
-                justWrite(INDENT);
-            }
-        }
+    protected void decrementDepth() {
+
+    }
+
+    protected void writeEol() {
+
+    }
+
+    protected void writeIndent() {
+
     }
 
     //caching currently disabled
@@ -135,7 +134,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         state.push(GeneratorState.START_OBJECT);
 
         writeIndent();
-        depth++;
+        incrementDepth();
         justWrite(START_OBJECT_CHAR);
 
         writeEol();
@@ -149,7 +148,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         justWrite(START_OBJECT_CHAR);
         writeEol();
         state.push(GeneratorState.START_OBJECT);
-        depth++;
+        incrementDepth();
         return this;
     }
 
@@ -157,7 +156,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     public JsonGenerator writeStartArray() {
         prepareValue();
         state.push(GeneratorState.START_ARRAY);
-        depth++;
+        incrementDepth();
         writeIndent();
         justWrite(START_ARRAY_CHAR);
         writeEol();
@@ -171,7 +170,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         justWrite(START_ARRAY_CHAR);
         writeEol();
         state.push(GeneratorState.START_ARRAY);
-        depth++;
+        incrementDepth();
         return this;
     }
 
@@ -204,12 +203,12 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                 write(name, JsonString.class.cast(value).getString());
                 break;
             case NUMBER:
-                //TODO optimize
-                final JsonNumber number = JsonNumber.class.cast(value);
-                if (number.isIntegral()) {
-                    write(name, number.longValueExact());
+                if (value instanceof JsonDoubleImpl) {
+                    write(name, JsonDoubleImpl.class.cast(value).doubleValue());
+                } else if (value instanceof JsonLongImpl) {
+                    write(name, JsonLongImpl.class.cast(value).longValue());
                 } else {
-                    write(name, number.bigDecimalValue());
+                    write(name, JsonNumber.class.cast(value).bigDecimalValue());
                 }
                 break;
             case TRUE:
@@ -255,12 +254,12 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                 write(JsonString.class.cast(value).getString());
                 break;
             case NUMBER:
-                //TODO optimize
-                final JsonNumber number = JsonNumber.class.cast(value);
-                if (number.isIntegral()) {
-                    write(number.longValueExact());
+                if (value instanceof JsonDoubleImpl) {
+                    write(JsonDoubleImpl.class.cast(value).doubleValue());
+                } else if (value instanceof JsonLongImpl) {
+                    write(JsonLongImpl.class.cast(value).longValue());
                 } else {
-                    write(number.bigDecimalValue());
+                    write(JsonNumber.class.cast(value).bigDecimalValue());
                 }
                 break;
             case TRUE:
@@ -353,7 +352,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     public JsonGenerator writeEnd() {
         checkArrayOrObject(false);
         final GeneratorState last = state.pop();
-        depth--;
+        decrementDepth();
         writeEol();
         writeIndent();
         if (last == GeneratorState.IN_ARRAY || last == GeneratorState.START_ARRAY) {
@@ -467,6 +466,15 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         }
     }
 
+    private final static char[][] REPLACEMENT_CHARS;
+
+    static {
+        REPLACEMENT_CHARS = new char[32][];
+        for (int i = 0; i < 32; i++) {
+            REPLACEMENT_CHARS[i] = toUnicode((char) i).toCharArray();
+        }
+    }
+
     private void writeEscaped0(final String value) {
         int len = 0;
         if (value == null || (len = value.length()) == 0) {
@@ -475,19 +483,19 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
         for (int i = 0; i < len; i++) {
             char c = value.charAt(i);
-
+            final int y = i;
             while (c != ESCAPE_CHAR && c != QUOTE_CHAR && c >= SPACE) {
 
-                //read fast
-                justWrite(c);
-
                 if (i >= len - 1) {
+                    justWrite(value, y, i - y + 1);
                     return;
                 }
 
                 i++;
                 c = value.charAt(i);
             }
+
+            justWrite(value, y, i - y);
 
             switch (c) {
                 case QUOTE_CHAR:
@@ -496,30 +504,29 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                     justWrite(c);
                     break;
                 default:
-                    if (c < SPACE) {
-                        switch (c) {
-                            case EOL:
-                                justWrite("\\n");
-                                break;
-                            case '\r':
-                                justWrite("\\r");
-                                break;
-                            case '\t':
-                                justWrite("\\t");
-                                break;
-                            case '\b':
-                                justWrite("\\b");
-                                break;
-                            case '\f':
-                                justWrite("\\f");
-                                break;
-                            default:
-                                justWrite(toUnicode(c));
-                        }
-                    } else if ((c >= '\u0080' && c < '\u00a0') || (c >= '\u2000' && c < '\u2100')) {
-                        justWrite(toUnicode(c));
-                    } else {
-                        justWrite(c);
+                    switch (c) {
+                        case EOL:
+                            justWrite('\\');
+                            justWrite('n');
+                            break;
+                        case '\r':
+                            justWrite('\\');
+                            justWrite('r');
+                            break;
+                        case '\t':
+                            justWrite('\\');
+                            justWrite('t');
+                            break;
+                        case '\b':
+                            justWrite('\\');
+                            justWrite('b');
+                            break;
+                        case '\f':
+                            justWrite('\\');
+                            justWrite('f');
+                            break;
+                        default:
+                            justWrite(REPLACEMENT_CHARS[c]);
                     }
             }
         }
@@ -534,17 +541,24 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         return s;
     }
 
-    private void justWrite(final String value) {
-        final int valueLength = value.length();
+    protected void justWrite(final String value) {
+        justWrite(value, 0, value.length());
+    }
+
+    protected void justWrite(final String value, final int offset, final int valueLength) {
+
+        if (valueLength == 0) {
+            return;
+        }
 
         if (bufferPos + valueLength >= buffer.length) {
 
-            int start = 0;
+            int start = offset;
             int len = buffer.length - bufferPos;
 
             while (true) {
                 int end = start + len;
-                if (end > valueLength) {
+                if (end > valueLength + offset) {
                     end = valueLength;
                 }
 
@@ -564,12 +578,56 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             }
         } else {
             //fits completely into the buffer
-            value.getChars(0, valueLength, buffer, bufferPos);
+            value.getChars(offset, valueLength + offset, buffer, bufferPos);
             bufferPos += valueLength;
         }
     }
 
-    private void justWrite(final char value) {
+    protected void justWrite(final char[] value) {
+        justWrite(value, 0, value.length);
+    }
+
+    protected void justWrite(final char[] value, final int offset, final int valueLength) {
+
+        if (valueLength == 0) {
+            return;
+        }
+
+        if (bufferPos + valueLength >= buffer.length) {
+
+            int start = offset;
+            int len = buffer.length - bufferPos;
+
+            while (true) {
+                int end = start + len;
+                if (end > valueLength + offset) {
+                    end = valueLength;
+                }
+
+                //value.getChars(start, end, buffer, bufferPos);
+                System.arraycopy(value, start, buffer, bufferPos, end - start);
+
+                bufferPos += (end - start);
+                start += (len);
+
+                if (start >= valueLength) {
+                    return;
+                }
+
+                if (bufferPos >= buffer.length) {
+                    flushBuffer();
+                    len = buffer.length;
+                }
+            }
+        } else {
+            //fits completely into the buffer
+            //value.getChars(offset, valueLength + offset, buffer, bufferPos);
+            System.arraycopy(value, offset, buffer, bufferPos, valueLength);
+            bufferPos += valueLength;
+        }
+    }
+
+    protected void justWrite(final char value) {
         if (bufferPos >= buffer.length) {
             flushBuffer();
         }
@@ -675,131 +733,19 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     private void writeValue(final String value) {
         prepareValue();
-        justWrite(String.valueOf(value));
+        justWrite(value);
         alignState();
     }
 
     private void writeValue(final int value) {
         prepareValue();
-        writeInt0(value);
+        justWrite(String.valueOf(value));
         alignState();
     }
 
     private void writeValue(final long value) {
         prepareValue();
-        writeLong0(value);
+        justWrite(String.valueOf(value));
         alignState();
     }
-
-    //unoptimized, see below
-    private void writeLong0(final long i) {
-        justWrite(String.valueOf(i));
-    }
-
-    //unoptimized, see below
-    private void writeInt0(final int i) {
-        justWrite(String.valueOf(i));
-    }
-
-    //optimized number optimizations
-    /*
-        private void writeLong0(final long i) {
-            if (i == Long.MIN_VALUE) {
-                justWrite("-9223372036854775808");
-                return;
-            }
-            final int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
-            final char[] buf = new char[size];
-            getChars(i, size, buf);
-            justWrite(buf);
-        }
-
-        private void writeInt0(final int i) {
-            if (i == Integer.MIN_VALUE) {
-                justWrite("-2147483648");
-                return;
-            }
-            final int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
-            final char[] buf = new char[size];
-            getChars(i, size, buf);
-            justWrite(buf);
-        }
-
-        private final static char[] DIGIT_TENS = { '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1', '1', '1', '1', '1', '1', '1', '1',
-                '1', '1', '2', '2', '2', '2', '2', '2', '2', '2', '2', '2', '3', '3', '3', '3', '3', '3', '3', '3', '3', '3', '4', '4', '4',
-                '4', '4', '4', '4', '4', '4', '4', '5', '5', '5', '5', '5', '5', '5', '5', '5', '5', '6', '6', '6', '6', '6', '6', '6', '6',
-                '6', '6', '7', '7', '7', '7', '7', '7', '7', '7', '7', '7', '8', '8', '8', '8', '8', '8', '8', '8', '8', '8', '9', '9', '9',
-                '9', '9', '9', '9', '9', '9', '9', };
-
-        private final static char[] DIGIT_ONES = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
-                '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
-                '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7',
-                '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2',
-                '3', '4', '5', '6', '7', '8', '9', };
-
-        private final static char[] DIGITS = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i',
-                'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z' };
-
-        // Requires positive x
-        private static int stringSize(final long x) {
-            long p = 10;
-            for (int i = 1; i < 19; i++) {
-                if (x < p) {
-                    return i;
-                }
-                p = 10 * p;
-            }
-            return 19;
-        }
-
-        private static void getChars(long i, final int index, final char[] buf) {
-            long q;
-            int r;
-            int charPos = index;
-            char sign = 0;
-
-            if (i < 0) {
-                sign = '-';
-                i = -i;
-            }
-
-            // Get 2 digits/iteration using longs until quotient fits into an int
-            while (i > Integer.MAX_VALUE) {
-                q = i / 100;
-                // really: r = i - (q * 100);
-                r = (int) (i - ((q << 6) + (q << 5) + (q << 2)));
-                i = q;
-                buf[--charPos] = DIGIT_ONES[r];
-                buf[--charPos] = DIGIT_TENS[r];
-            }
-
-            // Get 2 digits/iteration using ints
-            int q2;
-            int i2 = (int) i;
-            while (i2 >= 65536) {
-                q2 = i2 / 100;
-                // really: r = i2 - (q * 100);
-                r = i2 - ((q2 << 6) + (q2 << 5) + (q2 << 2));
-                i2 = q2;
-                buf[--charPos] = DIGIT_ONES[r];
-                buf[--charPos] = DIGIT_TENS[r];
-            }
-
-            // Fall thru to fast mode for smaller numbers
-            // assert(i2 <= 65536, i2);
-            for (;;) {
-                q2 = (i2 * 52429) >>> (16 + 3);
-                r = i2 - ((q2 << 3) + (q2 << 1)); // r = i2-(q2*10) ...
-                buf[--charPos] = DIGITS[r];
-                i2 = q2;
-                if (i2 == 0) {
-                    break;
-                }
-            }
-            if (sign != 0) {
-                buf[--charPos] = sign;
-            }
-        }
-     */
-
 }

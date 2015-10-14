@@ -66,238 +66,216 @@ public class JsonGeneratorImplTest {
     }
     
     @Test
+    public void escapeZero() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos).writeStartArray().write("\0").write(String.valueOf((char) 29)).writeEnd().close();
+        assertEquals("[\"\\u0000\",\"\\u001d\"]", new String(baos.toByteArray()));
+    }
+
+    @Test
     public void stringArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().write("val1").write("val2").writeEnd().close();
         assertEquals("[\"val1\",\"val2\"]", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void stringArrayEscapes() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().write("\"val1\t\u0010").write("val2\\").writeEnd().close();
         assertEquals("[\"\\\"val1\\t\\u0010\",\"val2\\\\\"]", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void stringArrayEscapes2() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().write("\"val1\t\u0067").write("val2\\").writeEnd().close();
         assertEquals("[\"\\\"val1\\tg\",\"val2\\\\\"]", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void emptyStringArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().writeNull().write("").writeEnd().close();
         assertEquals("[null,\"\"]", new String(baos.toByteArray()));
     }
-    
+
+    @Test
+    public void wsStringArray() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos).writeStartArray().write(new JsonStringImpl(" ")).write(new JsonStringImpl("")).write("").write(" ")
+        .writeEnd().close();
+        assertEquals("[\" \",\"\",\"\",\" \"]", new String(baos.toByteArray()));
+    }
+
     @Test
     public void nullLiteralArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().writeNull().write(JsonValue.NULL).writeEnd().close();
         assertEquals("[null,null]", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void boolLiteralArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Json.createGenerator(baos).writeStartArray().write(JsonValue.FALSE).write(JsonValue.TRUE).writeEnd().close();
         assertEquals("[false,true]", new String(baos.toByteArray()));
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail1() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartArray("test");      
+        Json.createGenerator(baos).writeStartArray("test");
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail2() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .write("test",1);      
+        Json.createGenerator(baos).write("test", 1);
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail3() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartObject()
-        .writeStartObject();
+        Json.createGenerator(baos).writeStartObject().writeStartObject();
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail4() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeEnd();
+        Json.createGenerator(baos).writeEnd();
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail5() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .close();
+        Json.createGenerator(baos).close();
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail6() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartArray()
-        .writeStartObject("test");
+        Json.createGenerator(baos).writeStartArray().writeStartObject("test");
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail7() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartArray()
-        .writeNull()
-        .writeStartObject()
-        .write("a", new BigDecimal("123.123"))
-        .write("b", true)
-        .write("c", new BigInteger("3312"))
-        .write("d", new JsonStringImpl("mystring"))
-        .writeEnd()
-        .close();
-        
+        Json.createGenerator(baos).writeStartArray().writeNull().writeStartObject().write("a", new BigDecimal("123.123")).write("b", true)
+                .write("c", new BigInteger("3312")).write("d", new JsonStringImpl("mystring")).writeEnd().close();
+
     }
-    
-    @Test(expected=JsonGenerationException.class)
+
+    @Test(expected = JsonGenerationException.class)
     public void fail9() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartObject()
-        .write("a", new BigDecimal("123.123"))
-        .write("b", true)
-        .write("c", new BigInteger("3312"))
-        .write("d", new JsonStringImpl("mystring"))
-        .writeEnd()
-        .writeStartObject()
-        .close();
-        
+        Json.createGenerator(baos).writeStartObject().write("a", new BigDecimal("123.123")).write("b", true)
+                .write("c", new BigInteger("3312")).write("d", new JsonStringImpl("mystring")).writeEnd().writeStartObject().close();
+
     }
-   
+
     @Test
     public void numbers() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartArray()
-        .writeNull()
-        .writeStartObject()
-        .write("a", new BigDecimal("123.123"))
-        .write("b", true)
-        .write("c", new BigInteger("3312"))
-        .write("d", new JsonStringImpl("Mystring"))
-        .writeEnd()
-        .writeEnd()
-        .close();
+        Json.createGenerator(baos).writeStartArray().writeNull().writeStartObject().write("a", new BigDecimal("123.123")).write("b", true)
+                .write("c", new BigInteger("3312")).write("d", new JsonStringImpl("Mystring")).writeEnd().writeEnd().close();
         assertEquals("[null,{\"a\":123.123,\"b\":true,\"c\":3312,\"d\":\"Mystring\"}]", new String(baos.toByteArray()));
     }
-    
+
+    @Test
+    public void integralNumbers() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos).writeStartArray().writeNull().writeStartObject().write("a", Long.MAX_VALUE).write("b", Long.MIN_VALUE)
+                .write("c", Integer.MAX_VALUE).write("d", Integer.MIN_VALUE).write("e", -198766172L).write("f", 188.001d).writeEnd()
+        .writeEnd().close();
+        assertEquals("[null,{\"a\":" + Long.MAX_VALUE + ",\"b\":" + Long.MIN_VALUE + ",\"c\":" + Integer.MAX_VALUE + ",\"d\":"
+                + Integer.MIN_VALUE + ",\"e\":-198766172,\"f\":188.001}]", new String(baos.toByteArray()));
+    }
+
+    @Test
+    public void integralNumbersSmall() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos).writeStartArray().writeNull().writeStartObject().write("a", 1).write("b", 1L).write("c", -6)
+                .write("d", -6L).write("e", 0).write("f", 0L).writeEnd().writeEnd().close();
+        assertEquals("[null,{\"a\":1,\"b\":1,\"c\":-6,\"d\":-6,\"e\":0,\"f\":0}]", new String(baos.toByteArray()));
+    }
+
+    @Test
+    public void integralNumbersSmall2() {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Json.createGenerator(baos).writeStartArray().writeNull().writeStartObject().write("a", 10).write("b", 10L).write("c", -10)
+                .write("d", -10L).write("e", 9).write("f", 9L).writeEnd().writeEnd().close();
+        assertEquals("[null,{\"a\":10,\"b\":10,\"c\":-10,\"d\":-10,\"e\":9,\"f\":9}]", new String(baos.toByteArray()));
+    }
+
     @Test
     public void numbers2() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartArray()
-        .writeNull()
-        .writeStartObject()
-        .write("a", 999999999L)
-        .write("b", 123)
-        .write("c", -444444444L)
-        .write("d",-123)
-        .writeEnd()
-        .writeEnd()
-        .close();
+        Json.createGenerator(baos).writeStartArray().writeNull().writeStartObject().write("a", 999999999L).write("b", 123)
+                .write("c", -444444444L).write("d", -123).writeEnd().writeEnd().close();
         assertEquals("[null,{\"a\":999999999,\"b\":123,\"c\":-444444444,\"d\":-123}]", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void arrayInArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Json.createGenerator(baos)
-        .writeStartArray()
-        .writeStartArray()
-        .writeNull()
-        .writeEnd()
-        .writeEnd()
-        .close();
-         assertEquals("[[null]]", new String(baos.toByteArray()));
+        Json.createGenerator(baos).writeStartArray().writeStartArray().writeNull().writeEnd().writeEnd().close();
+        assertEquals("[[null]]", new String(baos.toByteArray()));
     }
-    
 
     @Test
     public void generate() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final JsonGenerator generator = Json.createGenerator(baos);
 
-        generator.writeStartObject().write("firstName", "John").write("lastName", "Smith").write("age", 25)
-        .writeStartObject("address").write("streetAddress", "21 2nd Street").write("city", "New York")
-        .write("state", "NY").write("postalCode", "10021").writeEnd().writeStartArray("phoneNumber")
-        .writeStartObject().write("type", "home").write("number", "212 555-1234").writeEnd().writeStartObject()
-        .write("type", "fax").write("number", "646 555-4567").writeEnd().writeEnd().writeEnd().close();
+        generator.writeStartObject().write("firstName", "John").write("lastName", "Smith").write("age", 25).writeStartObject("address")
+                .write("streetAddress", "21 2nd Street").write("city", "New York").write("state", "NY").write("postalCode", "10021")
+                .writeEnd().writeStartArray("phoneNumber").writeStartObject().write("type", "home").write("number", "212 555-1234")
+                .writeEnd().writeStartObject().write("type", "fax").write("number", "646 555-4567").writeEnd().writeEnd().writeEnd()
+                .close();
 
         assertEquals("{\"firstName\":\"John\",\"lastName\":\"Smith\",\"age\":25,\"address\":"
                 + "{\"streetAddress\":\"21 2nd Street\",\"city\":\"New York\",\"state\":\"NY\",\"postalCode\":\"10021\"},"
-                + "\"phoneNumber\":[{\"type\":\"home\",\"number\":\"212 555-1234\"},{\"type\":\"fax\",\"number\":\"646 555-4567\"}]}", 
+                + "\"phoneNumber\":[{\"type\":\"home\",\"number\":\"212 555-1234\"},{\"type\":\"fax\",\"number\":\"646 555-4567\"}]}",
                 new String(baos.toByteArray()));
     }
 
     @Test
     public void pretty() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
-            put(JsonGenerator.PRETTY_PRINTING, true);
-        }}).createGenerator(baos);
+        final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {
+            {
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }
+        }).createGenerator(baos);
 
-        generator.writeStartObject().write("firstName", "John").write("lastName", "Smith")
-        .write("age", 25).writeStartObject("address").write("streetAddress", "21 2nd Street")
-        .write("city", "New York").write("state", "NY").write("postalCode", "10021").writeEnd()
-        .writeStartArray("phoneNumber").writeStartObject().write("type", "home").write("number", "212 555-1234")
-        .writeEnd().writeStartObject().write("type", "fax").write("number", "646 555-4567").writeEnd().writeEnd()
-        .writeEnd().close();
+        generator.writeStartObject().write("firstName", "John").write("lastName", "Smith").write("age", 25).writeStartObject("address")
+                .write("streetAddress", "21 2nd Street").write("city", "New York").write("state", "NY").write("postalCode", "10021")
+                .writeEnd().writeStartArray("phoneNumber").writeStartObject().write("type", "home").write("number", "212 555-1234")
+                .writeEnd().writeStartObject().write("type", "fax").write("number", "646 555-4567").writeEnd().writeEnd().writeEnd()
+                .close();
 
-        assertEquals("{\n" +
-                        "  \"firstName\":\"John\",\n" +
-                        "  \"lastName\":\"Smith\",\n" +
-                        "  \"age\":25,\n" +
-                        "  \"address\":{\n" +
-                        "    \"streetAddress\":\"21 2nd Street\",\n" +
-                        "    \"city\":\"New York\",\n" +
-                        "    \"state\":\"NY\",\n" +
-                        "    \"postalCode\":\"10021\"\n" +
-                        "  },\n" +
-                        "  \"phoneNumber\":[\n" +
-                        "    {\n" +
-                        "      \"type\":\"home\",\n" +
-                        "      \"number\":\"212 555-1234\"\n" +
-                        "    },\n" +
-                        "    {\n" +
-                        "      \"type\":\"fax\",\n" +
-                        "      \"number\":\"646 555-4567\"\n" +
-                        "    }\n" +
-                        "  ]\n" +
-                        "}", new String(baos.toByteArray()));
+        assertEquals("{\n" + "  \"firstName\":\"John\",\n" + "  \"lastName\":\"Smith\",\n" + "  \"age\":25,\n" + "  \"address\":{\n"
+                + "    \"streetAddress\":\"21 2nd Street\",\n" + "    \"city\":\"New York\",\n" + "    \"state\":\"NY\",\n"
+                + "    \"postalCode\":\"10021\"\n" + "  },\n" + "  \"phoneNumber\":[\n" + "    {\n" + "      \"type\":\"home\",\n"
+                + "      \"number\":\"212 555-1234\"\n" + "    },\n" + "    {\n" + "      \"type\":\"fax\",\n"
+                + "      \"number\":\"646 555-4567\"\n" + "    }\n" + "  ]\n" + "}", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void prettySimple() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
-            put(JsonGenerator.PRETTY_PRINTING, true);
-        }}).createGenerator(baos);
+        final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {
+            {
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }
+        }).createGenerator(baos);
 
         generator.writeStartObject().write("firstName", "John").writeEnd().close();
 
-        assertEquals("{\n" +
-                        "  \"firstName\":\"John\"\n" +
-                        "}", new String(baos.toByteArray()));
+        assertEquals("{\n" + "  \"firstName\":\"John\"\n" + "}", new String(baos.toByteArray()));
     }
-    
+
     @Test
     public void prettySimpleStructure() {
         final JsonWriterFactory writerFactory = Json.createWriterFactory(new HashMap<String, Object>() {
@@ -306,7 +284,7 @@ public class JsonGeneratorImplTest {
             }
         });
 
-        StringWriter buffer = new StringWriter();
+        final StringWriter buffer = new StringWriter();
 
         final JsonWriter writer = writerFactory.createWriter(buffer);
         writer.write(Json.createObjectBuilder().add("firstName", "John").build());
@@ -324,7 +302,7 @@ public class JsonGeneratorImplTest {
             }
         });
 
-        StringWriter buffer = new StringWriter();
+        final StringWriter buffer = new StringWriter();
 
         final JsonReader reader = Json.createReader(new ByteArrayInputStream("{\"firstName\":\"John\"}".getBytes()));
         final JsonWriter writer = writerFactory.createWriter(buffer);
