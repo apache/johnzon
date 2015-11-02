@@ -20,6 +20,7 @@ package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -91,14 +92,16 @@ public abstract class BaseAccessMode implements AccessMode {
 
     private Type fixTypeVariable(final Class<?> clazz, final Type type) {
         final TypeVariable typeVariable = TypeVariable.class.cast(type);
-        if (typeVariable.getGenericDeclaration() == clazz.getSuperclass()) {
+        final Class<?> classWithDeclaration = findClass(clazz.getSuperclass(), typeVariable.getGenericDeclaration());
+
+        if (classWithDeclaration != null) {
             // try to match generic
-            final TypeVariable<? extends Class<?>>[] typeParameters = clazz.getSuperclass().getTypeParameters();
+            final TypeVariable<? extends Class<?>>[] typeParameters = classWithDeclaration.getTypeParameters();
             final int idx = asList(typeParameters).indexOf(typeVariable);
             if (idx >= 0) {
-                final Type genParent = clazz.getGenericSuperclass();
-                if (ParameterizedType.class.isInstance(genParent)) {
-                    final ParameterizedType pt = ParameterizedType.class.cast(genParent);
+
+                ParameterizedType pt = findParameterizedType(clazz, classWithDeclaration);
+                if (pt != null) {
                     if (pt.getActualTypeArguments().length == typeParameters.length) {
                         return pt.getActualTypeArguments()[idx];
                     }
@@ -106,5 +109,35 @@ public abstract class BaseAccessMode implements AccessMode {
             }
         }
         return type;
+    }
+
+    private Class<?> findClass(final Class<?> clazz, final GenericDeclaration genericDeclaration) {
+
+        if (clazz == genericDeclaration) {
+            return clazz;
+        }
+
+        if (clazz.getSuperclass() != Object.class) {
+            return findClass(clazz.getSuperclass(), genericDeclaration);
+        }
+
+        return null;
+    }
+
+    private ParameterizedType findParameterizedType(Class<?> clazz, Class<?> classWithDeclaration) {
+
+        if (clazz == Object.class) {
+            return null;
+        }
+
+        Type genericSuperclass = clazz.getGenericSuperclass();
+
+        if (genericSuperclass instanceof ParameterizedType &&
+            ((ParameterizedType) genericSuperclass).getRawType() == classWithDeclaration) {
+
+                return (ParameterizedType) genericSuperclass;
+        }
+
+        return findParameterizedType(clazz.getSuperclass(), classWithDeclaration);
     }
 }
