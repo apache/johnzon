@@ -56,7 +56,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     // not strictly forbidden but kind of file to java convertion
     private static final List<Character> FORBIDDEN_JAVA_NAMES = asList('-', '_', '.');
 
-    @Parameter(property = "johnzon.source")
+    @Parameter(property = "johnzon.source", defaultValue = "${project.basedir}/src/main/johnzon")
     protected File source;
 
     @Parameter(property = "johnzon.target", defaultValue = "${project.build.directory}/generated-sources/johnzon")
