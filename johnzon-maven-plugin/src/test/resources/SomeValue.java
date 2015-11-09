@@ -38,27 +38,27 @@ public class SomeValue {
         this.mode = newValue;
     }
 
-    private Integer threads;
-    public Integer getThreads() {
+    private Double threads;
+    public Double getThreads() {
         return threads;
     }
-    public void setThreads(final Integer newValue) {
+    public void setThreads(final Double newValue) {
         this.threads = newValue;
     }
 
-    private Integer forks;
-    public Integer getForks() {
+    private Double forks;
+    public Double getForks() {
         return forks;
     }
-    public void setForks(final Integer newValue) {
+    public void setForks(final Double newValue) {
         this.forks = newValue;
     }
 
-    private Integer warmupIterations;
-    public Integer getWarmupIterations() {
+    private Double warmupIterations;
+    public Double getWarmupIterations() {
         return warmupIterations;
     }
-    public void setWarmupIterations(final Integer newValue) {
+    public void setWarmupIterations(final Double newValue) {
         this.warmupIterations = newValue;
     }
 
@@ -70,11 +70,11 @@ public class SomeValue {
         this.warmupTime = newValue;
     }
 
-    private Integer measurementIterations;
-    public Integer getMeasurementIterations() {
+    private Double measurementIterations;
+    public Double getMeasurementIterations() {
         return measurementIterations;
     }
-    public void setMeasurementIterations(final Integer newValue) {
+    public void setMeasurementIterations(final Double newValue) {
         this.measurementIterations = newValue;
     }
 
@@ -103,27 +103,27 @@ public class SomeValue {
     }
 
     public static class PrimaryMetric {
-        private Integer score;
-        public Integer getScore() {
+        private Double score;
+        public Double getScore() {
             return score;
         }
-        public void setScore(final Integer newValue) {
+        public void setScore(final Double newValue) {
             this.score = newValue;
         }
 
-        private Integer scoreError;
-        public Integer getScoreError() {
+        private Double scoreError;
+        public Double getScoreError() {
             return scoreError;
         }
-        public void setScoreError(final Integer newValue) {
+        public void setScoreError(final Double newValue) {
             this.scoreError = newValue;
         }
 
-        private List<Integer> scoreConfidence;
-        public List<Integer> getScoreConfidence() {
+        private List<Double> scoreConfidence;
+        public List<Double> getScoreConfidence() {
             return scoreConfidence;
         }
-        public void setScoreConfidence(final List<Integer> newValue) {
+        public void setScoreConfidence(final List<Double> newValue) {
             this.scoreConfidence = newValue;
         }
 
@@ -143,102 +143,102 @@ public class SomeValue {
             this.scoreUnit = newValue;
         }
 
-        private List<List<Integer>> rawData;
-        public List<List<Integer>> getRawData() {
+        private List<List<Double>> rawData;
+        public List<List<Double>> getRawData() {
             return rawData;
         }
-        public void setRawData(final List<List<Integer>> newValue) {
+        public void setRawData(final List<List<Double>> newValue) {
             this.rawData = newValue;
         }
 
         public static class ScorePercentiles {
             @JohnzonProperty("0.0")
-            private Integer _00;
-            public Integer get_00() {
+            private Double _00;
+            public Double get_00() {
                 return _00;
             }
-            public void set_00(final Integer newValue) {
+            public void set_00(final Double newValue) {
                 this._00 = newValue;
             }
 
             @JohnzonProperty("50.0")
-            private Integer _500;
-            public Integer get_500() {
+            private Double _500;
+            public Double get_500() {
                 return _500;
             }
-            public void set_500(final Integer newValue) {
+            public void set_500(final Double newValue) {
                 this._500 = newValue;
             }
 
             @JohnzonProperty("90.0")
-            private Integer _900;
-            public Integer get_900() {
+            private Double _900;
+            public Double get_900() {
                 return _900;
             }
-            public void set_900(final Integer newValue) {
+            public void set_900(final Double newValue) {
                 this._900 = newValue;
             }
 
             @JohnzonProperty("95.0")
-            private Integer _950;
-            public Integer get_950() {
+            private Double _950;
+            public Double get_950() {
                 return _950;
             }
-            public void set_950(final Integer newValue) {
+            public void set_950(final Double newValue) {
                 this._950 = newValue;
             }
 
             @JohnzonProperty("99.0")
-            private Integer _990;
-            public Integer get_990() {
+            private Double _990;
+            public Double get_990() {
                 return _990;
             }
-            public void set_990(final Integer newValue) {
+            public void set_990(final Double newValue) {
                 this._990 = newValue;
             }
 
             @JohnzonProperty("99.9")
-            private Integer _999;
-            public Integer get_999() {
+            private Double _999;
+            public Double get_999() {
                 return _999;
             }
-            public void set_999(final Integer newValue) {
+            public void set_999(final Double newValue) {
                 this._999 = newValue;
             }
 
             @JohnzonProperty("99.99")
-            private Integer _9999;
-            public Integer get_9999() {
+            private Double _9999;
+            public Double get_9999() {
                 return _9999;
             }
-            public void set_9999(final Integer newValue) {
+            public void set_9999(final Double newValue) {
                 this._9999 = newValue;
             }
 
             @JohnzonProperty("99.999")
-            private Integer _99999;
-            public Integer get_99999() {
+            private Double _99999;
+            public Double get_99999() {
                 return _99999;
             }
-            public void set_99999(final Integer newValue) {
+            public void set_99999(final Double newValue) {
                 this._99999 = newValue;
             }
 
             @JohnzonProperty("99.9999")
-            private Integer _999999;
-            public Integer get_999999() {
+            private Double _999999;
+            public Double get_999999() {
                 return _999999;
             }
-            public void set_999999(final Integer newValue) {
+            public void set_999999(final Double newValue) {
                 this._999999 = newValue;
             }
 
             @JohnzonProperty("100.0")
-            private Integer _1000;
-            public Integer get_1000() {
+            private Double _1000;
+            public Double get_1000() {
                 return _1000;
             }
-            public void set_1000(final Integer newValue) {
+            public void set_1000(final Double newValue) {
                 this._1000 = newValue;
             }
         }

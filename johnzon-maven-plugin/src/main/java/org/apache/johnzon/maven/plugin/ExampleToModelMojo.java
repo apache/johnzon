@@ -165,7 +165,7 @@ public class ExampleToModelMojo extends AbstractMojo {
                         fieldGetSetMethods(writer, key, fieldName, "Boolean", prefix, 0, imports);
                         break;
                     case NUMBER:
-                        fieldGetSetMethods(writer, key, fieldName, "Integer", prefix, 0, imports);
+                        fieldGetSetMethods(writer, key, fieldName, "Double", prefix, 0, imports);
                         break;
                     case STRING:
                         fieldGetSetMethods(writer, key, fieldName, "String", prefix, 0, imports);
@@ -216,7 +216,7 @@ public class ExampleToModelMojo extends AbstractMojo {
                     fieldGetSetMethods(writer, jsonField, fieldName, "Boolean", prefix, arrayLevel, imports);
                     break;
                 case NUMBER:
-                    fieldGetSetMethods(writer, jsonField, fieldName, "Integer", prefix, arrayLevel, imports);
+                    fieldGetSetMethods(writer, jsonField, fieldName, "Double", prefix, arrayLevel, imports);
                     break;
                 case STRING:
                     fieldGetSetMethods(writer, jsonField, fieldName, "String", prefix, arrayLevel, imports);
