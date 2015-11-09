@@ -54,6 +54,7 @@
     <module>johnzon-mapper</module>
     <module>johnzon-jaxrs</module>
     <module>johnzon-distribution</module>
+    <module>johnzon-maven-plugin</module>
   </modules>
 
   <dependencies>
