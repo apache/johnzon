@@ -18,6 +18,10 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonException;
+import javax.json.stream.JsonLocation;
+import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParsingException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -25,11 +29,6 @@ import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
-
-import javax.json.JsonException;
-import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParsingException;
 
 //This class represents either the Json tokenizer and the Json parser.
 public class JsonStreamParserImpl implements JsonChars, JsonParser{
@@ -55,7 +54,6 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //do we read from a character stream or a byte stream
     //not used at the moment but maybe relevant in future to calculate the JsonLocation offset
     @SuppressWarnings("unused")
-    private final boolean readBytes;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final BufferStrategy.BufferProvider<char[]> valueProvider;
 
@@ -142,16 +140,12 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         if (reader != null) {
             this.in = reader;
-            readBytes = false;
         } else if (encoding == null) {
             this.in = new RFC4627AwareInputStreamReader(inputStream);
-            readBytes = true;
 
         } else {
             this.in = new InputStreamReader(inputStream, encoding.newDecoder());
-            readBytes = true;
         }
-
     }
 
     //append a single char to the value buffer
