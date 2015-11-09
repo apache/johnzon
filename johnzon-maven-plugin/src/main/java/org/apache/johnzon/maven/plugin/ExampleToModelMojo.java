@@ -24,6 +24,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -58,7 +59,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     @Parameter(property = "johnzon.source")
     protected File source;
 
-    @Parameter(property = "johnzon.target", defaultValue = "${}")
+    @Parameter(property = "johnzon.target", defaultValue = "${project.build.directory}/generated-sources/johnzon")
     protected File target;
 
     @Parameter(property = "johnzon.package", defaultValue = "com.johnzon.generated")
@@ -66,6 +67,12 @@ public class ExampleToModelMojo extends AbstractMojo {
 
     @Parameter
     protected String header;
+
+    @Parameter
+    protected MavenProject project;
+
+    @Parameter(property = "johnzon.attach", defaultValue = "true")
+    protected boolean attach;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -85,6 +92,9 @@ public class ExampleToModelMojo extends AbstractMojo {
             for (final File child : children) {
                 generateFile(readerFactory, child);
             }
+        }
+        if (attach && project != null) {
+            project.addCompileSourceRoot(target.getAbsolutePath());
         }
     }
 
