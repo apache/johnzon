@@ -281,7 +281,7 @@ public class JsonbAccessMode implements AccessMode {
 
             // we are visible
             final JsonbProperty property = value.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = value.getAnnotation(JsonbNillable.class);
+            final JsonbNillable nillable = value.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
             final JsonbTypeAdapter adapter = value.getAnnotation(JsonbTypeAdapter.class);
             final JsonbDateFormat dateFormat = value.getAnnotation(JsonbDateFormat.class);
@@ -314,6 +314,11 @@ public class JsonbAccessMode implements AccessMode {
                 }
 
                 @Override
+                public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+                    return value.getClassOrPackageAnnotation(clazz);
+                }
+
+                @Override
                 public Converter<?> findConverter() {
                     return converter;
                 }
@@ -341,7 +346,7 @@ public class JsonbAccessMode implements AccessMode {
 
             // we are visible
             final JsonbProperty property = value.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = value.getAnnotation(JsonbNillable.class);
+            final JsonbNillable nillable = value.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
             final JsonbTypeAdapter adapter = value.getAnnotation(JsonbTypeAdapter.class);
             final JsonbDateFormat dateFormat = value.getAnnotation(JsonbDateFormat.class);
@@ -371,6 +376,11 @@ public class JsonbAccessMode implements AccessMode {
                 @Override
                 public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
                     return value.getAnnotation(clazz);
+                }
+
+                @Override
+                public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+                    return value.getClassOrPackageAnnotation(clazz);
                 }
 
                 @Override

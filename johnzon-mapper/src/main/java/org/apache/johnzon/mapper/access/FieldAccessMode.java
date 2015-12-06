@@ -105,6 +105,13 @@ public class FieldAccessMode extends BaseAccessMode {
         }
 
         @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            final Class<?> declaringClass = field.getDeclaringClass();
+            final T annotation = declaringClass.getAnnotation(clazz);
+            return annotation == null ? declaringClass.getPackage().getAnnotation(clazz) : annotation;
+        }
+
+        @Override
         public Converter<?> findConverter() {
             return null;
         }

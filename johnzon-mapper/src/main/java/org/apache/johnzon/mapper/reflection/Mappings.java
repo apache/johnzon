@@ -523,6 +523,11 @@ public class Mappings {
         }
 
         @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            return null;
+        }
+
+        @Override
         public Converter<?> findConverter() {
             return null;
         }
@@ -592,6 +597,11 @@ public class Mappings {
         }
 
         @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            return null;
+        }
+
+        @Override
         public Converter<?> findConverter() {
             return null;
         }
@@ -647,6 +657,11 @@ public class Mappings {
         }
 
         @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            return null;
+        }
+
+        @Override
         public Converter<?> findConverter() {
             for (final AccessMode.Reader r : delegates) {
                 final Converter<?> converter = r.findConverter();
@@ -698,6 +713,11 @@ public class Mappings {
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
+        }
+
+        @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            return null;
         }
 
         @Override

@@ -74,6 +74,12 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         }
 
         @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            final T found = type1.getClassOrPackageAnnotation(clazz);
+            return found == null ? type2.getClassOrPackageAnnotation(clazz) : found;
+        }
+
+        @Override
         public Converter<?> findConverter() {
             final Converter<?> converter = type1.findConverter();
             return converter != null ? converter : type2.findConverter();

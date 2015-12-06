@@ -28,6 +28,7 @@ public interface AccessMode {
     interface DecoratedType {
         Type getType();
         <T extends Annotation> T getAnnotation(Class<T> clazz);
+        <T extends Annotation> T getClassOrPackageAnnotation(Class<T> clazz);
         Converter<?> findConverter();
         boolean isNillable();
     }
