@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.Converter;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Map;
@@ -26,6 +28,8 @@ public interface AccessMode {
     interface DecoratedType {
         Type getType();
         <T extends Annotation> T getAnnotation(Class<T> clazz);
+        Converter<?> findConverter();
+        boolean isNillable();
     }
 
     interface Writer extends DecoratedType {
@@ -36,6 +40,15 @@ public interface AccessMode {
         Object read(Object instance);
     }
 
+    interface Factory {
+        Object create(Object[] params);
+        Type[] getParameterTypes();
+        String[] getParameterNames();
+        Converter<?>[] getParameterConverter();
+        Converter<?>[] getParameterItemConverter();
+    }
+
+    Factory findFactory(Class<?> clazz);
     Map<String, Reader> findReaders(Class<?> clazz);
     Map<String, Writer> findWriters(Class<?> clazz);
 }

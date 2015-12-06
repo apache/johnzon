@@ -81,25 +81,25 @@ public class Mapper {
     protected final boolean skipNull;
     protected final boolean skipEmptyArray;
     protected final boolean treatByteArrayAsBase64;
+    protected final boolean treatByteArrayAsBase64URL;
     protected final Charset encoding;
 
     // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Type, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
-                  final AccessMode accessMode, final boolean hiddenConstructorSupported, final boolean useConstructors,
-                  final boolean treatByteArrayAsBase64,
-                  final Charset encoding) {
+                  final AccessMode accessMode, final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL, final Charset encoding) {
     // CHECKSTYLE:ON
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
         this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, hiddenConstructorSupported, useConstructors, version, this.converters);
+        this.mappings = new Mappings(attributeOrder, accessMode, version, this.converters);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
+        this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
         this.encoding = encoding;
     }
 
@@ -370,7 +370,7 @@ public class Mapper {
             }
 
             if (value == null) {
-                if (skipNull) {
+                if (skipNull && !getter.reader.isNillable()) {
                     continue;
                 } else {
                     gen.writeNull(getterEntry.getKey());
@@ -433,6 +433,9 @@ public class Mapper {
                 String base64EncodedByteArray = DatatypeConverter.printBase64Binary((byte[]) value);
                 generator.write(key, base64EncodedByteArray);
                 return generator;
+            }
+            if(treatByteArrayAsBase64URL && (type == byte[].class /*|| type == Byte[].class*/)) {
+                return generator.write(key, Converter.class.cast(converters.get(byte[].class)).toString(value));
             }
 
             JsonGenerator gen = generator.writeStartArray(key);
@@ -619,12 +622,8 @@ public class Mapper {
             throw new MapperException("Can't map " + type);
         }
 
-        if (classMapping.constructor == null) {
-            throw new IllegalArgumentException(classMapping.clazz.getName() + " can't be instantiated by Johnzon, this is a write only class");
-        }
-
-        final Object t = !classMapping.constructorHasArguments ?
-                classMapping.constructor.newInstance() : classMapping.constructor.newInstance(createParameters(classMapping, object));
+        final Object t = classMapping.factory.getParameterTypes().length == 0 ?
+                classMapping.factory.create(null) : classMapping.factory.create(createParameters(classMapping, object));
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
             if (jsonValue == null) {
@@ -650,11 +649,12 @@ public class Mapper {
     }
 
     private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object) throws Exception {
-        final Object[] objects = new Object[mapping.constructorParameters.length];
-        for (int i = 0; i < mapping.constructorParameters.length; i++) {
+        final int length = mapping.factory.getParameterTypes().length;
+        final Object[] objects = new Object[length];
+        for (int i = 0; i < length; i++) {
             objects[i] = toValue(
-                object.get(mapping.constructorParameters[i]), mapping.constructorParameterConverters[i],
-                mapping.constructorItemParameterConverters[i], mapping.constructorParameterTypes[i]);
+                object.get(mapping.factory.getParameterNames()[i]), mapping.factory.getParameterConverter()[i],
+                mapping.factory.getParameterItemConverter()[i], mapping.factory.getParameterTypes()[i]);
         }
         return objects;
     }

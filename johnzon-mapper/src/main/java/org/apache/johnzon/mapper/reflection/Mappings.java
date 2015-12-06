@@ -27,11 +27,8 @@ import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 
-import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -53,88 +50,22 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 public class Mappings {
     public static class ClassMapping {
         public final Class<?> clazz;
+        public final AccessMode.Factory factory;
         public final Map<String, Getter> getters;
         public final Map<String, Setter> setters;
-        public final Constructor<?> constructor;
-        public final boolean constructorHasArguments;
-        public final String[] constructorParameters;
-        public final Converter<?>[] constructorParameterConverters;
-        public final Converter<?>[] constructorItemParameterConverters;
-        public final Type[] constructorParameterTypes;
 
-        protected ClassMapping(final Class<?> clazz,
-                               final Map<String, Getter> getters, final Map<String, Setter> setters,
-                               final boolean acceptHiddenConstructor, final boolean useConstructor) {
+
+        protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
+                               final Map<String, Getter> getters, final Map<String, Setter> setters) {
             this.clazz = clazz;
+            this.factory = factory;
             this.getters = getters;
             this.setters = setters;
-            this.constructor = findConstructor(acceptHiddenConstructor, useConstructor);
-
-            this.constructorHasArguments = this.constructor != null && this.constructor.getGenericParameterTypes().length > 0;
-            if (this.constructorHasArguments) {
-                this.constructorParameterTypes = this.constructor.getGenericParameterTypes();
-
-                // TODO: java 8 gives access to it without annotation
-                this.constructorParameters = new String[this.constructor.getGenericParameterTypes().length];
-                final ConstructorProperties constructorProperties = this.constructor.getAnnotation(ConstructorProperties.class);
-                System.arraycopy(constructorProperties.value(), 0, this.constructorParameters, 0, this.constructorParameters.length);
-
-                this.constructorParameterConverters = new Converter<?>[this.constructor.getGenericParameterTypes().length];
-                this.constructorItemParameterConverters = new Converter<?>[this.constructorParameterConverters.length];
-                for (int i = 0; i < this.constructorParameters.length; i++) {
-                    for (final Annotation a : this.constructor.getParameterAnnotations()[i]) {
-                        if (a.annotationType() == JohnzonConverter.class) {
-                            try {
-                                final Converter<?> converter = JohnzonConverter.class.cast(a).value().newInstance();
-                                if (matches(this.constructor.getParameterTypes()[i], converter)) {
-                                    this.constructorParameterConverters[i] = converter;
-                                    this.constructorItemParameterConverters[i] = null;
-                                } else {
-                                    this.constructorParameterConverters[i] = null;
-                                    this.constructorItemParameterConverters[i] = converter;
-                                }
-                            } catch (final Exception e) {
-                                throw new IllegalArgumentException(e);
-                            }
-                        }
-                    }
-                }
-            } else {
-                this.constructorParameterTypes = null;
-                this.constructorParameters = null;
-                this.constructorParameterConverters = null;
-                this.constructorItemParameterConverters = null;
-            }
-        }
-
-        private Constructor<?> findConstructor(final boolean acceptHiddenConstructor, final boolean useConstructor) {
-            Constructor<?> found = null;
-            for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
-                if (c.getParameterTypes().length == 0) {
-                    if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
-                        c.setAccessible(true);
-                    }
-                    found = c;
-                    if (!useConstructor) {
-                        break;
-                    }
-                } else if (c.getAnnotation(ConstructorProperties.class) != null) {
-                    found = c;
-                    break;
-                }
-            }
-            if (found != null) {
-                return found;
-            }
-            try {
-                return clazz.getConstructor();
-            } catch (final NoSuchMethodException e) {
-                return null; // readOnly class
-            }
         }
     }
 
@@ -241,70 +172,19 @@ public class Mappings {
         }
     }
 
-    // TODO: more ParameterizedType and maybe TypeClosure support
-    private static boolean matches(final Type type, final Converter<?> converter) {
-        Type convertType = null;
-        if (Converter.TypeAccess.class.isInstance(converter)) {
-            convertType = Converter.TypeAccess.class.cast(converter).type();
-        } else {
-            for (final Type pt : converter.getClass().getGenericInterfaces()) {
-                if (ParameterizedType.class.isInstance(pt) && ParameterizedType.class.cast(pt).getRawType() == Converter.class) {
-                    convertType = ParameterizedType.class.cast(pt).getActualTypeArguments()[0];
-                    break;
-                }
-            }
-        }
-
-        if (convertType == null) { // compatibility, previously nested converter were not supported
-            return true;
-        }
-
-        if (ParameterizedType.class.isInstance(type)) {
-            final ParameterizedType parameterizedType = ParameterizedType.class.cast(type);
-            final Type rawType = parameterizedType.getRawType();
-            if (Class.class.isInstance(rawType)) {
-                final Class<?> clazz = Class.class.cast(rawType);
-                if (Collection.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 1) {
-                    final Type argType = parameterizedType.getActualTypeArguments()[0];
-                    if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
-                        return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
-                    }
-                } else if (Map.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 2) {
-                    final Type argType = parameterizedType.getActualTypeArguments()[1];
-                    if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
-                        return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
-                    }
-                }
-                return true; // actually here we suppose we dont know
-            }
-        }
-        if (Class.class.isInstance(type)) {
-            final Class<?> clazz = Class.class.cast(type);
-            if (clazz.isArray()) {
-                return !Class.class.cast(convertType).isAssignableFrom(clazz.getComponentType());
-            }
-        }
-        return true;
-    }
-
     private static final JohnzonParameterizedType VIRTUAL_TYPE = new JohnzonParameterizedType(Map.class, String.class, Object.class);
 
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
     protected final ConcurrentMap<Type, Converter<?>> converters;
-    private final boolean supportHiddenConstructors;
-    private final boolean supportConstructors;
     private final AccessMode accessMode;
     private final int version;
 
     public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
-                    final boolean supportHiddenConstructors, final boolean supportConstructors,
                     final int version, final ConcurrentMap<Type, Converter<?>> converters) {
         this.fieldOrdering = attributeOrder;
         this.accessMode = accessMode;
-        this.supportHiddenConstructors = supportHiddenConstructors;
-        this.supportConstructors = supportConstructors;
         this.version = version;
         this.converters = converters;
     }
@@ -396,7 +276,7 @@ public class Mappings {
         return classMapping;
     }
 
-    private ClassMapping createClassMapping(final Class<?> inClazz) {
+    protected ClassMapping createClassMapping(final Class<?> inClazz) {
         boolean copyDate = false;
         for (final Class<?> itf : inClazz.getInterfaces()) {
             if ("org.apache.openjpa.enhance.PersistenceCapable".equals(itf.getName())) {
@@ -442,7 +322,7 @@ public class Mappings {
             }
             addSetterIfNeeded(setters, key, writer.getValue(), copyDate);
         }
-        return new ClassMapping(clazz, getters, setters, supportHiddenConstructors, supportConstructors);
+        return new ClassMapping(clazz, accessMode.findFactory(clazz), getters, setters);
     }
 
     protected Class<?> findModelClass(final Class<?> inClazz) {
@@ -550,20 +430,23 @@ public class Mappings {
         setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, -1));
     }
 
-    private Converter findConverter(final boolean copyDate, final AccessMode.DecoratedType method) {
-        Converter converter = null;
-        final JohnzonConverter annotation = method.getAnnotation(JohnzonConverter.class);
+    private Converter findConverter(final boolean copyDate, final AccessMode.DecoratedType decoratedType) {
+        Converter converter = decoratedType.findConverter();
+        if (converter != null) {
+            return converter;
+        }
 
+        final JohnzonConverter annotation = decoratedType.getAnnotation(JohnzonConverter.class);
 
-        Type typeToTest = method.getType();
+        Type typeToTest = decoratedType.getType();
         if (annotation != null) {
             try {
                 converter = annotation.value().newInstance();
             } catch (final Exception e) {
                 throw new IllegalArgumentException(e);
             }
-        } else if (ParameterizedType.class.isInstance(method.getType())) {
-            final ParameterizedType type = ParameterizedType.class.cast(method.getType());
+        } else if (ParameterizedType.class.isInstance(decoratedType.getType())) {
+            final ParameterizedType type = ParameterizedType.class.cast(decoratedType.getType());
             final Type rawType = type.getRawType();
             if (Class.class.isInstance(rawType)
                     && Collection.class.isAssignableFrom(Class.class.cast(rawType))
@@ -638,6 +521,16 @@ public class Mappings {
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
         }
+
+        @Override
+        public Converter<?> findConverter() {
+            return null;
+        }
+
+        @Override
+        public boolean isNillable() {
+            return false;
+        }
     }
 
     private static class MapUnwrapperWriter implements AccessMode.Writer {
@@ -697,6 +590,16 @@ public class Mappings {
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
         }
+
+        @Override
+        public Converter<?> findConverter() {
+            return null;
+        }
+
+        @Override
+        public boolean isNillable() {
+            return false;
+        }
     }
 
     private static class CompositeReader implements AccessMode.Reader {
@@ -742,6 +645,27 @@ public class Mappings {
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
         }
+
+        @Override
+        public Converter<?> findConverter() {
+            for (final AccessMode.Reader r : delegates) {
+                final Converter<?> converter = r.findConverter();
+                if (converter != null) {
+                    return converter;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isNillable() {
+            for (final AccessMode.Reader r : delegates) {
+                if (r.isNillable()) {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 
     private static class CompositeWriter implements AccessMode.Writer {
@@ -774,6 +698,27 @@ public class Mappings {
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             throw new UnsupportedOperationException("getAnnotation shouldn't get called for virtual fields");
+        }
+
+        @Override
+        public Converter<?> findConverter() {
+            for (final AccessMode.Writer r : delegates) {
+                final Converter<?> converter = r.findConverter();
+                if (converter != null) {
+                    return converter;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean isNillable() {
+            for (final AccessMode.Writer r : delegates) {
+                if (r.isNillable()) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }

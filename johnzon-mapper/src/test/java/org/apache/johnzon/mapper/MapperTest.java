@@ -545,7 +545,7 @@ public class MapperTest {
             public int compare(final String o1, final String o2) {
                 return o1.compareTo(o2);
             }
-        }).setAccessMode(new FieldAccessMode()).build();
+        }).setAccessMode(new FieldAccessMode(true, false)).build();
 
         final String asString = mapper.writeObjectAsString(source);
         assertEquals("{\"children\":[\"5\",\"6\"],\"nested\":{\"b\":2,\"sub\":{\"a\":1,\"c\":[\"3\",\"4\"]}}}", asString);

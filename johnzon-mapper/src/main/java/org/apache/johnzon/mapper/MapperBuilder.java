@@ -92,11 +92,14 @@ public class MapperBuilder {
     private boolean skipEmptyArray = false;
     private boolean supportsComments = false;
     protected boolean pretty;
-    private AccessMode accessMode = new MethodAccessMode(false);
+    private AccessMode accessMode;
     private boolean treatByteArrayAsBase64;
+    private boolean treatByteArrayAsBase64URL;
     private final Map<Type, Converter<?>> converters = new HashMap<Type, Converter<?>>(DEFAULT_CONVERTERS);
     private boolean supportConstructors;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
+    private boolean useGetterForCollections;
+    private String accessModeName;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -128,6 +131,20 @@ public class MapperBuilder {
             }
         }
 
+        if (accessMode == null) {
+            if ("field".equalsIgnoreCase(accessModeName)) {
+                this.accessMode = new FieldAccessMode(supportConstructors, supportHiddenAccess);
+            } else if ("method".equalsIgnoreCase(accessModeName)) {
+                this.accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, true);
+            } else if ("strict-method".equalsIgnoreCase(accessModeName)) {
+                this.accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, false);
+            } else if ("both".equalsIgnoreCase(accessModeName)) {
+                this.accessMode = new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess);
+            } else {
+                this.accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections);
+            }
+        }
+
         return new Mapper(
                 readerFactory, generatorFactory,
                 doCloseOnStreams,
@@ -136,9 +153,7 @@ public class MapperBuilder {
                 attributeOrder,
                 skipNull, skipEmptyArray,
                 accessMode,
-                supportHiddenAccess,
-                supportConstructors,
-                treatByteArrayAsBase64,
+                treatByteArrayAsBase64, treatByteArrayAsBase64URL,
                 encoding);
     }
 
@@ -156,7 +171,7 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setSupportGetterForCollections(final boolean useGetterForCollections) {
-        accessMode = new MethodAccessMode(useGetterForCollections);
+        this.useGetterForCollections = useGetterForCollections;
         return this;
     }
 
@@ -191,17 +206,11 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setAccessModeName(final String mode) {
-        if ("field".equalsIgnoreCase(mode)) {
-            this.accessMode = new FieldAccessMode();
-        } else if ("method".equalsIgnoreCase(mode)) {
-            this.accessMode = new MethodAccessMode(true);
-        } else if ("strict-method".equalsIgnoreCase(mode)) {
-            this.accessMode = new MethodAccessMode(false);
-        } else if ("both".equalsIgnoreCase(mode)) {
-            this.accessMode = new FieldAndMethodAccessMode();
-        } else {
+        if (!"field".equalsIgnoreCase(mode) && !"method".equalsIgnoreCase(mode) &&
+            !"strict-method".equalsIgnoreCase(mode) && !"both".equalsIgnoreCase(mode)) {
             throw new IllegalArgumentException("Mode " + mode + " unsupported");
         }
+        this.accessModeName = mode;
         return this;
     }
 
@@ -258,6 +267,11 @@ public class MapperBuilder {
     
     public MapperBuilder setTreatByteArrayAsBase64(final boolean treatByteArrayAsBase64) {
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
+        return this;
+    }
+
+    public MapperBuilder setTreatByteArrayAsBase64URL(final boolean treatByteArrayAsBase64URL) {
+        this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
         return this;
     }
 

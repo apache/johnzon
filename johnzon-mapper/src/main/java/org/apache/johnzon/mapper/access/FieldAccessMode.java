@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 
@@ -29,6 +30,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class FieldAccessMode extends BaseAccessMode {
+    public FieldAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor) {
+        super(useConstructor, acceptHiddenConstructor);
+    }
+
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
@@ -68,7 +73,7 @@ public class FieldAccessMode extends BaseAccessMode {
         return key.contains("$");
     }
 
-    private Map<String, Field> fields(final Class<?> clazz) {
+    protected Map<String, Field> fields(final Class<?> clazz) {
         final Map<String, Field> fields = new HashMap<String, Field>();
         Class<?> current = clazz;
         while (current != null && current != Object.class) {
@@ -87,7 +92,7 @@ public class FieldAccessMode extends BaseAccessMode {
         return fields;
     }
 
-    protected static abstract class FieldDecoratedType implements DecoratedType {
+    public static abstract class FieldDecoratedType implements DecoratedType {
         protected final Field field;
         protected final Type type;
 
@@ -100,6 +105,15 @@ public class FieldAccessMode extends BaseAccessMode {
         }
 
         @Override
+        public Converter<?> findConverter() {
+            return null;
+        }
+
+        public Field getField() {
+            return field;
+        }
+
+        @Override
         public Type getType() {
             return type;
         }
@@ -107,6 +121,11 @@ public class FieldAccessMode extends BaseAccessMode {
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             return field.getAnnotation(clazz);
+        }
+
+        @Override
+        public boolean isNillable() {
+            return false;
         }
     }
 

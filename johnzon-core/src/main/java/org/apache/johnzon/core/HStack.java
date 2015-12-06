@@ -20,15 +20,15 @@ package org.apache.johnzon.core;
 
 import java.io.Serializable;
 
-public class HStack<T> implements Serializable{
+public class HStack<T> implements Serializable {
 
     private Node<T> topElement = null;
     private int size;
-    
-    
-    private static final class Node<T> implements Serializable{
-        final Node<T> previous;
-        final T object;
+
+
+    private static final class Node<T> implements Serializable {
+        private final Node<T> previous;
+        private final T object;
 
         private Node(final Node<T> previous, final T object) {
             super();
@@ -36,29 +36,31 @@ public class HStack<T> implements Serializable{
             this.object = object;
         }
     }
-    
-    
+
+
     void push(T object) {
         topElement = new Node<T>(topElement, object);
         size++;
     }
-    
+
     T pop() {
-        
-        if(topElement == null) { return null; }
-        
+
+        if (topElement == null) {
+            return null;
+        }
+
         T tmp = topElement.object;
         topElement = topElement.previous;
         size--;
         return tmp;
     }
-    
+
     T peek() {
-        return topElement == null?null:topElement.object;
+        return topElement == null ? null : topElement.object;
     }
-    
+
     int size() {
         return size;
     }
-    
+
 }

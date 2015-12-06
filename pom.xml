@@ -47,6 +47,7 @@
     <staging.directory>${project.build.directory}/site</staging.directory>
     <felix.plugin.version>2.5.3</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
+    <java-compile.version>1.6</java-compile.version>
   </properties>
 
   <modules>
@@ -79,8 +80,8 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>1.6</source>
-          <target>1.6</target>
+          <source>${java-compile.version}</source>
+          <target>${java-compile.version}</target>
           <encoding>UTF-8</encoding>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -102,7 +103,7 @@
             <exclude>*.iws</exclude>
             <exclude>*.iml</exclude>
             <exclude>*.ipr</exclude>
-            <exclude>**/META-INF/services/javax.json.spi.JsonProvider</exclude>
+            <exclude>**/META-INF/services/javax.*</exclude>
             <exclude>**/*.json</exclude>
             <exclude>**/*.yml</exclude>
             <exclude>**/bench/*.txt</exclude>
@@ -159,7 +160,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.13</version>
+        <version>2.17</version>
         <executions>
           <execution>
             <id>verify-style</id>
@@ -302,7 +303,7 @@
             <localCheckout>true</localCheckout>
             <autoVersionSubmodules>true</autoVersionSubmodules>
           </configuration>
-       </plugin>       
+       </plugin>
        <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>cobertura-maven-plugin</artifactId>
@@ -351,7 +352,7 @@
                   <version>[3.1,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[1.6,)</version>
+                  <version>[${java-compile.version},)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -372,7 +373,7 @@
       <url>${pubsub.url}</url>
     </site>
   </distributionManagement>
-  
+
   <scm>
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</developerConnection>
@@ -550,7 +551,7 @@
       </otherArchives>
     </mailingList>
   </mailingLists>
-  
+
   <ciManagement>
     <system>jenkins</system>
     <url>https://builds.apache.org/job/johnzon/</url>
@@ -645,6 +646,17 @@
             </activation>
             <modules>
                 <module>johnzon-websocket</module>
+            </modules>
+        </profile>
+        <profile>
+            <!-- jsonb module needs java 1.8 or higher -->
+            <id>jdk1.8+</id>
+            <activation>
+                <jdk>[1.8,)</jdk>
+            </activation>
+            <modules>
+              <module>jsonb-api</module>
+              <module>johnzon-jsonb</module>
             </modules>
         </profile>
     </profiles>

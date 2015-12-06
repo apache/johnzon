@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 
@@ -34,7 +35,8 @@ import java.util.Map;
 public class MethodAccessMode extends BaseAccessMode {
     private final boolean supportGetterAsWritter;
 
-    public MethodAccessMode(final boolean supportGetterAsWritter) {
+    public MethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor, final boolean supportGetterAsWritter) {
+        super(useConstructor, acceptHiddenConstructor);
         this.supportGetterAsWritter = supportGetterAsWritter;
     }
 
@@ -94,7 +96,7 @@ public class MethodAccessMode extends BaseAccessMode {
         return propertyDescriptors;
     }
 
-    protected static abstract class MethodDecoratedType implements DecoratedType {
+    public static abstract class MethodDecoratedType implements DecoratedType {
         protected final Method method;
         protected final Type type;
 
@@ -107,6 +109,15 @@ public class MethodAccessMode extends BaseAccessMode {
         }
 
         @Override
+        public Converter<?> findConverter() {
+            return null;
+        }
+
+        public Method getMethod() {
+            return method;
+        }
+
+        @Override
         public Type getType() {
             return type;
         }
@@ -114,6 +125,11 @@ public class MethodAccessMode extends BaseAccessMode {
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
             return method.getAnnotation(clazz);
+        }
+
+        @Override
+        public boolean isNillable() {
+            return false;
         }
     }
 

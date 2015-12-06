@@ -18,9 +18,16 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
+import java.beans.ConstructorProperties;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -29,12 +36,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 // handle some specific types
 public abstract class BaseAccessMode implements AccessMode {
-    private final Map<Class<?>, String[]> fieldsToRemove = new HashMap<Class<?>, String[]>();
+    private static final Type[] NO_PARAMS = new Type[0];
 
-    public BaseAccessMode() { // mainly built it in the JVM types == user cant handle them
+    private final Map<Class<?>, String[]> fieldsToRemove = new HashMap<Class<?>, String[]>();
+    private final boolean acceptHiddenConstructor;
+    private final boolean useConstructor;
+
+    protected BaseAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor) {
+        this.useConstructor = useConstructor;
+        this.acceptHiddenConstructor = acceptHiddenConstructor;
+
+        // mainly built it in the JVM types == user cant handle them
         fieldsToRemove.put(Throwable.class, new String[]{"suppressedExceptions", "cause"});
     }
 
@@ -54,6 +70,113 @@ public abstract class BaseAccessMode implements AccessMode {
     // editable during builder time, dont do it at runtime or you get no guarantee
     public Map<Class<?>, String[]> getFieldsToRemove() {
         return fieldsToRemove;
+    }
+
+    @Override
+    public Factory findFactory(final Class<?> clazz) {
+        Constructor<?> constructor = null;
+        for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
+            if (c.getParameterTypes().length == 0) {
+                if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
+                    c.setAccessible(true);
+                }
+                constructor = c;
+                if (!useConstructor) {
+                    break;
+                }
+            } else if (c.getAnnotation(ConstructorProperties.class) != null) {
+                constructor = c;
+                break;
+            }
+        }
+        if (constructor == null) {
+            try {
+                constructor = clazz.getConstructor();
+            } catch (final NoSuchMethodException e) {
+                return null; // readOnly class
+            }
+        }
+
+        final boolean constructorHasArguments = constructor != null && constructor.getGenericParameterTypes().length > 0;
+        final Type[] factoryParameterTypes;
+        final String[] constructorParameters;
+        final Converter<?>[] constructorParameterConverters;
+        final Converter<?>[] constructorItemParameterConverters;
+        if (constructorHasArguments) {
+            factoryParameterTypes = constructor.getGenericParameterTypes();
+
+            constructorParameters = new String[constructor.getGenericParameterTypes().length];
+            final ConstructorProperties constructorProperties = constructor.getAnnotation(ConstructorProperties.class);
+            System.arraycopy(constructorProperties.value(), 0, constructorParameters, 0, constructorParameters.length);
+
+            constructorParameterConverters = new Converter<?>[constructor.getGenericParameterTypes().length];
+            constructorItemParameterConverters = new Converter<?>[constructorParameterConverters.length];
+            for (int i = 0; i < constructorParameters.length; i++) {
+                for (final Annotation a : constructor.getParameterAnnotations()[i]) {
+                    if (a.annotationType() == JohnzonConverter.class) {
+                        try {
+                            final Converter<?> converter = JohnzonConverter.class.cast(a).value().newInstance();
+                            if (matches(constructor.getParameterTypes()[i], converter)) {
+                                constructorParameterConverters[i] = converter;
+                                constructorItemParameterConverters[i] = null;
+                            } else {
+                                constructorParameterConverters[i] = null;
+                                constructorItemParameterConverters[i] = converter;
+                            }
+                        } catch (final Exception e) {
+                            throw new IllegalArgumentException(e);
+                        }
+                    }
+                }
+            }
+        } else {
+            factoryParameterTypes = NO_PARAMS;
+            constructorParameters = null;
+            constructorParameterConverters = null;
+            constructorItemParameterConverters = null;
+        }
+
+        final Constructor<?> cons = constructor;
+        if (cons != null && !cons.isAccessible()) {
+            cons.setAccessible(true);
+        }
+        return new Factory() {
+            @Override
+            public Object create(final Object[] params) {
+                if (cons == null) {
+                    throw new IllegalArgumentException(clazz.getName() + " can't be instantiated by Johnzon, this is a write only class");
+                }
+                try {
+                    return params == null ? cons.newInstance() : cons.newInstance(params);
+                } catch (final InstantiationException e) {
+                    throw new IllegalStateException(e);
+                } catch (final IllegalAccessException e) {
+                    throw new IllegalStateException(e);
+                } catch (final InvocationTargetException e) {
+                    throw new IllegalStateException(e.getCause());
+                }
+            }
+
+            @Override
+            public Type[] getParameterTypes() {
+                return factoryParameterTypes;
+            }
+
+            @Override
+            public String[] getParameterNames() {
+                return constructorParameters;
+            }
+
+            @Override
+            public Converter<?>[] getParameterConverter() {
+                return constructorParameterConverters;
+            }
+
+            @Override
+            public Converter<?>[] getParameterItemConverter() {
+                return constructorItemParameterConverters;
+            }
+        };
     }
 
     private <T> Map<String, T> sanitize(final Class<?> type, final Map<String, T> delegate) {

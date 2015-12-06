@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import org.apache.johnzon.mapper.Converter;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -25,8 +27,14 @@ import java.util.Map;
 
 // methods override fields
 public class FieldAndMethodAccessMode extends BaseAccessMode {
-    private final FieldAccessMode fields = new FieldAccessMode();
-    private final MethodAccessMode methods = new MethodAccessMode(false);
+    private final FieldAccessMode fields;
+    private final MethodAccessMode methods;
+
+    public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor) {
+        super(useConstructor, acceptHiddenConstructor);
+        this.fields = new FieldAccessMode(useConstructor, acceptHiddenConstructor);
+        this.methods = new MethodAccessMode(useConstructor, acceptHiddenConstructor, false);
+    }
 
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
@@ -56,13 +64,19 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         return writers;
     }
 
-    private static abstract class CompositeDecoratedType implements DecoratedType {
+    public static abstract class CompositeDecoratedType implements DecoratedType {
         protected final DecoratedType type1;
         private final DecoratedType type2;
 
         private CompositeDecoratedType(final DecoratedType type1, final DecoratedType type2) {
             this.type1 = type1;
             this.type2 = type2;
+        }
+
+        @Override
+        public Converter<?> findConverter() {
+            final Converter<?> converter = type1.findConverter();
+            return converter != null ? converter : type2.findConverter();
         }
 
         @Override
@@ -75,9 +89,22 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         public Type getType() {
             return type1.getType();
         }
+
+        @Override
+        public boolean isNillable() {
+            return type1.isNillable() || type2.isNillable();
+        }
+
+        public DecoratedType getType1() {
+            return type1;
+        }
+
+        public DecoratedType getType2() {
+            return type2;
+        }
     }
 
-    private static final class CompositeReader extends CompositeDecoratedType implements Reader {
+    public static final class CompositeReader extends CompositeDecoratedType implements Reader {
         private final Reader reader;
 
         private CompositeReader(final Reader type1, final DecoratedType type2) {
@@ -91,7 +118,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         }
     }
 
-    private static final class CompositeWriter extends CompositeDecoratedType implements Writer {
+    public static final class CompositeWriter extends CompositeDecoratedType implements Writer {
         private final Writer writer;
 
         private CompositeWriter(final Writer type1, final DecoratedType type2) {
