@@ -48,6 +48,7 @@
     <felix.plugin.version>2.5.3</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <java-compile.version>1.6</java-compile.version>
+    <cxf.version>3.0.0</cxf.version>
   </properties>
 
   <modules>

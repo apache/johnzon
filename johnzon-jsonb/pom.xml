@@ -38,6 +38,13 @@
 
   <dependencies>
     <dependency>
+      <groupId>javax.ws.rs</groupId>
+      <artifactId>javax.ws.rs-api</artifactId>
+      <version>2.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>jsonb-api</artifactId>
       <version>1.0-early-draft</version>
@@ -47,6 +54,25 @@
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-mapper</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-rs-client</artifactId>
+      <version>${cxf.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+      <version>${cxf.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-transports-local</artifactId>
+      <version>${cxf.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
