@@ -30,6 +30,7 @@ import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonString;
+import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonGenerator;
@@ -49,13 +50,22 @@ import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Deque;
+import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
@@ -241,7 +251,11 @@ public class Mapper {
         } else {
             generator = generator.writeStartArray();
             for (final T t : object) {
-                generator = writeItem(generator, t);
+                if (JsonValue.class.isInstance(t)) {
+                    generator = generator.write(JsonValue.class.cast(t));
+                } else {
+                    generator = writeItem(generator, t);
+                }
             }
             generator = generator.writeEnd();
         }
@@ -364,8 +378,13 @@ public class Mapper {
         JsonGenerator generator = gen;
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
-            final Object value = getter.reader.read(object);
             if (getter.version >= 0 && version >= getter.version) {
+                continue;
+            }
+
+            final Object value = getter.reader.read(object);
+            if (JsonValue.class.isInstance(value)) {
+                generator = generator.write(getterEntry.getKey(), JsonValue.class.cast(value));
                 continue;
             }
 
@@ -591,10 +610,14 @@ public class Mapper {
                     final Class<?> raw = Class.class.cast(aType.getRawType());
 
                     final Map map;
-                    if (SortedMap.class.isAssignableFrom(raw)) {
+                    if (LinkedHashMap.class == raw) {
+                        map = new LinkedHashMap();
+                    } else if (SortedMap.class.isAssignableFrom(raw) || NavigableMap.class == raw || TreeMap.class == raw) {
                         map = new TreeMap();
                     } else if (ConcurrentMap.class.isAssignableFrom(raw)) {
                         map = new ConcurrentHashMap(object.size());
+                    } else if (EnumMap.class.isAssignableFrom(raw)) {
+                        map = new EnumMap(Class.class.cast(fieldArgTypes[0]));
                     } else if (Map.class.isAssignableFrom(raw)) {
                         map = new HashMap(object.size());
                     } else {
@@ -626,11 +649,15 @@ public class Mapper {
                 classMapping.factory.create(null) : classMapping.factory.create(createParameters(classMapping, object));
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
+            final Mappings.Setter value = setter.getValue();
+            if (JsonValue.class == value.paramType) {
+                setter.getValue().writer.write(t, jsonValue);
+                continue;
+            }
             if (jsonValue == null) {
                 continue;
             }
 
-            final Mappings.Setter value = setter.getValue();
             final AccessMode.Writer setterMethod = value.writer;
             final Object convertedValue = toValue(jsonValue, value.converter, value.itemConverter, value.paramType);
             if (convertedValue != null) {
@@ -699,10 +726,19 @@ public class Mapper {
         }
 
         if (JsonObject.class.isInstance(jsonValue)) {
+            if (JsonObject.class == type || JsonStructure.class == type) {
+                return jsonValue;
+            }
             return buildObject(type, JsonObject.class.cast(jsonValue));
         } else if (JsonArray.class.isInstance(jsonValue)) {
+            if (JsonArray.class == type || JsonStructure.class == type) {
+                return jsonValue;
+            }
             return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter);
         } else if (JsonNumber.class.isInstance(jsonValue)) {
+            if (JsonNumber.class == type) {
+                return jsonValue;
+            }
 
             final JsonNumber number = JsonNumber.class.cast(jsonValue);
 
@@ -738,6 +774,10 @@ public class Mapper {
                 return number.bigDecimalValue();
             }
         } else if (JsonString.class.isInstance(jsonValue) || Object.class == type) {
+            if (JsonString.class == type) {
+                return jsonValue;
+            }
+
             final String string = JsonString.class.cast(jsonValue).getString();
             if (itemConverter == null) {
                 return convertTo(Class.class.cast(type), string);
@@ -772,17 +812,24 @@ public class Mapper {
         throw new UnsupportedOperationException("type " + type + " not supported");
     }
 
-    private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray, final Converter<?> itemConverter) throws Exception {
+    private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray,
+                                            final Converter<?> itemConverter) throws Exception {
         final Collection collection;
 
-        if (SortedSet.class == mapping.raw) {
+        if (SortedSet.class == mapping.raw || NavigableSet.class == mapping.raw || TreeSet.class == mapping.raw) {
             collection = new TreeSet<T>();
-        } else if (Set.class == mapping.raw) {
+        } else if (Set.class == mapping.raw || HashSet.class == mapping.raw) {
             collection = new HashSet<T>(jsonArray.size());
         } else if (Queue.class == mapping.raw) {
             collection = new ArrayBlockingQueue<T>(jsonArray.size());
-        } else if (List.class == mapping.raw || Collection.class == mapping.raw) {
+        } else if (List.class == mapping.raw || Collection.class == mapping.raw || ArrayList.class == mapping.raw || EnumSet.class == mapping.raw) {
             collection = new ArrayList<T>(jsonArray.size());
+        } else if (LinkedHashSet.class == mapping.raw) {
+            collection = new LinkedHashSet<T>(jsonArray.size());
+        } else if (Deque.class == mapping.raw || ArrayDeque.class == mapping.raw) {
+            collection = new ArrayDeque(jsonArray.size());
+        } else if (Queue.class == mapping.raw || PriorityQueue.class == mapping.raw) {
+            collection = new PriorityQueue(jsonArray.size());
         } else {
             throw new IllegalStateException("not supported collection type: " + mapping.raw.getName());
         }
@@ -790,6 +837,18 @@ public class Mapper {
         for (final JsonValue value : jsonArray) {
             collection.add(toObject(value, mapping.arg, itemConverter));
         }
+
+        if (EnumSet.class == mapping.raw) {
+            if (collection.isEmpty()) {
+                return EnumSet.noneOf(Class.class.cast(mapping.arg));
+            } else if (collection.size() == 1) {
+                return Collection.class.cast(EnumSet.of(Enum.class.cast(collection.iterator().next())));
+            } else {
+                final List<Enum<?>> list = List.class.cast(collection);
+                return Collection.class.cast(EnumSet.of(list.get(0), list.subList(1, list.size()).toArray(new Enum[list.size() - 1])));
+            }
+        }
+
         return collection;
     }
 

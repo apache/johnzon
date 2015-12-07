@@ -37,6 +37,8 @@ import org.apache.johnzon.mapper.converter.IntegerConverter;
 import org.apache.johnzon.mapper.converter.LongConverter;
 import org.apache.johnzon.mapper.converter.ShortConverter;
 import org.apache.johnzon.mapper.converter.StringConverter;
+import org.apache.johnzon.mapper.converter.URIConverter;
+import org.apache.johnzon.mapper.converter.URLConverter;
 
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
@@ -45,6 +47,8 @@ import javax.json.stream.JsonGeneratorFactory;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.Date;
@@ -57,6 +61,8 @@ public class MapperBuilder {
     static {
         //DEFAULT_CONVERTERS.put(Date.class, new DateConverter("yyyy-MM-dd'T'HH:mm:ssZ")); // ISO8601 long RFC822 zone
         DEFAULT_CONVERTERS.put(Date.class, new DateConverter("yyyyMMddHHmmssZ")); // ISO8601 short
+        DEFAULT_CONVERTERS.put(URL.class, new URLConverter());
+        DEFAULT_CONVERTERS.put(URI.class, new URIConverter());
         DEFAULT_CONVERTERS.put(Class.class, new ClassConverter());
         DEFAULT_CONVERTERS.put(String.class, new StringConverter());
         DEFAULT_CONVERTERS.put(BigDecimal.class, new BigDecimalConverter());

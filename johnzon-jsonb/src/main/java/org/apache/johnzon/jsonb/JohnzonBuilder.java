@@ -37,10 +37,26 @@ import javax.json.stream.JsonGenerator;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
@@ -121,16 +137,22 @@ public class JohnzonBuilder implements JsonbBuilder {
                 }
             });
 
-        builder.setAccessMode(
-            new JsonbAccessMode(propertyNamingStrategy, orderValue, visibilityStrategy, !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE)));
+        config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
 
+        final Map<Class<?>, Converter<?>> defaultConverters = createJava8Converters();
+        defaultConverters.forEach(builder::addConverter);
+
+        builder.setAccessMode(
+            new JsonbAccessMode(
+                propertyNamingStrategy, orderValue, visibilityStrategy,
+                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                defaultConverters));
+
+
+        // user adapters
         config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter ->
             builder.addConverter(ofNullable(adapter.getRuntimeBoundType()).orElse(adapter.getBoundType()), new JsonbConverter(adapter))
         ));
-
-        // TODO:
-        // - Converters for setter/getter
-        // - check adapters when type is not String (breaks our Converter API it seems)
 
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
             // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec sould be fine by default
@@ -163,6 +185,198 @@ public class JohnzonBuilder implements JsonbBuilder {
         });
 
         return new JohnsonJsonb(builder.build());
+    }
+
+    private static Map<Class<?>, Converter<?>> createJava8Converters() { // TODO: move these converters in converter package
+        final Map<Class<?>, Converter<?>> converters = new HashMap<>();
+
+        final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+        final ZoneId zoneIDUTC = ZoneId.of("UTC");
+
+        // built-in converters not in mapper
+        converters.put(Period.class, new Converter<Period>() {
+            @Override
+            public String toString(final Period instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public Period fromString(final String text) {
+                return Period.parse(text);
+            }
+        });
+        converters.put(Duration.class, new Converter<Duration>() {
+            @Override
+            public String toString(final Duration instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public Duration fromString(final String text) {
+                return Duration.parse(text);
+            }
+        });
+        converters.put(Date.class, new Converter<Date>() {
+            @Override
+            public String toString(final Date instance) {
+                return LocalDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
+            }
+
+            @Override
+            public Date fromString(final String text) {
+                return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
+            }
+        });
+        converters.put(Calendar.class, new Converter<Calendar>() {
+            @Override
+            public String toString(final Calendar instance) {
+                return ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
+            }
+
+            @Override
+            public Calendar fromString(final String text) {
+                final Calendar calendar = Calendar.getInstance();
+                calendar.setTimeZone(timeZoneUTC);
+                calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
+                return calendar;
+            }
+        });
+        converters.put(GregorianCalendar.class, new Converter<GregorianCalendar>() {
+            @Override
+            public String toString(final GregorianCalendar instance) {
+                return instance.toZonedDateTime().toString();
+            }
+
+            @Override
+            public GregorianCalendar fromString(final String text) {
+                final GregorianCalendar calendar = new GregorianCalendar();
+                calendar.setTimeZone(timeZoneUTC);
+                calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
+                return calendar;
+            }
+        });
+        converters.put(TimeZone.class, new Converter<TimeZone>() {
+            @Override
+            public String toString(final TimeZone instance) {
+                return instance.getID();
+            }
+
+            @Override
+            public TimeZone fromString(final String text) {
+                logIfDeprecatedTimeZone(text);
+                return TimeZone.getTimeZone(text);
+            }
+        });
+        converters.put(ZoneId.class, new Converter<ZoneId>() {
+            @Override
+            public String toString(final ZoneId instance) {
+                return instance.getId();
+            }
+
+            @Override
+            public ZoneId fromString(final String text) {
+                return ZoneId.of(text);
+            }
+        });
+        converters.put(ZoneOffset.class, new Converter<ZoneOffset>() {
+            @Override
+            public String toString(final ZoneOffset instance) {
+                return instance.getId();
+            }
+
+            @Override
+            public ZoneOffset fromString(final String text) {
+                return ZoneOffset.of(text);
+            }
+        });
+        converters.put(SimpleTimeZone.class, new Converter<SimpleTimeZone>() {
+            @Override
+            public String toString(final SimpleTimeZone instance) {
+                return instance.getID();
+            }
+
+            @Override
+            public SimpleTimeZone fromString(final String text) {
+                logIfDeprecatedTimeZone(text);
+                final TimeZone timeZone = TimeZone.getTimeZone(text);
+                return new SimpleTimeZone(timeZone.getRawOffset(), timeZone.getID());
+            }
+        });
+        converters.put(Instant.class, new Converter<Instant>() {
+            @Override
+            public String toString(final Instant instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public Instant fromString(final String text) {
+                return Instant.parse(text);
+            }
+        });
+        converters.put(LocalDate.class, new Converter<LocalDate>() {
+            @Override
+            public String toString(final LocalDate instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public LocalDate fromString(final String text) {
+                return LocalDate.parse(text);
+            }
+        });
+        converters.put(LocalDateTime.class, new Converter<LocalDateTime>() {
+            @Override
+            public String toString(final LocalDateTime instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public LocalDateTime fromString(final String text) {
+                return LocalDateTime.parse(text);
+            }
+        });
+        converters.put(ZonedDateTime.class, new Converter<ZonedDateTime>() {
+            @Override
+            public String toString(final ZonedDateTime instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public ZonedDateTime fromString(final String text) {
+                return ZonedDateTime.parse(text);
+            }
+        });
+        converters.put(OffsetDateTime.class, new Converter<OffsetDateTime>() {
+            @Override
+            public String toString(final OffsetDateTime instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public OffsetDateTime fromString(final String text) {
+                return OffsetDateTime.parse(text);
+            }
+        });
+        converters.put(OffsetTime.class, new Converter<OffsetTime>() {
+            @Override
+            public String toString(final OffsetTime instance) {
+                return instance.toString();
+            }
+
+            @Override
+            public OffsetTime fromString(final String text) {
+                return OffsetTime.parse(text);
+            }
+        });
+        return converters;
+    }
+
+    private static void logIfDeprecatedTimeZone(final String text) {
+        /* TODO: get the list, UTC is clearly not deprecated but uses 3 letters
+        if (text.length() == 3) { // don't fail but log it
+            Logger.getLogger(JohnzonBuilder.class.getName()).severe("Deprecated timezone: " + text);
+        }
+        */
     }
 
     private Map<String, ?> generatorConfig() {

@@ -32,7 +32,6 @@ import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 
 import javax.json.bind.JsonbException;
-import javax.json.bind.annotation.JsonbAnnotation;
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbNillable;
@@ -51,6 +50,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -61,7 +61,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -73,14 +79,17 @@ public class JsonbAccessMode implements AccessMode {
     private final PropertyVisibilityStrategy visibility;
     private final FieldAndMethodAccessMode delegate;
     private final boolean caseSensitive;
+    private final Map<Class<?>, Converter<?>> defaultConverters;
 
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
-                           final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive) {
+                           final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
+                           final Map<Class<?>, Converter<?>> defaultConverters) {
         this.naming = propertyNamingStrategy;
         this.order = orderValue;
         this.visibility = visibilityStrategy;
         this.caseSensitive = caseSensitive;
         this.delegate = new FieldAndMethodAccessMode(true, false);
+        this.defaultConverters = defaultConverters;
     }
 
     @Override
@@ -125,7 +134,7 @@ public class JsonbAccessMode implements AccessMode {
                 final JsonbNumberFormat numberFormat = parameter.getAnnotation(JsonbNumberFormat.class);
                 final JsonbValue value = parameter.getAnnotation(JsonbValue.class);
                 if (adapter == null && dateFormat == null && numberFormat == null && value == null) {
-                    converters[i] = null;
+                    converters[i] = defaultConverters.get(parameter.getType());
                     itemConverters[i] = null;
                 } else {
                     validateAnnotations(parameter, adapter, dateFormat, numberFormat, value);
@@ -275,7 +284,7 @@ public class JsonbAccessMode implements AccessMode {
         final Map<String, Reader> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Reader> entry : readers.entrySet()) {
             final Reader value = entry.getValue();
-            if (shouldSkip(visibility, value)) {
+            if (isTransient(value, visibility)) {
                 continue;
             }
 
@@ -291,21 +300,42 @@ public class JsonbAccessMode implements AccessMode {
 
             final Converter<?> converter;
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? null :
+                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? defaultConverters.get(value.getType()) :
                     toConverter(value.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
             }
 
-            result.put(property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value(), new Reader() {
+            // handle optionals since mapper is still only java 7
+            final Type type;
+            final Function<Object, Object> reader;
+            if (isOptional(value)) {
+                type = ParameterizedType.class.cast(value.getType()).getActualTypeArguments()[0];
+                reader = i -> Optional.class.cast(value.read(i)).orElse(null);
+            } else if (OptionalInt.class == value.getType()) {
+                type = int.class;
+                reader = i -> OptionalInt.class.cast(value.read(i)).orElse(0);
+            } else if (OptionalLong.class == value.getType()) {
+                type = long.class;
+                reader = i -> OptionalLong.class.cast(value.read(i)).orElse(0);
+            } else if (OptionalDouble.class == value.getType()) {
+                type = double.class;
+                reader = i -> OptionalDouble.class.cast(value.read(i)).orElse(0);
+            } else {
+                type = value.getType();
+                reader = value::read;
+            }
+
+            final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
+            if (result.put(key, new Reader() {
                 @Override
                 public Object read(final Object instance) {
-                    return value.read(instance);
+                    return reader.apply(instance);
                 }
 
                 @Override
                 public Type getType() {
-                    return value.getType();
+                    return type;
                 }
 
                 @Override
@@ -327,7 +357,9 @@ public class JsonbAccessMode implements AccessMode {
                 public boolean isNillable() {
                     return isNillable;
                 }
-            });
+            }) != null) {
+                throw new JsonbException("Ambiguous field " + key);
+            }
         }
         return result;
     }
@@ -340,7 +372,7 @@ public class JsonbAccessMode implements AccessMode {
         final Map<String, Writer> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Writer> entry : writers.entrySet()) {
             final Writer value = entry.getValue();
-            if (shouldSkip(visibility, value)) {
+            if (isTransient(value, visibility)) {
                 continue;
             }
 
@@ -356,21 +388,42 @@ public class JsonbAccessMode implements AccessMode {
 
             final Converter<?> converter;
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? null :
+                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? defaultConverters.get(value.getType())  :
                     toConverter(value.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
             }
 
-            result.put(property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value(), new Writer() {
+            // handle optionals since mapper is still only java 7
+            final Type type;
+            final BiConsumer<Object, Object> writer;
+            if (isOptional(value)) {
+                type = ParameterizedType.class.cast(value.getType()).getActualTypeArguments()[0];
+                writer = (i, val) -> value.write(i, Optional.ofNullable(val));
+            } else if (OptionalInt.class == value.getType()) {
+                type = int.class;
+                writer = (i, val) -> value.write(i, OptionalInt.of(Number.class.cast(val).intValue()));
+            } else if (OptionalLong.class == value.getType()) {
+                type = long.class;
+                writer = (i, val) -> value.write(i, OptionalLong.of(Number.class.cast(val).longValue()));
+            } else if (OptionalDouble.class == value.getType()) {
+                type = double.class;
+                writer = (i, val) -> value.write(i, OptionalDouble.of(Number.class.cast(val).doubleValue()));
+            } else {
+                type = value.getType();
+                writer = value::write;
+            }
+
+            final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
+            if (result.put(key, new Writer() {
                 @Override
                 public void write(final Object instance, final Object val) {
-                    value.write(instance, val);
+                    writer.accept(instance, val);
                 }
 
                 @Override
                 public Type getType() {
-                    return value.getType();
+                    return type;
                 }
 
                 @Override
@@ -392,9 +445,15 @@ public class JsonbAccessMode implements AccessMode {
                 public boolean isNillable() {
                     return isNillable;
                 }
-            });
+            }) != null) {
+                throw new JsonbException("Ambiguous field " + key);
+            }
         }
         return result;
+    }
+
+    private boolean isOptional(final DecoratedType value) {
+        return ParameterizedType.class.isInstance(value.getType()) && Optional.class == ParameterizedType.class.cast(value.getType()).getRawType();
     }
 
     private boolean isTransient(final DecoratedType dt, final PropertyVisibilityStrategy visibility) {
@@ -411,22 +470,6 @@ public class JsonbAccessMode implements AccessMode {
         return t.getAnnotation(JsonbTransient.class) != null ||
             (FieldAccessMode.FieldDecoratedType.class.isInstance(t) && !visibility.isVisible(FieldAccessMode.FieldDecoratedType.class.cast(t).getField())) ||
             (MethodAccessMode.MethodDecoratedType.class.isInstance(t) && !visibility.isVisible(MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod()));
-    }
-
-    private boolean checkTransient(final Annotation[] annotations) {
-        boolean hasTransient = false;
-        boolean hasJsonb = false;
-        for (final Annotation a : annotations) {
-            if (a.annotationType() == JsonbTransient.class) {
-                hasTransient = true;
-            } else if (a.annotationType().isAnnotationPresent(JsonbAnnotation.class)) {
-                hasJsonb = true;
-            }
-        }
-        if (hasJsonb && hasTransient) {
-            throw new JsonbException("@JsonbTransient doesnt work with other @JsonbXXX: " + asList(annotations));
-        }
-        return hasTransient;
     }
 
     private Comparator<String> orderComparator(final Class<?> clazz) {
