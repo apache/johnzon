@@ -377,10 +377,7 @@ public class MapperTest {
 
     @Test(expected = MapperException.class)
     public void literalFail2() {
-
-        final Bool2 instance = new MapperBuilder().build().readObject(new ByteArrayInputStream("{\"map\":{\"key\":\"true\"}}".getBytes()),
-                Bool2.class);
-
+        new MapperBuilder().build().readObject(new ByteArrayInputStream("{\"map\":{\"key\":\"true\"}}".getBytes()), Bool2.class);
     }
 
     @Test

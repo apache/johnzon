@@ -36,6 +36,7 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -212,10 +213,12 @@ public class Mappings {
             final Class<?> collectionType;
             if (List.class.isAssignableFrom(r)) {
                 collectionType = List.class;
-            }else if (SortedSet.class.isAssignableFrom(r)) {
+            } else if (SortedSet.class.isAssignableFrom(r)) {
                 collectionType = SortedSet.class;
             } else if (Set.class.isAssignableFrom(r)) {
                 collectionType = Set.class;
+            } else if (Deque.class.isAssignableFrom(r)) {
+                collectionType = Deque.class;
             } else if (Queue.class.isAssignableFrom(r)) {
                 collectionType = Queue.class;
             } else if (Collection.class.isAssignableFrom(r)) {
@@ -286,8 +289,11 @@ public class Mappings {
         }
         final Class<?> clazz = findModelClass(inClazz);
 
-        final Map<String, Getter> getters = newOrderedMap();
-        final Map<String, Setter> setters = newOrderedMap();
+        Comparator<String> fieldComparator = accessMode.fieldComparator(inClazz);
+        fieldComparator = fieldComparator == null ? fieldOrdering : fieldComparator;
+
+        final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<String, Getter>(fieldComparator);
+        final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<String, Setter>(fieldComparator);
 
         final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
         final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
@@ -339,7 +345,7 @@ public class Mappings {
         return clazz;
     }
 
-    private <T> Map<String, T> newOrderedMap() {
+    private <T> Map<String, T> newOrderedMap(final Class<T> value) {
         return fieldOrdering != null ? new TreeMap<String, T>(fieldOrdering) : new HashMap<String, T>();
     }
 
@@ -400,8 +406,8 @@ public class Mappings {
         }
 
         // build "this" model
-        final Map<String, Getter> objectGetters = newOrderedMap();
-        final Map<String, Setter> objectSetters = newOrderedMap();
+        final Map<String, Getter> objectGetters = newOrderedMap(Getter.class);
+        final Map<String, Setter> objectSetters = newOrderedMap(Setter.class);
 
         for (final JohnzonVirtualObject.Field f : o.fields()) {
             final String name = f.value();

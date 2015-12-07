@@ -36,6 +36,7 @@ import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -57,12 +58,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
 import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
-import static javax.json.bind.config.PropertyOrderStrategy.ANY;
+import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
 
 public class JohnzonBuilder implements JsonbBuilder {
     private final MapperBuilder builder = new MapperBuilder();
@@ -102,17 +105,21 @@ public class JohnzonBuilder implements JsonbBuilder {
         final Optional<Object> namingStrategyValue = config.getProperty(JsonbConfig.PROPERTY_NAMING_STRATEGY);
 
         final PropertyNamingStrategy propertyNamingStrategy = new PropertyNamingStrategyFactory(namingStrategyValue.orElse(IDENTITY)).create();
-        final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(ANY);
+        final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(LEXICOGRAPHICAL);
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
             .map(PropertyVisibilityStrategy.class::cast).orElse(new PropertyVisibilityStrategy() {
+                private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
+
                 @Override
                 public boolean isVisible(final Field field) {
-                    return true;
+                    final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
+                    return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
                 }
 
                 @Override
                 public boolean isVisible(final Method method) {
-                    return true;
+                    final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
+                    return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
                 }
 
                 private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached

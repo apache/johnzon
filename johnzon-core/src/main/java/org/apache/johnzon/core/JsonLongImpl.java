@@ -23,7 +23,7 @@ import java.math.BigInteger;
 
 import javax.json.JsonNumber;
 
-final class JsonLongImpl implements JsonNumber {
+public final class JsonLongImpl implements JsonNumber {
     private final long value;
 
     JsonLongImpl(final long value) {

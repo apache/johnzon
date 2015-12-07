@@ -43,7 +43,8 @@ class JsonReaderImpl implements JsonReader {
         if (!parser.hasNext()) {
             throw new IllegalStateException("Nothing to read");
         }
-        switch (parser.next()) {
+        final JsonParser.Event next = parser.next();
+        switch (next) {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl();
                 parseObject(objectBuilder);
@@ -62,7 +63,7 @@ class JsonReaderImpl implements JsonReader {
                 return arrayBuilder.build();
             default:
                 close();
-                throw new JsonParsingException("Unknown structure: " + parser.next(), parser.getLocation());
+                throw new JsonParsingException("Unknown structure: " + next, parser.getLocation());
         }
 
     }

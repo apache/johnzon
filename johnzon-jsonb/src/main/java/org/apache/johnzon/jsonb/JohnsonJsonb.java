@@ -19,6 +19,8 @@
 package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.mapper.Mapper;
+import org.apache.johnzon.mapper.MapperException;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbException;
@@ -30,6 +32,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
+import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.CharBuffer;
@@ -44,28 +47,52 @@ public class JohnsonJsonb implements Jsonb {
 
     @Override
     public <T> T fromJson(final String str, final Class<T> type) throws JsonbException {
-        return delegate.readObject(str, type);
+        try {
+            if (isArray(type)) {
+                return delegate.readTypedArray(new StringReader(str), type.getComponentType(), type);
+            } else if (Collection.class.isAssignableFrom(type)) {
+                return (T) delegate.readCollection(new StringReader(str), new JohnzonParameterizedType(type, Object.class));
+            }
+            return delegate.readObject(str, type);
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
+        }
     }
 
     @Override
     public <T> T fromJson(final String str, final Type runtimeType) throws JsonbException {
-        if (isArray(runtimeType)) {
-            return (T) delegate.readArray(new StringReader(str), Class.class.cast(runtimeType).getComponentType());
-        } else if (isCollection(runtimeType)) {
-            return (T) delegate.readCollection(new StringReader(str), ParameterizedType.class.cast(runtimeType));
+        try {
+            if (isArray(runtimeType)) {
+                final Class cast = Class.class.cast(runtimeType);
+                return (T) delegate.readTypedArray(new StringReader(str), cast.getComponentType(), cast);
+            } else if (isCollection(runtimeType)) {
+                return (T) delegate.readCollection(new StringReader(str), ParameterizedType.class.cast(runtimeType));
+            }
+            return delegate.readObject(str, runtimeType);
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
         }
-        return delegate.readObject(str, runtimeType);
     }
 
     @Override
     public <T> T fromJson(final Readable readable, final Class<T> type) throws JsonbException {
-        return delegate.readObject(toReader(readable), type);
+        try {
+            if (isArray(type)) {
+                return delegate.readTypedArray(toReader(readable), type.getComponentType(), type);
+            } else if (Collection.class.isAssignableFrom(type)) {
+                return (T) delegate.readCollection(toReader(readable), new JohnzonParameterizedType(type, Object.class));
+            }
+            return delegate.readObject(toReader(readable), type);
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
+        }
     }
 
     @Override
     public <T> T fromJson(final Readable readable, final Type runtimeType) throws JsonbException {
         if (isArray(runtimeType)) {
-            return (T) delegate.readArray(toReader(readable), Class.class.cast(runtimeType).getComponentType());
+            final Class<T> type = Class.class.cast(runtimeType);
+            return delegate.readTypedArray(toReader(readable), type.getComponentType(), type);
         } else if (isCollection(runtimeType)) {
             return (T) delegate.readCollection(toReader(readable), ParameterizedType.class.cast(runtimeType));
         }
@@ -74,27 +101,97 @@ public class JohnsonJsonb implements Jsonb {
 
     @Override
     public <T> T fromJson(final InputStream stream, final Class<T> type) throws JsonbException {
-        return delegate.readObject(stream, type);
+        try {
+            if (isArray(type)) {
+                return delegate.readTypedArray(stream, type.getComponentType(), type);
+            } else if (Collection.class.isAssignableFrom(type)) {
+                return (T) delegate.readCollection(stream, new JohnzonParameterizedType(type, Object.class));
+            }
+            return delegate.readObject(stream, type);
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
+        }
     }
 
     @Override
     public <T> T fromJson(final InputStream stream, final Type runtimeType) throws JsonbException {
-        if (isArray(runtimeType)) {
-            return (T) delegate.readArray(stream, Class.class.cast(runtimeType).getComponentType());
-        } else if (isCollection(runtimeType)) {
-            return (T) delegate.readCollection(stream, ParameterizedType.class.cast(runtimeType));
+        try {
+            if (isArray(runtimeType)) {
+                final Class<T> type = Class.class.cast(runtimeType);
+                return delegate.readTypedArray(stream, type.getComponentType(), type);
+            } else if (isCollection(runtimeType)) {
+                return (T) delegate.readCollection(stream, ParameterizedType.class.cast(runtimeType));
+            }
+            return delegate.readObject(stream, runtimeType);
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
         }
-        return delegate.readObject(stream, runtimeType);
     }
 
     @Override
     public String toJson(final Object object) throws JsonbException {
-        if (isArray(object.getClass())) {
-            return delegate.writeArrayAsString((Object[]) object);
-        } else if (Collection.class.isInstance(object)) {
-            return delegate.writeArrayAsString(Collection.class.cast(object));
+        try {
+            if (isArray(object.getClass())) {
+                return delegate.writeArrayAsString(toArray(object));
+            } else if (Collection.class.isInstance(object)) {
+                return delegate.writeArrayAsString(Collection.class.cast(object));
+            }
+            return delegate.writeObjectAsString(object);
+
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
         }
-        return delegate.writeObjectAsString(object);
+    }
+
+    private Object[] toArray(final Object object) {
+        final Class<?> componentType = object.getClass().getComponentType();
+        Object[] array;
+        if (int.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getInt(object, i);
+            }
+        } else if (double.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getDouble(object, i);
+            }
+        } else if (byte.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getByte(object, i);
+            }
+        } else if (char.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getChar(object, i);
+            }
+        } else if (float.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getFloat(object, i);
+            }
+        } else if (long.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getLong(object, i);
+            }
+        } else if (short.class == componentType) {
+            final int length = Array.getLength(object);
+            array = new Integer[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = Array.getShort(object, i);
+            }
+        } else {
+            array = (Object[]) object;
+        }
+        return array;
     }
 
     @Override

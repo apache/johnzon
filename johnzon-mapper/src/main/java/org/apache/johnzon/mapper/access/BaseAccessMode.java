@@ -32,6 +32,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,6 +57,11 @@ public abstract class BaseAccessMode implements AccessMode {
 
     protected abstract Map<String,Reader> doFindReaders(Class<?> clazz);
     protected abstract Map<String,Writer> doFindWriters(Class<?> clazz);
+
+    @Override
+    public Comparator<String> fieldComparator(final Class<?> clazz) {
+        return null;
+    }
 
     @Override
     public Map<String, Reader> findReaders(final Class<?> clazz) {
@@ -240,8 +246,9 @@ public abstract class BaseAccessMode implements AccessMode {
             return clazz;
         }
 
-        if (clazz.getSuperclass() != Object.class) {
-            return findClass(clazz.getSuperclass(), genericDeclaration);
+        final Class<?> superclass = clazz.getSuperclass();
+        if (superclass != null && superclass != Object.class) {
+            return findClass(superclass, genericDeclaration);
         }
 
         return null;

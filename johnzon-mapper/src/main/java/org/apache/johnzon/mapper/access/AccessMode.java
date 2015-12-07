@@ -22,6 +22,7 @@ import org.apache.johnzon.mapper.Converter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
+import java.util.Comparator;
 import java.util.Map;
 
 public interface AccessMode {
@@ -50,6 +51,7 @@ public interface AccessMode {
     }
 
     Factory findFactory(Class<?> clazz);
+    Comparator<String> fieldComparator(Class<?> clazz);
     Map<String, Reader> findReaders(Class<?> clazz);
     Map<String, Writer> findWriters(Class<?> clazz);
 }

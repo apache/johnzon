@@ -71,6 +71,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 public class JsonbAccessMode implements AccessMode {
@@ -88,8 +89,14 @@ public class JsonbAccessMode implements AccessMode {
         this.order = orderValue;
         this.visibility = visibilityStrategy;
         this.caseSensitive = caseSensitive;
-        this.delegate = new FieldAndMethodAccessMode(true, false);
+        this.delegate = new FieldAndMethodAccessMode(true, true);
         this.defaultConverters = defaultConverters;
+    }
+
+    @Override
+    public Comparator<String> fieldComparator(final Class<?> clazz) {
+        final Comparator<String> orderComparator = orderComparator(clazz);
+        return caseSensitive ? orderComparator : ((o1, o2) -> o1.equalsIgnoreCase(o2) ? 0 : orderComparator.compare(o1, o2));
     }
 
     @Override
@@ -276,32 +283,41 @@ public class JsonbAccessMode implements AccessMode {
     public Map<String, Reader> findReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = delegate.findReaders(clazz);
 
-        final Comparator<String> orderComparator = orderComparator(clazz);
-        final Comparator<String> keyComparator = caseSensitive ?
-            orderComparator :
-            (o1, o2) -> o1.equalsIgnoreCase(o2) ? 0 : orderComparator.compare(o1, o2);
-
+        final Comparator<String> keyComparator = fieldComparator(clazz);
         final Map<String, Reader> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Reader> entry : readers.entrySet()) {
-            final Reader value = entry.getValue();
-            if (isTransient(value, visibility)) {
+            final Reader initialReader = entry.getValue();
+            if (isTransient(initialReader, visibility)) {
                 continue;
             }
 
+            final Reader finalReader;
+            if (FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(initialReader)) { // unwrap to use the right reader
+                final FieldAndMethodAccessMode.CompositeDecoratedType decoratedType = FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(initialReader);
+                final DecoratedType type2 = decoratedType.getType2();
+                if (MethodAccessMode.MethodReader.class.isInstance(type2)) {
+                    finalReader = Reader.class.cast(type2);
+                } else {
+                    finalReader = initialReader;
+                }
+            } else {
+                finalReader = initialReader;
+            }
+
             // we are visible
-            final JsonbProperty property = value.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = value.getClassOrPackageAnnotation(JsonbNillable.class);
+            final JsonbProperty property = initialReader.getAnnotation(JsonbProperty.class);
+            final JsonbNillable nillable = initialReader.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
-            final JsonbTypeAdapter adapter = value.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbDateFormat dateFormat = value.getAnnotation(JsonbDateFormat.class);
-            final JsonbNumberFormat numberFormat = value.getAnnotation(JsonbNumberFormat.class);
-            final JsonbValue jsonbValue = value.getAnnotation(JsonbValue.class);
-            validateAnnotations(value, adapter, dateFormat, numberFormat, jsonbValue);
+            final JsonbTypeAdapter adapter = initialReader.getAnnotation(JsonbTypeAdapter.class);
+            final JsonbDateFormat dateFormat = initialReader.getAnnotation(JsonbDateFormat.class);
+            final JsonbNumberFormat numberFormat = initialReader.getAnnotation(JsonbNumberFormat.class);
+            final JsonbValue jsonbValue = initialReader.getAnnotation(JsonbValue.class);
+            validateAnnotations(initialReader, adapter, dateFormat, numberFormat, jsonbValue);
 
             final Converter<?> converter;
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? defaultConverters.get(value.getType()) :
-                    toConverter(value.getType(), adapter, dateFormat, numberFormat);
+                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? defaultConverters.get(initialReader.getType()) :
+                    toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -309,21 +325,21 @@ public class JsonbAccessMode implements AccessMode {
             // handle optionals since mapper is still only java 7
             final Type type;
             final Function<Object, Object> reader;
-            if (isOptional(value)) {
-                type = ParameterizedType.class.cast(value.getType()).getActualTypeArguments()[0];
-                reader = i -> Optional.class.cast(value.read(i)).orElse(null);
-            } else if (OptionalInt.class == value.getType()) {
+            if (isOptional(finalReader)) {
+                type = ParameterizedType.class.cast(finalReader.getType()).getActualTypeArguments()[0];
+                reader = i -> ofNullable(finalReader.read(i)).map(o -> Optional.class.cast(o).orElse(null)).orElse(null);
+            } else if (OptionalInt.class == finalReader.getType()) {
                 type = int.class;
-                reader = i -> OptionalInt.class.cast(value.read(i)).orElse(0);
-            } else if (OptionalLong.class == value.getType()) {
+                reader = i -> OptionalInt.class.cast(finalReader.read(i)).orElse(0);
+            } else if (OptionalLong.class == finalReader.getType()) {
                 type = long.class;
-                reader = i -> OptionalLong.class.cast(value.read(i)).orElse(0);
-            } else if (OptionalDouble.class == value.getType()) {
+                reader = i -> OptionalLong.class.cast(finalReader.read(i)).orElse(0);
+            } else if (OptionalDouble.class == finalReader.getType()) {
                 type = double.class;
-                reader = i -> OptionalDouble.class.cast(value.read(i)).orElse(0);
+                reader = i -> OptionalDouble.class.cast(finalReader.read(i)).orElse(0);
             } else {
-                type = value.getType();
-                reader = value::read;
+                type = finalReader.getType();
+                reader = finalReader::read;
             }
 
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
@@ -340,12 +356,12 @@ public class JsonbAccessMode implements AccessMode {
 
                 @Override
                 public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
-                    return value.getAnnotation(clazz);
+                    return finalReader.getAnnotation(clazz);
                 }
 
                 @Override
                 public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
-                    return value.getClassOrPackageAnnotation(clazz);
+                    return finalReader.getClassOrPackageAnnotation(clazz);
                 }
 
                 @Override
@@ -368,28 +384,41 @@ public class JsonbAccessMode implements AccessMode {
     public Map<String, Writer> findWriters(final Class<?> clazz) {
         final Map<String, Writer> writers = delegate.findWriters(clazz);
 
-        final Comparator<String> keyComparator = orderComparator(clazz);
+        final Comparator<String> keyComparator = fieldComparator(clazz);
         final Map<String, Writer> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Writer> entry : writers.entrySet()) {
-            final Writer value = entry.getValue();
-            if (isTransient(value, visibility)) {
+            Writer initialWriter = entry.getValue();
+            if (isTransient(initialWriter, visibility)) {
                 continue;
             }
 
+            final Writer finalWriter;
+            if (FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(initialWriter)) { // unwrap to use the right reader
+                final FieldAndMethodAccessMode.CompositeDecoratedType decoratedType = FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(initialWriter);
+                final DecoratedType type2 = decoratedType.getType2();
+                if (MethodAccessMode.MethodWriter.class.isInstance(type2)) {
+                    finalWriter = Writer.class.cast(type2);
+                } else {
+                    finalWriter = initialWriter;
+                }
+            } else {
+                finalWriter = initialWriter;
+            }
+
             // we are visible
-            final JsonbProperty property = value.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = value.getClassOrPackageAnnotation(JsonbNillable.class);
+            final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
+            final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
-            final JsonbTypeAdapter adapter = value.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbDateFormat dateFormat = value.getAnnotation(JsonbDateFormat.class);
-            final JsonbNumberFormat numberFormat = value.getAnnotation(JsonbNumberFormat.class);
-            final JsonbValue jsonbValue = value.getAnnotation(JsonbValue.class);
-            validateAnnotations(value, adapter, dateFormat, numberFormat, jsonbValue);
+            final JsonbTypeAdapter adapter = initialWriter.getAnnotation(JsonbTypeAdapter.class);
+            final JsonbDateFormat dateFormat = initialWriter.getAnnotation(JsonbDateFormat.class);
+            final JsonbNumberFormat numberFormat = initialWriter.getAnnotation(JsonbNumberFormat.class);
+            final JsonbValue jsonbValue = initialWriter.getAnnotation(JsonbValue.class);
+            validateAnnotations(initialWriter, adapter, dateFormat, numberFormat, jsonbValue);
 
             final Converter<?> converter;
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? defaultConverters.get(value.getType())  :
-                    toConverter(value.getType(), adapter, dateFormat, numberFormat);
+                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ? defaultConverters.get(initialWriter.getType()) :
+                    toConverter(initialWriter.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -397,21 +426,21 @@ public class JsonbAccessMode implements AccessMode {
             // handle optionals since mapper is still only java 7
             final Type type;
             final BiConsumer<Object, Object> writer;
-            if (isOptional(value)) {
-                type = ParameterizedType.class.cast(value.getType()).getActualTypeArguments()[0];
-                writer = (i, val) -> value.write(i, Optional.ofNullable(val));
-            } else if (OptionalInt.class == value.getType()) {
+            if (isOptional(initialWriter)) {
+                type = ParameterizedType.class.cast(initialWriter.getType()).getActualTypeArguments()[0];
+                writer = (i, val) -> finalWriter.write(i, Optional.ofNullable(val));
+            } else if (OptionalInt.class == initialWriter.getType()) {
                 type = int.class;
-                writer = (i, val) -> value.write(i, OptionalInt.of(Number.class.cast(val).intValue()));
-            } else if (OptionalLong.class == value.getType()) {
+                writer = (i, val) -> finalWriter.write(i, OptionalInt.of(Number.class.cast(val).intValue()));
+            } else if (OptionalLong.class == initialWriter.getType()) {
                 type = long.class;
-                writer = (i, val) -> value.write(i, OptionalLong.of(Number.class.cast(val).longValue()));
-            } else if (OptionalDouble.class == value.getType()) {
+                writer = (i, val) -> finalWriter.write(i, OptionalLong.of(Number.class.cast(val).longValue()));
+            } else if (OptionalDouble.class == initialWriter.getType()) {
                 type = double.class;
-                writer = (i, val) -> value.write(i, OptionalDouble.of(Number.class.cast(val).doubleValue()));
+                writer = (i, val) -> finalWriter.write(i, OptionalDouble.of(Number.class.cast(val).doubleValue()));
             } else {
-                type = value.getType();
-                writer = value::write;
+                type = initialWriter.getType();
+                writer = finalWriter::write;
             }
 
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
@@ -428,12 +457,12 @@ public class JsonbAccessMode implements AccessMode {
 
                 @Override
                 public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
-                    return value.getAnnotation(clazz);
+                    return initialWriter.getAnnotation(clazz);
                 }
 
                 @Override
                 public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
-                    return value.getClassOrPackageAnnotation(clazz);
+                    return initialWriter.getClassOrPackageAnnotation(clazz);
                 }
 
                 @Override
@@ -457,9 +486,9 @@ public class JsonbAccessMode implements AccessMode {
     }
 
     private boolean isTransient(final DecoratedType dt, final PropertyVisibilityStrategy visibility) {
-        return shouldSkip(visibility, dt) ||
-            (FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(dt) &&
-                Stream.of(FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt).getType1(), FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt).getType2())
+        return shouldSkip(visibility, dt) &&
+            (!FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(dt) ||
+                !Stream.of(FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt).getType1(), FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt).getType2())
                     .map(t -> shouldSkip(visibility, t))
                     .filter(a -> a)
                     .findAny()

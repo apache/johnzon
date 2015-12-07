@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.core.JsonLongImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
@@ -36,6 +37,7 @@ import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 import javax.xml.bind.DatatypeConverter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -292,6 +294,28 @@ public class Mapper {
     }
 
     public void writeObject(final Object object, final Writer stream) {
+        if (JsonValue.class.isInstance(object)) {
+            try {
+                stream.write(object.toString());
+            } catch (final IOException e) {
+                throw new MapperException(e);
+            } finally {
+                if (close) {
+                    try {
+                        stream.close();
+                    } catch (final IOException e) {
+                        // no-op
+                    }
+                } else {
+                    try {
+                        stream.flush();
+                    } catch (final IOException e) {
+                        // no-op
+                    }
+                }
+            }
+            return;
+        }
         final JsonGenerator generator = generatorFactory.createGenerator(stream);
         doWriteHandlingNullObject(object, generator);
     }
@@ -322,6 +346,15 @@ public class Mapper {
     private void doWriteHandlingNullObject(final Object object, final JsonGenerator generator) {
         if (object == null) {
             generator.writeStartObject().writeEnd().close();
+            return;
+        }
+        if (JsonObject.class.isInstance(object)) {
+            final JsonObject jsonObject = JsonObject.class.cast(object);
+            generator.writeStartObject();
+            for (final Map.Entry<String, JsonValue> value  : jsonObject.entrySet()) {
+                generator.write(value.getKey(), value.getValue());
+            }
+            generator.writeEnd().close();
             return;
         }
 
@@ -499,6 +532,8 @@ public class Mapper {
                     }
                     newGen = newGen.writeEnd();
                 }
+            } else if (o == null) {
+                newGen = generator.writeNull();
             } else {
                 newGen = doWriteObject(generator, o);
             }
@@ -520,7 +555,11 @@ public class Mapper {
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
         try {
-            return (T) buildObject(clazz, reader.readObject());
+            final JsonObject object = reader.readObject();
+            if (JsonStructure.class == clazz || JsonObject.class == clazz) {
+                return (T) object;
+            }
+            return (T) buildObject(clazz, object);
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
@@ -574,17 +613,27 @@ public class Mapper {
 
     public <T> T[] readArray(final Reader stream, final Class<T> clazz) {
         final JsonReader reader = readerFactory.createReader(stream);
-        return mapArray(clazz, reader);
+        return (T[]) mapArray(clazz, reader);
+    }
+
+    public <T> T readTypedArray(final InputStream stream, final Class<?> elementType, final Class<T> arrayType) {
+        final JsonReader reader = readerFactory.createReader(stream);
+        return arrayType.cast(mapArray(elementType, reader));
+    }
+
+    public <T> T readTypedArray(final Reader stream, final Class<?> elementType, final Class<T> arrayType) {
+        final JsonReader reader = readerFactory.createReader(stream);
+        return arrayType.cast(mapArray(elementType, reader));
     }
 
     public <T> T[] readArray(final InputStream stream, final Class<T> clazz) {
         final JsonReader reader = readerFactory.createReader(stream);
-        return mapArray(clazz, reader);
+        return (T[]) mapArray(clazz, reader);
     }
 
-    private <T> T[] mapArray(final Class<T> clazz, final JsonReader reader) {
+    private Object mapArray(final Class<?> clazz, final JsonReader reader) {
         try {
-            return (T[]) buildArrayWithComponentType(reader.readArray(), clazz, null);
+            return buildArrayWithComponentType(reader.readArray(), clazz, null);
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
@@ -633,16 +682,44 @@ public class Mapper {
                             keyType = fieldArgTypes[0];
                         }
 
+                        final boolean any = fieldArgTypes.length < 2 || fieldArgTypes[1] == Object.class;
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
-                            map.put(convertTo(keyType, value.getKey()), toObject(value.getValue(), fieldArgTypes[1], null));
+                            final JsonValue jsonValue = value.getValue();
+                            if (JsonLongImpl.class.isInstance(jsonValue) && any) {
+                                final JsonNumber number = JsonNumber.class.cast(jsonValue);
+                                final int integer = number.intValue();
+                                final long asLong = number.longValue();
+                                if (integer == asLong) {
+                                    map.put(value.getKey(), integer);
+                                } else {
+                                    map.put(value.getKey(), asLong);
+                                }
+                            } else if (JsonNumber.class.isInstance(jsonValue) && any) {
+                                final JsonNumber number = JsonNumber.class.cast(jsonValue);
+                                map.put(value.getKey(), !number.isIntegral() ? number.bigDecimalValue() : number.intValue());
+                            } else if (JsonString.class.isInstance(jsonValue) && any) {
+                                map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
+                            } else {
+                                map.put(convertTo(keyType, value.getKey()), toObject(jsonValue, fieldArgTypes[1], null));
+                            }
                         }
                         return map;
                     }
                 }
+            } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
+                final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+                for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
+                    map.put(value.getKey(), toObject(value.getValue(), Object.class, null));
+                }
+                return map;
             }
         }
         if (classMapping == null) {
             throw new MapperException("Can't map " + type);
+        }
+
+        if (classMapping.factory == null) {
+            throw new IllegalArgumentException(classMapping.clazz + " not instantiable");
         }
 
         final Object t = classMapping.factory.getParameterTypes().length == 0 ?
@@ -659,9 +736,13 @@ public class Mapper {
             }
 
             final AccessMode.Writer setterMethod = value.writer;
-            final Object convertedValue = toValue(jsonValue, value.converter, value.itemConverter, value.paramType);
-            if (convertedValue != null) {
-                setterMethod.write(t, convertedValue);
+            if (jsonValue == JsonValue.NULL) { // forced
+                setterMethod.write(t, null);
+            } else {
+                final Object convertedValue = toValue(jsonValue, value.converter, value.itemConverter, value.paramType);
+                if (convertedValue != null) {
+                    setterMethod.write(t, convertedValue);
+                }
             }
         }
 
@@ -687,7 +768,7 @@ public class Mapper {
     }
 
     private Object toObject(final JsonValue jsonValue, final Type type, final Converter<?> itemConverter) throws Exception {
-        if (jsonValue == null || jsonValue == JsonValue.NULL) {
+        if (jsonValue == null || JsonValue.NULL == jsonValue) {
             return null;
         }
 
@@ -773,7 +854,7 @@ public class Mapper {
             if (type == BigDecimal.class) {
                 return number.bigDecimalValue();
             }
-        } else if (JsonString.class.isInstance(jsonValue) || Object.class == type) {
+        } else if (JsonString.class.isInstance(jsonValue)) {
             if (JsonString.class == type) {
                 return jsonValue;
             }
@@ -820,7 +901,7 @@ public class Mapper {
             collection = new TreeSet<T>();
         } else if (Set.class == mapping.raw || HashSet.class == mapping.raw) {
             collection = new HashSet<T>(jsonArray.size());
-        } else if (Queue.class == mapping.raw) {
+        } else if (Queue.class == mapping.raw || ArrayBlockingQueue.class == mapping.raw) {
             collection = new ArrayBlockingQueue<T>(jsonArray.size());
         } else if (List.class == mapping.raw || Collection.class == mapping.raw || ArrayList.class == mapping.raw || EnumSet.class == mapping.raw) {
             collection = new ArrayList<T>(jsonArray.size());
@@ -835,7 +916,7 @@ public class Mapper {
         }
 
         for (final JsonValue value : jsonArray) {
-            collection.add(toObject(value, mapping.arg, itemConverter));
+            collection.add(value == JsonValue.NULL ? null : toObject(value, mapping.arg, itemConverter));
         }
 
         if (EnumSet.class == mapping.raw) {
