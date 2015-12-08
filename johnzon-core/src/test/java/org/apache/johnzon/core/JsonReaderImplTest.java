@@ -35,10 +35,13 @@ import java.util.Map;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
 
 import org.junit.Test;
 
@@ -524,6 +527,35 @@ public class JsonReaderImplTest {
                     throw new Throwable("Failed for buffer size=" + size + " growingString with length: " + i, t);
                 }
             }
+        }
+    }
+
+    @Test
+    public void simpleValues() {
+        { // string
+            final JsonValue value = JsonReaderImpl.class.cast(Json.createReader(new StringReader("\"a string\""))).readValue();
+            assertEquals(JsonValue.ValueType.STRING, value.getValueType());
+            assertEquals("a string", JsonString.class.cast(value).getString());
+        }
+        { // true
+            final JsonValue value = JsonReaderImpl.class.cast(Json.createReader(new StringReader("true"))).readValue();
+            assertEquals(JsonValue.ValueType.TRUE, value.getValueType());
+            assertEquals(JsonValue.TRUE, value);
+        }
+        { // false
+            final JsonValue value = JsonReaderImpl.class.cast(Json.createReader(new StringReader("false"))).readValue();
+            assertEquals(JsonValue.ValueType.FALSE, value.getValueType());
+            assertEquals(JsonValue.FALSE, value);
+        }
+        { // null
+            final JsonValue value = JsonReaderImpl.class.cast(Json.createReader(new StringReader("null"))).readValue();
+            assertEquals(JsonValue.ValueType.NULL, value.getValueType());
+            assertEquals(JsonValue.NULL, value);
+        }
+        { // number
+            final JsonValue value = JsonReaderImpl.class.cast(Json.createReader(new StringReader("1234.5"))).readValue();
+            assertEquals(JsonValue.ValueType.NUMBER, value.getValueType());
+            assertEquals(1234.5, JsonNumber.class.cast(value).doubleValue(), 0.);
         }
     }
 }

@@ -59,7 +59,7 @@ public class MapperTest {
     public void writeEmptyObject() {
         final StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(null, writer);
-        assertEquals("{}", writer.toString());
+        assertEquals("null", writer.toString());
     }
 
     @Test

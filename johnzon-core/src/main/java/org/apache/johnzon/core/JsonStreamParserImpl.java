@@ -95,8 +95,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
     //minimal stack implementation
     private static final class StructureElement {
-        final StructureElement previous;
-        final boolean isArray;
+        private final StructureElement previous;
+        private final boolean isArray;
 
         StructureElement(final StructureElement previous, final boolean isArray) {
             super();
@@ -174,7 +174,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     @Override
     public final boolean hasNext() {
 
-        if (currentStructureElement != null || (previousEvent != END_ARRAY && previousEvent != END_OBJECT) || previousEvent == 0) {
+        if (currentStructureElement != null ||
+            (previousEvent != END_ARRAY && previousEvent != END_OBJECT &&
+                previousEvent != VALUE_STRING && previousEvent != VALUE_FALSE && previousEvent != VALUE_TRUE && previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) ||
+            previousEvent == 0) {
+
             return true;
         }
 
@@ -648,7 +652,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         } else { //Event is  START_OBJECT  OR START_ARRAY OR COMMA_EVENT
             //must be a key if we are in an object, if not its a value 
 
-            if (currentStructureElement != null && currentStructureElement.isArray) {
+            if ((currentStructureElement != null && currentStructureElement.isArray) || currentStructureElement == null) {
                 return EVT_MAP[previousEvent = VALUE_STRING];
             }
 
@@ -728,9 +732,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         }
 
-        endOfValueInBuffer = bufferPos;
+        endOfValueInBuffer = y == EOF && endOfValueInBuffer < 0 ? -1 : bufferPos;
 
-        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR) {
+        if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR || y == EOF) {
 
             bufferPos--;//unread one char
 

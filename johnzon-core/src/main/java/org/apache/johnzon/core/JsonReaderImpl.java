@@ -20,14 +20,16 @@ package org.apache.johnzon.core;
 
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
-class JsonReaderImpl implements JsonReader {
+public class JsonReaderImpl implements JsonReader {
     private final JsonParser parser;
     private boolean closed = false;
 
@@ -37,7 +39,11 @@ class JsonReaderImpl implements JsonReader {
 
     @Override
     public JsonStructure read() {
+        return JsonStructure.class.cast(readValue());
+    }
 
+    //@Override
+    public JsonValue readValue() {
         checkClosed();
 
         if (!parser.hasNext()) {
@@ -61,11 +67,42 @@ class JsonReaderImpl implements JsonReader {
                 }
                 close();
                 return arrayBuilder.build();
+            case VALUE_STRING:
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
+                final JsonStringImpl string = new JsonStringImpl(parser.getString());
+                close();
+                return string;
+            case VALUE_FALSE:
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
+                close();
+                return JsonValue.FALSE;
+            case VALUE_TRUE:
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
+                close();
+                return JsonValue.TRUE;
+            case VALUE_NULL:
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
+                close();
+                return JsonValue.NULL;
+            case VALUE_NUMBER:
+                if (parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                }
+                final JsonNumber number = new JsonNumberImpl(parser.getBigDecimal());
+                close();
+                return number;
             default:
                 close();
                 throw new JsonParsingException("Unknown structure: " + next, parser.getLocation());
         }
-
     }
 
     @Override

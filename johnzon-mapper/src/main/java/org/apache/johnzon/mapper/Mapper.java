@@ -95,6 +95,7 @@ public class Mapper {
     protected final boolean treatByteArrayAsBase64;
     protected final boolean treatByteArrayAsBase64URL;
     protected final Charset encoding;
+    protected final ReaderHandler readerHandler;
 
     // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
@@ -113,6 +114,7 @@ public class Mapper {
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
         this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
         this.encoding = encoding;
+        this.readerHandler = ReaderHandler.create(readerFactory);
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -294,9 +296,9 @@ public class Mapper {
     }
 
     public void writeObject(final Object object, final Writer stream) {
-        if (JsonValue.class.isInstance(object)) {
+        if (JsonValue.class.isInstance(object) || String.class.isInstance(object) || Number.class.isInstance(object) || object == null) {
             try {
-                stream.write(object.toString());
+                stream.write(String.valueOf(object));
             } catch (final IOException e) {
                 throw new MapperException(e);
             } finally {
@@ -555,11 +557,44 @@ public class Mapper {
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
         try {
-            final JsonObject object = reader.readObject();
-            if (JsonStructure.class == clazz || JsonObject.class == clazz) {
+            final JsonValue object = readerHandler.read(reader);
+            if (JsonStructure.class == clazz || JsonObject.class == clazz || JsonValue.class == clazz) {
                 return (T) object;
             }
-            return (T) buildObject(clazz, object);
+            if (JsonObject.class.isInstance(object)) {
+                return (T) buildObject(clazz, JsonObject.class.cast(object));
+            }
+            if (JsonString.class.isInstance(object) && clazz == String.class) {
+                return (T) JsonString.class.cast(object).getString();
+            }
+            if (JsonNumber.class.isInstance(object)) {
+                final JsonNumber number = JsonNumber.class.cast(object);
+                if (clazz == int.class || clazz == Integer.class) {
+                    return (T) Integer.valueOf(number.intValue());
+                }
+                if (clazz == long.class || clazz == Long.class) {
+                    return (T) Long.valueOf(number.longValue());
+                }
+                if (clazz == double.class || clazz == Double.class) {
+                    return (T) Double.valueOf(number.doubleValue());
+                }
+                if (clazz == BigDecimal.class) {
+                    return (T) number.bigDecimalValue();
+                }
+                if (clazz == BigInteger.class) {
+                    return (T) number.bigIntegerValue();
+                }
+            }
+            if (JsonValue.NULL == object) {
+                return null;
+            }
+            if (JsonValue.TRUE == object && (Boolean.class == clazz || boolean.class == clazz)) {
+                return (T) Boolean.TRUE;
+            }
+            if (JsonValue.FALSE == object && (Boolean.class == clazz || boolean.class == clazz)) {
+                return (T) Boolean.FALSE;
+            }
+            throw new IllegalArgumentException("Unsupported " + object + " for type " + clazz);
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {

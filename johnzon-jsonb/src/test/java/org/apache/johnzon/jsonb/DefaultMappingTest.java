@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -46,6 +47,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -142,6 +146,55 @@ public class DefaultMappingTest {
     public void accessors() throws Exception {
         toJsonAccessors();
         fromJsonAccessors();
+    }
+
+    @Test
+    public void simpleValues() {
+        assertEquals("\"strValue\"", JSONB.toJson("\"strValue\""));
+        assertEquals("true", JSONB.toJson("true"));
+        assertEquals("false", JSONB.toJson("false"));
+        assertEquals("null", JSONB.toJson("null"));
+        assertEquals("strValue", JSONB.toJson(Optional.of("strValue")));
+        assertEquals("null", JSONB.toJson(Optional.ofNullable(null)));
+        assertEquals("null", JSONB.toJson(Optional.empty()));
+        assertEquals("1", JSONB.toJson(OptionalInt.of(1)));
+        assertEquals("null", JSONB.toJson(OptionalInt.empty()));
+        assertEquals("123", JSONB.toJson(OptionalLong.of(123)));
+        assertEquals("null", JSONB.toJson(OptionalLong.empty()));
+        assertEquals("1.2", JSONB.toJson(OptionalDouble.of(1.2)));
+        assertEquals("null", JSONB.toJson(OptionalDouble.empty()));
+
+        //Optional
+        Optional<String> stringValue = JSONB.fromJson("\"optionalString\"", new JohnzonParameterizedType(Optional.class, String.class));
+        assertTrue(stringValue.isPresent());
+        assertEquals("optionalString", stringValue.get());
+
+        Optional<String> nullStringValue = JSONB.fromJson("null", new JohnzonParameterizedType(Optional.class, String.class));
+        assertTrue(!nullStringValue.isPresent());
+
+        //OptionalInt
+        OptionalInt optionalInt = JSONB.fromJson("1", OptionalInt.class);
+        assertTrue(optionalInt.isPresent());
+        assertTrue(optionalInt.getAsInt() == 1);
+
+        OptionalInt emptyOptionalInt = JSONB.fromJson("null", OptionalInt.class);
+        assertTrue(!emptyOptionalInt.isPresent());
+
+        //OptionalLong
+        OptionalLong optionalLong = JSONB.fromJson("123", OptionalLong.class);
+        assertTrue(optionalLong.isPresent());
+        assertTrue(optionalLong.getAsLong() == 123L);
+
+        OptionalLong emptyOptionalLong = JSONB.fromJson("null", OptionalLong.class);
+        assertTrue(!emptyOptionalLong.isPresent());
+
+        //OptionalDouble
+        OptionalDouble optionalDouble = JSONB.fromJson("1.2", OptionalDouble.class);
+        assertTrue(optionalDouble.isPresent());
+        assertTrue(optionalDouble.getAsDouble() == 1.2);
+
+        OptionalDouble emptyOptionalDouble = JSONB.fromJson("null", OptionalDouble.class);
+        assertTrue(!emptyOptionalDouble.isPresent());
     }
 
     public static void fromJsonPrimitives() {
@@ -308,7 +361,7 @@ public class DefaultMappingTest {
         assertNotNull(JSONB.fromJson("[{\"value\":\"first\"},{\"value\":\"second\"}]", JsonArray.class));
 
         //JsonValue
-        // TBD assertNotNull(JSONB.fromJson("1", JsonValue.class));
+        assertNotNull(JSONB.fromJson("1", JsonValue.class));
     }
 
     public static void toJsonStructures() {
@@ -1079,29 +1132,6 @@ public class DefaultMappingTest {
     }
 
     public static void toJsonOptional() {
-
-        //Optional
-        /* TBD: direct mapping
-        assertEquals("\"strValue\"", JSONB.toJson(Optional.of("strValue")));
-
-
-        assertEquals("null", JSONB.toJson(Optional.ofNullable(null)));
-
-        assertEquals("null", JSONB.toJson(Optional.empty()));
-
-        //OptionalInt
-        assertEquals("1", JSONB.toJson(OptionalInt.of(1)));
-        assertEquals("null", JSONB.toJson(OptionalInt.empty()));
-
-        //OptionalLong
-        assertEquals("123", JSONB.toJson(OptionalLong.of(123)));
-        assertEquals("null", JSONB.toJson(OptionalLong.empty()));
-
-        //OptionalDouble
-        assertEquals("1.2", JSONB.toJson(OptionalDouble.of(1.2)));
-        assertEquals("null", JSONB.toJson(OptionalDouble.empty()));
-        */
-
         final OptionalClass object = new OptionalClass();
         object.optionalField = Optional.of("test");
         assertEquals("{\"optionalField\":\"test\"}", JSONB.toJson(object));
@@ -1118,40 +1148,6 @@ public class DefaultMappingTest {
     }
 
     public static void fromJsonOptional() {
-        /* TBD
-        //Optional
-        Optional<String> stringValue = JSONB.fromJson("\"optionalString\"", Optional.class);
-        assertTrue(stringValue.isPresent());
-        assertEquals("optionalString", stringValue.get());
-
-        Optional<String> nullStringValue = JSONB.fromJson("null", Optional.class);
-        assertTrue(!nullStringValue.isPresent());
-
-        //OptionalInt
-        OptionalInt optionalInt = JSONB.fromJson("1", OptionalInt.class);
-        assertTrue(optionalInt.isPresent());
-        assertTrue(optionalInt.getAsInt() == 1);
-
-        OptionalInt emptyOptionalInt = JSONB.fromJson("null", OptionalInt.class);
-        assertTrue(!emptyOptionalInt.isPresent());
-
-        //OptionalLong
-        OptionalLong optionalLong = JSONB.fromJson("123", OptionalLong.class);
-        assertTrue(optionalLong.isPresent());
-        assertTrue(optionalLong.getAsLong() == 123L);
-
-        OptionalLong emptyOptionalLong = JSONB.fromJson("null", OptionalLong.class);
-        assertTrue(!emptyOptionalLong.isPresent());
-
-        //OptionalDouble
-        OptionalDouble optionalDouble = JSONB.fromJson("1.2", OptionalDouble.class);
-        assertTrue(optionalDouble.isPresent());
-        assertTrue(optionalDouble.getAsDouble() == 1.2);
-
-        OptionalDouble emptyOptionalDouble = JSONB.fromJson("null", OptionalDouble.class);
-        assertTrue(!emptyOptionalDouble.isPresent());
-        */
-
         OptionalClass optionalClass = JSONB.fromJson("{\"optionalField\":\"value\"}", OptionalClass.class);
         assertTrue(optionalClass.optionalField.isPresent());
         assertEquals("value", optionalClass.optionalField.get());

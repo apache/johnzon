@@ -1637,20 +1637,26 @@ public class JsonParserTest {
         }
     }
 
+    /*
     @Test(expected=JsonParsingException.class)
     public void rfc7159MustFailForLiteral() {
         Json.createReader(new ByteArrayInputStream("null ".getBytes())).read();
     }
+    */
 
+    /*
     @Test(expected=JsonParsingException.class)
     public void rfc7159MustFailForString() {
         Json.createReader(new ByteArrayInputStream("\"hello\"".getBytes())).read();
     }
+    */
 
+    /*
     @Test(expected=JsonParsingException.class)
     public void rfc7159MustFailForNumber() {
         Json.createReader(new ByteArrayInputStream("  12  ".getBytes())).read();
     }
+    */
 
     @Test(expected=JsonParsingException.class)
     public void arrayFollowedByGarbage() {
@@ -1803,6 +1809,42 @@ public class JsonParserTest {
         assertNotNull(parser);
         while (parser.hasNext()) {
             parser.next();
+        }
+    }
+
+    @Test
+    public void plainValues() {
+        { // string
+            final JsonParser string = Json.createParser(new StringReader("\"a\""));
+            assertTrue(string.hasNext());
+            assertEquals(Event.VALUE_STRING, string.next());
+            assertEquals("a", string.getString());
+            assertFalse(string.hasNext());
+        }
+        { // true
+            final JsonParser parser = Json.createParser(new StringReader("true"));
+            assertTrue(parser.hasNext());
+            assertEquals(Event.VALUE_TRUE, parser.next());
+            assertFalse(parser.hasNext());
+        }
+        { // false
+            final JsonParser parser = Json.createParser(new StringReader("false"));
+            assertTrue(parser.hasNext());
+            assertEquals(Event.VALUE_FALSE, parser.next());
+            assertFalse(parser.hasNext());
+        }
+        { // null
+            final JsonParser parser = Json.createParser(new StringReader("null"));
+            assertTrue(parser.hasNext());
+            assertEquals(Event.VALUE_NULL, parser.next());
+            assertFalse(parser.hasNext());
+        }
+        { // number
+            final JsonParser parser = Json.createParser(new StringReader("1234"));
+            assertTrue(parser.hasNext());
+            assertEquals(Event.VALUE_NUMBER, parser.next());
+            assertEquals(1234, parser.getInt());
+            assertFalse(parser.hasNext());
         }
     }
 

@@ -37,7 +37,12 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.CharBuffer;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
+// TODO: Optional handling for lists (and arrays)?
 public class JohnsonJsonb implements Jsonb {
     private final Mapper delegate;
 
@@ -53,10 +58,52 @@ public class JohnsonJsonb implements Jsonb {
             } else if (Collection.class.isAssignableFrom(type)) {
                 return (T) delegate.readCollection(new StringReader(str), new JohnzonParameterizedType(type, Object.class));
             }
-            return delegate.readObject(str, type);
+            final Type mappingType = unwrapPrimitiveOptional(type);
+            final Object object = delegate.readObject(str, mappingType);
+            if (mappingType != type) {
+                return wrapPrimitiveOptional(object, type);
+            }
+            return (T) object;
         } catch (final MapperException me) {
             throw new JsonbException(me.getMessage(), me);
         }
+    }
+
+    private <T> T wrapPrimitiveOptional(final Object object, final Type type) {
+        if (OptionalDouble.class == type) {
+            if (object == null) {
+                return (T) OptionalDouble.empty();
+            }
+            return (T) OptionalDouble.of(Number.class.cast(object).doubleValue());
+        } else if (OptionalInt.class == type) {
+            if (object == null) {
+                return (T) OptionalInt.empty();
+            }
+            return (T) OptionalInt.of(Number.class.cast(object).intValue());
+        } else if (OptionalLong.class == type) {
+            if (object == null) {
+                return (T) OptionalLong.empty();
+            }
+            return (T) OptionalLong.of(Number.class.cast(object).longValue());
+        }
+        // Optional
+        return (T) Optional.ofNullable(object);
+    }
+
+    private Type unwrapPrimitiveOptional(final Type type) {
+        if (OptionalDouble.class == type) {
+            return double.class;
+        } else if (OptionalInt.class == type) {
+            return int.class;
+        } else if (OptionalLong.class == type) {
+            return long.class;
+        } else if (ParameterizedType.class.isInstance(type)) {
+            final ParameterizedType pt = ParameterizedType.class.cast(type);
+            if (Optional.class == pt.getRawType()) {
+                return pt.getActualTypeArguments()[0];
+            }
+        }
+        return type;
     }
 
     @Override
@@ -68,7 +115,12 @@ public class JohnsonJsonb implements Jsonb {
             } else if (isCollection(runtimeType)) {
                 return (T) delegate.readCollection(new StringReader(str), ParameterizedType.class.cast(runtimeType));
             }
-            return delegate.readObject(str, runtimeType);
+            final Type mappingType = unwrapPrimitiveOptional(runtimeType);
+            final Object object = delegate.readObject(str, mappingType);
+            if (mappingType != runtimeType) {
+                return wrapPrimitiveOptional(object, runtimeType);
+            }
+            return (T) object;
         } catch (final MapperException me) {
             throw new JsonbException(me.getMessage(), me);
         }
@@ -82,7 +134,12 @@ public class JohnsonJsonb implements Jsonb {
             } else if (Collection.class.isAssignableFrom(type)) {
                 return (T) delegate.readCollection(toReader(readable), new JohnzonParameterizedType(type, Object.class));
             }
-            return delegate.readObject(toReader(readable), type);
+            final Type mappingType = unwrapPrimitiveOptional(type);
+            final Object object = delegate.readObject(toReader(readable), mappingType);
+            if (mappingType != type) {
+                return wrapPrimitiveOptional(object, type);
+            }
+            return (T) object;
         } catch (final MapperException me) {
             throw new JsonbException(me.getMessage(), me);
         }
@@ -90,13 +147,22 @@ public class JohnsonJsonb implements Jsonb {
 
     @Override
     public <T> T fromJson(final Readable readable, final Type runtimeType) throws JsonbException {
-        if (isArray(runtimeType)) {
-            final Class<T> type = Class.class.cast(runtimeType);
-            return delegate.readTypedArray(toReader(readable), type.getComponentType(), type);
-        } else if (isCollection(runtimeType)) {
-            return (T) delegate.readCollection(toReader(readable), ParameterizedType.class.cast(runtimeType));
+        try {
+            if (isArray(runtimeType)) {
+                final Class<T> type = Class.class.cast(runtimeType);
+                return delegate.readTypedArray(toReader(readable), type.getComponentType(), type);
+            } else if (isCollection(runtimeType)) {
+                return (T) delegate.readCollection(toReader(readable), ParameterizedType.class.cast(runtimeType));
+            }
+            final Type mappingType = unwrapPrimitiveOptional(runtimeType);
+            final Object object = delegate.readObject(toReader(readable), mappingType);
+            if (mappingType != runtimeType) {
+                return wrapPrimitiveOptional(object, runtimeType);
+            }
+            return (T) object;
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
         }
-        return delegate.readObject(toReader(readable), runtimeType);
     }
 
     @Override
@@ -107,7 +173,12 @@ public class JohnsonJsonb implements Jsonb {
             } else if (Collection.class.isAssignableFrom(type)) {
                 return (T) delegate.readCollection(stream, new JohnzonParameterizedType(type, Object.class));
             }
-            return delegate.readObject(stream, type);
+            final Type mappingType = unwrapPrimitiveOptional(type);
+            final Object object = delegate.readObject(stream, mappingType);
+            if (mappingType != type) {
+                return wrapPrimitiveOptional(object, type);
+            }
+            return (T) object;
         } catch (final MapperException me) {
             throw new JsonbException(me.getMessage(), me);
         }
@@ -122,15 +193,25 @@ public class JohnsonJsonb implements Jsonb {
             } else if (isCollection(runtimeType)) {
                 return (T) delegate.readCollection(stream, ParameterizedType.class.cast(runtimeType));
             }
-            return delegate.readObject(stream, runtimeType);
+
+            final Type mappingType = unwrapPrimitiveOptional(runtimeType);
+            final Object object = delegate.readObject(stream, mappingType);
+            if (mappingType != runtimeType) {
+                return wrapPrimitiveOptional(object, runtimeType);
+            }
+            return (T) object;
         } catch (final MapperException me) {
             throw new JsonbException(me.getMessage(), me);
         }
     }
 
     @Override
-    public String toJson(final Object object) throws JsonbException {
+    public String toJson(final Object inObject) throws JsonbException {
         try {
+            final Object object = unwrapOptional(inObject);
+            if (object == null) {
+                return "null";
+            }
             if (isArray(object.getClass())) {
                 return delegate.writeArrayAsString(toArray(object));
             } else if (Collection.class.isInstance(object)) {
@@ -195,8 +276,9 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public String toJson(final Object object, final Type runtimeType) throws JsonbException {
-        if (isArray(runtimeType)) {
+    public String toJson(final Object inObject, final Type runtimeType) throws JsonbException {
+        final Object object = unwrapOptional(inObject);
+        if (object != null && isArray(runtimeType)) {
             return delegate.writeArrayAsString((Object[]) object);
         } else if (isCollection(runtimeType)) {
             return delegate.writeArrayAsString(Collection.class.cast(object));
@@ -205,8 +287,9 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public void toJson(final Object object, final Appendable appendable) throws JsonbException {
-        if (isArray(object.getClass())) {
+    public void toJson(final Object inObject, final Appendable appendable) throws JsonbException {
+        final Object object = unwrapOptional(inObject);
+        if (object != null && isArray(object.getClass())) {
             delegate.writeArray((Object[]) object, toWriter(appendable));
         } else if (Collection.class.isInstance(object)) {
             delegate.writeArray(Collection.class.cast(object), toWriter(appendable));
@@ -216,8 +299,9 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public void toJson(final Object object, final Type runtimeType, final Appendable appendable) throws JsonbException {
-        if (isArray(runtimeType)) {
+    public void toJson(final Object inObject, final Type runtimeType, final Appendable appendable) throws JsonbException {
+        final Object object = unwrapOptional(inObject);
+        if (object != null && isArray(runtimeType)) {
             delegate.writeArray((Object[]) object, toWriter(appendable));
         } else if (isCollection(runtimeType)) {
             delegate.writeArray(Collection.class.cast(object), toWriter(appendable));
@@ -227,8 +311,9 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public void toJson(final Object object, final OutputStream stream) throws JsonbException {
-        if (isArray(object.getClass())) {
+    public void toJson(final Object inObject, final OutputStream stream) throws JsonbException {
+        final Object object = unwrapOptional(inObject);
+        if (object != null && isArray(object.getClass())) {
             delegate.writeArray((Object[]) object, stream);
         } else if (Collection.class.isInstance(object)) {
             delegate.writeArray(Collection.class.cast(object), stream);
@@ -238,14 +323,34 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public void toJson(final Object object, final Type runtimeType, final OutputStream stream) throws JsonbException {
-        if (isArray(runtimeType)) {
+    public void toJson(final Object inObject, final Type runtimeType, final OutputStream stream) throws JsonbException {
+        final Object object = unwrapOptional(inObject);
+        if (object != null && isArray(runtimeType)) {
             delegate.writeArray((Object[]) object, stream);
         } else if (isCollection(runtimeType)) {
             delegate.writeArray(Collection.class.cast(object), stream);
         } else {
             delegate.writeObject(object, stream);
         }
+    }
+
+    private Object unwrapOptional(final Object inObject) {
+        if (Optional.class.isInstance(inObject)) {
+            return Optional.class.cast(inObject).orElse(null);
+        }
+        if (OptionalInt.class.isInstance(inObject)) {
+            final OptionalInt optionalInt = OptionalInt.class.cast(inObject);
+            return optionalInt.isPresent() ? optionalInt.getAsInt() : null;
+        }
+        if (OptionalLong.class.isInstance(inObject)) {
+            final OptionalLong optionalLong = OptionalLong.class.cast(inObject);
+            return optionalLong.isPresent() ? optionalLong.getAsLong() : null;
+        }
+        if (OptionalDouble.class.isInstance(inObject)) {
+            final OptionalDouble optionalDouble = OptionalDouble.class.cast(inObject);
+            return optionalDouble.isPresent() ? optionalDouble.getAsDouble() : null;
+        }
+        return inObject;
     }
 
     private boolean isArray(final Type runtimeType) {

@@ -46,7 +46,7 @@ public class MapperEnhancedTest {
     public void writeNull() {
         final StringWriter sw = new StringWriter();
         new MapperBuilder().build().writeObject(null, sw);
-        assertEquals("{}", sw.toString());
+        assertEquals("null", sw.toString());
     }
     
     @Test
