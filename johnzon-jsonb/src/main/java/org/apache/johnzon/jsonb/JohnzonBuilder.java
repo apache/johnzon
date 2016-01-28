@@ -20,7 +20,8 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
-import org.apache.johnzon.jsonb.converter.JsonbConverter;
+import org.apache.johnzon.jsonb.converter.JsonbConverterFromString;
+import org.apache.johnzon.jsonb.converter.JsonbConverterToString;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.MapperBuilder;
 
@@ -37,6 +38,8 @@ import javax.json.stream.JsonGenerator;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -63,7 +66,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Optional.ofNullable;
 import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
 import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
 
@@ -157,9 +159,17 @@ public class JohnzonBuilder implements JsonbBuilder {
 
 
         // user adapters
-        config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter ->
-            builder.addConverter(ofNullable(adapter.getRuntimeBoundType()).orElse(adapter.getBoundType()), new JsonbConverter(adapter))
-        ));
+        config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter -> {
+            final ParameterizedType pt = ParameterizedType.class.cast(
+                Stream.of(adapter.getClass().getGenericInterfaces())
+                    .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+            if (pt == null) {
+                throw new IllegalArgumentException(adapter + " doesn't implement JsonbAdapter");
+            }
+            final Type[] args = pt.getActualTypeArguments();
+            final boolean fromString = args[0] == String.class;
+            builder.addConverter(fromString ? args[1] : args[0], fromString ? new JsonbConverterFromString<>(adapter) : new JsonbConverterToString<>(adapter));
+        }));
 
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
             // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec sould be fine by default

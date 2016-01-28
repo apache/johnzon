@@ -18,35 +18,8 @@
  */
 package javax.json.bind.adapter;
 
-import java.lang.reflect.Type;
-
 // under discussion
-public interface JsonbAdapter {
-    default <ValueType> ValueType adaptTo(Object obj) throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
-    default <BoundType> BoundType adaptFrom(Object obj) throws Exception {
-        throw new UnsupportedOperationException();
-    }
-
-    default Class<?> getValueType() {
-        return null;
-    }
-
-    default Class<?> getBoundType() {
-        return null;
-    }
-
-    default Type getRuntimeValueType() {
-        return null;
-    }
-
-    default Type getRuntimeBoundType() {
-        return null;
-    }
-
-    default boolean handlesNullValue() {
-        return false;
-    }
+public interface JsonbAdapter<A, B> {
+    A adaptTo(B obj) throws Exception;
+    B adaptFrom(A obj) throws Exception;
 }

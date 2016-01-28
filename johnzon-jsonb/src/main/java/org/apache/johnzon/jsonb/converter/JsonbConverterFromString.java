@@ -23,16 +23,15 @@ import org.apache.johnzon.mapper.Converter;
 import javax.json.bind.JsonbException;
 import javax.json.bind.adapter.JsonbAdapter;
 
-// TODO
-public class JsonbConverter implements Converter<Object> {
-    private final JsonbAdapter adapter;
+public class JsonbConverterFromString<T> implements Converter<T> {
+    private final JsonbAdapter<String, T> adapter;
 
-    public JsonbConverter(final JsonbAdapter adapter) {
+    public JsonbConverterFromString(final JsonbAdapter<String, T> adapter) {
         this.adapter = adapter;
     }
 
     @Override
-    public String toString(final Object instance) {
+    public String toString(final T instance) {
         try {
             return adapter.adaptTo(instance);
         } catch (final Exception e) {
@@ -41,7 +40,7 @@ public class JsonbConverter implements Converter<Object> {
     }
 
     @Override
-    public Object fromString(String text) {
+    public T fromString(final String text) {
         try {
             return adapter.adaptFrom(text);
         } catch (final Exception e) {

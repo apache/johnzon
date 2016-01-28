@@ -20,6 +20,8 @@ package javax.json.bind;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
 import java.lang.reflect.Type;
 
 public interface Jsonb {
@@ -27,9 +29,9 @@ public interface Jsonb {
 
     <T> T fromJson(String str, Type runtimeType) throws JsonbException;
 
-    <T> T fromJson(Readable readable, Class<T> type) throws JsonbException;
+    <T> T fromJson(Reader reader, Class<T> type) throws JsonbException;
 
-    <T> T fromJson(Readable readable, Type runtimeType) throws JsonbException;
+    <T> T fromJson(Reader reader, Type runtimeType) throws JsonbException;
 
     <T> T fromJson(InputStream stream, Class<T> type) throws JsonbException;
 
@@ -39,9 +41,9 @@ public interface Jsonb {
 
     String toJson(Object object, Type runtimeType) throws JsonbException;
 
-    void toJson(Object object, Appendable appendable) throws JsonbException;
+    void toJson(Object object, Writer writer) throws JsonbException;
 
-    void toJson(Object object, Type runtimeType, Appendable appendable) throws JsonbException;
+    void toJson(Object object, Type runtimeType, Writer writer) throws JsonbException;
 
     void toJson(Object object, OutputStream stream) throws JsonbException;
 

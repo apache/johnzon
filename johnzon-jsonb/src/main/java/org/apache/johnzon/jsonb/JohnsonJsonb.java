@@ -24,9 +24,6 @@ import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbException;
-import java.io.Closeable;
-import java.io.Flushable;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -35,7 +32,6 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.nio.CharBuffer;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -127,15 +123,15 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public <T> T fromJson(final Readable readable, final Class<T> type) throws JsonbException {
+    public <T> T fromJson(final Reader reader, final Class<T> type) throws JsonbException {
         try {
             if (isArray(type)) {
-                return delegate.readTypedArray(toReader(readable), type.getComponentType(), type);
+                return delegate.readTypedArray(reader, type.getComponentType(), type);
             } else if (Collection.class.isAssignableFrom(type)) {
-                return (T) delegate.readCollection(toReader(readable), new JohnzonParameterizedType(type, Object.class));
+                return (T) delegate.readCollection(reader, new JohnzonParameterizedType(type, Object.class));
             }
             final Type mappingType = unwrapPrimitiveOptional(type);
-            final Object object = delegate.readObject(toReader(readable), mappingType);
+            final Object object = delegate.readObject(reader, mappingType);
             if (mappingType != type) {
                 return wrapPrimitiveOptional(object, type);
             }
@@ -146,16 +142,16 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public <T> T fromJson(final Readable readable, final Type runtimeType) throws JsonbException {
+    public <T> T fromJson(final Reader reader, final Type runtimeType) throws JsonbException {
         try {
             if (isArray(runtimeType)) {
                 final Class<T> type = Class.class.cast(runtimeType);
-                return delegate.readTypedArray(toReader(readable), type.getComponentType(), type);
+                return delegate.readTypedArray(reader, type.getComponentType(), type);
             } else if (isCollection(runtimeType)) {
-                return (T) delegate.readCollection(toReader(readable), ParameterizedType.class.cast(runtimeType));
+                return (T) delegate.readCollection(reader, ParameterizedType.class.cast(runtimeType));
             }
             final Type mappingType = unwrapPrimitiveOptional(runtimeType);
-            final Object object = delegate.readObject(toReader(readable), mappingType);
+            final Object object = delegate.readObject(reader, mappingType);
             if (mappingType != runtimeType) {
                 return wrapPrimitiveOptional(object, runtimeType);
             }
@@ -287,26 +283,26 @@ public class JohnsonJsonb implements Jsonb {
     }
 
     @Override
-    public void toJson(final Object inObject, final Appendable appendable) throws JsonbException {
+    public void toJson(final Object inObject, final Writer writer) throws JsonbException {
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(object.getClass())) {
-            delegate.writeArray((Object[]) object, toWriter(appendable));
+            delegate.writeArray((Object[]) object, writer);
         } else if (Collection.class.isInstance(object)) {
-            delegate.writeArray(Collection.class.cast(object), toWriter(appendable));
+            delegate.writeArray(Collection.class.cast(object), writer);
         } else {
-            delegate.writeObject(object, toWriter(appendable));
+            delegate.writeObject(object, writer);
         }
     }
 
     @Override
-    public void toJson(final Object inObject, final Type runtimeType, final Appendable appendable) throws JsonbException {
+    public void toJson(final Object inObject, final Type runtimeType, final Writer writer) throws JsonbException {
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(runtimeType)) {
-            delegate.writeArray((Object[]) object, toWriter(appendable));
+            delegate.writeArray((Object[]) object, writer);
         } else if (isCollection(runtimeType)) {
-            delegate.writeArray(Collection.class.cast(object), toWriter(appendable));
+            delegate.writeArray(Collection.class.cast(object), writer);
         } else {
-            delegate.writeObject(object, toWriter(appendable));
+            delegate.writeObject(object, writer);
         }
     }
 
@@ -363,51 +359,5 @@ public class JohnsonJsonb implements Jsonb {
         }
         final Type rawType = ParameterizedType.class.cast(runtimeType).getRawType();
         return Class.class.isInstance(rawType) && Collection.class.isAssignableFrom(Class.class.cast(rawType));
-    }
-
-    private Writer toWriter(final Appendable appendable) {
-        return Writer.class.isInstance(appendable) ? Writer.class.cast(appendable) :
-            new Writer() {
-                @Override
-                public void write(final char[] cbuf, final int off, final int len) throws IOException {
-                    appendable.append(new String(cbuf, off, len));
-                }
-
-                @Override
-                public void flush() throws IOException {
-                    if (Flushable.class.isInstance(appendable)) {
-                        Flushable.class.cast(appendable);
-                    }
-                }
-
-                @Override
-                public void close() throws IOException {
-                    if (Closeable.class.isInstance(appendable)) {
-                        Closeable.class.cast(appendable);
-                    }
-                }
-            };
-    }
-
-    private Reader toReader(final Readable readable) {
-        return Reader.class.isInstance(readable) ? Reader.class.cast(readable) :
-            new Reader() {
-                @Override
-                public int read(final char[] cbuf, final int off, final int len) throws IOException {
-                    int r;
-                    final CharBuffer cb = CharBuffer.allocate(len);
-                    while ((r = readable.read(cb)) >= 0) {
-                        System.arraycopy(cb.array(), 0, cbuf, off, r);
-                    }
-                    return readable.read(CharBuffer.allocate(len));
-                }
-
-                @Override
-                public void close() throws IOException {
-                    if (Closeable.class.isInstance(readable)) {
-                        Closeable.class.cast(readable);
-                    }
-                }
-            };
     }
 }

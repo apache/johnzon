@@ -275,7 +275,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
+        <version>2.10.3</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -284,6 +284,7 @@
             </goals>
             <configuration combine.self="override"> <!-- disable parent configuration -->
               <show>private</show>
+              <additionalparam>-Xdoclint:none</additionalparam> <!-- maven plugin generated a HelpMojo with malformed javadoc -->
             </configuration>
           </execution>
         </executions>

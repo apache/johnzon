@@ -18,7 +18,8 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.jsonb.converter.JsonbConverter;
+import org.apache.johnzon.jsonb.converter.JsonbConverterFromString;
+import org.apache.johnzon.jsonb.converter.JsonbConverterToString;
 import org.apache.johnzon.jsonb.converter.JsonbDateConverter;
 import org.apache.johnzon.jsonb.converter.JsonbLocalDateConverter;
 import org.apache.johnzon.jsonb.converter.JsonbLocalDateTimeConverter;
@@ -32,6 +33,7 @@ import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 
 import javax.json.bind.JsonbException;
+import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbNillable;
@@ -258,7 +260,16 @@ public class JsonbAccessMode implements AccessMode {
                                      final JsonbNumberFormat numberFormat) throws InstantiationException, IllegalAccessException {
         final Converter<?> converter;
         if (adapter != null) {
-            converter = new JsonbConverter(adapter.value().newInstance());
+            final Class<? extends JsonbAdapter> value = adapter.value();
+            final ParameterizedType pt = ParameterizedType.class.cast(
+                Stream.of(value.getGenericInterfaces())
+                    .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+            if (pt == null) {
+                throw new IllegalArgumentException(value + " doesn't implement JsonbAdapter");
+            }
+            final Type[] args = pt.getActualTypeArguments();
+            final boolean fromString = args[0] == String.class;
+            converter = fromString ? new JsonbConverterFromString<>(value.newInstance()) : new JsonbConverterToString<>(value.newInstance());
         } else if (dateFormat != null) { // TODO: support lists, LocalDate?
             if (Date.class == type) {
                 converter = new JsonbDateConverter(dateFormat);
