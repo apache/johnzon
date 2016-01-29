@@ -32,6 +32,9 @@ public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
 
     @Override
     public A to(final B obj) {
+        if (obj == null && !delegate.handlesNullValue()) {
+            return null;
+        }
         try {
             return delegate.adaptTo(obj);
         } catch (final Exception e) {
@@ -41,6 +44,9 @@ public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
 
     @Override
     public B from(final A obj) {
+        if (obj == null && !delegate.handlesNullValue()) {
+            return null;
+        }
         try {
             return delegate.adaptFrom(obj);
         } catch (final Exception e) {

@@ -44,7 +44,6 @@ import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbPropertyOrder;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeAdapter;
-import javax.json.bind.annotation.JsonbValue;
 import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
@@ -149,12 +148,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 final JsonbTypeAdapter adapter = parameter.getAnnotation(JsonbTypeAdapter.class);
                 final JsonbDateFormat dateFormat = parameter.getAnnotation(JsonbDateFormat.class);
                 final JsonbNumberFormat numberFormat = parameter.getAnnotation(JsonbNumberFormat.class);
-                final JsonbValue value = parameter.getAnnotation(JsonbValue.class);
-                if (adapter == null && dateFormat == null && numberFormat == null && value == null) {
+                if (adapter == null && dateFormat == null && numberFormat == null) {
                     converters[i] = defaultConverters.get(parameter.getType());
                     itemConverters[i] = null;
                 } else {
-                    validateAnnotations(parameter, adapter, dateFormat, numberFormat, value);
+                    validateAnnotations(parameter, adapter, dateFormat, numberFormat);
 
                     try {
                         final Adapter converter = toConverter(parameter.getType(), adapter, dateFormat, numberFormat);
@@ -253,11 +251,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
     private void validateAnnotations(final Object parameter,
                                      final JsonbTypeAdapter adapter, final JsonbDateFormat dateFormat,
-                                     final JsonbNumberFormat numberFormat, final JsonbValue value) {
+                                     final JsonbNumberFormat numberFormat) {
         int notNull = adapter != null ? 1 : 0;
         notNull += dateFormat != null ? 1 : 0;
         notNull += numberFormat != null ? 1 : 0;
-        notNull += value != null ? 1 : 0;
         if (notNull > 1) {
             throw new IllegalArgumentException("Conflicting @JsonbXXX on " + parameter);
         }
@@ -335,12 +332,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final JsonbTypeAdapter adapter = initialReader.getAnnotation(JsonbTypeAdapter.class);
             final JsonbDateFormat dateFormat = initialReader.getAnnotation(JsonbDateFormat.class);
             final JsonbNumberFormat numberFormat = initialReader.getAnnotation(JsonbNumberFormat.class);
-            final JsonbValue jsonbValue = initialReader.getAnnotation(JsonbValue.class);
-            validateAnnotations(initialReader, adapter, dateFormat, numberFormat, jsonbValue);
+            validateAnnotations(initialReader, adapter, dateFormat, numberFormat);
 
             final Adapter<?, ?> converter;
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ?
+                converter = adapter == null && dateFormat == null && numberFormat == null ?
                     defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
                     toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
@@ -437,12 +433,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final JsonbTypeAdapter adapter = initialWriter.getAnnotation(JsonbTypeAdapter.class);
             final JsonbDateFormat dateFormat = initialWriter.getAnnotation(JsonbDateFormat.class);
             final JsonbNumberFormat numberFormat = initialWriter.getAnnotation(JsonbNumberFormat.class);
-            final JsonbValue jsonbValue = initialWriter.getAnnotation(JsonbValue.class);
-            validateAnnotations(initialWriter, adapter, dateFormat, numberFormat, jsonbValue);
+            validateAnnotations(initialWriter, adapter, dateFormat, numberFormat);
 
             final Adapter<?, ?> converter;
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null && jsonbValue == null ?
+                converter = adapter == null && dateFormat == null && numberFormat == null ?
                     defaultConverters.get(new AdapterKey(initialWriter.getType(), String.class)) :
                     toConverter(initialWriter.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
