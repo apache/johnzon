@@ -16,28 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper.converter;
+package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
-
-import java.util.Date;
-
-// needed for openjpa for instance which proxies dates
-public class DateWithCopyConverter implements Adapter<Date, String> {
-    private final Adapter<Date, String> delegate;
-
-    public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<Date>(new DateConverter("yyyyMMddHHmmssZ")) : delegate;
-    }
-
-    @Override
-    public Date to(final String s) {
-        return delegate.to(s);
-    }
-
-    @Override
-    public String from(final Date date) {
-        return delegate.from(new Date(date.getTime()));
-    }
+public interface Adapter<A, B> {
+    A to(B b);
+    B from(A a);
 }

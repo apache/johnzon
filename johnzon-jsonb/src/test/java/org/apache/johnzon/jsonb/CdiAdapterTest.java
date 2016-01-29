@@ -85,19 +85,19 @@ public class CdiAdapterTest {
     }
 
     @ApplicationScoped
-    public static class ModelAdapter implements JsonbAdapter<String, Model> {
+    public static class ModelAdapter implements JsonbAdapter<Model, String> {
         @Inject
         private Service service;
 
         @Override
-        public String adaptTo(final Model obj) throws Exception {
-            assertTrue(OwbNormalScopeProxy.class.isInstance(service)); // additional test
-            return service.toString(obj);
+        public Model adaptTo(final String obj) throws Exception {
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public Model adaptFrom(final String obj) throws Exception {
-            throw new UnsupportedOperationException();
+        public String adaptFrom(final Model obj) throws Exception {
+            assertTrue(OwbNormalScopeProxy.class.isInstance(service)); // additional test
+            return service.toString(obj);
         }
     }
 }

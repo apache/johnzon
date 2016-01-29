@@ -21,6 +21,8 @@ package org.apache.johnzon.mapper;
 import org.apache.johnzon.core.JsonLongImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.apache.johnzon.mapper.reflection.Mappings;
@@ -80,16 +82,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
+import static javafx.scene.input.KeyCode.T;
 
 public class Mapper implements Closeable {
-    private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
+    private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
 
     protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
     protected final boolean close;
-    protected final ConcurrentMap<Type, Converter<?>> converters;
+    protected final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
+    protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry = new ConcurrentHashMap<Adapter<?, ?>, AdapterKey>();
     protected final int version;
     protected final boolean skipNull;
     protected final boolean skipEmptyArray;
@@ -101,7 +105,7 @@ public class Mapper implements Closeable {
 
     // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
-                  final boolean doClose, final Map<Type, Converter<?>> converters,
+                  final boolean doClose, final Map<AdapterKey, Adapter<?, ?>> adapters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
                   final AccessMode accessMode, final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL, final Charset encoding,
                   final Collection<Closeable> closeables) {
@@ -109,9 +113,9 @@ public class Mapper implements Closeable {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.close = doClose;
-        this.converters = new ConcurrentHashMap<Type, Converter<?>>(converters);
+        this.adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(adapters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, version, this.converters);
+        this.mappings = new Mappings(attributeOrder, accessMode, version, this.adapters);
         this.skipNull = skipNull;
         this.skipEmptyArray = skipEmptyArray;
         this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
@@ -188,27 +192,27 @@ public class Mapper implements Closeable {
     }
 
     /*private <T> String convertFrom(final Class<T> aClass, final T value) {
-        final Converter<T> converter = (Converter<T>) findConverter(aClass);
+        final Converter<T> converter = (Converter<T>) findAdapter(aClass);
         return doConvertFrom(value, converter);
     }*/
 
-    private static <T> String doConvertFrom(final T value, final Converter<T> converter) {
+    private static <T> Object doConvertFrom(final T value, final Adapter<T, Object> converter) {
         if (converter == null) {
             throw new MapperException("can't convert " + value + " to String");
         }
-        return converter.toString(value);
+        return converter.from(value);
     }
 
-    private <T> Converter<T> findConverter(final Type aClass) {
-        final Converter<T> converter = (Converter<T>) converters.get(aClass);
+    private Adapter findAdapter(final Type aClass) {
+        final Adapter<?, ?> converter = adapters.get(new AdapterKey(aClass, String.class));
         if (converter != null) {
             return converter;
         }
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (clazz.isEnum()) {
-                final Converter<T> enumConverter = new EnumConverter(clazz);
-                converters.putIfAbsent(clazz, enumConverter);
+                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz));
+                adapters.putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;
             }
         }
@@ -216,15 +220,15 @@ public class Mapper implements Closeable {
     }
 
     private Object convertTo(final Type aClass, final String text) {
-        if (Object.class == aClass) {
+        if (Object.class == aClass || String.class == aClass) {
             return text;
         }
-        final Converter<?> converter = findConverter(aClass);
+        final Adapter converter = findAdapter(aClass);
         if (converter == null) {
-            converters.putIfAbsent(aClass, FALLBACK_CONVERTER);
-            return FALLBACK_CONVERTER;
+            adapters.putIfAbsent(new AdapterKey(String.class, aClass), FALLBACK_CONVERTER);
+            return FALLBACK_CONVERTER.to(text);
         }
-        return converter.fromString(text);
+        return converter.to(text);
     }
 
     public <T> void writeArray(final Object object, final OutputStream stream) {
@@ -394,7 +398,9 @@ public class Mapper implements Closeable {
 
             final Class<?> objectClass = object.getClass();
             if (objectClass.isEnum()) {
-                return gen.write(findConverter(objectClass).toString(object));
+                final Adapter adapter = findAdapter(objectClass);
+                final String adaptedValue = adapter.from(object).toString(); // we know it ends as String for enums
+                return gen.write(adaptedValue);
             }
 
             gen = gen.writeStartObject();
@@ -436,7 +442,7 @@ public class Mapper implements Closeable {
                 }
             }
 
-            final Object val = getter.converter == null ? value : getter.converter.toString(value);
+            final Object val = getter.converter == null ? value : getter.converter.from(value);
 
             generator = writeValue(generator, val.getClass(),
                     getter.primitive, getter.array,
@@ -448,7 +454,7 @@ public class Mapper implements Closeable {
         return generator;
     }
 
-    private JsonGenerator writeMapBody(final Map<?, ?> object, final JsonGenerator gen, final Converter itemConverter) throws InvocationTargetException, IllegalAccessException {
+    private JsonGenerator writeMapBody(final Map<?, ?> object, final JsonGenerator gen, final Adapter itemConverter) throws InvocationTargetException, IllegalAccessException {
         JsonGenerator generator = gen;
         for (final Map.Entry<?, ?> entry : ((Map<?, ?>) object).entrySet()) {
             final Object value = entry.getValue();
@@ -479,7 +485,7 @@ public class Mapper implements Closeable {
     private JsonGenerator writeValue(final JsonGenerator generator, final Class<?> type,
                                      final boolean primitive, final boolean array,
                                      final boolean collection, final boolean map,
-                                     final Converter itemConverter,
+                                     final Adapter itemConverter,
                                      final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
@@ -493,19 +499,19 @@ public class Mapper implements Closeable {
                 return generator;
             }
             if(treatByteArrayAsBase64URL && (type == byte[].class /*|| type == Byte[].class*/)) {
-                return generator.write(key, Converter.class.cast(converters.get(byte[].class)).toString(value));
+                return generator.write(key, String.valueOf(Adapter.class.cast(adapters.get(new AdapterKey(byte[].class, String.class))).to(value)));
             }
 
             JsonGenerator gen = generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
                 final Object o = Array.get(value, i);
-                gen = writeItem(gen, itemConverter != null ? itemConverter.toString(o) : o);
+                gen = writeItem(gen, itemConverter != null ? itemConverter.from(o) : o);
             }
             return gen.writeEnd();
         } else if (collection) {
             JsonGenerator gen = generator.writeStartArray(key);
             for (final Object o : Collection.class.cast(value)) {
-                gen = writeItem(gen, itemConverter != null ? itemConverter.toString(o) : o);
+                gen = writeItem(gen, itemConverter != null ? itemConverter.from(o) : o);
             }
             return gen.writeEnd();
         } else if (map) {
@@ -515,10 +521,14 @@ public class Mapper implements Closeable {
         } else if (primitive) {
             return writePrimitives(generator, key, type, value);
         } else {
-            final Converter<?> converter = findConverter(type);
+            final Adapter converter = findAdapter(type);
             if (converter != null) {
-                return writeValue(generator, String.class, true, false, false, false, null, key,
-                        doConvertFrom(value, (Converter<Object>) converter));
+                final Object adapted = doConvertFrom(value, converter);
+                final JsonGenerator written = writePrimitives(generator, key, adapted.getClass(), adapted);
+                if (written != null) {
+                    return written;
+                }
+                return writeValue(generator, String.class, true, false, false, false, null, key, adapted);
             }
             return doWriteObjectBody(generator.writeStartObject(key), value).writeEnd();
         }
@@ -788,11 +798,34 @@ public class Mapper implements Closeable {
         return t;
     }
 
-    private Object toValue(final JsonValue jsonValue, final Converter<?> converter, final Converter<?> itemConverter, final Type type) throws Exception {
+    private Object toValue(final JsonValue jsonValue, final Adapter converter, final Adapter itemConverter, final Type type) throws Exception {
         return converter == null ?
                 toObject(jsonValue, type, itemConverter) : jsonValue.getValueType() == ValueType.STRING ?
-                converter.fromString(JsonString.class.cast(jsonValue).getString()) :
-                converter.fromString(jsonValue.toString());
+                converter.to(JsonString.class.cast(jsonValue).getString()) :
+                convertTo(converter, jsonValue);
+    }
+
+    private Object convertTo(final Adapter converter, final JsonValue jsonValue) {
+        if (jsonValue.getValueType() == ValueType.OBJECT) {
+            AdapterKey adapterKey = reverseAdaptersRegistry.get(converter);
+            if (adapterKey == null) {
+                for (final Map.Entry<AdapterKey, Adapter<?, ?>> entry : adapters.entrySet()) {
+                    if (entry.getValue() == converter) {
+                        adapterKey = entry.getKey();
+                        reverseAdaptersRegistry.put(converter, adapterKey);
+                        break;
+                    }
+                }
+            }
+            final Object param;
+            try {
+                param = buildObject(adapterKey.getTo(), JsonObject.class.cast(jsonValue));
+            } catch (final Exception e) {
+                throw new MapperException(e);
+            }
+            return converter.to(param);
+        }
+        return converter.to(jsonValue.toString());
     }
 
     private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object) throws Exception {
@@ -806,7 +839,7 @@ public class Mapper implements Closeable {
         return objects;
     }
 
-    private Object toObject(final JsonValue jsonValue, final Type type, final Converter<?> itemConverter) throws Exception {
+    private Object toObject(final JsonValue jsonValue, final Type type, final Adapter itemConverter) throws Exception {
         if (jsonValue == null || JsonValue.NULL == jsonValue) {
             return null;
         }
@@ -902,14 +935,14 @@ public class Mapper implements Closeable {
             if (itemConverter == null) {
                 return convertTo(Class.class.cast(type), string);
             } else {
-                return itemConverter.fromString(string);
+                return itemConverter.to(string);
             }
         }
 
         throw new MapperException("Unable to parse " + jsonValue + " to " + type);
     }
 
-    private Object buildArray(final Type type, final JsonArray jsonArray, final Converter<?> itemConverter) throws Exception {
+    private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter) throws Exception {
         if (Class.class.isInstance(type)) {
             final Class clazz = Class.class.cast(type);
             if (clazz.isArray()) {
@@ -933,7 +966,7 @@ public class Mapper implements Closeable {
     }
 
     private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray,
-                                            final Converter<?> itemConverter) throws Exception {
+                                            final Adapter itemConverter) throws Exception {
         final Collection collection;
 
         if (SortedSet.class == mapping.raw || NavigableSet.class == mapping.raw || TreeSet.class == mapping.raw) {
@@ -972,7 +1005,7 @@ public class Mapper implements Closeable {
         return collection;
     }
 
-    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType, final Converter<?> itemConverter) throws Exception {
+    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType, final Adapter itemConverter) throws Exception {
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {

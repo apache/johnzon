@@ -18,31 +18,31 @@
  */
 package org.apache.johnzon.jsonb.converter;
 
-import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Adapter;
 
 import javax.json.bind.JsonbException;
 import javax.json.bind.adapter.JsonbAdapter;
 
-public class JsonbConverterFromString<T> implements Converter<T> {
-    private final JsonbAdapter<String, T> adapter;
+public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
+    private final JsonbAdapter<A, B> delegate;
 
-    public JsonbConverterFromString(final JsonbAdapter<String, T> adapter) {
-        this.adapter = adapter;
+    public JohnzonJsonbAdapter(final JsonbAdapter<A, B> delegate) {
+        this.delegate = delegate;
     }
 
     @Override
-    public String toString(final T instance) {
+    public A to(final B obj) {
         try {
-            return adapter.adaptTo(instance);
+            return delegate.adaptTo(obj);
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }
     }
 
     @Override
-    public T fromString(final String text) {
+    public B from(final A obj) {
         try {
-            return adapter.adaptFrom(text);
+            return delegate.adaptFrom(obj);
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }

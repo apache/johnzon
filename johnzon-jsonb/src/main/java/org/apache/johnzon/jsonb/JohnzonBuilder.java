@@ -20,12 +20,14 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
-import org.apache.johnzon.jsonb.converter.JsonbConverterFromString;
-import org.apache.johnzon.jsonb.converter.JsonbConverterToString;
+import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -151,8 +153,7 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
 
-        final Map<Class<?>, Converter<?>> defaultConverters = createJava8Converters();
-        defaultConverters.forEach(builder::addConverter);
+        final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 
         final JsonbAccessMode accessMode = new JsonbAccessMode(
             propertyNamingStrategy, orderValue, visibilityStrategy,
@@ -190,8 +191,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 throw new IllegalArgumentException(adapter + " doesn't implement JsonbAdapter");
             }
             final Type[] args = pt.getActualTypeArguments();
-            final boolean fromString = args[0] == String.class;
-            builder.addConverter(fromString ? args[1] : args[0], fromString ? new JsonbConverterFromString<>(adapter) : new JsonbConverterToString<>(adapter));
+            builder.addAdapter(args[0], args[1], new JohnzonJsonbAdapter(adapter));
         }));
 
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
@@ -242,14 +242,14 @@ public class JohnzonBuilder implements JsonbBuilder {
         return ofNullable(Thread.currentThread().getContextClassLoader()).orElseGet(ClassLoader::getSystemClassLoader);
     }
 
-    private static Map<Class<?>, Converter<?>> createJava8Converters() { // TODO: move these converters in converter package
-        final Map<Class<?>, Converter<?>> converters = new HashMap<>();
+    private static Map<AdapterKey, Adapter<?, ?>> createJava8Converters(final MapperBuilder builder) { // TODO: move these converters in converter package
+        final Map<AdapterKey, Adapter<?, ?>> converters = new HashMap<>();
 
         final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
         final ZoneId zoneIDUTC = ZoneId.of("UTC");
 
         // built-in converters not in mapper
-        converters.put(Period.class, new Converter<Period>() {
+        converters.put(new AdapterKey(Period.class, String.class), new ConverterAdapter<>(new Converter<Period>() {
             @Override
             public String toString(final Period instance) {
                 return instance.toString();
@@ -259,8 +259,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public Period fromString(final String text) {
                 return Period.parse(text);
             }
-        });
-        converters.put(Duration.class, new Converter<Duration>() {
+        }));
+        converters.put(new AdapterKey(Duration.class, String.class), new ConverterAdapter<>(new Converter<Duration>() {
             @Override
             public String toString(final Duration instance) {
                 return instance.toString();
@@ -270,8 +270,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public Duration fromString(final String text) {
                 return Duration.parse(text);
             }
-        });
-        converters.put(Date.class, new Converter<Date>() {
+        }));
+        converters.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new Converter<Date>() {
             @Override
             public String toString(final Date instance) {
                 return LocalDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
@@ -281,8 +281,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public Date fromString(final String text) {
                 return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
             }
-        });
-        converters.put(Calendar.class, new Converter<Calendar>() {
+        }));
+        converters.put(new AdapterKey(Calendar.class, String.class), new ConverterAdapter<>(new Converter<Calendar>() {
             @Override
             public String toString(final Calendar instance) {
                 return ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
@@ -295,8 +295,8 @@ public class JohnzonBuilder implements JsonbBuilder {
                 calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
                 return calendar;
             }
-        });
-        converters.put(GregorianCalendar.class, new Converter<GregorianCalendar>() {
+        }));
+        converters.put(new AdapterKey(GregorianCalendar.class, String.class), new ConverterAdapter<>(new Converter<GregorianCalendar>() {
             @Override
             public String toString(final GregorianCalendar instance) {
                 return instance.toZonedDateTime().toString();
@@ -309,8 +309,8 @@ public class JohnzonBuilder implements JsonbBuilder {
                 calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
                 return calendar;
             }
-        });
-        converters.put(TimeZone.class, new Converter<TimeZone>() {
+        }));
+        converters.put(new AdapterKey(TimeZone.class, String.class), new ConverterAdapter<>(new Converter<TimeZone>() {
             @Override
             public String toString(final TimeZone instance) {
                 return instance.getID();
@@ -321,8 +321,8 @@ public class JohnzonBuilder implements JsonbBuilder {
                 logIfDeprecatedTimeZone(text);
                 return TimeZone.getTimeZone(text);
             }
-        });
-        converters.put(ZoneId.class, new Converter<ZoneId>() {
+        }));
+        converters.put(new AdapterKey(ZoneId.class, String.class), new ConverterAdapter<>(new Converter<ZoneId>() {
             @Override
             public String toString(final ZoneId instance) {
                 return instance.getId();
@@ -332,8 +332,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public ZoneId fromString(final String text) {
                 return ZoneId.of(text);
             }
-        });
-        converters.put(ZoneOffset.class, new Converter<ZoneOffset>() {
+        }));
+        converters.put(new AdapterKey(ZoneOffset.class, String.class), new ConverterAdapter<>(new Converter<ZoneOffset>() {
             @Override
             public String toString(final ZoneOffset instance) {
                 return instance.getId();
@@ -343,8 +343,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public ZoneOffset fromString(final String text) {
                 return ZoneOffset.of(text);
             }
-        });
-        converters.put(SimpleTimeZone.class, new Converter<SimpleTimeZone>() {
+        }));
+        converters.put(new AdapterKey(SimpleTimeZone.class, String.class), new ConverterAdapter<>(new Converter<SimpleTimeZone>() {
             @Override
             public String toString(final SimpleTimeZone instance) {
                 return instance.getID();
@@ -356,8 +356,8 @@ public class JohnzonBuilder implements JsonbBuilder {
                 final TimeZone timeZone = TimeZone.getTimeZone(text);
                 return new SimpleTimeZone(timeZone.getRawOffset(), timeZone.getID());
             }
-        });
-        converters.put(Instant.class, new Converter<Instant>() {
+        }));
+        converters.put(new AdapterKey(Instant.class, String.class), new ConverterAdapter<>(new Converter<Instant>() {
             @Override
             public String toString(final Instant instance) {
                 return instance.toString();
@@ -367,8 +367,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public Instant fromString(final String text) {
                 return Instant.parse(text);
             }
-        });
-        converters.put(LocalDate.class, new Converter<LocalDate>() {
+        }));
+        converters.put(new AdapterKey(LocalDate.class, String.class), new ConverterAdapter<>(new Converter<LocalDate>() {
             @Override
             public String toString(final LocalDate instance) {
                 return instance.toString();
@@ -378,8 +378,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public LocalDate fromString(final String text) {
                 return LocalDate.parse(text);
             }
-        });
-        converters.put(LocalDateTime.class, new Converter<LocalDateTime>() {
+        }));
+        converters.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new Converter<LocalDateTime>() {
             @Override
             public String toString(final LocalDateTime instance) {
                 return instance.toString();
@@ -389,8 +389,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public LocalDateTime fromString(final String text) {
                 return LocalDateTime.parse(text);
             }
-        });
-        converters.put(ZonedDateTime.class, new Converter<ZonedDateTime>() {
+        }));
+        converters.put(new AdapterKey(ZonedDateTime.class, String.class), new ConverterAdapter<>(new Converter<ZonedDateTime>() {
             @Override
             public String toString(final ZonedDateTime instance) {
                 return instance.toString();
@@ -400,8 +400,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public ZonedDateTime fromString(final String text) {
                 return ZonedDateTime.parse(text);
             }
-        });
-        converters.put(OffsetDateTime.class, new Converter<OffsetDateTime>() {
+        }));
+        converters.put(new AdapterKey(OffsetDateTime.class, String.class), new ConverterAdapter<>(new Converter<OffsetDateTime>() {
             @Override
             public String toString(final OffsetDateTime instance) {
                 return instance.toString();
@@ -411,8 +411,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             public OffsetDateTime fromString(final String text) {
                 return OffsetDateTime.parse(text);
             }
-        });
-        converters.put(OffsetTime.class, new Converter<OffsetTime>() {
+        }));
+        converters.put(new AdapterKey(OffsetTime.class, String.class), new ConverterAdapter<>(new Converter<OffsetTime>() {
             @Override
             public String toString(final OffsetTime instance) {
                 return instance.toString();
@@ -422,7 +422,9 @@ public class JohnzonBuilder implements JsonbBuilder {
             public OffsetTime fromString(final String text) {
                 return OffsetTime.parse(text);
             }
-        });
+        }));
+
+        converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
         return converters;
     }
 

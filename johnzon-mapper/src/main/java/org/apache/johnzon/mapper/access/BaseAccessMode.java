@@ -18,8 +18,9 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.beans.ConstructorProperties;
@@ -106,8 +107,8 @@ public abstract class BaseAccessMode implements AccessMode {
         final boolean constructorHasArguments = constructor != null && constructor.getGenericParameterTypes().length > 0;
         final Type[] factoryParameterTypes;
         final String[] constructorParameters;
-        final Converter<?>[] constructorParameterConverters;
-        final Converter<?>[] constructorItemParameterConverters;
+        final Adapter<?, ?>[] constructorParameterConverters;
+        final Adapter<?, ?>[] constructorItemParameterConverters;
         if (constructorHasArguments) {
             factoryParameterTypes = constructor.getGenericParameterTypes();
 
@@ -115,13 +116,13 @@ public abstract class BaseAccessMode implements AccessMode {
             final ConstructorProperties constructorProperties = constructor.getAnnotation(ConstructorProperties.class);
             System.arraycopy(constructorProperties.value(), 0, constructorParameters, 0, constructorParameters.length);
 
-            constructorParameterConverters = new Converter<?>[constructor.getGenericParameterTypes().length];
-            constructorItemParameterConverters = new Converter<?>[constructorParameterConverters.length];
+            constructorParameterConverters = new Adapter<?, ?>[constructor.getGenericParameterTypes().length];
+            constructorItemParameterConverters = new Adapter<?, ?>[constructorParameterConverters.length];
             for (int i = 0; i < constructorParameters.length; i++) {
                 for (final Annotation a : constructor.getParameterAnnotations()[i]) {
                     if (a.annotationType() == JohnzonConverter.class) {
                         try {
-                            final Converter<?> converter = JohnzonConverter.class.cast(a).value().newInstance();
+                            final Adapter<?, ?> converter = new ConverterAdapter(JohnzonConverter.class.cast(a).value().newInstance());
                             if (matches(constructor.getParameterTypes()[i], converter)) {
                                 constructorParameterConverters[i] = converter;
                                 constructorItemParameterConverters[i] = null;
@@ -174,12 +175,12 @@ public abstract class BaseAccessMode implements AccessMode {
             }
 
             @Override
-            public Converter<?>[] getParameterConverter() {
+            public Adapter<?, ?>[] getParameterConverter() {
                 return constructorParameterConverters;
             }
 
             @Override
-            public Converter<?>[] getParameterItemConverter() {
+            public Adapter<?, ?>[] getParameterItemConverter() {
                 return constructorItemParameterConverters;
             }
         };

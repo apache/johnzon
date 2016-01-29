@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Adapter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -30,7 +30,7 @@ public interface AccessMode {
         Type getType();
         <T extends Annotation> T getAnnotation(Class<T> clazz);
         <T extends Annotation> T getClassOrPackageAnnotation(Class<T> clazz);
-        Converter<?> findConverter();
+        Adapter<?, ?> findConverter();
         boolean isNillable();
     }
 
@@ -46,8 +46,8 @@ public interface AccessMode {
         Object create(Object[] params);
         Type[] getParameterTypes();
         String[] getParameterNames();
-        Converter<?>[] getParameterConverter();
-        Converter<?>[] getParameterItemConverter();
+        Adapter<?, ?>[] getParameterConverter();
+        Adapter<?, ?>[] getParameterItemConverter();
     }
 
     Factory findFactory(Class<?> clazz);

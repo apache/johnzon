@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 
@@ -112,7 +112,7 @@ public class FieldAccessMode extends BaseAccessMode {
         }
 
         @Override
-        public Converter<?> findConverter() {
+        public Adapter<?, ?> findConverter() {
             return null;
         }
 

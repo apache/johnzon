@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Adapter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -80,8 +80,8 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         }
 
         @Override
-        public Converter<?> findConverter() {
-            final Converter<?> converter = type1.findConverter();
+        public Adapter<?, ?> findConverter() {
+            final Adapter<?, ?> converter = type1.findConverter();
             return converter != null ? converter : type2.findConverter();
         }
 

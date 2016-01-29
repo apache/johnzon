@@ -18,7 +18,9 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -31,47 +33,52 @@ public class Converters {
     }
 
     // TODO: more ParameterizedType and maybe TypeClosure support
-    public static boolean matches(final Type type, final Converter<?> converter) {
-        Type convertType = null;
-        if (Converter.TypeAccess.class.isInstance(converter)) {
-            convertType = Converter.TypeAccess.class.cast(converter).type();
+    public static boolean matches(final Type type, final Adapter<?, ?> adapter) {
+        if (ConverterAdapter.class.isInstance(adapter)) {
+            final Converter delegate = ConverterAdapter.class.cast(adapter).getConverter();
+            Type convertType = null;
+            if (Converter.TypeAccess.class.isInstance(delegate)) {
+                convertType = Converter.TypeAccess.class.cast(delegate).type();
+            } else {
+                for (final Type pt : delegate.getClass().getGenericInterfaces()) {
+                    if (ParameterizedType.class.isInstance(pt) && ParameterizedType.class.cast(pt).getRawType() == Converter.class) {
+                        convertType = ParameterizedType.class.cast(pt).getActualTypeArguments()[0];
+                        break;
+                    }
+                }
+            }
+
+            if (convertType == null) { // compatibility, previously nested converter were not supported
+                return true;
+            }
+
+            if (ParameterizedType.class.isInstance(type)) {
+                final ParameterizedType parameterizedType = ParameterizedType.class.cast(type);
+                final Type rawType = parameterizedType.getRawType();
+                if (Class.class.isInstance(rawType)) {
+                    final Class<?> clazz = Class.class.cast(rawType);
+                    if (Collection.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 1) {
+                        final Type argType = parameterizedType.getActualTypeArguments()[0];
+                        if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
+                            return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
+                        }
+                    } else if (Map.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 2) {
+                        final Type argType = parameterizedType.getActualTypeArguments()[1];
+                        if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
+                            return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
+                        }
+                    }
+                    return true; // actually here we suppose we dont know
+                }
+            }
+            if (Class.class.isInstance(type)) {
+                final Class<?> clazz = Class.class.cast(type);
+                if (clazz.isArray()) {
+                    return !Class.class.cast(convertType).isAssignableFrom(clazz.getComponentType());
+                }
+            }
         } else {
-            for (final Type pt : converter.getClass().getGenericInterfaces()) {
-                if (ParameterizedType.class.isInstance(pt) && ParameterizedType.class.cast(pt).getRawType() == Converter.class) {
-                    convertType = ParameterizedType.class.cast(pt).getActualTypeArguments()[0];
-                    break;
-                }
-            }
-        }
-
-        if (convertType == null) { // compatibility, previously nested converter were not supported
-            return true;
-        }
-
-        if (ParameterizedType.class.isInstance(type)) {
-            final ParameterizedType parameterizedType = ParameterizedType.class.cast(type);
-            final Type rawType = parameterizedType.getRawType();
-            if (Class.class.isInstance(rawType)) {
-                final Class<?> clazz = Class.class.cast(rawType);
-                if (Collection.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 1) {
-                    final Type argType = parameterizedType.getActualTypeArguments()[0];
-                    if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
-                        return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
-                    }
-                } else if (Map.class.isAssignableFrom(clazz) && parameterizedType.getActualTypeArguments().length == 2) {
-                    final Type argType = parameterizedType.getActualTypeArguments()[1];
-                    if (Class.class.isInstance(argType) && Class.class.isInstance(convertType)) {
-                        return !Class.class.cast(convertType).isAssignableFrom(Class.class.cast(argType));
-                    }
-                }
-                return true; // actually here we suppose we dont know
-            }
-        }
-        if (Class.class.isInstance(type)) {
-            final Class<?> clazz = Class.class.cast(type);
-            if (clazz.isArray()) {
-                return !Class.class.cast(convertType).isAssignableFrom(clazz.getComponentType());
-            }
+            // TODO? earlier surely
         }
         return true;
     }

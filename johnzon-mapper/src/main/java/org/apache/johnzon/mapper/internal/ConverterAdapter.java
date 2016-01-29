@@ -16,35 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.jsonb.converter;
+package org.apache.johnzon.mapper.internal;
 
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 
-import javax.json.bind.JsonbException;
-import javax.json.bind.adapter.JsonbAdapter;
+public class ConverterAdapter<A> implements Adapter<A, String> {
+    private final Converter<A> converter;
 
-public class JsonbConverterToString<T> implements Converter<T> {
-    private final JsonbAdapter<T, String> adapter;
+    public ConverterAdapter(final Converter<A> converter) {
+        this.converter = converter;
+    }
 
-    public JsonbConverterToString(final JsonbAdapter<T, String> adapter) {
-        this.adapter = adapter;
+    public Converter<A> getConverter() {
+        return converter;
     }
 
     @Override
-    public String toString(final T instance) {
-        try {
-            return adapter.adaptFrom(instance);
-        } catch (final Exception e) {
-            throw new JsonbException(e.getMessage(), e);
-        }
+    public A to(final String s) {
+        return converter.fromString(s);
     }
 
     @Override
-    public T fromString(final String text) {
-        try {
-            return adapter.adaptTo(text);
-        } catch (final Exception e) {
-            throw new JsonbException(e.getMessage(), e);
-        }
+    public String from(final A a) {
+        return converter.toString(a);
     }
 }

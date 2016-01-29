@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.JohnzonIgnore;
@@ -26,6 +27,8 @@ import org.apache.johnzon.mapper.JohnzonVirtualObjects;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -85,8 +88,8 @@ public class Mappings {
     public static class Getter {
         public final AccessMode.Reader reader;
         public final int version;
-        public final Converter<Object> converter;
-        public final Converter<Object> itemConverter;
+        public final Adapter converter;
+        public final Adapter itemConverter;
         public final boolean primitive;
         public final boolean array;
         public final boolean map;
@@ -95,7 +98,7 @@ public class Mappings {
         public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
-                      final Converter<Object> converter,
+                      final Adapter<?, ?> converter,
                       final int version) {
             this.reader = reader;
             this.version = version;
@@ -134,13 +137,13 @@ public class Mappings {
         public final AccessMode.Writer writer;
         public final int version;
         public final Type paramType;
-        public final Converter<?> converter;
-        public final Converter<?> itemConverter;
+        public final Adapter<?, ?> converter;
+        public final Adapter<?, ?> itemConverter;
         public final boolean primitive;
         public final boolean array;
 
         public Setter(final AccessMode.Writer writer, final boolean primitive, final boolean array,
-                      final Type paramType, final Converter<?> converter,
+                      final Type paramType, final Adapter<?, ?> converter,
                       final int version) {
             this.writer = writer;
             this.paramType = paramType;
@@ -178,16 +181,16 @@ public class Mappings {
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
     protected final Comparator<String> fieldOrdering;
-    protected final ConcurrentMap<Type, Converter<?>> converters;
+    protected final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
     private final AccessMode accessMode;
     private final int version;
 
     public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
-                    final int version, final ConcurrentMap<Type, Converter<?>> converters) {
+                    final int version, final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters) {
         this.fieldOrdering = attributeOrder;
         this.accessMode = accessMode;
         this.version = version;
-        this.converters = converters;
+        this.adapters = adapters;
     }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
@@ -243,11 +246,11 @@ public class Mappings {
         } else if (type == long.class || type == Long.class) {
             return true;
         } else if (type == int.class || type == Integer.class
-                || type == byte.class || type == Byte.class
-                || type == short.class || type == Short.class) {
+            || type == byte.class || type == Byte.class
+            || type == short.class || type == Short.class) {
             return true;
         } else if (type == double.class || type == Double.class
-                || type == float.class || type == Float.class) {
+            || type == float.class || type == Float.class) {
             return true;
         } else if (type == boolean.class || type == Boolean.class) {
             return true;
@@ -335,8 +338,8 @@ public class Mappings {
         Class<?> clazz = inClazz;
         // unproxy to get a clean model
         while (clazz != null && clazz != Object.class
-                && (clazz.getName().contains("$$") || clazz.getName().contains("$proxy")
-                || clazz.getName().startsWith("org.apache.openjpa.enhance.") /* subclassing mode, not the default */ )) {
+            && (clazz.getName().contains("$$") || clazz.getName().contains("$proxy")
+            || clazz.getName().startsWith("org.apache.openjpa.enhance.") /* subclassing mode, not the default */)) {
             clazz = clazz.getSuperclass();
         }
         if (clazz == null || clazz == Object.class) { // shouldn't occur but a NPE protection
@@ -361,8 +364,8 @@ public class Mappings {
             final Type param = value.getType();
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
-                    value, isPrimitive(param), returnType != null && returnType.isArray(), param,
-                    findConverter(copyDate, value), writeIgnore != null ? writeIgnore.minVersion() : -1);
+                value, isPrimitive(param), returnType != null && returnType.isArray(), param,
+                findConverter(copyDate, value), writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
         }
     }
@@ -376,13 +379,13 @@ public class Mappings {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
             final Getter getter = new Getter(value, isPrimitive(returnType),
-                    returnType != null && returnType.isArray(),
-                    (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
-                            || (returnType != null && Collection.class.isAssignableFrom(returnType)),
-                    (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
-                            || (returnType != null && Map.class.isAssignableFrom(returnType)),
-                    findConverter(copyDate, value),
-                    readIgnore != null ? readIgnore.minVersion() : -1);
+                returnType != null && returnType.isArray(),
+                (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                    || (returnType != null && Collection.class.isAssignableFrom(returnType)),
+                (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                    || (returnType != null && Map.class.isAssignableFrom(returnType)),
+                findConverter(copyDate, value),
+                readIgnore != null ? readIgnore.minVersion() : -1);
             getters.put(key, getter);
         }
     }
@@ -414,7 +417,7 @@ public class Mappings {
             if (f.read()) {
                 final AccessMode.Reader reader = readers.get(name);
                 if (reader != null) {
-                    addGetterIfNeeded(objectGetters, name, reader,copyDate);
+                    addGetterIfNeeded(objectGetters, name, reader, copyDate);
                 }
             }
             if (f.write()) {
@@ -436,8 +439,8 @@ public class Mappings {
         setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, -1));
     }
 
-    private Converter findConverter(final boolean copyDate, final AccessMode.DecoratedType decoratedType) {
-        Converter converter = decoratedType.findConverter();
+    private Adapter findConverter(final boolean copyDate, final AccessMode.DecoratedType decoratedType) {
+        Adapter converter = decoratedType.findConverter();
         if (converter != null) {
             return converter;
         }
@@ -447,7 +450,7 @@ public class Mappings {
         Type typeToTest = decoratedType.getType();
         if (annotation != null) {
             try {
-                converter = annotation.value().newInstance();
+                converter = new ConverterAdapter(annotation.value().newInstance());
             } catch (final Exception e) {
                 throw new IllegalArgumentException(e);
             }
@@ -455,20 +458,37 @@ public class Mappings {
             final ParameterizedType type = ParameterizedType.class.cast(decoratedType.getType());
             final Type rawType = type.getRawType();
             if (Class.class.isInstance(rawType)
-                    && Collection.class.isAssignableFrom(Class.class.cast(rawType))
-                    && type.getActualTypeArguments().length >= 1) {
+                && Collection.class.isAssignableFrom(Class.class.cast(rawType))
+                && type.getActualTypeArguments().length >= 1) {
                 typeToTest = type.getActualTypeArguments()[0];
             } // TODO: map
         }
         if (converter == null && Class.class.isInstance(typeToTest)) {
             final Class type = Class.class.cast(typeToTest);
             if (Date.class.isAssignableFrom(type) && copyDate) {
-                converter = new DateWithCopyConverter(Converter.class.cast(converters.get(Date.class)));
+                converter = new DateWithCopyConverter(Adapter.class.cast(adapters.get(new AdapterKey(Date.class, String.class))));
             } else if (type.isEnum()) {
-                converter = converters.get(type); // first ensure user didnt override it
+                final AdapterKey key = new AdapterKey(String.class, type);
+                converter = adapters.get(key); // first ensure user didnt override it
                 if (converter == null) {
-                    converter = new EnumConverter(type);
-                    converters.put(type, converter);
+                    converter = new ConverterAdapter(new EnumConverter(type));
+                    adapters.put(key, converter);
+                }
+            } else {
+                for (final Map.Entry<AdapterKey, Adapter<?, ?>> adapterEntry : adapters.entrySet()) {
+                    if (adapterEntry.getKey().getFrom() == adapterEntry.getKey().getTo()) { // String -> String
+                        continue;
+                    }
+                    if (adapterEntry.getKey().getFrom() == type && !(
+                            // ignore internal converters to let primitives be correctly handled
+                            ConverterAdapter.class.isInstance(adapterEntry.getValue()) &&
+                            ConverterAdapter.class.cast(adapterEntry.getValue()).getConverter().getClass().getName().startsWith("org.apache.johnzon.mapper."))) {
+
+                        if (converter != null) {
+                            throw new IllegalArgumentException("Ambiguous adapter for " + decoratedType);
+                        }
+                        converter = adapterEntry.getValue();
+                    }
                 }
             }
         }
@@ -505,7 +525,7 @@ public class Mappings {
             for (final Map.Entry<String, Getter> g : getters.entrySet()) {
                 final Mappings.Getter getter = g.getValue();
                 final Object value = getter.reader.read(instance);
-                final Object val = value == null || getter.converter == null ? value : getter.converter.toString(value);
+                final Object val = value == null || getter.converter == null ? value : getter.converter.from(value);
                 if (val == null) {
                     continue;
                 }
@@ -534,7 +554,7 @@ public class Mappings {
         }
 
         @Override
-        public Converter<?> findConverter() {
+        public Adapter<?, ?> findConverter() {
             return null;
         }
 
@@ -576,7 +596,7 @@ public class Mappings {
                 final String key = setter.getKey();
                 final Object rawValue = nested.get(key);
                 Object val = value == null || setterValue.converter == null ?
-                        rawValue : Converter.class.cast(setterValue.converter).toString(rawValue);
+                    rawValue : Converter.class.cast(setterValue.converter).toString(rawValue);
                 if (val == null) {
                     continue;
                 }
@@ -608,7 +628,7 @@ public class Mappings {
         }
 
         @Override
-        public Converter<?> findConverter() {
+        public Adapter<?, ?> findConverter() {
             return null;
         }
 
@@ -638,11 +658,11 @@ public class Mappings {
             final Map<String, Object> map = new LinkedHashMap<String, Object>();
             for (final AccessMode.Reader reader : delegates) {
                 final Map<String, Object> readerMap = (Map<String, Object>) reader.read(instance);
-                for (final Map.Entry<String, Object> entry :readerMap.entrySet()) {
+                for (final Map.Entry<String, Object> entry : readerMap.entrySet()) {
                     final Object o = map.get(entry.getKey());
                     if (o == null) {
                         map.put(entry.getKey(), entry.getValue());
-                    } else  if (Map.class.isInstance(o)) {
+                    } else if (Map.class.isInstance(o)) {
                         // TODO
                     } else {
                         throw new IllegalStateException(entry.getKey() + " is ambiguous");
@@ -668,9 +688,9 @@ public class Mappings {
         }
 
         @Override
-        public Converter<?> findConverter() {
+        public Adapter<?, ?> findConverter() {
             for (final AccessMode.Reader r : delegates) {
-                final Converter<?> converter = r.findConverter();
+                final Adapter<?, ?> converter = r.findConverter();
                 if (converter != null) {
                     return converter;
                 }
@@ -727,9 +747,9 @@ public class Mappings {
         }
 
         @Override
-        public Converter<?> findConverter() {
+        public Adapter<?, ?> findConverter() {
             for (final AccessMode.Writer r : delegates) {
-                final Converter<?> converter = r.findConverter();
+                final Adapter<?, ?> converter = r.findConverter();
                 if (converter != null) {
                     return converter;
                 }
