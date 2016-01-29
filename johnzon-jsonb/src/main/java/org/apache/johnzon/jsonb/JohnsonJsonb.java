@@ -39,7 +39,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 // TODO: Optional handling for lists (and arrays)?
-public class JohnsonJsonb implements Jsonb {
+public class JohnsonJsonb implements Jsonb, AutoCloseable {
     private final Mapper delegate;
 
     public JohnsonJsonb(final Mapper build) {
@@ -359,5 +359,10 @@ public class JohnsonJsonb implements Jsonb {
         }
         final Type rawType = ParameterizedType.class.cast(runtimeType).getRawType();
         return Class.class.isInstance(rawType) && Collection.class.isAssignableFrom(Class.class.cast(rawType));
+    }
+
+    @Override
+    public void close() {
+        delegate.close();
     }
 }

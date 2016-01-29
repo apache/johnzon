@@ -37,6 +37,7 @@ import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 import javax.xml.bind.DatatypeConverter;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -80,7 +81,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 
-public class Mapper {
+public class Mapper implements Closeable {
     private static final Converter<Object> FALLBACK_CONVERTER = new FallbackConverter();
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
 
@@ -96,12 +97,14 @@ public class Mapper {
     protected final boolean treatByteArrayAsBase64URL;
     protected final Charset encoding;
     protected final ReaderHandler readerHandler;
+    protected final Collection<Closeable> closeables;
 
     // CHECKSTYLE:OFF
     public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
                   final boolean doClose, final Map<Type, Converter<?>> converters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
-                  final AccessMode accessMode, final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL, final Charset encoding) {
+                  final AccessMode accessMode, final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL, final Charset encoding,
+                  final Collection<Closeable> closeables) {
     // CHECKSTYLE:ON
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
@@ -115,6 +118,7 @@ public class Mapper {
         this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
         this.encoding = encoding;
         this.readerHandler = ReaderHandler.create(readerFactory);
+        this.closeables = closeables;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -975,6 +979,25 @@ public class Mapper {
             Array.set(array, i++, toObject(value, componentType, itemConverter));
         }
         return array;
+    }
+
+    @Override
+    public synchronized void close() {
+        Collection<Exception> errors = null;
+        for (final Closeable c : closeables) {
+            try {
+                c.close();
+            } catch (final IOException e) {
+                if (errors == null) {
+                    errors = new ArrayList<Exception>();
+                }
+                errors.add(e);
+            }
+        }
+        closeables.clear();
+        if (errors != null) {
+            throw new IllegalStateException(errors.toString());
+        }
     }
 
     private static class FallbackConverter implements Converter<Object> {

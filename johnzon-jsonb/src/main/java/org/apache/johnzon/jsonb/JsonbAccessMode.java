@@ -26,6 +26,7 @@ import org.apache.johnzon.jsonb.converter.JsonbLocalDateTimeConverter;
 import org.apache.johnzon.jsonb.converter.JsonbNumberConverter;
 import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
 import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
+import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -46,6 +47,8 @@ import javax.json.bind.annotation.JsonbValue;
 import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -58,6 +61,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -76,23 +80,26 @@ import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
-public class JsonbAccessMode implements AccessMode {
+public class JsonbAccessMode implements AccessMode, Closeable {
     private final PropertyNamingStrategy naming;
     private final String order;
     private final PropertyVisibilityStrategy visibility;
     private final FieldAndMethodAccessMode delegate;
     private final boolean caseSensitive;
     private final Map<Class<?>, Converter<?>> defaultConverters;
+    private final JohnzonAdapterFactory factory;
+    private final Collection<JohnzonAdapterFactory.Instance<?>> toRelease = new ArrayList<>();
 
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
-                           final Map<Class<?>, Converter<?>> defaultConverters) {
+                           final Map<Class<?>, Converter<?>> defaultConverters, final JohnzonAdapterFactory factory) {
         this.naming = propertyNamingStrategy;
         this.order = orderValue;
         this.visibility = visibilityStrategy;
         this.caseSensitive = caseSensitive;
         this.delegate = new FieldAndMethodAccessMode(true, true);
         this.defaultConverters = defaultConverters;
+        this.factory = factory;
     }
 
     @Override
@@ -269,7 +276,9 @@ public class JsonbAccessMode implements AccessMode {
             }
             final Type[] args = pt.getActualTypeArguments();
             final boolean fromString = args[0] == String.class;
-            converter = fromString ? new JsonbConverterFromString<>(value.newInstance()) : new JsonbConverterToString<>(value.newInstance());
+            final JohnzonAdapterFactory.Instance<? extends JsonbAdapter> instance = newAdapter(value);
+            toRelease.add(instance);
+            converter = fromString ? new JsonbConverterFromString(instance.getValue()) : new JsonbConverterToString(instance.getValue());
         } else if (dateFormat != null) { // TODO: support lists, LocalDate?
             if (Date.class == type) {
                 converter = new JsonbDateConverter(dateFormat);
@@ -288,6 +297,10 @@ public class JsonbAccessMode implements AccessMode {
             converter = new JsonbValueConverter();
         }
         return converter;
+    }
+
+    private JohnzonAdapterFactory.Instance<? extends JsonbAdapter> newAdapter(final Class<? extends JsonbAdapter> value) {
+        return factory.create(value);
     }
 
     @Override
@@ -543,5 +556,11 @@ public class JsonbAccessMode implements AccessMode {
             keyComparator = null;
         }
         return keyComparator;
+    }
+
+    @Override
+    public void close() throws IOException {
+        toRelease.forEach(JohnzonAdapterFactory.Instance::release);
+        toRelease.clear();
     }
 }

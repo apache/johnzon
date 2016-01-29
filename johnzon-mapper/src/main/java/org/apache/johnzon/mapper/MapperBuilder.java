@@ -44,12 +44,15 @@ import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
+import java.io.Closeable;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -106,6 +109,7 @@ public class MapperBuilder {
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
     private boolean useGetterForCollections;
     private String accessModeName;
+    private final Collection<Closeable> closeables = new ArrayList<Closeable>();
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -160,7 +164,13 @@ public class MapperBuilder {
                 skipNull, skipEmptyArray,
                 accessMode,
                 treatByteArrayAsBase64, treatByteArrayAsBase64URL,
-                encoding);
+                encoding,
+                closeables);
+    }
+
+    public MapperBuilder addCloseable(final Closeable closeable) {
+        closeables.add(closeable);
+        return this;
     }
 
     public MapperBuilder setIgnoreFieldsForType(final Class<?> type, final String... fields) {
