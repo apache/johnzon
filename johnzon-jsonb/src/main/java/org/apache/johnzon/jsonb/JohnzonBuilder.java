@@ -20,11 +20,13 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
+import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
@@ -75,9 +77,13 @@ import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
 import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
 
 public class JohnzonBuilder implements JsonbBuilder {
+    private static final Object NO_BM = new Object();
+
     private final MapperBuilder builder = new MapperBuilder();
     private JsonProvider jsonp;
     private JsonbConfig config;
+    private Object beanManager;
+    private CDIs cdiIntegration;
 
     @Override
     public JsonbBuilder withConfig(final JsonbConfig config) {
@@ -155,30 +161,31 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 
+        final JohnzonAdapterFactory factory = config.getProperty("johnzon.factory").map(val -> {
+            if (JohnzonAdapterFactory.class.isInstance(val)) {
+                return JohnzonAdapterFactory.class.cast(val);
+            }
+            if (String.class.isInstance(val)) {
+                try {
+                    return JohnzonAdapterFactory.class.cast(tccl().loadClass(val.toString()).newInstance());
+                } catch (final InstantiationException | ClassNotFoundException | IllegalAccessException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            if (Class.class.isInstance(val)) {
+                try {
+                    return JohnzonAdapterFactory.class.cast(Class.class.cast(val).newInstance());
+                } catch (final InstantiationException | IllegalAccessException e) {
+                    throw new IllegalArgumentException(e);
+                }
+            }
+            throw new IllegalArgumentException("Unsupported factory: " + val);
+        }).orElseGet(this::findFactory);
         final JsonbAccessMode accessMode = new JsonbAccessMode(
             propertyNamingStrategy, orderValue, visibilityStrategy,
             !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
             defaultConverters,
-            config.getProperty("johnzon.factory").map(val -> {
-                if (JohnzonAdapterFactory.class.isInstance(val)) {
-                    return JohnzonAdapterFactory.class.cast(val);
-                }
-                if (String.class.isInstance(val)) {
-                    try {
-                        return JohnzonAdapterFactory.class.cast(tccl().loadClass(val.toString()).newInstance());
-                    } catch (final InstantiationException | ClassNotFoundException | IllegalAccessException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-                }
-                if (Class.class.isInstance(val)) {
-                    try {
-                        return JohnzonAdapterFactory.class.cast(Class.class.cast(val).newInstance());
-                    } catch (final InstantiationException | IllegalAccessException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-                }
-                throw new IllegalArgumentException("Unsupported factory: " + val);
-            }).orElseGet(this::findFactory));
+            factory);
         builder.setAccessMode(accessMode);
 
 
@@ -224,14 +231,49 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
         });
 
-        return new JohnsonJsonb(builder.addCloseable(accessMode).build());
+        getBeanManager(); // force detection
+
+        final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite();
+        final Mapper mapper = builder.addCloseable(accessMode).build();
+
+        return useCdi ? new JohnsonJsonb(mapper) {
+            {
+                cdiIntegration.track(this);
+            }
+
+            @Override
+            public void close() {
+                try {
+                    super.close();
+                } finally {
+                    if (cdiIntegration.isCanWrite()) {
+                        cdiIntegration.untrack(this);
+                    }
+                }
+            }
+        } : new JohnsonJsonb(mapper);
+    }
+
+    private Object getBeanManager() {
+        if (beanManager == null) {
+            try { // don't trigger CDI is not there
+                final Class<?> cdi = tccl().loadClass("javax.enterprise.inject.spi.CDI");
+                final Object cdiInstance = cdi.getMethod("current").invoke(null);
+                beanManager = cdi.getMethod("getBeanManager").invoke(cdiInstance);
+                cdiIntegration = new CDIs(beanManager);
+            } catch (final NoClassDefFoundError | Exception e) {
+                beanManager = NO_BM;
+            }
+        }
+        return beanManager;
     }
 
     private JohnzonAdapterFactory findFactory() {
+        if (getBeanManager() == NO_BM || config.getProperty("johnzon.skip-cdi")
+                .map(s -> "true".equalsIgnoreCase(String.valueOf(s))).orElse(false)) {
+            return new SimpleJohnzonAdapterFactory();
+        }
         try { // don't trigger CDI is not there
-            final Class<?> cdi = tccl().loadClass("javax.enterprise.inject.spi.CDI");
-            final Object cdiInstance = cdi.getMethod("current").invoke(null);
-            final Object beanManager = cdi.getMethod("getBeanManager").invoke(cdiInstance);
             return new org.apache.johnzon.jsonb.factory.CdiJohnzonAdapterFactory(beanManager);
         } catch (final NoClassDefFoundError | Exception e) {
             return new SimpleJohnzonAdapterFactory();
