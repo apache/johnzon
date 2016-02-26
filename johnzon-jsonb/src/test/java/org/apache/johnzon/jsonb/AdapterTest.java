@@ -63,28 +63,28 @@ public class AdapterTest {
 
     public static class DummyAdapter implements JsonbAdapter<Dummy, String> {
         @Override
-        public Dummy adaptTo(final String obj) throws Exception {
+        public Dummy adaptToJson(final String obj) throws Exception {
             final Dummy bar = new Dummy();
             bar.value = Long.parseLong(obj);
             return bar;
         }
 
         @Override
-        public String adaptFrom(final Dummy obj) throws Exception {
+        public String adaptFromJson(final Dummy obj) throws Exception {
             return Long.toString(obj.value);
         }
     }
 
     public static class BarAdapter implements JsonbAdapter<Bar, String> {
         @Override
-        public Bar adaptTo(final String obj) throws Exception {
+        public Bar adaptToJson(final String obj) throws Exception {
             final Bar bar = new Bar();
             bar.value = Integer.parseInt(obj);
             return bar;
         }
 
         @Override
-        public String adaptFrom(final Bar obj) throws Exception {
+        public String adaptFromJson(final Bar obj) throws Exception {
             return Integer.toString(obj.value);
         }
     }

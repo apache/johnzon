@@ -90,12 +90,12 @@ public class CdiAdapterTest {
         private Service service;
 
         @Override
-        public Model adaptTo(final String obj) throws Exception {
+        public Model adaptToJson(final String obj) throws Exception {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public String adaptFrom(final Model obj) throws Exception {
+        public String adaptFromJson(final Model obj) throws Exception {
             assertTrue(OwbNormalScopeProxy.class.isInstance(service)); // additional test
             return service.toString(obj);
         }

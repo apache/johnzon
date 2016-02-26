@@ -36,7 +36,7 @@ public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
             return null;
         }
         try {
-            return delegate.adaptTo(obj);
+            return delegate.adaptToJson(obj);
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }
@@ -48,7 +48,7 @@ public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
             return null;
         }
         try {
-            return delegate.adaptFrom(obj);
+            return delegate.adaptFromJson(obj);
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }

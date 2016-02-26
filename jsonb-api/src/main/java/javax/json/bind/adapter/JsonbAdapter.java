@@ -19,6 +19,6 @@
 package javax.json.bind.adapter;
 
 public interface JsonbAdapter<A, B> {
-    A adaptTo(B obj) throws Exception;
-    B adaptFrom(A obj) throws Exception;
+    A adaptToJson(B obj) throws Exception;
+    B adaptFromJson(A obj) throws Exception;
 }
