@@ -34,6 +34,7 @@ import org.apache.johnzon.mapper.converter.DateConverter;
 import org.apache.johnzon.mapper.converter.DoubleConverter;
 import org.apache.johnzon.mapper.converter.FloatConverter;
 import org.apache.johnzon.mapper.converter.IntegerConverter;
+import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.converter.LongConverter;
 import org.apache.johnzon.mapper.converter.ShortConverter;
 import org.apache.johnzon.mapper.converter.StringConverter;
@@ -59,6 +60,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class MapperBuilder {
@@ -89,6 +91,7 @@ public class MapperBuilder {
         DEFAULT_CONVERTERS.put(new AdapterKey(long.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Long.class, String.class)));
         DEFAULT_CONVERTERS.put(new AdapterKey(short.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Short.class, String.class)));
         DEFAULT_CONVERTERS.put(new AdapterKey(boolean.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Boolean.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Locale.class, String.class), new LocaleConverter());
     }
 
     private JsonReaderFactory readerFactory;

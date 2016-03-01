@@ -19,17 +19,14 @@
 package org.apache.johnzon.jsonb.converter;
 
 import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.converter.LocaleConverter;
 
 import java.util.Locale;
 
 public abstract class JsonbLocaleParserConverterBase<T> implements Converter<T> {
+    private final LocaleConverter delegate = new LocaleConverter();
+
     protected Locale newLocale(final String locale) {
-        final String[] parts = locale.split("-");
-        switch (parts.length) {
-            case 1: return new Locale(locale);
-            case 2: return new Locale(parts[0], parts[1]);
-            case 3: return new Locale(parts[0], parts[1], parts[2]);
-            default: throw new IllegalArgumentException(locale);
-        }
+        return delegate.fromString(locale);
     }
 }
