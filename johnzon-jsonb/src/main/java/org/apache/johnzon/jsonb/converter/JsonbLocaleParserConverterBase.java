@@ -27,6 +27,6 @@ public abstract class JsonbLocaleParserConverterBase<T> implements Converter<T> 
     private final LocaleConverter delegate = new LocaleConverter();
 
     protected Locale newLocale(final String locale) {
-        return delegate.fromString(locale);
+        return delegate.to(locale);
     }
 }
