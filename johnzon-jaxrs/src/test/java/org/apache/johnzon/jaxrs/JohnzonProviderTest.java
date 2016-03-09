@@ -27,11 +27,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
@@ -39,6 +41,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -126,6 +130,17 @@ public class JohnzonProviderTest {
         }
     }
 
+    @Test
+    public void listPostNoGeneric() {
+        final List<Johnzon> list = new ArrayList<Johnzon>();
+        final Johnzon johnzon = new Johnzon();
+        johnzon.setName("test");
+        list.add(johnzon);
+        list.add(new Johnzon());
+
+        assertTrue(client(MediaType.TEXT_PLAIN_TYPE).path("johnzon/list").post(Entity.json(list), boolean.class));
+    }
+
     private static WebClient client() {
         return client(MediaType.APPLICATION_JSON_TYPE);
     }
@@ -178,6 +193,14 @@ public class JohnzonProviderTest {
         @POST
         public String asParam(final Johnzon f) {
             return Boolean.toString("client".equals(f.getName()));
+        }
+
+        @POST
+        @Path("list")
+        @Consumes(MediaType.APPLICATION_JSON)
+        @Produces(MediaType.TEXT_PLAIN)
+        public boolean asParam(final Collection<Johnzon> list) {
+            return list.size() == 2 && list.iterator().next().getName().equals("test");
         }
 
         @GET
