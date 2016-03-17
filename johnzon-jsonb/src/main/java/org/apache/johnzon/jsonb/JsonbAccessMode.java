@@ -178,75 +178,75 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         }
 
         return constructor == null && factory == null ? delegate.findFactory(clazz) : (
-            constructor != null ?
-                new Factory() {
-                    @Override
-                    public Object create(final Object[] params) {
-                        try {
-                            return finalConstructor.newInstance(params);
-                        } catch (final InstantiationException | IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        } catch (final InvocationTargetException e) {
-                            throw new IllegalStateException(e.getCause());
-                        }
-                    }
-
-                    @Override
-                    public Type[] getParameterTypes() {
-                        return types;
-                    }
-
-                    @Override
-                    public String[] getParameterNames() {
-                        return params;
-                    }
-
-                    @Override
-                    public Adapter<?, ?>[] getParameterConverter() {
-                        return converters;
-                    }
-
-                    @Override
-                    public Adapter<?, ?>[] getParameterItemConverter() {
-                        return itemConverters;
-                    }
-                } :
-                new Factory() {
-                    @Override
-                    public Object create(final Object[] params) {
-                        try {
-                            final Object invoke = finalFactory.invoke(null, params);
-                            if (!clazz.isInstance(invoke)) {
-                                throw new IllegalArgumentException(invoke + " is not a " + clazz.getName());
+                constructor != null ?
+                        new Factory() {
+                            @Override
+                            public Object create(final Object[] params) {
+                                try {
+                                    return finalConstructor.newInstance(params);
+                                } catch (final InstantiationException | IllegalAccessException e) {
+                                    throw new IllegalStateException(e);
+                                } catch (final InvocationTargetException e) {
+                                    throw new IllegalStateException(e.getCause());
+                                }
                             }
-                            return invoke;
-                        } catch (final IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        } catch (final InvocationTargetException e) {
-                            throw new IllegalStateException(e.getCause());
-                        }
-                    }
 
-                    @Override
-                    public Type[] getParameterTypes() {
-                        return types;
-                    }
+                            @Override
+                            public Type[] getParameterTypes() {
+                                return types;
+                            }
 
-                    @Override
-                    public String[] getParameterNames() {
-                        return params;
-                    }
+                            @Override
+                            public String[] getParameterNames() {
+                                return params;
+                            }
 
-                    @Override
-                    public Adapter<?, ?>[] getParameterConverter() {
-                        return converters;
-                    }
+                            @Override
+                            public Adapter<?, ?>[] getParameterConverter() {
+                                return converters;
+                            }
 
-                    @Override
-                    public Adapter<?, ?>[] getParameterItemConverter() {
-                        return itemConverters;
-                    }
-                });
+                            @Override
+                            public Adapter<?, ?>[] getParameterItemConverter() {
+                                return itemConverters;
+                            }
+                        } :
+                        new Factory() {
+                            @Override
+                            public Object create(final Object[] params) {
+                                try {
+                                    final Object invoke = finalFactory.invoke(null, params);
+                                    if (!clazz.isInstance(invoke)) {
+                                        throw new IllegalArgumentException(invoke + " is not a " + clazz.getName());
+                                    }
+                                    return invoke;
+                                } catch (final IllegalAccessException e) {
+                                    throw new IllegalStateException(e);
+                                } catch (final InvocationTargetException e) {
+                                    throw new IllegalStateException(e.getCause());
+                                }
+                            }
+
+                            @Override
+                            public Type[] getParameterTypes() {
+                                return types;
+                            }
+
+                            @Override
+                            public String[] getParameterNames() {
+                                return params;
+                            }
+
+                            @Override
+                            public Adapter<?, ?>[] getParameterConverter() {
+                                return converters;
+                            }
+
+                            @Override
+                            public Adapter<?, ?>[] getParameterItemConverter() {
+                                return itemConverters;
+                            }
+                        });
     }
 
     private void validateAnnotations(final Object parameter,
@@ -267,8 +267,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         if (adapter != null) {
             final Class<? extends JsonbAdapter> value = adapter.value();
             final ParameterizedType pt = ParameterizedType.class.cast(
-                Stream.of(value.getGenericInterfaces())
-                    .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+                    Stream.of(value.getGenericInterfaces())
+                            .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
             if (pt == null) {
                 throw new IllegalArgumentException(value + " doesn't implement JsonbAdapter");
             }
@@ -337,8 +337,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final Adapter<?, ?> converter;
             try {
                 converter = adapter == null && dateFormat == null && numberFormat == null ?
-                    defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
-                    toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
+                        defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
+                        toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -438,8 +438,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final Adapter<?, ?> converter;
             try {
                 converter = adapter == null && dateFormat == null && numberFormat == null ?
-                    defaultConverters.get(new AdapterKey(initialWriter.getType(), String.class)) :
-                    toConverter(initialWriter.getType(), adapter, dateFormat, numberFormat);
+                        defaultConverters.get(new AdapterKey(initialWriter.getType(), String.class)) :
+                        toConverter(initialWriter.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -507,19 +507,27 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     private boolean isTransient(final DecoratedType dt, final PropertyVisibilityStrategy visibility) {
-        return shouldSkip(visibility, dt) &&
-            (!FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(dt) ||
-                !Stream.of(FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt).getType1(), FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt).getType2())
-                    .map(t -> shouldSkip(visibility, t))
-                    .filter(a -> a)
-                    .findAny()
-                    .isPresent());
+        if (!FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(dt)) {
+            return isTransient(dt) || shouldSkip(visibility, dt);
+        }
+        final FieldAndMethodAccessMode.CompositeDecoratedType cdt = FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt);
+        return isTransient(cdt.getType1()) || isTransient(cdt.getType2()) ||
+                (shouldSkip(visibility, cdt.getType1()) && shouldSkip(visibility, cdt.getType2()));
     }
 
     private boolean shouldSkip(final PropertyVisibilityStrategy visibility, final DecoratedType t) {
-        return t.getAnnotation(JsonbTransient.class) != null ||
-            (FieldAccessMode.FieldDecoratedType.class.isInstance(t) && !visibility.isVisible(FieldAccessMode.FieldDecoratedType.class.cast(t).getField())) ||
-            (MethodAccessMode.MethodDecoratedType.class.isInstance(t) && !visibility.isVisible(MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod()));
+        return isNotVisible(visibility, t);
+    }
+
+    private boolean isTransient(final DecoratedType t) {
+        return t.getAnnotation(JsonbTransient.class) != null;
+    }
+
+    private boolean isNotVisible(PropertyVisibilityStrategy visibility, DecoratedType t) {
+        return !(FieldAccessMode.FieldDecoratedType.class.isInstance(t) ?
+                visibility.isVisible(FieldAccessMode.FieldDecoratedType.class.cast(t).getField())
+                : (MethodAccessMode.MethodDecoratedType.class.isInstance(t) &&
+                        visibility.isVisible(MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod())));
     }
 
     private Comparator<String> orderComparator(final Class<?> clazz) {
