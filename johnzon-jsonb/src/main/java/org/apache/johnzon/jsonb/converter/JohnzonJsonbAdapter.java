@@ -18,16 +18,21 @@
  */
 package org.apache.johnzon.jsonb.converter;
 
-import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.TypeAwareAdapter;
 
 import javax.json.bind.JsonbException;
 import javax.json.bind.adapter.JsonbAdapter;
+import java.lang.reflect.Type;
 
-public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
+public class JohnzonJsonbAdapter<A, B> implements TypeAwareAdapter<A, B> {
     private final JsonbAdapter<A, B> delegate;
+    private final Type from;
+    private final Type to;
 
-    public JohnzonJsonbAdapter(final JsonbAdapter<A, B> delegate) {
+    public JohnzonJsonbAdapter(final JsonbAdapter<A, B> delegate, final Type from, final Type to) {
         this.delegate = delegate;
+        this.from = from;
+        this.to = to;
     }
 
     @Override
@@ -52,5 +57,15 @@ public class JohnzonJsonbAdapter<A, B> implements Adapter<A, B> {
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public Type getTo() {
+        return to;
+    }
+
+    @Override
+    public Type getFrom() {
+        return from;
     }
 }

@@ -198,7 +198,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 throw new IllegalArgumentException(adapter + " doesn't implement JsonbAdapter");
             }
             final Type[] args = pt.getActualTypeArguments();
-            builder.addAdapter(args[0], args[1], new JohnzonJsonbAdapter(adapter));
+            builder.addAdapter(args[0], args[1], new JohnzonJsonbAdapter(adapter, args[0], args[1]));
         }));
 
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {

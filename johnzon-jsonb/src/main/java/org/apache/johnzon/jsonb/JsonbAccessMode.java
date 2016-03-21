@@ -272,10 +272,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             if (pt == null) {
                 throw new IllegalArgumentException(value + " doesn't implement JsonbAdapter");
             }
-            final Type[] args = pt.getActualTypeArguments();
             final JohnzonAdapterFactory.Instance<? extends JsonbAdapter> instance = newAdapter(value);
             toRelease.add(instance);
-            converter = new JohnzonJsonbAdapter(instance.getValue());
+            final Type[] actualTypeArguments = pt.getActualTypeArguments();
+            converter = new JohnzonJsonbAdapter(instance.getValue(), actualTypeArguments[0], actualTypeArguments[1]);
         } else if (dateFormat != null) { // TODO: support lists, LocalDate?
             if (Date.class == type) {
                 converter = new ConverterAdapter<>(new JsonbDateConverter(dateFormat));

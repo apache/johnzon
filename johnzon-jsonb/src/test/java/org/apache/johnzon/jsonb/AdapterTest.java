@@ -25,8 +25,13 @@ import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.annotation.JsonbTypeAdapter;
+import javax.json.bind.config.PropertyOrderStrategy;
+import java.util.ArrayList;
+import java.util.List;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class AdapterTest {
     @Test
@@ -46,6 +51,56 @@ public class AdapterTest {
         assertEquals(foo.dummy.value, read.dummy.value);
     }
 
+    @Test
+    public void notYetPloymorphism() { // we run it since it checked list/item conversion
+        final Bar bar = new Bar();
+        bar.value = 11;
+
+        final Bar2 bar2 = new Bar2();
+        bar2.value = 21;
+        bar2.value2 = 22;
+
+        final Polymorphism foo = new Polymorphism();
+        foo.bars = new ArrayList<>(asList(bar, bar2));
+
+        final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL));
+
+        final String toString = jsonb.toJson(foo);
+        assertEquals("{\"bars\":[" +
+                "{\"type\":\"org.apache.johnzon.jsonb.AdapterTest$Bar\",\"value\":{\"value\":11}}," +
+                "{\"type\":\"org.apache.johnzon.jsonb.AdapterTest$Bar2\",\"value\":{\"value\":21,\"value2\":22}}]}", toString);
+
+        final Polymorphism read = jsonb.fromJson(toString, Polymorphism.class);
+        assertEquals(2, read.bars.size());
+        assertEquals(11, read.bars.get(0).value);
+        assertTrue(Bar.class == read.bars.get(0).getClass());
+        assertEquals(21, read.bars.get(1).value);
+        /* not yet working since model is statically typed
+        assertTrue(Bar2.class == read.bars.get(1).getClass());
+        assertEquals(22, Bar2.class.cast(read.bars.get(1)).value2);
+        */
+    }
+
+    public static class Polymorphism {
+        @JsonbTypeAdapter(PolyBarAdapter.class)
+        public List<Bar> bars;
+    }
+
+
+    public static class TypeInstance {
+        public String type;
+        private Bar value;
+
+        public Bar getValue() {
+            return value;
+        }
+
+        public void setValue(final Bar value) {
+            this.value = value;
+        }
+    }
+
+
     public static class Foo {
         public Bar bar;
 
@@ -53,8 +108,27 @@ public class AdapterTest {
         public Dummy dummy;
     }
 
+    public static class Bar2 extends Bar {
+        public int value2;
+    }
+
     public static class Bar {
         public int value;
+    }
+
+    public static class PolyBarAdapter implements JsonbAdapter<Bar, TypeInstance> {
+        @Override
+        public Bar adaptToJson(final TypeInstance obj) throws Exception {
+            return obj.value;
+        }
+
+        @Override
+        public TypeInstance adaptFromJson(final Bar obj) throws Exception {
+            final TypeInstance typeInstance = new TypeInstance();
+            typeInstance.type = obj.getClass().getName();
+            typeInstance.value = obj;
+            return typeInstance;
+        }
     }
 
     public static class Dummy {

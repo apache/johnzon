@@ -882,7 +882,11 @@ public class Mapper implements Closeable {
             if (JsonObject.class == type || JsonStructure.class == type) {
                 return jsonValue;
             }
-            return buildObject(type, JsonObject.class.cast(jsonValue));
+            final boolean typedAdapter = TypeAwareAdapter.class.isInstance(itemConverter);
+            final Object object = buildObject(
+                    typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type,
+                    JsonObject.class.cast(jsonValue));
+            return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
             if (JsonArray.class == type || JsonStructure.class == type) {
                 return jsonValue;
