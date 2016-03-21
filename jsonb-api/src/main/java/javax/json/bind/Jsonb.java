@@ -24,7 +24,7 @@ import java.io.Reader;
 import java.io.Writer;
 import java.lang.reflect.Type;
 
-public interface Jsonb {
+public interface Jsonb extends AutoCloseable {
     <T> T fromJson(String str, Class<T> type) throws JsonbException;
 
     <T> T fromJson(String str, Type runtimeType) throws JsonbException;
