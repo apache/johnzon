@@ -18,6 +18,15 @@
  */
 package org.apache.johnzon.mapper;
 
+/**
+ * An Adapter is similar to a {@link Converter}.
+ * The main difference is that a Converter always converts from/to a String.
+ * An adapter might e.g. convert to a Date or any other Object which will
+ * then be json-ified.
+ *
+ * @param <A>
+ * @param <B>
+ */
 public interface Adapter<A, B> {
     A to(B b);
     B from(A a);

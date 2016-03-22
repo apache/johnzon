@@ -20,6 +20,14 @@ package org.apache.johnzon.mapper;
 
 import java.lang.reflect.Type;
 
+/**
+ * Convert a given Java Type to it's JSON String representation.
+ * And the other way around.
+ *
+ * An example would be to convert joda LocalDate into Strings and back.
+ *
+ * @param <T>
+ */
 public interface Converter<T> {
     String toString(T instance);
     T fromString(String text);
