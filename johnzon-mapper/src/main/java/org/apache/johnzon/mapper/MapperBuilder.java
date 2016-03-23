@@ -114,6 +114,7 @@ public class MapperBuilder {
     private boolean supportConstructors;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
     private boolean useGetterForCollections;
+    private boolean readAttributeBeforeWrite;
     private String accessModeName;
     private final Collection<Closeable> closeables = new ArrayList<Closeable>();
 
@@ -171,7 +172,8 @@ public class MapperBuilder {
             accessMode,
             treatByteArrayAsBase64, treatByteArrayAsBase64URL,
             encoding,
-            closeables);
+            closeables,
+            readAttributeBeforeWrite);
     }
 
     public MapperBuilder addCloseable(final Closeable closeable) {
@@ -321,6 +323,11 @@ public class MapperBuilder {
 
     public MapperBuilder setEncoding(final String encoding) {
         this.encoding = Charset.forName(encoding);
+        return this;
+    }
+
+    public MapperBuilder setReadAttributeBeforeWrite(final boolean readAttributeBeforeWrite) {
+        this.readAttributeBeforeWrite = readAttributeBeforeWrite;
         return this;
     }
 }

@@ -202,7 +202,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         }));
 
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
-            // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec sould be fine by default
+            // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec should be fine by default
         });
 
         config.getProperty(JsonbConfig.BINARY_DATA_STRATEGY).map(String.class::cast).ifPresent(bin -> {
@@ -232,6 +232,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         });
 
         getBeanManager(); // force detection
+
+        builder.setReadAttributeBeforeWrite(
+                config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
 
         final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite();
         final Mapper mapper = builder.addCloseable(accessMode).build();

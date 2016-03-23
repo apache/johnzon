@@ -99,6 +99,7 @@ public class Mapper implements Closeable {
     protected final boolean skipEmptyArray;
     protected final boolean treatByteArrayAsBase64;
     protected final boolean treatByteArrayAsBase64URL;
+    protected final boolean readAttributeBeforeWrite;
     protected final Charset encoding;
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
@@ -108,7 +109,7 @@ public class Mapper implements Closeable {
                   final boolean doClose, final Map<AdapterKey, Adapter<?, ?>> adapters,
                   final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
                   final AccessMode accessMode, final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL, final Charset encoding,
-                  final Collection<Closeable> closeables) {
+                  final Collection<Closeable> closeables, final boolean readAttributeBeforeWrite) {
     // CHECKSTYLE:ON
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
@@ -123,6 +124,7 @@ public class Mapper implements Closeable {
         this.encoding = encoding;
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
+        this.readAttributeBeforeWrite = readAttributeBeforeWrite;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -749,7 +751,7 @@ public class Mapper implements Closeable {
                             } else if (JsonString.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
                             } else {
-                                map.put(convertTo(keyType, value.getKey()), toObject(jsonValue, fieldArgTypes[1], null));
+                                map.put(convertTo(keyType, value.getKey()), toObject(null, jsonValue, fieldArgTypes[1], null));
                             }
                         }
                         return map;
@@ -758,7 +760,7 @@ public class Mapper implements Closeable {
             } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
                 final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
                 for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
-                    map.put(value.getKey(), toObject(value.getValue(), Object.class, null));
+                    map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null));
                 }
                 return map;
             }
@@ -788,7 +790,18 @@ public class Mapper implements Closeable {
             if (jsonValue == JsonValue.NULL) { // forced
                 setterMethod.write(t, null);
             } else {
-                final Object convertedValue = toValue(jsonValue, value.converter, value.itemConverter, value.paramType);
+                Object existingInstance = null;
+                if (readAttributeBeforeWrite) {
+                    final Mappings.Getter getter = classMapping.getters.get(setter.getKey());
+                    if (getter != null) {
+                        try {
+                            existingInstance = getter.reader.read(t);
+                        } catch (final RuntimeException re) {
+                            // backward compatibility
+                        }
+                    }
+                }
+                final Object convertedValue = toValue(existingInstance, jsonValue, value.converter, value.itemConverter, value.paramType);
                 if (convertedValue != null) {
                     setterMethod.write(t, convertedValue);
                 }
@@ -798,9 +811,10 @@ public class Mapper implements Closeable {
         return t;
     }
 
-    private Object toValue(final JsonValue jsonValue, final Adapter converter, final Adapter itemConverter, final Type type) throws Exception {
+    private Object toValue(final Object baseInstance, final JsonValue jsonValue, final Adapter converter,
+                           final Adapter itemConverter, final Type type) throws Exception {
         return converter == null ?
-                toObject(jsonValue, type, itemConverter) : jsonValue.getValueType() == ValueType.STRING ?
+                toObject(baseInstance, jsonValue, type, itemConverter) : jsonValue.getValueType() == ValueType.STRING ?
                 converter.to(JsonString.class.cast(jsonValue).getString()) :
                 convertTo(converter, jsonValue);
     }
@@ -833,13 +847,15 @@ public class Mapper implements Closeable {
         final Object[] objects = new Object[length];
         for (int i = 0; i < length; i++) {
             objects[i] = toValue(
+                null,
                 object.get(mapping.factory.getParameterNames()[i]), mapping.factory.getParameterConverter()[i],
                 mapping.factory.getParameterItemConverter()[i], mapping.factory.getParameterTypes()[i]);
         }
         return objects;
     }
 
-    private Object toObject(final JsonValue jsonValue, final Type type, final Adapter itemConverter) throws Exception {
+    private Object toObject(final Object baseInstance, final JsonValue jsonValue,
+                            final Type type, final Adapter itemConverter) throws Exception {
         if (jsonValue == null || JsonValue.NULL == jsonValue) {
             return null;
         }
@@ -884,7 +900,8 @@ public class Mapper implements Closeable {
             }
             final boolean typedAdapter = TypeAwareAdapter.class.isInstance(itemConverter);
             final Object object = buildObject(
-                    typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type,
+                    baseInstance != null ? baseInstance.getClass() : (
+                    typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
                     JsonObject.class.cast(jsonValue));
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
@@ -992,7 +1009,7 @@ public class Mapper implements Closeable {
         }
 
         for (final JsonValue value : jsonArray) {
-            collection.add(value == JsonValue.NULL ? null : toObject(value, mapping.arg, itemConverter));
+            collection.add(value == JsonValue.NULL ? null : toObject(null, value, mapping.arg, itemConverter));
         }
 
         if (EnumSet.class == mapping.raw) {
@@ -1013,7 +1030,7 @@ public class Mapper implements Closeable {
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {
-            Array.set(array, i++, toObject(value, componentType, itemConverter));
+            Array.set(array, i++, toObject(null, value, componentType, itemConverter));
         }
         return array;
     }

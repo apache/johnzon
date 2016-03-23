@@ -200,6 +200,10 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
         builder.setTreatByteArrayAsBase64(treatByteArrayAsBase64);
     }
 
+    public void setReadAttributeBeforeWrite(final boolean rabw) {
+        builder.setReadAttributeBeforeWrite(rabw);
+    }
+
     public void setEncoding(final String encoding) {
         builder.setEncoding(encoding);
     }

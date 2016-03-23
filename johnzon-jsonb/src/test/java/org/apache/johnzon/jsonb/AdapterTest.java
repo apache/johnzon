@@ -63,7 +63,10 @@ public class AdapterTest {
         final Polymorphism foo = new Polymorphism();
         foo.bars = new ArrayList<>(asList(bar, bar2));
 
-        final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL));
+        final Jsonb jsonb = JsonbBuilder.create(
+                new JsonbConfig()
+                        .setProperty("johnzon.readAttributeBeforeWrite", true)
+                        .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL) /* assertEquals() order */);
 
         final String toString = jsonb.toJson(foo);
         assertEquals("{\"bars\":[" +
@@ -75,10 +78,8 @@ public class AdapterTest {
         assertEquals(11, read.bars.get(0).value);
         assertTrue(Bar.class == read.bars.get(0).getClass());
         assertEquals(21, read.bars.get(1).value);
-        /* not yet working since model is statically typed
         assertTrue(Bar2.class == read.bars.get(1).getClass());
         assertEquals(22, Bar2.class.cast(read.bars.get(1)).value2);
-        */
     }
 
     public static class Polymorphism {
@@ -88,8 +89,21 @@ public class AdapterTest {
 
 
     public static class TypeInstance {
-        public String type;
+        private String type;
         private Bar value;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(final String type) {
+            this.type = type;
+            try {
+                this.value = Bar.class.cast(Thread.currentThread().getContextClassLoader().loadClass(type).newInstance());
+            } catch (final InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
 
         public Bar getValue() {
             return value;

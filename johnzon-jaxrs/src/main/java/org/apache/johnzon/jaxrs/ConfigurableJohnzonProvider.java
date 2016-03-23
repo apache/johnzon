@@ -195,4 +195,8 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
     public void setEncoding(final String encoding) {
         builder.setEncoding(encoding);
     }
+
+    public void setReadAttributeBeforeWrite(final boolean rabw) {
+        builder.setReadAttributeBeforeWrite(rabw);
+    }
 }
