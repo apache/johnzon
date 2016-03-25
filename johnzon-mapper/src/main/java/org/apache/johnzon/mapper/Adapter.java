@@ -28,6 +28,14 @@ package org.apache.johnzon.mapper;
  * @param <B>
  */
 public interface Adapter<A, B> {
+    /**
+     * Transfer B to JSON as A.
+     * A will be inserted into the JSON output
+     */
     A to(B b);
+
+    /**
+     * Take the object A from JSON an convert it to B to store in the POJO
+     */
     B from(A a);
 }
