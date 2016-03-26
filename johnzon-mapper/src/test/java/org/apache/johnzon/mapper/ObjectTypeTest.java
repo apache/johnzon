@@ -72,9 +72,9 @@ public class ObjectTypeTest {
 
     public static class TestWithTypeConverter implements ObjectConverter<Dog> {
         @Override
-        public void writeJson(Dog instance, JsonbGenerator jsonGenerator) {
-            jsonGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
-
+        public void writeJson(Dog instance, JsonbGenerator jsonbGenerator) {
+            jsonbGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
+            jsonbGenerator.writeObject(instance);
         }
 
         @Override
