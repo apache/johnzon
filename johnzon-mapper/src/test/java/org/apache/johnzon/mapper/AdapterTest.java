@@ -62,7 +62,7 @@ public class AdapterTest {
     }
 
     public static class Root {
-        public Foo foo = new Foo();
+        Foo foo = new Foo();
     }
 
     public static class Foo {
@@ -71,8 +71,8 @@ public class AdapterTest {
     }
 
     public static class Bar {
-        public String simple;
-        public int count;
+        String simple;
+        int count;
 
         public Bar() {
             // no-op

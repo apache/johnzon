@@ -19,9 +19,12 @@
 package org.apache.johnzon.mapper;
 
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 
+
+import javax.json.JsonObject;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,7 +50,10 @@ public class ObjectTypeTest {
                 .setAccessModeName(accessMode)
                 .build();
 
-        String jsonString = "{ \"//javaType\": \"org.apache.johnzon.mapper.ObjectTypeTest$Customer\", \"firstName\":\"Bruce\", \"lastName\":\"Wayne\" }";
+        String expectedJsonString = "{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
+                "\"mother\":{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\",\"name\":\"Rosa\",\"hairCut\":true}," +
+                "\"father\":{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                "\"father\":{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\",\"name\":\"Wuffi\"},\"name\":\"Gnarl\"},\"name\":\"Snoopie\"}";
 
         Poodle mum = new Poodle();
         mum.setName("Rosa");
@@ -67,18 +73,45 @@ public class ObjectTypeTest {
 
         String json = mapper.writeObjectAsString(snoopie);
         Assert.assertNotNull(json);
+        //X TODO Assert.assertEquals(expectedJsonString, json);
     }
 
 
     public static class TestWithTypeConverter implements ObjectConverter<Dog> {
         @Override
-        public void writeJson(Dog instance, JsonbGenerator jsonbGenerator) {
+        public void writeJson(Dog instance, MappingGenerator jsonbGenerator) {
             jsonbGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
             jsonbGenerator.writeObject(instance);
         }
 
         @Override
-        public Dog fromJson(JsonbParser jsonParser, Type targetType) {
+        public Dog fromJson(MappingParser jsonParser, Type targetType) {
+            JsonObject jsonObject = jsonParser.getJsonReader().readObject();
+            String javaType = jsonObject.getString("//javaType");
+            if (javaType != null) {
+                // the following should get extracted in a utility class.
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                if (cl == null) {
+                    cl = targetType.getClass().getClassLoader();
+                }
+
+                try {
+                    Class subClass = cl.loadClass(javaType);
+                    Class targetClass = null;
+                    if (targetType instanceof Class) {
+                        targetClass = (Class) targetType;
+                    } else if (targetType instanceof ParameterizedType) {
+                       targetClass = (Class)((ParameterizedType) targetType).getRawType();
+                    }
+                    if (targetClass != null && targetClass.isAssignableFrom(subClass)) {
+                        targetType = subClass;
+                    }
+                } catch (ClassNotFoundException e) {
+                    // continue without better class match
+                }
+
+                jsonParser.readObject(jsonObject, targetType);
+            }
             return null;
         }
     }
@@ -117,7 +150,7 @@ public class ObjectTypeTest {
     }
 
     public static class Poodle extends Dog {
-        boolean hairCut = false;
+        private boolean hairCut = false;
 
         public boolean isHairCut() {
             return hairCut;

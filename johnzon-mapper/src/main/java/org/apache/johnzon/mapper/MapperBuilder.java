@@ -43,6 +43,8 @@ import org.apache.johnzon.mapper.converter.URLConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
+import org.apache.johnzon.core.JsonParserFactoryImpl;
+
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
@@ -94,27 +96,19 @@ public class MapperBuilder {
         DEFAULT_CONVERTERS.put(new AdapterKey(Locale.class, String.class), new LocaleConverter());
     }
 
+    private MapperConfig builderConfig = new MapperConfig();
+
     private JsonReaderFactory readerFactory;
     private JsonGeneratorFactory generatorFactory;
-    private boolean doCloseOnStreams = false;
     private boolean supportHiddenAccess = true;
     private int version = -1;
     private int maxSize = -1;
     private int bufferSize = -1;
     private String bufferStrategy;
     private Comparator<String> attributeOrder = null;
-    private boolean skipNull = true;
-    private boolean skipEmptyArray = false;
-    private boolean supportsComments = false;
-    protected boolean pretty;
-    private AccessMode accessMode;
-    private boolean treatByteArrayAsBase64;
-    private boolean treatByteArrayAsBase64URL;
     private final Map<AdapterKey, Adapter<?, ?>> adapters = new HashMap<AdapterKey, Adapter<?, ?>>(DEFAULT_CONVERTERS);
     private boolean supportConstructors;
-    private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
     private boolean useGetterForCollections;
-    private boolean readAttributeBeforeWrite;
     private String accessModeName;
     private final Collection<Closeable> closeables = new ArrayList<Closeable>();
 
@@ -123,9 +117,9 @@ public class MapperBuilder {
             final JsonProvider provider = JsonProvider.provider();
             final Map<String, Object> config = new HashMap<String, Object>();
             if (bufferStrategy != null) {
-                config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
+                config.put(JsonParserFactoryImpl.BUFFER_STRATEGY, bufferStrategy);
             }
-            if (pretty) {
+            if (builderConfig.isPrettyPrint()) {
                 config.put(JsonGenerator.PRETTY_PRINTING, true);
             }
 
@@ -134,46 +128,44 @@ public class MapperBuilder {
             }
 
             config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
-            if (supportsComments) {
-                config.put("org.apache.johnzon.supports-comments", "true");
+            if (builderConfig.isSupportsComments()) {
+                config.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, "true");
             }
             if (maxSize > 0) {
-                config.put("org.apache.johnzon.max-string-length", maxSize);
+                config.put(JsonParserFactoryImpl.MAX_STRING_LENGTH, maxSize);
             }
             if (bufferSize > 0) {
-                config.put("org.apache.johnzon.default-char-buffer", bufferSize);
+                config.put(JsonParserFactoryImpl.BUFFER_LENGTH, bufferSize);
             }
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
             }
         }
 
-        if (accessMode == null) {
+        if (builderConfig.getAccessMode() == null) {
             if ("field".equalsIgnoreCase(accessModeName)) {
-                this.accessMode = new FieldAccessMode(supportConstructors, supportHiddenAccess);
+                builderConfig.setAccessMode(new FieldAccessMode(supportConstructors, supportHiddenAccess));
             } else if ("method".equalsIgnoreCase(accessModeName)) {
-                this.accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, true);
+                builderConfig.setAccessMode(new MethodAccessMode(supportConstructors, supportHiddenAccess, true));
             } else if ("strict-method".equalsIgnoreCase(accessModeName)) {
-                this.accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, false);
+                builderConfig.setAccessMode(new MethodAccessMode(supportConstructors, supportHiddenAccess, false));
             } else if ("both".equalsIgnoreCase(accessModeName)) {
-                this.accessMode = new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess);
+                builderConfig.setAccessMode(new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess));
             } else {
-                this.accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections);
+                builderConfig.setAccessMode(new MethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections));
             }
         }
 
+        // new config so builderConfig can get tweaked again.
+        MapperConfig config = builderConfig.clone();
+
         return new Mapper(
             readerFactory, generatorFactory,
-            doCloseOnStreams,
+            config,
             adapters,
             version,
             attributeOrder,
-            skipNull, skipEmptyArray,
-            accessMode,
-            treatByteArrayAsBase64, treatByteArrayAsBase64URL,
-            encoding,
-            closeables,
-            readAttributeBeforeWrite);
+            closeables);
     }
 
     public MapperBuilder addCloseable(final Closeable closeable) {
@@ -182,11 +174,11 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setIgnoreFieldsForType(final Class<?> type, final String... fields) {
-        if (BaseAccessMode.class.isInstance(accessMode)) {
+        if (BaseAccessMode.class.isInstance(builderConfig.getAccessMode())) {
             if (fields == null || fields.length == 0) {
-                BaseAccessMode.class.cast(accessMode).getFieldsToRemove().remove(type);
+                BaseAccessMode.class.cast(builderConfig.getAccessMode()).getFieldsToRemove().remove(type);
             } else {
-                BaseAccessMode.class.cast(accessMode).getFieldsToRemove().put(type, fields);
+                BaseAccessMode.class.cast(builderConfig.getAccessMode()).getFieldsToRemove().put(type, fields);
             }
         } else {
             throw new IllegalStateException("AccessMode is not an BaseAccessMode");
@@ -200,12 +192,12 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setSupportsComments(final boolean supportsComments) {
-        this.supportsComments = supportsComments;
+        builderConfig.setSupportsComments(supportsComments);
         return this;
     }
 
     public MapperBuilder setPretty(final boolean pretty) {
-        this.pretty = pretty;
+        builderConfig.setPrettyPrint(pretty);
         return this;
     }
 
@@ -225,7 +217,7 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setAccessMode(final AccessMode mode) {
-        this.accessMode = mode;
+        builderConfig.setAccessMode(mode);
         return this;
     }
 
@@ -259,7 +251,7 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setDoCloseOnStreams(final boolean doCloseOnStreams) {
-        this.doCloseOnStreams = doCloseOnStreams;
+        builderConfig.setClose(doCloseOnStreams);
         return this;
     }
 
@@ -297,22 +289,22 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setSkipNull(final boolean skipNull) {
-        this.skipNull = skipNull;
+        builderConfig.setSkipNull(skipNull);
         return this;
     }
 
     public MapperBuilder setSkipEmptyArray(final boolean skipEmptyArray) {
-        this.skipEmptyArray = skipEmptyArray;
+        builderConfig.setSkipEmptyArray(skipEmptyArray);
         return this;
     }
 
     public MapperBuilder setTreatByteArrayAsBase64(final boolean treatByteArrayAsBase64) {
-        this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
+        builderConfig.setTreatByteArrayAsBase64(treatByteArrayAsBase64);
         return this;
     }
 
     public MapperBuilder setTreatByteArrayAsBase64URL(final boolean treatByteArrayAsBase64URL) {
-        this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
+        builderConfig.setTreatByteArrayAsBase64URL(treatByteArrayAsBase64URL);
         return this;
     }
 
@@ -322,12 +314,12 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setEncoding(final String encoding) {
-        this.encoding = Charset.forName(encoding);
+        builderConfig.setEncoding(Charset.forName(encoding));
         return this;
     }
 
     public MapperBuilder setReadAttributeBeforeWrite(final boolean readAttributeBeforeWrite) {
-        this.readAttributeBeforeWrite = readAttributeBeforeWrite;
+        builderConfig.setReadAttributeBeforeWrite(readAttributeBeforeWrite);
         return this;
     }
 }

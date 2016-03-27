@@ -27,7 +27,7 @@ import javax.json.stream.JsonGenerator;
  * To write JSON-P structure elements you can use the {@link #getJsonGenerator()} method.
  *
  */
-public interface JsonbGenerator {
+public interface MappingGenerator {
 
     /**
      * @return the {@link JsonGenerator} used internally to write the JSON output.
@@ -55,7 +55,7 @@ public interface JsonbGenerator {
      * @param o the object to write
      * @return itself, for easier chaining of commands
      */
-    JsonbGenerator writeObject(Object o);
+    MappingGenerator writeObject(Object o);
 
 
 }

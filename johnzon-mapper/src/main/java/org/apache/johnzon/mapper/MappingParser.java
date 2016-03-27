@@ -18,7 +18,10 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.stream.JsonGenerator;
+import java.lang.reflect.Type;
+
+import javax.json.JsonReader;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 
 /**
@@ -28,13 +31,19 @@ import javax.json.stream.JsonParser;
  * To write JSON-P structure elements you can use the {@link #getJsonParser()} ()} method.
  *
  */
-public interface JsonbParser {
+public interface MappingParser {
 
     /**
-     * @return the {@link JsonGenerator} used internally to write the JSON output.
+     * @return the {@link JsonParser} used internally to read the JSON input.
      */
     JsonParser getJsonParser();
 
+    /**
+     * @return the {@link JsonReader} to read in full {@link javax.json.JsonValue}s from the {@link #getJsonParser()}
+     */
+    JsonReader getJsonReader();
 
+    <T> T readObject(Type targetType);
 
+    <T> T readObject(JsonValue jsonValue, Type targetType);
 }

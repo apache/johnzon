@@ -25,7 +25,6 @@ import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
-import org.apache.johnzon.mapper.reflection.Mappings;
 
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
@@ -54,7 +53,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -87,43 +85,28 @@ public class Mapper implements Closeable {
     private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
 
+    protected final MapperConfig config;
     protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
-    protected final boolean close;
     protected final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
     protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry = new ConcurrentHashMap<Adapter<?, ?>, AdapterKey>();
     protected final int version;
-    protected final boolean skipNull;
-    protected final boolean skipEmptyArray;
-    protected final boolean treatByteArrayAsBase64;
-    protected final boolean treatByteArrayAsBase64URL;
-    protected final boolean readAttributeBeforeWrite;
-    protected final Charset encoding;
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
 
-    // CHECKSTYLE:OFF
-    public Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
-                  final boolean doClose, final Map<AdapterKey, Adapter<?, ?>> adapters,
-                  final int version, final Comparator<String> attributeOrder, final boolean skipNull, final boolean skipEmptyArray,
-                  final AccessMode accessMode, final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL, final Charset encoding,
-                  final Collection<Closeable> closeables, final boolean readAttributeBeforeWrite) {
-    // CHECKSTYLE:ON
+    Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory, MapperConfig config,
+                  final Map<AdapterKey, Adapter<?, ?>> adapters,
+                  final int version, final Comparator<String> attributeOrder,
+                  final Collection<Closeable> closeables) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
-        this.close = doClose;
+        this.config = config;
         this.adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(adapters);
         this.version = version;
-        this.mappings = new Mappings(attributeOrder, accessMode, version, this.adapters);
-        this.skipNull = skipNull;
-        this.skipEmptyArray = skipEmptyArray;
-        this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
-        this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
-        this.encoding = encoding;
+        this.mappings = new Mappings(attributeOrder, config.getAccessMode(), version, this.adapters);
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
-        this.readAttributeBeforeWrite = readAttributeBeforeWrite;
     }
 
     private static JsonGenerator writePrimitives(final JsonGenerator generator, final Object value) {
@@ -245,7 +228,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> void writeArray(final Collection<T> object, final OutputStream stream) {
-        writeArray(object, new OutputStreamWriter(stream, encoding));
+        writeArray(object, new OutputStreamWriter(stream, config.getEncoding()));
     }
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
@@ -276,7 +259,7 @@ public class Mapper implements Closeable {
     }
 
     private void doCloseOrFlush(final JsonGenerator generator) {
-        if (close) {
+        if (config.isClose()) {
             generator.close();
         } else {
             generator.flush();
@@ -284,7 +267,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
-        writeIterable(object, new OutputStreamWriter(stream, encoding));
+        writeIterable(object, new OutputStreamWriter(stream, config.getEncoding()));
     }
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
@@ -311,7 +294,7 @@ public class Mapper implements Closeable {
             } catch (final IOException e) {
                 throw new MapperException(e);
             } finally {
-                if (close) {
+                if (config.isClose()) {
                     try {
                         stream.close();
                     } catch (final IOException e) {
@@ -332,7 +315,7 @@ public class Mapper implements Closeable {
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
-        final JsonGenerator generator = generatorFactory.createGenerator(stream, encoding);
+        final JsonGenerator generator = generatorFactory.createGenerator(stream, config.getEncoding());
         doWriteHandlingNullObject(object, generator);
     }
 
@@ -435,7 +418,7 @@ public class Mapper implements Closeable {
             }
 
             if (value == null) {
-                if (skipNull && !getter.reader.isNillable()) {
+                if (config.isSkipNull() && !getter.reader.isNillable()) {
                     continue;
                 } else {
                     gen.writeNull(getterEntry.getKey());
@@ -462,7 +445,7 @@ public class Mapper implements Closeable {
             final Object key = entry.getKey();
 
             if (value == null) {
-                if (skipNull) {
+                if (config.isSkipNull()) {
                     continue;
                 } else {
                     gen.writeNull(key == null ? "null" : key.toString());
@@ -490,16 +473,16 @@ public class Mapper implements Closeable {
                                      final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
-            if (length == 0 && skipEmptyArray) {
+            if (length == 0 && config.isSkipEmptyArray()) {
                 return generator;
             }
             
-            if(treatByteArrayAsBase64 && (type == byte[].class /*|| type == Byte[].class*/)) {
+            if(config.isTreatByteArrayAsBase64() && (type == byte[].class /*|| type == Byte[].class*/)) {
                 String base64EncodedByteArray = DatatypeConverter.printBase64Binary((byte[]) value);
                 generator.write(key, base64EncodedByteArray);
                 return generator;
             }
-            if(treatByteArrayAsBase64URL && (type == byte[].class /*|| type == Byte[].class*/)) {
+            if(config.isTreatByteArrayAsBase64URL() && (type == byte[].class /*|| type == Byte[].class*/)) {
                 return generator.write(key, String.valueOf(Adapter.class.cast(adapters.get(new AdapterKey(byte[].class, String.class))).to(value)));
             }
 
@@ -542,7 +525,7 @@ public class Mapper implements Closeable {
                 newGen = doWriteArray(Collection.class.cast(o), generator);
             } else if (o != null && o.getClass().isArray()) {
                 final int length = Array.getLength(o);
-                if (length > 0 || !skipEmptyArray) {
+                if (length > 0 || !config.isSkipEmptyArray()) {
                     newGen = generator.writeStartArray();
                     for (int i = 0; i < length; i++) {
                         newGen = writeItem(newGen, Array.get(o, i));
@@ -613,7 +596,7 @@ public class Mapper implements Closeable {
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
-            if (close) {
+            if (config.isClose()) {
                 reader.close();
             }
         }
@@ -630,7 +613,7 @@ public class Mapper implements Closeable {
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
-            if (close) {
+            if (config.isClose()) {
                 reader.close();
             }
         }
@@ -655,7 +638,7 @@ public class Mapper implements Closeable {
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
-            if (close) {
+            if (config.isClose()) {
                 reader.close();
             }
         }
@@ -687,7 +670,7 @@ public class Mapper implements Closeable {
         } catch (final Exception e) {
             throw new MapperException(e);
         } finally {
-            if (close) {
+            if (config.isClose()) {
                 reader.close();
             }
         }
@@ -790,7 +773,7 @@ public class Mapper implements Closeable {
                 setterMethod.write(t, null);
             } else {
                 Object existingInstance = null;
-                if (readAttributeBeforeWrite) {
+                if (config.isReadAttributeBeforeWrite()) {
                     final Mappings.Getter getter = classMapping.getters.get(setter.getKey());
                     if (getter != null) {
                         try {
@@ -869,7 +852,7 @@ public class Mapper implements Closeable {
             throw new MapperException("Unable to parse " + jsonValue + " to boolean");
         }
 
-        if(treatByteArrayAsBase64 && jsonValue.getValueType() == ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
+        if(config.isTreatByteArrayAsBase64() && jsonValue.getValueType() == ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
             return DatatypeConverter.parseBase64Binary(((JsonString)jsonValue).getString());
         }
 

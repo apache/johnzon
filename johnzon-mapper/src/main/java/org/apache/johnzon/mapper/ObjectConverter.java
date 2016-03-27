@@ -20,9 +20,6 @@ package org.apache.johnzon.mapper;
 
 import java.lang.reflect.Type;
 
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParser;
-
 /**
  * Convert a given Java Type a nested JSON representation.
  * And the other way around.
@@ -33,7 +30,7 @@ import javax.json.stream.JsonParser;
  * @param <T>
  */
 public interface ObjectConverter<T> {
-    void writeJson(T instance, JsonbGenerator jsonbGenerator);
+    void writeJson(T instance, MappingGenerator jsonbGenerator);
 
-    T fromJson(JsonbParser jsonbParser, Type targetType);
+    T fromJson(MappingParser jsonbParser, Type targetType);
 }

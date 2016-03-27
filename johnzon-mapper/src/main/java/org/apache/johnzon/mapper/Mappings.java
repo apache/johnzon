@@ -16,19 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper.reflection;
+package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.Converter;
-import org.apache.johnzon.mapper.JohnzonConverter;
-import org.apache.johnzon.mapper.JohnzonIgnore;
-import org.apache.johnzon.mapper.JohnzonVirtualObject;
-import org.apache.johnzon.mapper.JohnzonVirtualObjects;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -58,10 +53,10 @@ import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 public class Mappings {
     public static class ClassMapping {
-        public final Class<?> clazz;
-        public final AccessMode.Factory factory;
-        public final Map<String, Getter> getters;
-        public final Map<String, Setter> setters;
+        final Class<?> clazz;
+        final AccessMode.Factory factory;
+        final Map<String, Getter> getters;
+        final Map<String, Setter> setters;
 
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
@@ -74,9 +69,9 @@ public class Mappings {
     }
 
     public static class CollectionMapping {
-        public final Class<?> raw;
-        public final Type arg;
-        public final boolean primitive;
+        final Class<?> raw;
+        final Type arg;
+        final boolean primitive;
 
         public CollectionMapping(final boolean primitive, final Class<?> collectionType, final Type fieldArgType) {
             this.raw = collectionType;
@@ -86,14 +81,14 @@ public class Mappings {
     }
 
     public static class Getter {
-        public final AccessMode.Reader reader;
-        public final int version;
-        public final Adapter converter;
-        public final Adapter itemConverter;
-        public final boolean primitive;
-        public final boolean array;
-        public final boolean map;
-        public final boolean collection;
+        final AccessMode.Reader reader;
+        final int version;
+        final Adapter converter;
+        final Adapter itemConverter;
+        final boolean primitive;
+        final boolean array;
+        final boolean map;
+        final boolean collection;
 
         public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
