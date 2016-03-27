@@ -27,7 +27,7 @@
   </bannerLeft>
   
   <bannerRight>
-		<src>http://people.apache.org/~salyh/aj_logo_vote.png</src>
+		<src>/resources/images/johnzon_logo.png</src>
 		<width>180</width>
   </bannerRight>
 
