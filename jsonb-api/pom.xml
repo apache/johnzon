@@ -31,5 +31,6 @@
 
   <properties>
     <java-compile.version>1.8</java-compile.version>
+    <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
 </project>
