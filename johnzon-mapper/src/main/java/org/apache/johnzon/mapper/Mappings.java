@@ -445,7 +445,13 @@ public class Mappings {
         Type typeToTest = decoratedType.getType();
         if (annotation != null) {
             try {
-                converter = new ConverterAdapter(annotation.value().newInstance());
+                MapperConverter mapperConverter = annotation.value().newInstance();
+                if (mapperConverter instanceof Converter) {
+                    converter = new ConverterAdapter((Converter) mapperConverter);
+                } else {
+                    throw new UnsupportedOperationException("TODO implement");
+                }
+
             } catch (final Exception e) {
                 throw new IllegalArgumentException(e);
             }

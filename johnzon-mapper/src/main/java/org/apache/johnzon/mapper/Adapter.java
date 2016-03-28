@@ -27,7 +27,7 @@ package org.apache.johnzon.mapper;
  * @param <A>
  * @param <B>
  */
-public interface Adapter<A, B> {
+public interface Adapter<A, B> extends MapperConverter {
     /**
      * Transfer B to JSON as A.
      * A will be inserted into the JSON output

@@ -33,7 +33,7 @@ public class JsonReaderImpl implements JsonReader {
     private final JsonParser parser;
     private boolean closed = false;
 
-    JsonReaderImpl(final JsonParser parser) {
+    public JsonReaderImpl(final JsonParser parser) {
         this.parser = parser;
     }
 

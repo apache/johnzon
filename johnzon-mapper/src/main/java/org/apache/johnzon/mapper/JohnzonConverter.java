@@ -29,5 +29,5 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Target({ METHOD, FIELD, PARAMETER })
 @Retention(RUNTIME)
 public @interface JohnzonConverter {
-    Class<? extends Converter<?>> value();
+    Class<? extends MapperConverter> value();
 }

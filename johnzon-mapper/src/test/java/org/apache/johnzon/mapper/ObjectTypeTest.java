@@ -48,6 +48,7 @@ public class ObjectTypeTest {
     public void testObjectConverterMapper() {
         Mapper mapper = new MapperBuilder()
                 .setAccessModeName(accessMode)
+                //X TODO .addObjectConverter or so
                 .build();
 
         String expectedJsonString = "{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
@@ -79,15 +80,26 @@ public class ObjectTypeTest {
 
     public static class TestWithTypeConverter implements ObjectConverter<Dog> {
         @Override
-        public void writeJson(Dog instance, MappingGenerator jsonbGenerator) {
-            jsonbGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
-            jsonbGenerator.writeObject(instance);
+        public void writeJson(Dog instance, MappingGenerator mappingGenerator) {
+            mappingGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
+            mappingGenerator.writeObject(instance);
         }
 
         @Override
-        public Dog fromJson(MappingParser jsonParser, Type targetType) {
-            JsonObject jsonObject = jsonParser.getJsonReader().readObject();
+        public Dog fromJson(MappingParser mappingParser, Type targetType) {
+            JsonObject jsonObject = mappingParser.getJsonReader().readObject();
             String javaType = jsonObject.getString("//javaType");
+            Class targetClass = javaType != null ? getSubClass(targetType, javaType) : (Class) targetType;
+
+            return mappingParser.readObject(jsonObject, targetClass);
+        }
+
+
+        /**
+         * Helper method to check that javaType is really a subclass of targetType.
+         * Might get moved to a utility class
+         */
+        private Class getSubClass(Type targetType, String javaType) {
             if (javaType != null) {
                 // the following should get extracted in a utility class.
                 ClassLoader cl = Thread.currentThread().getContextClassLoader();
@@ -101,18 +113,17 @@ public class ObjectTypeTest {
                     if (targetType instanceof Class) {
                         targetClass = (Class) targetType;
                     } else if (targetType instanceof ParameterizedType) {
-                       targetClass = (Class)((ParameterizedType) targetType).getRawType();
+                        targetClass = (Class)((ParameterizedType) targetType).getRawType();
                     }
                     if (targetClass != null && targetClass.isAssignableFrom(subClass)) {
-                        targetType = subClass;
+                        return subClass;
                     }
                 } catch (ClassNotFoundException e) {
                     // continue without better class match
                 }
-
-                jsonParser.readObject(jsonObject, targetType);
             }
-            return null;
+
+            return (Class) targetType;
         }
     }
 

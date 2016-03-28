@@ -28,7 +28,7 @@ import java.lang.reflect.Type;
  *
  * @param <T>
  */
-public interface Converter<T> {
+public interface Converter<T> extends MapperConverter {
     String toString(T instance);
     T fromString(String text);
 

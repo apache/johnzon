@@ -19,7 +19,9 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.MapperConverter;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
@@ -122,13 +124,18 @@ public abstract class BaseAccessMode implements AccessMode {
                 for (final Annotation a : constructor.getParameterAnnotations()[i]) {
                     if (a.annotationType() == JohnzonConverter.class) {
                         try {
-                            final Adapter<?, ?> converter = new ConverterAdapter(JohnzonConverter.class.cast(a).value().newInstance());
-                            if (matches(constructor.getParameterTypes()[i], converter)) {
-                                constructorParameterConverters[i] = converter;
-                                constructorItemParameterConverters[i] = null;
+                            MapperConverter mapperConverter = JohnzonConverter.class.cast(a).value().newInstance();
+                            if (mapperConverter instanceof Converter) {
+                                final Adapter<?, ?> converter = new ConverterAdapter((Converter) mapperConverter);
+                                if (matches(constructor.getParameterTypes()[i], converter)) {
+                                    constructorParameterConverters[i] = converter;
+                                    constructorItemParameterConverters[i] = null;
+                                } else {
+                                    constructorParameterConverters[i] = null;
+                                    constructorItemParameterConverters[i] = converter;
+                                }
                             } else {
-                                constructorParameterConverters[i] = null;
-                                constructorItemParameterConverters[i] = converter;
+                                throw new UnsupportedOperationException("TODO implement");
                             }
                         } catch (final Exception e) {
                             throw new IllegalArgumentException(e);

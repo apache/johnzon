@@ -18,19 +18,9 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.lang.reflect.Type;
 
 /**
- * Convert a given Java Type a nested JSON representation.
- * And the other way around.
- *
- * An example would be to convert a custom Project POJO, like Dog.class
- * to it's JSON representation
- *
- * @param <T>
+ * MapperConverter is the common marker interface for all Converters available in Johnzon
  */
-public interface ObjectConverter<T> extends MapperConverter {
-    void writeJson(T instance, MappingGenerator jsonbGenerator);
-
-    T fromJson(MappingParser jsonbParser, Type targetType);
+public interface MapperConverter {
 }
