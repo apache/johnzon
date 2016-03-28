@@ -342,13 +342,8 @@ public class Mapper implements Closeable {
             generator.writeStartObject().writeEnd().close();
             return;
         }
-        if (JsonObject.class.isInstance(object)) {
-            final JsonObject jsonObject = JsonObject.class.cast(object);
-            generator.writeStartObject();
-            for (final Map.Entry<String, JsonValue> value  : jsonObject.entrySet()) {
-                generator.write(value.getKey(), value.getValue());
-            }
-            generator.writeEnd().close();
+        if (object instanceof JsonValue) {
+            generator.write((JsonValue) object);
             return;
         }
 
