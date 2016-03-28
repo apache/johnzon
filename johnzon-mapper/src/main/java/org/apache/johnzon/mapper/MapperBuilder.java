@@ -157,11 +157,11 @@ public class MapperBuilder {
         }
 
         // new config so builderConfig can get tweaked again.
-        MapperConfig config = builderConfig.clone();
+        MapperConfig mapperConfig = builderConfig.clone();
 
         return new Mapper(
             readerFactory, generatorFactory,
-            config,
+            mapperConfig,
             adapters,
             version,
             attributeOrder,
@@ -322,4 +322,10 @@ public class MapperBuilder {
         builderConfig.setReadAttributeBeforeWrite(readAttributeBeforeWrite);
         return this;
     }
+
+    public <T> MapperBuilder addObjectConverter(Class<T> targetType, ObjectConverter<T> objectConverter) {
+        builderConfig.addObjectConverter(targetType, objectConverter);
+        return this;
+    }
+
 }

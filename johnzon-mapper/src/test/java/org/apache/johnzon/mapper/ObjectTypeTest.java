@@ -48,7 +48,7 @@ public class ObjectTypeTest {
     public void testObjectConverterMapper() {
         Mapper mapper = new MapperBuilder()
                 .setAccessModeName(accessMode)
-                //X TODO .addObjectConverter or so
+                .addObjectConverter(Dog.class, new TestWithTypeConverter())
                 .build();
 
         String expectedJsonString = "{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
@@ -74,7 +74,7 @@ public class ObjectTypeTest {
 
         String json = mapper.writeObjectAsString(snoopie);
         Assert.assertNotNull(json);
-        //X TODO Assert.assertEquals(expectedJsonString, json);
+        Assert.assertEquals(expectedJsonString, json);
     }
 
 

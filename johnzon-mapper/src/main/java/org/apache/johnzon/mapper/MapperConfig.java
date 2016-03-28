@@ -19,6 +19,8 @@
 package org.apache.johnzon.mapper;
 
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.johnzon.mapper.access.AccessMode;
 
@@ -36,6 +38,10 @@ class MapperConfig implements Cloneable {
     private boolean prettyPrint;
     private AccessMode accessMode;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
+
+    //X TODO we need a more elaborated approache at the end, but for now it's fine
+    private Map<Class<?>, ObjectConverter<?>> objectConverters = new HashMap<Class<?>, ObjectConverter<?>>();
+
 
     MapperConfig() {
     }
@@ -120,6 +126,14 @@ class MapperConfig implements Cloneable {
         this.encoding = encoding;
     }
 
+    <T> void addObjectConverter(Class<T> targetType, ObjectConverter<T> objectConverter) {
+        objectConverters.put(targetType, objectConverter);
+    }
+
+    public Map<Class<?>, ObjectConverter<?>> getObjectConverters() {
+        return objectConverters;
+    }
+
     @Override
     public MapperConfig clone() {
         try {
@@ -128,4 +142,6 @@ class MapperConfig implements Cloneable {
             return null;
         }
     }
+
+
 }
