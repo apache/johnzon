@@ -316,6 +316,15 @@
         <artifactId>cobertura-maven-plugin</artifactId>
         <version>2.6</version>
             <configuration>
+                <instrumentation>
+                    <ignores>
+                       <ignore>org.apache.johnzon.maven.*</ignore>
+                    </ignores>
+                    <excludes>
+                        <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
+                        <exclude>org/apache/johnzon/**/*Test.class</exclude>
+                    </excludes>
+                </instrumentation>
                 <formats>
                      <format>xml</format>
                 </formats>
@@ -450,6 +459,15 @@
         <artifactId>cobertura-maven-plugin</artifactId>
         <version>2.6</version>
             <configuration>
+                <instrumentation>
+                    <ignores>
+                       <ignore>org.apache.johnzon.maven.*</ignore>
+                    </ignores>
+                    <excludes>
+                        <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
+                        <exclude>org/apache/johnzon/**/*Test.class</exclude>
+                    </excludes>
+                </instrumentation>
                 <formats>
                      <format>html</format>
                 </formats>
