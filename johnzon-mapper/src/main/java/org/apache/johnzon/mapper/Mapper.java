@@ -89,22 +89,17 @@ public class Mapper implements Closeable {
     protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
-    protected final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
     protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry = new ConcurrentHashMap<Adapter<?, ?>, AdapterKey>();
-    protected final int version;
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
 
     Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory, MapperConfig config,
-                  final Map<AdapterKey, Adapter<?, ?>> adapters,
-                  final int version, final Comparator<String> attributeOrder,
+                  final Comparator<String> attributeOrder,
                   final Collection<Closeable> closeables) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.config = config;
-        this.adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(adapters);
-        this.version = version;
-        this.mappings = new Mappings(attributeOrder, config.getAccessMode(), version, this.adapters);
+        this.mappings = new Mappings(attributeOrder, config.getAccessMode(), config.getVersion(), config.getAdapters());
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
     }
@@ -187,8 +182,11 @@ public class Mapper implements Closeable {
         return converter.from(value);
     }
 
+    /**
+     * @deprecated see MapperConfig
+     */
     private Adapter findAdapter(final Type aClass) {
-        final Adapter<?, ?> converter = adapters.get(new AdapterKey(aClass, String.class));
+        final Adapter<?, ?> converter = config.getAdapters().get(new AdapterKey(aClass, String.class));
         if (converter != null) {
             return converter;
         }
@@ -196,20 +194,23 @@ public class Mapper implements Closeable {
             final Class<?> clazz = Class.class.cast(aClass);
             if (clazz.isEnum()) {
                 final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz));
-                adapters.putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
+                config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;
             }
         }
         return null;
     }
 
+    /**
+     * @deprecated see MapperConfig
+     */
     private Object convertTo(final Type aClass, final String text) {
         if (Object.class == aClass || String.class == aClass) {
             return text;
         }
         final Adapter converter = findAdapter(aClass);
         if (converter == null) {
-            adapters.putIfAbsent(new AdapterKey(String.class, aClass), FALLBACK_CONVERTER);
+            config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), FALLBACK_CONVERTER);
             return FALLBACK_CONVERTER.to(text);
         }
         return converter.to(text);
@@ -402,7 +403,7 @@ public class Mapper implements Closeable {
         JsonGenerator generator = gen;
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
-            if (getter.version >= 0 && version >= getter.version) {
+            if (getter.version >= 0 && config.getVersion() >= getter.version) {
                 continue;
             }
 
@@ -478,7 +479,7 @@ public class Mapper implements Closeable {
                 return generator;
             }
             if(config.isTreatByteArrayAsBase64URL() && (type == byte[].class /*|| type == Byte[].class*/)) {
-                return generator.write(key, String.valueOf(Adapter.class.cast(adapters.get(new AdapterKey(byte[].class, String.class))).to(value)));
+                return generator.write(key, String.valueOf(Adapter.class.cast(config.getAdapters().get(new AdapterKey(byte[].class, String.class))).to(value)));
             }
 
             JsonGenerator gen = generator.writeStartArray(key);
@@ -800,7 +801,7 @@ public class Mapper implements Closeable {
         if (jsonValue.getValueType() == ValueType.OBJECT) {
             AdapterKey adapterKey = reverseAdaptersRegistry.get(converter);
             if (adapterKey == null) {
-                for (final Map.Entry<AdapterKey, Adapter<?, ?>> entry : adapters.entrySet()) {
+                for (final Map.Entry<AdapterKey, Adapter<?, ?>> entry : config.getAdapters().entrySet()) {
                     if (entry.getValue() == converter) {
                         adapterKey = entry.getKey();
                         reverseAdaptersRegistry.put(converter, adapterKey);
