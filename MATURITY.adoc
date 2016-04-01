@@ -30,10 +30,8 @@ Directors) to graduate it as a top-level Apache project.
 It is based on the ASF project maturity model at
 https://community.apache.org/apache-way/apache-project-maturity-model.html
 
-The idea of this document is based on Groovy one.
-
 == Status of this document
-Just created.
+Final
 
 == Overall assessment
 Dev list acknowledged by lazy consensus it was time to graduate for Johnzon. The fact we released a lot
