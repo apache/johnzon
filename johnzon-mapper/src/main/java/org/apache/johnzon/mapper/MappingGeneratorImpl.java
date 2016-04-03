@@ -60,7 +60,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
         return this;
     }
 
-    private void doWriteObject(Object object, boolean writeBody) {
+    public void doWriteObject(Object object, boolean writeBody) {
         try {
             if (object instanceof Map) {
                 if (writeBody) {
@@ -82,6 +82,11 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 final Adapter adapter = config.findAdapter(objectClass);
                 final String adaptedValue = adapter.from(object).toString(); // we know it ends as String for enums
                 generator.write(adaptedValue);
+                return;
+            }
+
+            if (object instanceof Iterable) {
+                doWriteIterable((Iterable) object);
                 return;
             }
 
@@ -315,13 +320,18 @@ public class MappingGeneratorImpl implements MappingGenerator {
     private void writeItem(final Object o) {
         if (!writePrimitives(o)) {
             if (Collection.class.isInstance(o)) {
-                doWriteArray(Collection.class.cast(o));
+                doWriteIterable(Collection.class.cast(o));
             } else if (o != null && o.getClass().isArray()) {
                 final int length = Array.getLength(o);
                 if (length > 0 || !config.isSkipEmptyArray()) {
                     generator.writeStartArray();
                     for (int i = 0; i < length; i++) {
-                        writeItem(Array.get(o, i));
+                        Object t = Array.get(o, i);
+                        if (t == null) {
+                            generator.writeNull();
+                        } else {
+                            writeItem(t);
+                        }
                     }
                     generator.writeEnd();
                 }
@@ -333,7 +343,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
     }
 
-    private <T> void doWriteArray(final Collection<T> object) {
+    private <T> void doWriteIterable(final Iterable<T> object) {
         if (object == null) {
             generator.writeStartArray().writeEnd();
         } else {
@@ -342,7 +352,11 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (JsonValue.class.isInstance(t)) {
                     generator.write(JsonValue.class.cast(t));
                 } else {
-                    writeItem(t);
+                    if (t == null) {
+                        generator.writeNull();
+                    } else {
+                        writeItem(t);
+                    }
                 }
             }
             generator.writeEnd();

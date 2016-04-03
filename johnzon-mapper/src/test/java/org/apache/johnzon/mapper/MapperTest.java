@@ -1010,20 +1010,4 @@ public class MapperTest {
         }
     }
 
-    /*public static class ByteArray {
-        
-        public byte[] byteArray;
-
-        @JohnzonConverter(ByteArrayBase64Converter.class)
-        public byte[] getByteArray() {
-            return byteArray;
-        }
-
-        @JohnzonConverter(ByteArrayBase64Converter.class)
-        public void setByteArray(byte[] byteArray) {
-            this.byteArray = byteArray;
-        }
-        
-        
-    }*/
 }

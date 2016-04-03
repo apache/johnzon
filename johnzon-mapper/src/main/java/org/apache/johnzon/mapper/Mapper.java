@@ -212,15 +212,15 @@ public class Mapper implements Closeable {
     }
 
     public <T> void writeArray(final Object object, final OutputStream stream) {
-        writeArray(asList((T[]) object), stream);
+        writeObject(asList((T[]) object), stream);
     }
 
     public <T> void writeArray(final T[] object, final OutputStream stream) {
-        writeArray(asList(object), stream);
+        writeObject(asList(object), stream);
     }
 
     public <T> void writeArray(final T[] object, final Writer stream) {
-        writeArray(asList(object), stream);
+        writeObject(asList(object), stream);
     }
 
     public <T> void writeArray(final Collection<T> object, final OutputStream stream) {
@@ -230,7 +230,7 @@ public class Mapper implements Closeable {
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
         try {
-            generator = doWriteArray(object, generator);
+            writeObject(object, generator);
         } finally {
             generator.close();
         }
@@ -261,15 +261,7 @@ public class Mapper implements Closeable {
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
         try {
-            if (object == null) {
-                generator = generator.writeStartArray().writeEnd();
-            } else {
-                generator.writeStartArray();
-                for (final T t : object) {
-                    generator = writeItem(generator, t);
-                }
-                generator.writeEnd();
-            }
+            writeObject(object, generator);
         } finally {
             generator.close();
         }
@@ -309,10 +301,8 @@ public class Mapper implements Closeable {
     }
 
     private void writeObject(Object object, JsonGenerator generator) {
-        MappingGenerator mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
-        generator.writeStartObject();
-        mappingGenerator.writeObject(object);
-        generator.writeEnd();
+        MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
+        mappingGenerator.doWriteObject(object, true);
         generator.close();
     }
 
@@ -334,25 +324,6 @@ public class Mapper implements Closeable {
         return writer.toString();
     }
 
-    private void doWriteHandlingNullObject(final Object object, final JsonGenerator generator) {
-        if (object == null) {
-            generator.writeStartObject().writeEnd().close();
-            return;
-        }
-        if (object instanceof JsonValue) {
-            generator.write((JsonValue) object);
-            return;
-        }
-
-        JsonGenerator gen = null;
-        try {
-            gen = doWriteObject(generator, object);
-        } finally {
-            if (gen != null) {
-                gen.close();
-            }
-        }
-    }
 
     private JsonGenerator doWriteObject(final JsonGenerator generator, final Object object) {
         try {
