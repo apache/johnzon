@@ -34,6 +34,8 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
 
+import static org.apache.johnzon.mapper.internal.Streams.noClose;
+
 @Provider
 @Consumes({
     "application/json", "*/json",
@@ -66,10 +68,10 @@ public class JsrMessageBodyReader implements MessageBodyReader<JsonStructure> {
                                   final InputStream inputStream) throws IOException, WebApplicationException {
         JsonReader reader = null;
         try {
-            reader = factory.createReader(inputStream);
+            reader = factory.createReader(closeStream ? inputStream : noClose(inputStream));
             return reader.read();
         } finally {
-            if (closeStream && reader != null) {
+            if (reader != null) {
                 reader.close();
             }
         }

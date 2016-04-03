@@ -28,12 +28,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
-import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collections;
+
+import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
 @Provider
 @Produces({
@@ -75,15 +76,11 @@ public class JsrMessageBodyWriter implements MessageBodyWriter<JsonStructure> {
                         final OutputStream outputStream) throws IOException, WebApplicationException {
         JsonWriter writer = null;
         try {
-            writer = factory.createWriter(outputStream);
+            writer = factory.createWriter(close ? outputStream : noClose(outputStream));
             writer.write(jsonStructure);
         } finally {
             if (writer != null) {
-                if (close) {
-                    writer.close();
-                } else if (Flushable.class.isInstance(writer)) {
-                    Flushable.class.cast(writer).flush();
-                }
+                writer.close();
             }
         }
     }
