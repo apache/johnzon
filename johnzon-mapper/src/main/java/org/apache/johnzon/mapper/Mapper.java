@@ -362,12 +362,13 @@ public class Mapper implements Closeable {
             return;
         }
 
-        //JsonGenerator gen = null;
+        JsonGenerator gen = null;
         try {
-            /*gen = */
-            doWriteObject(generator, object);
+            gen = doWriteObject(generator, object);
         } finally {
-            generator.close();
+            if (gen != null) {
+                gen.close();
+            }
         }
     }
 
