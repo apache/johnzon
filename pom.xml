@@ -49,6 +49,10 @@
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <java-compile.version>1.6</java-compile.version>
     <cxf.version>3.0.0</cxf.version>
+    <javadoc.params></javadoc.params> <!-- for java 8 set disable doclint (by profile) -->
+    <checkstyle.version>2.15</checkstyle.version> <!-- checkstyle > 2.15 version do not support java 6 -->
+    <!-- JVM values for surefire plugin -->
+    <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
   </properties>
 
   <modules>
@@ -161,7 +165,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>2.17</version>
+        <version>${checkstyle.version}</version>
         <executions>
           <execution>
             <id>verify-style</id>
@@ -282,9 +286,9 @@
             <goals>
               <goal>jar</goal>
             </goals>
-            <configuration combine.self="override"> <!-- disable parent configuration -->
+            <configuration>
               <show>private</show>
-              <additionalparam>-Xdoclint:none</additionalparam> <!-- maven plugin generated a HelpMojo with malformed javadoc -->
+              <additionalparam>${javadoc.params}</additionalparam> <!-- maven plugin generated a HelpMojo with malformed javadoc -->
             </configuration>
           </execution>
         </executions>
@@ -292,8 +296,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.19.1</version>
         <configuration>
-          <args>-Dfile.encoding=UTF-8</args>
+          <argLine>${surefire.jvm.params}</argLine>
         </configuration>
       </plugin>
       <plugin>
@@ -311,6 +316,15 @@
         <artifactId>cobertura-maven-plugin</artifactId>
         <version>2.6</version>
             <configuration>
+                <instrumentation>
+                    <ignores>
+                       <ignore>org.apache.johnzon.maven.*</ignore>
+                    </ignores>
+                    <excludes>
+                        <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
+                        <exclude>org/apache/johnzon/**/*Test.class</exclude>
+                    </excludes>
+                </instrumentation>
                 <formats>
                      <format>xml</format>
                 </formats>
@@ -411,10 +425,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.9.1</version>
+        <version>2.10.3</version>
         <configuration>
           <notimestamp>true</notimestamp>
           <show>private</show>
+          <additionalparam>${javadoc.params}</additionalparam> <!-- maven plugin generated a HelpMojo with malformed javadoc -->
         </configuration>
         <reportSets>
           <reportSet>
@@ -433,9 +448,10 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.17</version>
+        <version>2.19.1</version>
         <configuration>
-        <aggregate>true</aggregate>
+            <argLine>${surefire.jvm.params}</argLine>
+            <aggregate>true</aggregate>
         </configuration>
       </plugin>
       <plugin>
@@ -443,6 +459,15 @@
         <artifactId>cobertura-maven-plugin</artifactId>
         <version>2.6</version>
             <configuration>
+                <instrumentation>
+                    <ignores>
+                       <ignore>org.apache.johnzon.maven.*</ignore>
+                    </ignores>
+                    <excludes>
+                        <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
+                        <exclude>org/apache/johnzon/**/*Test.class</exclude>
+                    </excludes>
+                </instrumentation>
                 <formats>
                      <format>html</format>
                 </formats>
@@ -452,7 +477,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>2.13</version>
+          <version>${checkstyle.version}</version>
           <reportSets>
             <reportSet>
               <reports>
@@ -634,9 +659,13 @@
   </developers>
 
   <contributors>
-	<contributor>
-		<name>Thiago Veronezi</name>
-	</contributor>
+    <contributor>
+       <name>Thiago Veronezi</name>
+  </contributor>
+     <contributor>
+       <name>Karl Grosse</name>
+    </contributor>
+
   </contributors>
 
     <profiles>
@@ -649,6 +678,9 @@
             <modules>
                 <module>johnzon-websocket</module>
             </modules>
+            <properties>
+                <checkstyle.version>2.17</checkstyle.version>
+            </properties>
         </profile>
         <profile>
             <!-- jsonb module needs java 1.8 or higher -->
@@ -660,6 +692,10 @@
               <module>jsonb-api</module>
               <module>johnzon-jsonb</module>
             </modules>
+            <properties>
+                <checkstyle.version>2.17</checkstyle.version>
+                <javadoc.params>-Xdoclint:none</javadoc.params>
+            </properties>
         </profile>
     </profiles>
 </project>

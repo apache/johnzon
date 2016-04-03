@@ -80,6 +80,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
+import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
 public class Mapper implements Closeable {
     private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
@@ -233,11 +234,11 @@ public class Mapper implements Closeable {
     }
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
-        JsonGenerator generator = generatorFactory.createGenerator(stream);
+        JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
         try {
             generator = doWriteArray(object, generator);
         } finally {
-            doCloseOrFlush(generator);
+            generator.close();
         }
     }
 
@@ -259,20 +260,12 @@ public class Mapper implements Closeable {
         return generator;
     }
 
-    private void doCloseOrFlush(final JsonGenerator generator) {
-        if (config.isClose()) {
-            generator.close();
-        } else {
-            generator.flush();
-        }
-    }
-
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
         writeIterable(object, new OutputStreamWriter(stream, config.getEncoding()));
     }
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
-        JsonGenerator generator = generatorFactory.createGenerator(stream);
+        JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
         try {
             if (object == null) {
                 generator = generator.writeStartArray().writeEnd();
@@ -284,7 +277,7 @@ public class Mapper implements Closeable {
                 generator.writeEnd();
             }
         } finally {
-            doCloseOrFlush(generator);
+            generator.close();
         }
     }
 
@@ -312,24 +305,21 @@ public class Mapper implements Closeable {
             return;
         }
 
-        final JsonGenerator generator = generatorFactory.createGenerator(stream);
+        final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
         writeObject(object, generator);
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
-        final JsonGenerator generator = generatorFactory.createGenerator(stream, config.getEncoding());
+        final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
         writeObject(object, generator);
     }
 
     private void writeObject(Object object, JsonGenerator generator) {
-        try {
-            MappingGenerator mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
-            generator.writeStartObject();
-            mappingGenerator.writeObject(object);
-            generator.writeEnd();
-        } finally {
-            doCloseOrFlush(generator);
-        }
+        MappingGenerator mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
+        generator.writeStartObject();
+        mappingGenerator.writeObject(object);
+        generator.writeEnd();
+        generator.close();
     }
 
     public String writeArrayAsString(final Collection<?> instance) {
@@ -360,12 +350,13 @@ public class Mapper implements Closeable {
             return;
         }
 
-        //JsonGenerator gen = null;
+        JsonGenerator gen = null;
         try {
-            /*gen = */
-            doWriteObject(generator, object);
+            gen = doWriteObject(generator, object);
         } finally {
-            doCloseOrFlush(generator);
+            if (gen != null) {
+                gen.close();
+            }
         }
     }
 
@@ -484,7 +475,7 @@ public class Mapper implements Closeable {
             if (length == 0 && config.isSkipEmptyArray()) {
                 return generator;
             }
-            
+
             if(config.isTreatByteArrayAsBase64() && (type == byte[].class /*|| type == Byte[].class*/)) {
                 String base64EncodedByteArray = DatatypeConverter.printBase64Binary((byte[]) value);
                 generator.write(key, base64EncodedByteArray);
@@ -554,11 +545,11 @@ public class Mapper implements Closeable {
     }
 
     public <T> T readObject(final Reader stream, final Type clazz) {
-        return mapObject(clazz, readerFactory.createReader(stream));
+        return mapObject(clazz, readerFactory.createReader(stream(stream)));
     }
 
     public <T> T readObject(final InputStream stream, final Type clazz) {
-        return mapObject(clazz, readerFactory.createReader(stream));
+        return mapObject(clazz, readerFactory.createReader(stream(stream)));
     }
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
@@ -611,7 +602,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> Collection<T> readCollection(final InputStream stream, final ParameterizedType genericType) {
-        final JsonReader reader = readerFactory.createReader(stream);
+        final JsonReader reader = readerFactory.createReader(stream(stream));
         final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType);
         if (mapping == null) {
             throw new UnsupportedOperationException("type " + genericType + " not supported");
@@ -636,7 +627,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> Collection<T> readCollection(final Reader stream, final ParameterizedType genericType) {
-        final JsonReader reader = readerFactory.createReader(stream);
+        final JsonReader reader = readerFactory.createReader(stream(stream));
         final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType);
         if (mapping == null) {
             throw new UnsupportedOperationException("type " + genericType + " not supported");
@@ -653,22 +644,22 @@ public class Mapper implements Closeable {
     }
 
     public <T> T[] readArray(final Reader stream, final Class<T> clazz) {
-        final JsonReader reader = readerFactory.createReader(stream);
+        final JsonReader reader = readerFactory.createReader(stream(stream));
         return (T[]) mapArray(clazz, reader);
     }
 
     public <T> T readTypedArray(final InputStream stream, final Class<?> elementType, final Class<T> arrayType) {
-        final JsonReader reader = readerFactory.createReader(stream);
+        final JsonReader reader = readerFactory.createReader(stream(stream));
         return arrayType.cast(mapArray(elementType, reader));
     }
 
     public <T> T readTypedArray(final Reader stream, final Class<?> elementType, final Class<T> arrayType) {
-        final JsonReader reader = readerFactory.createReader(stream);
+        final JsonReader reader = readerFactory.createReader(stream(stream));
         return arrayType.cast(mapArray(elementType, reader));
     }
 
     public <T> T[] readArray(final InputStream stream, final Class<T> clazz) {
-        final JsonReader reader = readerFactory.createReader(stream);
+        final JsonReader reader = readerFactory.createReader(stream(stream));
         return (T[]) mapArray(clazz, reader);
     }
 
@@ -837,9 +828,9 @@ public class Mapper implements Closeable {
         final Object[] objects = new Object[length];
         for (int i = 0; i < length; i++) {
             objects[i] = toValue(
-                null,
-                object.get(mapping.factory.getParameterNames()[i]), mapping.factory.getParameterConverter()[i],
-                mapping.factory.getParameterItemConverter()[i], mapping.factory.getParameterTypes()[i]);
+                    null,
+                    object.get(mapping.factory.getParameterNames()[i]), mapping.factory.getParameterConverter()[i],
+                    mapping.factory.getParameterItemConverter()[i], mapping.factory.getParameterTypes()[i]);
         }
         return objects;
     }
@@ -891,7 +882,7 @@ public class Mapper implements Closeable {
             final boolean typedAdapter = TypeAwareAdapter.class.isInstance(itemConverter);
             final Object object = buildObject(
                     baseInstance != null ? baseInstance.getClass() : (
-                    typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
+                            typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
                     JsonObject.class.cast(jsonValue));
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
@@ -1023,6 +1014,22 @@ public class Mapper implements Closeable {
             Array.set(array, i++, toObject(null, value, componentType, itemConverter));
         }
         return array;
+    }
+
+    private Reader stream(final Reader stream) {
+        return !config.isClose() ? noClose(stream) : stream;
+    }
+
+    private Writer stream(final Writer stream) {
+        return !config.isClose() ? noClose(stream) : stream;
+    }
+
+    private OutputStream stream(final OutputStream stream) {
+        return !config.isClose() ? noClose(stream) : stream;
+    }
+
+    private InputStream stream(final InputStream stream) {
+        return !config.isClose() ? noClose(stream) : stream;
     }
 
     @Override

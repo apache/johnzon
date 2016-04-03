@@ -30,10 +30,8 @@ Directors) to graduate it as a top-level Apache project.
 It is based on the ASF project maturity model at
 https://community.apache.org/apache-way/apache-project-maturity-model.html
 
-The idea of this document is based on Groovy one.
-
 == Status of this document
-Just created.
+Final
 
 == Overall assessment
 Dev list acknowledged by lazy consensus it was time to graduate for Johnzon. The fact we released a lot
@@ -136,7 +134,7 @@ OK
 ==== QU30
 _The project provides a well-documented channel to report security issues, along with a documented way of responding to them._
 
-TBD?
+OK, see http://johnzon.apache.org/security.html
 
 ==== QU40
 _The project puts a high priority on backwards compatibility and aims to document any incompatible changes and provide tools and documentation to help users transition to new features._ 
@@ -168,7 +166,7 @@ Not yet relevant? Was mainly bugfixes.
 ==== CO40
 _The community is meritocratic and over time aims to give more rights and responsibilities to contributors who add value to the project._
 
-TBD.
+OK. List of commmitters and PPMC members has grown during incubation.
 
 ==== CO50
 _The way in which contributors can be granted more rights such as commit access or decision power is clearly documented and is the same for all contributors._
