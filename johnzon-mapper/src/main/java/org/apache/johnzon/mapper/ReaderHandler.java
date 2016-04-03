@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import javax.json.JsonNumber;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonValue;
@@ -41,5 +42,12 @@ public class ReaderHandler {
             return JohnzonReaderHandler.read(reader);
         }
         return reader.read();
+    }
+
+    public boolean isJsonLong(final JsonNumber number) {
+        if (johnzon) {
+            return JohnzonReaderHandler.isLong(number);
+        }
+        return false; // will be slower but not a big deal
     }
 }

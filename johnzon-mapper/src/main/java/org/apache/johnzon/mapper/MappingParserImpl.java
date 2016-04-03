@@ -30,11 +30,9 @@ import org.apache.johnzon.core.JsonReaderImpl;
  * This class is not concurrently usable as it contains state.
  */
 public class MappingParserImpl implements MappingParser {
-
     private final JsonParser jsonParser;
 
     private JsonReader jsonReader = null;
-
 
     public MappingParserImpl(JsonParser jsonParser) {
         this.jsonParser = jsonParser;

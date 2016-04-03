@@ -18,15 +18,31 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
+import org.apache.johnzon.mapper.converter.BigIntegerConverter;
+import org.apache.johnzon.mapper.converter.BooleanConverter;
+import org.apache.johnzon.mapper.converter.ByteConverter;
+import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
+import org.apache.johnzon.mapper.converter.CharacterConverter;
+import org.apache.johnzon.mapper.converter.ClassConverter;
+import org.apache.johnzon.mapper.converter.DateConverter;
+import org.apache.johnzon.mapper.converter.DoubleConverter;
+import org.apache.johnzon.mapper.converter.FloatConverter;
+import org.apache.johnzon.mapper.converter.IntegerConverter;
+import org.apache.johnzon.mapper.converter.LocaleConverter;
+import org.apache.johnzon.mapper.converter.LongConverter;
+import org.apache.johnzon.mapper.converter.ShortConverter;
+import org.apache.johnzon.mapper.converter.StringConverter;
+import org.apache.johnzon.mapper.converter.URIConverter;
+import org.apache.johnzon.mapper.converter.URLConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
-
-import org.apache.johnzon.core.JsonParserFactoryImpl;
 
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
@@ -35,18 +51,53 @@ import javax.json.stream.JsonGeneratorFactory;
 import java.io.Closeable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
+// this class is responsible to hold any needed config
+// to build the runtime
 public class MapperBuilder {
-    private static final Map<AdapterKey, Adapter<?, ?>> DEFAULT_CONVERTERS = new HashMap<AdapterKey, Adapter<?, ?>>(23);
+    private static final Map<AdapterKey, Adapter<?, ?>> DEFAULT_CONVERTERS = new HashMap<AdapterKey, Adapter<?, ?>>(24);
 
-
-    private MapperConfig builderConfig = new MapperConfig();
+    static {
+        //DEFAULT_CONVERTERS.put(Date.class, new DateConverter("yyyy-MM-dd'T'HH:mm:ssZ")); // ISO8601 long RFC822 zone
+        DEFAULT_CONVERTERS.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<Date>(new DateConverter("yyyyMMddHHmmssZ"))); // ISO8601 short
+        DEFAULT_CONVERTERS.put(new AdapterKey(URL.class, String.class), new ConverterAdapter<URL>(new URLConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(URI.class, String.class), new ConverterAdapter<URI>(new URIConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Class.class, String.class), new ConverterAdapter<Class<?>>(new ClassConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(String.class, String.class), new ConverterAdapter<String>(new StringConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(BigDecimal.class, String.class), new ConverterAdapter<BigDecimal>(new BigDecimalConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(BigInteger.class, String.class), new ConverterAdapter<BigInteger>(new BigIntegerConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<Byte>(new CachedDelegateConverter<Byte>(new ByteConverter())));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<Character>(new CharacterConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Double.class, String.class), new ConverterAdapter<Double>(new DoubleConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Float.class, String.class), new ConverterAdapter<Float>(new FloatConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Integer.class, String.class), new ConverterAdapter<Integer>(new IntegerConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Long.class, String.class), new ConverterAdapter<Long>(new LongConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Short.class, String.class), new ConverterAdapter<Short>(new ShortConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Boolean.class, String.class), new ConverterAdapter<Boolean>(new CachedDelegateConverter<Boolean>(new BooleanConverter())));
+        DEFAULT_CONVERTERS.put(new AdapterKey(byte.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Byte.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(char.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Character.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(double.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Double.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(float.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Float.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(int.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Integer.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(long.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Long.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(short.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Short.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(boolean.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Boolean.class, String.class)));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Locale.class, String.class), new LocaleConverter());
+    }
 
     private JsonReaderFactory readerFactory;
     private JsonGeneratorFactory generatorFactory;
@@ -58,7 +109,21 @@ public class MapperBuilder {
     private boolean supportConstructors;
     private boolean useGetterForCollections;
     private String accessModeName;
+    private boolean pretty;
     private final Collection<Closeable> closeables = new ArrayList<Closeable>();
+    private int version = -1;
+    private boolean close;
+    private boolean skipNull = true;
+    private boolean skipEmptyArray;
+    private boolean supportsComments;
+    private boolean treatByteArrayAsBase64;
+    private boolean treatByteArrayAsBase64URL;
+    private boolean readAttributeBeforeWrite;
+    private AccessMode accessMode;
+    private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
+    private ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(DEFAULT_CONVERTERS);
+    private Map<Class<?>, ObjectConverter<?>> objectConverters = new HashMap<Class<?>, ObjectConverter<?>>();
+    private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -67,7 +132,7 @@ public class MapperBuilder {
             if (bufferStrategy != null) {
                 config.put(JsonParserFactoryImpl.BUFFER_STRATEGY, bufferStrategy);
             }
-            if (builderConfig.isPrettyPrint()) {
+            if (pretty) {
                 config.put(JsonGenerator.PRETTY_PRINTING, true);
             }
 
@@ -76,7 +141,7 @@ public class MapperBuilder {
             }
 
             config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
-            if (builderConfig.isSupportsComments()) {
+            if (supportsComments) {
                 config.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, "true");
             }
             if (maxSize > 0) {
@@ -90,28 +155,45 @@ public class MapperBuilder {
             }
         }
 
-        if (builderConfig.getAccessMode() == null) {
+        if (accessMode == null) {
             if ("field".equalsIgnoreCase(accessModeName)) {
-                builderConfig.setAccessMode(new FieldAccessMode(supportConstructors, supportHiddenAccess));
+                accessMode = new FieldAccessMode(supportConstructors, supportHiddenAccess);
             } else if ("method".equalsIgnoreCase(accessModeName)) {
-                builderConfig.setAccessMode(new MethodAccessMode(supportConstructors, supportHiddenAccess, true));
+                accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, true);
             } else if ("strict-method".equalsIgnoreCase(accessModeName)) {
-                builderConfig.setAccessMode(new MethodAccessMode(supportConstructors, supportHiddenAccess, false));
+                accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, false);
             } else if ("both".equalsIgnoreCase(accessModeName)) {
-                builderConfig.setAccessMode(new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess));
+                accessMode = new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess);
             } else {
-                builderConfig.setAccessMode(new MethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections));
+                accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections);
+            }
+        }
+        if (!ignoredForFields.isEmpty()) {
+            if (BaseAccessMode.class.isInstance(accessMode)) {
+                final BaseAccessMode baseAccessMode = BaseAccessMode.class.cast(accessMode);
+                for (final Map.Entry<Class<?>, String[]> ignored : ignoredForFields.entrySet()) {
+                    final String[] fields = ignored.getValue();
+                    if (fields == null || fields.length == 0) {
+                        baseAccessMode.getFieldsToRemove().remove(ignored.getKey());
+                    } else {
+                        baseAccessMode.getFieldsToRemove().put(ignored.getKey(), fields);
+                    }
+                }
+            } else {
+                throw new IllegalStateException("AccessMode is not an BaseAccessMode");
             }
         }
 
-        // new config so builderConfig can get tweaked again.
-        MapperConfig mapperConfig = builderConfig.clone();
-
         return new Mapper(
-            readerFactory, generatorFactory,
-            mapperConfig,
-            attributeOrder,
-            closeables);
+                readerFactory, generatorFactory,
+                new MapperConfig(
+                        adapters, objectConverters,
+                        version, close,
+                        skipNull, skipEmptyArray,
+                        treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
+                        accessMode, encoding),
+                attributeOrder,
+                closeables);
     }
 
     public MapperBuilder addCloseable(final Closeable closeable) {
@@ -120,15 +202,7 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setIgnoreFieldsForType(final Class<?> type, final String... fields) {
-        if (BaseAccessMode.class.isInstance(builderConfig.getAccessMode())) {
-            if (fields == null || fields.length == 0) {
-                BaseAccessMode.class.cast(builderConfig.getAccessMode()).getFieldsToRemove().remove(type);
-            } else {
-                BaseAccessMode.class.cast(builderConfig.getAccessMode()).getFieldsToRemove().put(type, fields);
-            }
-        } else {
-            throw new IllegalStateException("AccessMode is not an BaseAccessMode");
-        }
+        ignoredForFields.put(type, fields == null ? new String[0] : fields);
         return this;
     }
 
@@ -138,12 +212,12 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setSupportsComments(final boolean supportsComments) {
-        builderConfig.setSupportsComments(supportsComments);
+        this.supportsComments = supportsComments;
         return this;
     }
 
     public MapperBuilder setPretty(final boolean pretty) {
-        builderConfig.setPrettyPrint(pretty);
+        this.pretty = pretty;
         return this;
     }
 
@@ -163,13 +237,13 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setAccessMode(final AccessMode mode) {
-        builderConfig.setAccessMode(mode);
+        this.accessMode = mode;
         return this;
     }
 
     public MapperBuilder setAccessModeName(final String mode) {
         if (!"field".equalsIgnoreCase(mode) && !"method".equalsIgnoreCase(mode) &&
-            !"strict-method".equalsIgnoreCase(mode) && !"both".equalsIgnoreCase(mode)) {
+                !"strict-method".equalsIgnoreCase(mode) && !"both".equalsIgnoreCase(mode)) {
             throw new IllegalArgumentException("Mode " + mode + " unsupported");
         }
         this.accessModeName = mode;
@@ -197,24 +271,24 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setDoCloseOnStreams(final boolean doCloseOnStreams) {
-        builderConfig.setClose(doCloseOnStreams);
+        this.close = doCloseOnStreams;
         return this;
     }
 
     @Deprecated // use addAdapter
     public MapperBuilder addPropertyEditor(final Class<?> clazz, final Converter<?> converter) {
-        builderConfig.addAdapter(new AdapterKey(clazz, String.class), new ConverterAdapter(converter));
+        adapters.put(new AdapterKey(clazz, String.class), new ConverterAdapter(converter));
         return this;
     }
 
     @Deprecated // use addAdapter
     public MapperBuilder addConverter(final Type clazz, final Converter<?> converter) {
-        builderConfig.addAdapter(new AdapterKey(clazz, String.class), new ConverterAdapter(converter));
+        adapters.put(new AdapterKey(clazz, String.class), new ConverterAdapter(converter));
         return this;
     }
 
     public MapperBuilder addAdapter(final Type from, final Type to, final Adapter<?, ?> adapter) {
-        builderConfig.addAdapter(new AdapterKey(from, to), adapter);
+        adapters.put(new AdapterKey(from, to), adapter);
         return this;
     }
 
@@ -222,7 +296,7 @@ public class MapperBuilder {
         for (final Type gi : converter.getClass().getGenericInterfaces()) {
             if (ParameterizedType.class.isInstance(gi) && Adapter.class == ParameterizedType.class.cast(gi).getRawType()) {
                 final Type[] args = ParameterizedType.class.cast(gi).getActualTypeArguments();
-                builderConfig.addAdapter(new AdapterKey(args[0], args[1]), converter);
+                adapters.put(new AdapterKey(args[0], args[1]), converter);
                 return this;
             }
         }
@@ -230,27 +304,27 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setVersion(final int version) {
-        builderConfig.setVersion(version);
+        this.version = version;
         return this;
     }
 
     public MapperBuilder setSkipNull(final boolean skipNull) {
-        builderConfig.setSkipNull(skipNull);
+        this.skipNull = skipNull;
         return this;
     }
 
     public MapperBuilder setSkipEmptyArray(final boolean skipEmptyArray) {
-        builderConfig.setSkipEmptyArray(skipEmptyArray);
+        this.skipEmptyArray = skipEmptyArray;
         return this;
     }
 
     public MapperBuilder setTreatByteArrayAsBase64(final boolean treatByteArrayAsBase64) {
-        builderConfig.setTreatByteArrayAsBase64(treatByteArrayAsBase64);
+        this.treatByteArrayAsBase64 = treatByteArrayAsBase64;
         return this;
     }
 
     public MapperBuilder setTreatByteArrayAsBase64URL(final boolean treatByteArrayAsBase64URL) {
-        builderConfig.setTreatByteArrayAsBase64URL(treatByteArrayAsBase64URL);
+        this.treatByteArrayAsBase64URL = treatByteArrayAsBase64URL;
         return this;
     }
 
@@ -260,17 +334,17 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setEncoding(final String encoding) {
-        builderConfig.setEncoding(Charset.forName(encoding));
+        this.encoding = Charset.forName(encoding);
         return this;
     }
 
     public MapperBuilder setReadAttributeBeforeWrite(final boolean readAttributeBeforeWrite) {
-        builderConfig.setReadAttributeBeforeWrite(readAttributeBeforeWrite);
+        this.readAttributeBeforeWrite = readAttributeBeforeWrite;
         return this;
     }
 
-    public <T> MapperBuilder addObjectConverter(Class<T> targetType, ObjectConverter<T> objectConverter) {
-        builderConfig.addObjectConverter(targetType, objectConverter);
+    public <T> MapperBuilder addObjectConverter(final Class<T> targetType, final ObjectConverter<T> objectConverter) {
+        this.objectConverters.put(targetType, objectConverter);
         return this;
     }
 

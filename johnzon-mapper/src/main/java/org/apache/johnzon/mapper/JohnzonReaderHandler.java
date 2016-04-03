@@ -18,8 +18,10 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.core.JsonLongImpl;
 import org.apache.johnzon.core.JsonReaderImpl;
 
+import javax.json.JsonNumber;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
 
@@ -31,5 +33,9 @@ public class JohnzonReaderHandler {
 
     public static JsonValue read(final JsonReader reader) {
         return JsonReaderImpl.class.cast(reader).readValue();
+    }
+
+    public static boolean isLong(final JsonNumber number) {
+        return JsonLongImpl.class.isInstance(number);
     }
 }

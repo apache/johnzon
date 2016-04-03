@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.core.JsonLongImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
@@ -170,11 +169,6 @@ public class Mapper implements Closeable {
         return type == double.class || type == Double.class
                 || type == float.class || type == Float.class;
     }
-
-    /*private <T> String convertFrom(final Class<T> aClass, final T value) {
-        final Converter<T> converter = (Converter<T>) findAdapter(aClass);
-        return doConvertFrom(value, converter);
-    }*/
 
     private static <T> Object doConvertFrom(final T value, final Adapter<T, Object> converter) {
         if (converter == null) {
@@ -717,18 +711,19 @@ public class Mapper implements Closeable {
                         final boolean any = fieldArgTypes.length < 2 || fieldArgTypes[1] == Object.class;
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                             final JsonValue jsonValue = value.getValue();
-                            if (JsonLongImpl.class.isInstance(jsonValue) && any) {
+                            if (JsonNumber.class.isInstance(jsonValue) && any) {
                                 final JsonNumber number = JsonNumber.class.cast(jsonValue);
-                                final int integer = number.intValue();
-                                final long asLong = number.longValue();
-                                if (integer == asLong) {
-                                    map.put(value.getKey(), integer);
+                                if (readerHandler.isJsonLong(number)) {
+                                    final int integer = number.intValue();
+                                    final long asLong = number.longValue();
+                                    if (integer == asLong) {
+                                        map.put(value.getKey(), integer);
+                                    } else {
+                                        map.put(value.getKey(), asLong);
+                                    }
                                 } else {
-                                    map.put(value.getKey(), asLong);
+                                    map.put(value.getKey(), !number.isIntegral() ? number.bigDecimalValue() : number.intValue());
                                 }
-                            } else if (JsonNumber.class.isInstance(jsonValue) && any) {
-                                final JsonNumber number = JsonNumber.class.cast(jsonValue);
-                                map.put(value.getKey(), !number.isIntegral() ? number.bigDecimalValue() : number.intValue());
                             } else if (JsonString.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
                             } else {
