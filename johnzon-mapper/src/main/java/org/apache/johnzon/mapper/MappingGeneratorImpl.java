@@ -34,7 +34,7 @@ import org.apache.johnzon.mapper.internal.AdapterKey;
 public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
     private final JsonGenerator generator;
-    protected final Mappings mappings;
+    private final Mappings mappings;
 
 
     MappingGeneratorImpl(MapperConfig config, JsonGenerator jsonGenerator, final Mappings mappings) {
@@ -55,17 +55,22 @@ public class MappingGeneratorImpl implements MappingGenerator {
         } else if (object instanceof JsonValue) {
             generator.write((JsonValue) object);
         } else {
-            doWriteObject(object);
+            doWriteObject(object, false);
         }
         return this;
     }
 
-    private void doWriteObject(Object object) {
+    private void doWriteObject(Object object, boolean writeBody) {
         try {
             if (object instanceof Map) {
-                generator.writeStartObject();
+                if (writeBody) {
+                    generator.writeStartObject();
+                }
                 writeMapBody((Map<?, ?>) object, null);
-                generator.writeEnd();
+                if (writeBody) {
+                    generator.writeEnd();
+                }
+                return;
             }
 
             if(writePrimitives(object)) {
@@ -80,9 +85,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
-            generator.writeStartObject();
+            if (writeBody) {
+                generator.writeStartObject();
+            }
             doWriteObjectBody(object);
-            generator.writeEnd();
+            if (writeBody) {
+                generator.writeEnd();
+            }
         } catch (final InvocationTargetException e) {
             throw new MapperException(e);
         } catch (final IllegalAccessException e) {
@@ -319,7 +328,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             } else if (o == null) {
                 generator.writeNull();
             } else {
-                doWriteObject(o);
+                doWriteObject(o, true);
             }
         }
     }

@@ -311,13 +311,25 @@ public class Mapper implements Closeable {
             }
             return;
         }
+
         final JsonGenerator generator = generatorFactory.createGenerator(stream);
-        doWriteHandlingNullObject(object, generator);
+        writeObject(object, generator);
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
         final JsonGenerator generator = generatorFactory.createGenerator(stream, config.getEncoding());
-        doWriteHandlingNullObject(object, generator);
+        writeObject(object, generator);
+    }
+
+    private void writeObject(Object object, JsonGenerator generator) {
+        try {
+            MappingGenerator mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
+            generator.writeStartObject();
+            mappingGenerator.writeObject(object);
+            generator.writeEnd();
+        } finally {
+            doCloseOrFlush(generator);
+        }
     }
 
     public String writeArrayAsString(final Collection<?> instance) {
