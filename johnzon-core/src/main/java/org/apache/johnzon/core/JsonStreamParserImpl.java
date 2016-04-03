@@ -332,8 +332,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         if (c == COMMA_CHAR) {
             //last event must one of the following-> " ] } LITERAL
-            if (previousEvent == KEY_SEPARATOR_EVENT || previousEvent == START_ARRAY 
-                    || previousEvent == START_OBJECT || previousEvent == COMMA_EVENT 
+            if (previousEvent == KEY_SEPARATOR_EVENT || previousEvent == START_ARRAY
+                    || previousEvent == START_OBJECT || previousEvent == COMMA_EVENT
                     || previousEvent == KEY_NAME) {
                 throw uexc("Expected \" ] } LITERAL");
             }
@@ -975,7 +975,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private JsonParsingException tmc() {
         final JsonLocation location = createLocation();
         return new JsonParsingException("Too many characters. Maximum string/number length of " + maxValueLength + " exceeded on "
-                + location, location);
+                + location + ". Maybe increase org.apache.johnzon.max-string-length in jsonp factory properties or system properties.", location);
     }
 
     private JsonParsingException uexio(final IOException e) {
