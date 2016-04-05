@@ -86,13 +86,13 @@ public class ObjectTypeTest {
         }
 
         @Override
-        public Dog fromJson(MappingParser mappingParser, Type targetType) {
-            JsonObject jsonObject = mappingParser.getJsonReader().readObject();
+        public Dog fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
             String javaType = jsonObject.getString("//javaType");
             Class targetClass = javaType != null ? getSubClass(targetType, javaType) : (Class) targetType;
 
-            return mappingParser.readObject(jsonObject, targetClass);
+            return parser.readObject(jsonObject, targetClass);
         }
+
 
 
         /**

@@ -245,7 +245,16 @@ public class Mapper implements Closeable {
         return mapObject(clazz, readerFactory.createReader(stream(stream)));
     }
 
+
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
+        return new MappingParserImpl(config, mappings, reader).readObject(clazz);
+    }
+
+
+    /**
+     * @deprecated just for refactoring
+     */
+    private <T> T mapObjectOld(final Type clazz, final JsonReader reader) {
         try {
             final JsonValue object = readerHandler.read(reader);
             if (JsonStructure.class == clazz || JsonObject.class == clazz || JsonValue.class == clazz) {

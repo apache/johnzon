@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import javax.json.JsonObject;
 import java.lang.reflect.Type;
 
 /**
@@ -32,5 +33,5 @@ import java.lang.reflect.Type;
 public interface ObjectConverter<T> extends MapperConverter {
     void writeJson(T instance, MappingGenerator jsonbGenerator);
 
-    T fromJson(MappingParser jsonbParser, Type targetType);
+    T fromJson(JsonObject jsonObject, Type targetType, MappingParser parser);
 }
