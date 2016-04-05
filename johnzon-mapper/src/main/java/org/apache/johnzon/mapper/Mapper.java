@@ -366,15 +366,7 @@ public class Mapper implements Closeable {
     }
 
     private Object mapArray(final Class<?> clazz, final JsonReader reader) {
-        try {
-            return buildArrayWithComponentType(reader.readArray(), clazz, null);
-        } catch (final Exception e) {
-            throw new MapperException(e);
-        } finally {
-            if (config.isClose()) {
-                reader.close();
-            }
-        }
+        return mapObject(Array.newInstance(clazz, 0).getClass(), reader);
     }
 
     private Object buildObject(final Type inType, final JsonObject object) throws Exception {

@@ -133,6 +133,10 @@ public class MappingParserImpl implements MappingParser {
                 return (T) number.bigIntegerValue();
             }
         }
+        if (JsonArray.class.isInstance(jsonValue) && Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
+            return (T) buildArrayWithComponentType((JsonArray) jsonValue, ((Class) targetType).getComponentType(), null);
+
+        }
         if (JsonValue.NULL == jsonValue) {
             return null;
         }
