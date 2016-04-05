@@ -304,20 +304,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> Collection<T> readCollection(final InputStream stream, final ParameterizedType genericType) {
-        final JsonReader reader = readerFactory.createReader(stream(stream));
-        final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType);
-        if (mapping == null) {
-            throw new UnsupportedOperationException("type " + genericType + " not supported");
-        }
-        try {
-            return mapCollection(mapping, reader.readArray(), null);
-        } catch (final Exception e) {
-            throw new MapperException(e);
-        } finally {
-            if (config.isClose()) {
-                reader.close();
-            }
-        }
+        return mapObject(genericType, readerFactory.createReader(stream(stream)));
     }
 
     public <T> T readJohnzonCollection(final InputStream stream, final JohnzonCollectionType<T> genericType) {
@@ -329,20 +316,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> Collection<T> readCollection(final Reader stream, final ParameterizedType genericType) {
-        final JsonReader reader = readerFactory.createReader(stream(stream));
-        final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType);
-        if (mapping == null) {
-            throw new UnsupportedOperationException("type " + genericType + " not supported");
-        }
-        try {
-            return mapCollection(mapping, reader.readArray(), null);
-        } catch (final Exception e) {
-            throw new MapperException(e);
-        } finally {
-            if (config.isClose()) {
-                reader.close();
-            }
-        }
+        return mapObject(genericType, readerFactory.createReader(stream(stream)));
     }
 
     public <T> T[] readArray(final Reader stream, final Class<T> clazz) {

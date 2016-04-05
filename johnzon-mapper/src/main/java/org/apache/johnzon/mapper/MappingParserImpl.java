@@ -133,9 +133,23 @@ public class MappingParserImpl implements MappingParser {
                 return (T) number.bigIntegerValue();
             }
         }
-        if (JsonArray.class.isInstance(jsonValue) && Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
-            return (T) buildArrayWithComponentType((JsonArray) jsonValue, ((Class) targetType).getComponentType(), null);
+        if (JsonArray.class.isInstance(jsonValue)) {
 
+            JsonArray jsonArray = (JsonArray) jsonValue;
+
+            if (Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
+                return (T) buildArrayWithComponentType(jsonArray, ((Class) targetType).getComponentType(), null);
+            }
+            if (ParameterizedType.class.isInstance(targetType)) {
+
+                final Mappings.CollectionMapping mapping = mappings.findCollectionMapping((ParameterizedType) targetType);
+                if (mapping == null) {
+                    throw new UnsupportedOperationException("type " + targetType + " not supported");
+                }
+
+                return (T) mapCollection(mapping, jsonArray, null);
+
+            }
         }
         if (JsonValue.NULL == jsonValue) {
             return null;
