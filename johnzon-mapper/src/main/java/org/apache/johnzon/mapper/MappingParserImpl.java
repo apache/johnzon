@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.core.JsonLongImpl;
+import org.apache.johnzon.core.JsonReaderImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
@@ -96,6 +97,11 @@ public class MappingParserImpl implements MappingParser {
     public <T> T readObject(Type targetType) {
 
         try {
+            if (jsonReader instanceof JsonReaderImpl) {
+                // later in JSON-P 1.1 we can remove this hack again
+                return readObject(((JsonReaderImpl) jsonReader).readValue(), targetType);
+            }
+
             return readObject(jsonReader.read(), targetType);
         } finally {
             if (config.isClose()) {
