@@ -247,7 +247,7 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (classMapping.factory == null) {
-            throw new IllegalArgumentException(classMapping.clazz + " not instantiable");
+            throw new MapperException(classMapping.clazz + " not instantiable");
         }
 
         final Object t = classMapping.factory.getParameterTypes().length == 0 ?
