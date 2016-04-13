@@ -175,17 +175,12 @@ public class Mappings {
 
     protected final ConcurrentMap<Type, ClassMapping> classes = new ConcurrentHashMap<Type, ClassMapping>();
     protected final ConcurrentMap<Type, CollectionMapping> collections = new ConcurrentHashMap<Type, CollectionMapping>();
-    protected final Comparator<String> fieldOrdering;
-    protected final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
-    private final AccessMode accessMode;
-    private final int version;
 
-    public Mappings(final Comparator<String> attributeOrder, final AccessMode accessMode,
-                    final int version, final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters) {
-        this.fieldOrdering = attributeOrder;
-        this.accessMode = accessMode;
-        this.version = version;
-        this.adapters = adapters;
+    protected final MapperConfig config;
+
+
+    public Mappings(final MapperConfig config) {
+        this.config = config;
     }
 
     public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
@@ -287,8 +282,10 @@ public class Mappings {
         }
         final Class<?> clazz = findModelClass(inClazz);
 
+        AccessMode accessMode = config.getAccessMode();
+
         Comparator<String> fieldComparator = accessMode.fieldComparator(inClazz);
-        fieldComparator = fieldComparator == null ? fieldOrdering : fieldComparator;
+        fieldComparator = fieldComparator == null ? config.getAttributeOrder() : fieldComparator;
 
         final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<String, Getter>(fieldComparator);
         final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<String, Setter>(fieldComparator);
@@ -344,7 +341,7 @@ public class Mappings {
     }
 
     private <T> Map<String, T> newOrderedMap(final Class<T> value) {
-        return fieldOrdering != null ? new TreeMap<String, T>(fieldOrdering) : new HashMap<String, T>();
+        return config.getAttributeOrder() != null ? new TreeMap<String, T>(config.getAttributeOrder()) : new HashMap<String, T>();
     }
 
     private void addSetterIfNeeded(final Map<String, Setter> setters,
@@ -426,7 +423,7 @@ public class Mappings {
         final String key = path[0];
 
         final Getter getter = getters.get(key);
-        final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, version);
+        final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, config.getVersion());
         getters.put(key, new Getter(getter == null ? newReader : new CompositeReader(getter.reader, newReader), false, false, false, true, null, -1));
 
         final Setter newSetter = setters.get(key);
@@ -466,6 +463,8 @@ public class Mappings {
         }
         if (converter == null && Class.class.isInstance(typeToTest)) {
             final Class type = Class.class.cast(typeToTest);
+            ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters = config.getAdapters();
+
             if (Date.class.isAssignableFrom(type) && copyDate) {
                 converter = new DateWithCopyConverter(Adapter.class.cast(adapters.get(new AdapterKey(Date.class, String.class))));
             } else if (type.isEnum()) {

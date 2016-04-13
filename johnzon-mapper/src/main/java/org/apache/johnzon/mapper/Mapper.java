@@ -40,7 +40,6 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -58,12 +57,11 @@ public class Mapper implements Closeable {
     protected final Collection<Closeable> closeables;
 
     Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory, MapperConfig config,
-                  final Comparator<String> attributeOrder,
                   final Collection<Closeable> closeables) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
         this.config = config;
-        this.mappings = new Mappings(attributeOrder, config.getAccessMode(), config.getVersion(), config.getAdapters());
+        this.mappings = new Mappings(config);
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
     }

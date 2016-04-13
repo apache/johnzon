@@ -191,8 +191,7 @@ public class MapperBuilder {
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
-                        accessMode, encoding),
-                attributeOrder,
+                        accessMode, encoding, attributeOrder),
                 closeables);
     }
 

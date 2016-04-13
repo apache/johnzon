@@ -25,6 +25,7 @@ import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 
@@ -44,14 +45,19 @@ class MapperConfig implements Cloneable {
     private final Charset encoding;
     private final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
     private final Map<Class<?>, ObjectConverter<?>> objectConverters;
+    private final Comparator<String> attributeOrder;
 
+    //disable checkstyle for 10+ parameters
+    //CHECKSTYLE:OFF
     public MapperConfig(final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters,
                         final Map<Class<?>, ObjectConverter<?>> objectConverters,
                         final int version, final boolean close,
                         final boolean skipNull, final boolean skipEmptyArray,
                         final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL,
                         final boolean readAttributeBeforeWrite,
-                        final AccessMode accessMode, final Charset encoding) {
+                        final AccessMode accessMode, final Charset encoding,
+                        final Comparator<String> attributeOrder) {
+    //CHECKSTYLE:ON
         this.objectConverters = objectConverters;
         this.version = version;
         this.close = close;
@@ -63,6 +69,7 @@ class MapperConfig implements Cloneable {
         this.accessMode = accessMode;
         this.encoding = encoding;
         this.adapters = adapters;
+        this.attributeOrder = attributeOrder;
     }
 
     public Adapter findAdapter(final Type aClass) {
@@ -123,5 +130,9 @@ class MapperConfig implements Cloneable {
 
     public Map<Class<?>, ObjectConverter<?>> getObjectConverters() {
         return objectConverters;
+    }
+
+    public Comparator<String> getAttributeOrder() {
+        return attributeOrder;
     }
 }
