@@ -49,12 +49,24 @@ public class ObjectTypeTest {
         Mapper mapper = new MapperBuilder()
                 .setAccessModeName(accessMode)
                 .addObjectConverter(Dog.class, new TestWithTypeConverter())
+                .setAttributeOrder(String.CASE_INSENSITIVE_ORDER)
                 .build();
 
-        String expectedJsonString = "{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
-                "\"mother\":{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\",\"name\":\"Rosa\",\"hairCut\":true}," +
-                "\"father\":{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
-                "\"father\":{\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\",\"name\":\"Wuffi\"},\"name\":\"Gnarl\"},\"name\":\"Snoopie\"}";
+        String expectedJsonString = "{" +
+                                      "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
+                                      "\"father\":{" +
+                                        "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                                          "\"father\":{" +
+                                            "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                                            "\"name\":\"Wuffi\"" +
+                                          "}," +
+                                          "\"name\":\"Gnarl\"}," +
+                                      "\"mother\":{" +
+                                        "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\"," +
+                                        "\"hairCut\":true," +
+                                        "\"name\":\"Rosa\"}," +
+                                      "\"name\":\"Snoopie\"" +
+                                    "}";
 
         Poodle mum = new Poodle();
         mum.setName("Rosa");
@@ -74,7 +86,7 @@ public class ObjectTypeTest {
 
         String json = mapper.writeObjectAsString(snoopie);
         Assert.assertNotNull(json);
-        //X TODO Assert.assertEquals(expectedJsonString, json);
+        Assert.assertEquals(expectedJsonString, json);
     }
 
 

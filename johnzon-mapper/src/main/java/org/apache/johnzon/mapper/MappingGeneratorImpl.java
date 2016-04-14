@@ -93,7 +93,14 @@ public class MappingGeneratorImpl implements MappingGenerator {
             if (writeBody) {
                 generator.writeStartObject();
             }
-            doWriteObjectBody(object);
+
+            ObjectConverter objectConverter = config.findObjectConverter(objectClass);
+            if (writeBody && objectConverter != null) {
+                objectConverter.writeJson(object, this);
+            } else {
+                doWriteObjectBody(object);
+            }
+
             if (writeBody) {
                 generator.writeEnd();
             }
@@ -310,6 +317,14 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 }
                 writeValue(String.class, true, false, false, false, null, key, adapted);
                 return;
+            } else {
+                ObjectConverter objectConverter = config.findObjectConverter(type);
+                if (objectConverter != null) {
+                    generator.writeStartObject(key);
+                    objectConverter.writeJson(value, this);
+                    generator.writeEnd();
+                    return;
+                }
             }
             generator.writeStartObject(key);
             doWriteObjectBody(value);
