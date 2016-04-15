@@ -21,7 +21,11 @@ package org.apache.johnzon.mapper;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 
 import javax.json.JsonObject;
@@ -70,6 +74,51 @@ public class ObjectTypeTest {
         Dog dog = mapper.readObject(getJson(), Dog.class);
         Assert.assertNotNull(dog);
         Assert.assertEquals(getJavaObject(), dog);
+    }
+
+    @Test
+    public void testWriteWithAdvancedObjectConverter() {
+
+        String expectedJson = "[{\"poodleName\":\"Poodle1\"},{\"poodleName\":\"Poodle2\"}]";
+
+        Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .addObjectConverter(Poodle.class, new DBAccessPoodleConverter())
+                                           .build();
+
+        String json = mapper.writeObjectAsString(new ArrayList<Poodle>(DBAccessPoodleConverter.POODLES.values()));
+        Assert.assertNotNull(json);
+        Assert.assertEquals(expectedJson, json);
+    }
+
+    @Test
+    public void testReadWithAdvancedObjectConverter() {
+
+        Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .addObjectConverter(Poodle.class, new DBAccessPoodleConverter())
+                                           .build();
+
+        List<Poodle> poodles = mapper.readObject("[{\"poodleName\":\"Poodle1\"},{\"poodleName\":\"Poodle2\"}]", new ParameterizedType() {
+            @Override
+            public Type[] getActualTypeArguments() {
+                return new Type[]{Poodle.class};
+            }
+
+            @Override
+            public Type getRawType() {
+                return List.class;
+            }
+
+            @Override
+            public Type getOwnerType() {
+                return null;
+            }
+        });
+
+        Assert.assertNotNull(poodles);
+        Assert.assertEquals(2, poodles.size());
+        for (Poodle poodle : poodles) {
+            Assert.assertEquals(DBAccessPoodleConverter.POODLES.get(poodle.getName()), poodle);
+        }
     }
 
 
@@ -235,5 +284,36 @@ public class ObjectTypeTest {
     }
 
     public static class Mutt extends Dog {
+    }
+
+
+    public static class DBAccessPoodleConverter implements ObjectConverter<Poodle> {
+
+        public static final String POODLE_1_NAME = "Poodle1";
+        public static final String POODLE_2_NAME = "Poodle2";
+
+        public static final Map<String, Poodle> POODLES = new LinkedHashMap<String, Poodle>(2);
+        static {
+            Poodle poodle1 = new Poodle();
+            poodle1.setHairCut(true);
+            poodle1.setName(POODLE_1_NAME);
+
+            Poodle poodle2 = new Poodle();
+            poodle2.setHairCut(false);
+            poodle2.setName(POODLE_2_NAME);
+
+            POODLES.put(poodle1.getName(), poodle1);
+            POODLES.put(poodle2.getName(), poodle2);
+        }
+
+        @Override
+        public void writeJson(Poodle instance, MappingGenerator jsonbGenerator) {
+            jsonbGenerator.getJsonGenerator().write("poodleName", instance.getName());
+        }
+
+        @Override
+        public Poodle fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
+            return POODLES.get(jsonObject.getString("poodleName"));
+        }
     }
 }
