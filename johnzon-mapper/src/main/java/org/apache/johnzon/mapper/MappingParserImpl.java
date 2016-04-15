@@ -112,11 +112,15 @@ public class MappingParserImpl implements MappingParser {
 
     @Override
     public <T> T readObject(JsonValue jsonValue, Type targetType) {
+        return readObject(jsonValue, targetType, targetType instanceof Class);
+    }
+
+    public <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
         if (JsonStructure.class == targetType || JsonObject.class == targetType || JsonValue.class == targetType) {
             return (T) jsonValue;
         }
         if (JsonObject.class.isInstance(jsonValue)) {
-            return (T) buildObject(targetType, JsonObject.class.cast(jsonValue));
+            return (T) buildObject(targetType, JsonObject.class.cast(jsonValue), applyObjectConverter);
         }
         if (JsonString.class.isInstance(jsonValue) && targetType == String.class) {
             return (T) JsonString.class.cast(jsonValue).getString();
@@ -170,10 +174,22 @@ public class MappingParserImpl implements MappingParser {
     }
 
 
-    private Object buildObject(final Type inType, final JsonObject object) {
+    private Object buildObject(final Type inType, final JsonObject object, final boolean applyObjectConverter) {
         Type type = inType;
         if (inType == Object.class) {
             type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
+        }
+
+        if (applyObjectConverter && !(type instanceof JohnzonParameterizedType)) {
+
+            if (!(type instanceof Class)) {
+                throw new MapperException("ObjectConverters are only supported for Classes not Types");
+            }
+
+            ObjectConverter objectConverter = config.findObjectConverter((Class) type);
+            if (objectConverter != null) {
+                return objectConverter.fromJson(object, type, this);
+            }
         }
 
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
@@ -307,7 +323,8 @@ public class MappingParserImpl implements MappingParser {
 
             final Object param;
             try {
-                param = buildObject(adapterKey.getTo(), JsonObject.class.cast(jsonValue));
+                Type to = adapterKey.getTo();
+                param = buildObject(to, JsonObject.class.cast(jsonValue), to instanceof Class);
             } catch (final Exception e) {
                 throw new MapperException(e);
             }
@@ -366,7 +383,7 @@ public class MappingParserImpl implements MappingParser {
             final Object object = buildObject(
                     baseInstance != null ? baseInstance.getClass() : (
                             typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
-                    JsonObject.class.cast(jsonValue));
+                    JsonObject.class.cast(jsonValue), type instanceof Class);
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
             if (JsonArray.class == type || JsonStructure.class == type) {

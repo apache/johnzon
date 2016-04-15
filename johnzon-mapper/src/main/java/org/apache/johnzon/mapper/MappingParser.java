@@ -31,4 +31,6 @@ public interface MappingParser {
     <T> T readObject(Type targetType);
 
     <T> T readObject(JsonValue jsonValue, Type targetType);
+
+    <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter);
 }

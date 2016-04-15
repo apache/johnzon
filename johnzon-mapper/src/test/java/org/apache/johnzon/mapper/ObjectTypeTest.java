@@ -52,22 +52,28 @@ public class ObjectTypeTest {
                 .setAttributeOrder(String.CASE_INSENSITIVE_ORDER)
                 .build();
 
-        String expectedJsonString = "{" +
-                                      "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
-                                      "\"father\":{" +
-                                        "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
-                                          "\"father\":{" +
-                                            "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
-                                            "\"name\":\"Wuffi\"" +
-                                          "}," +
-                                          "\"name\":\"Gnarl\"}," +
-                                      "\"mother\":{" +
-                                        "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\"," +
-                                        "\"hairCut\":true," +
-                                        "\"name\":\"Rosa\"}," +
-                                      "\"name\":\"Snoopie\"" +
-                                    "}";
+        String expectedJsonString = getJson();
+        Mutt snoopie = getJavaObject();
 
+        String json = mapper.writeObjectAsString(snoopie);
+        Assert.assertNotNull(json);
+        Assert.assertEquals(expectedJsonString, json);
+    }
+
+    @Test
+    public void testReadWithObjectConverter() {
+
+        Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .addObjectConverter(Dog.class, new TestWithTypeConverter())
+                                           .build();
+
+        Dog dog = mapper.readObject(getJson(), Dog.class);
+        Assert.assertNotNull(dog);
+        Assert.assertEquals(getJavaObject(), dog);
+    }
+
+
+    private Mutt getJavaObject() {
         Poodle mum = new Poodle();
         mum.setName("Rosa");
         mum.setHairCut(true);
@@ -83,10 +89,25 @@ public class ObjectTypeTest {
         snoopie.setName("Snoopie");
         snoopie.setFather(dad);
         snoopie.setMother(mum);
+        return snoopie;
+    }
 
-        String json = mapper.writeObjectAsString(snoopie);
-        Assert.assertNotNull(json);
-        Assert.assertEquals(expectedJsonString, json);
+    private String getJson() {
+        return "{" +
+                                          "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
+                                          "\"father\":{" +
+                                            "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                                              "\"father\":{" +
+                                                "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                                                "\"name\":\"Wuffi\"" +
+                                              "}," +
+                                              "\"name\":\"Gnarl\"}," +
+                                          "\"mother\":{" +
+                                            "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\"," +
+                                            "\"hairCut\":true," +
+                                            "\"name\":\"Rosa\"}," +
+                                          "\"name\":\"Snoopie\"" +
+                                        "}";
     }
 
 
@@ -102,7 +123,7 @@ public class ObjectTypeTest {
             String javaType = jsonObject.getString("//javaType");
             Class targetClass = javaType != null ? getSubClass(targetType, javaType) : (Class) targetType;
 
-            return parser.readObject(jsonObject, targetClass);
+            return parser.readObject(jsonObject, targetClass, false);
         }
 
 
@@ -166,6 +187,35 @@ public class ObjectTypeTest {
 
         public void setMother(Dog mother) {
             this.mother = mother;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            Dog dog = (Dog) o;
+
+            if (name != null ? !name.equals(dog.name) : dog.name != null) {
+                return false;
+            }
+            if (father != null ? !father.equals(dog.father) : dog.father != null) {
+                return false;
+            }
+            return mother != null ? mother.equals(dog.mother) : dog.mother == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = name != null ? name.hashCode() : 0;
+            result = 31 * result + (father != null ? father.hashCode() : 0);
+            result = 31 * result + (mother != null ? mother.hashCode() : 0);
+            return result;
         }
     }
 
