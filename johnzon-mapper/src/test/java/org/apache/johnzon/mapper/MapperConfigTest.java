@@ -125,6 +125,25 @@ public class MapperConfigTest {
         Assert.assertEquals(theConverter, converter);
     }
 
+    @Test
+    public void testfindObjectConverterConverterForObject() {
+        TheConverter<Object> theConverter = new TheConverter<Object>();
+
+        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter<?>>singletonMap(Object.class, theConverter));
+
+        ObjectConverter converter = config.findObjectConverter(ClassForTheInterface.class);
+        Assert.assertNotNull(converter);
+        Assert.assertEquals(theConverter, converter);
+
+        converter = config.findObjectConverter(TheInterface.class);
+        Assert.assertNotNull(converter);
+        Assert.assertEquals(theConverter, converter);
+
+        converter = config.findObjectConverter(InterfaceExtendingTwoInterfaces.class);
+        Assert.assertNotNull(converter);
+        Assert.assertEquals(theConverter, converter);
+    }
+
 
     private MapperConfig createConfig(Map<Class<?>, ObjectConverter<?>> converter) {
         return new MapperConfig(new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(0),
@@ -150,6 +169,8 @@ public class MapperConfigTest {
 
     private interface TheSecondInterface {}
     private static class ClassWithTwoInterfaces implements TheInterface, TheSecondInterface {}
+
+    private interface InterfaceExtendingTwoInterfaces extends TheInterface, TheSecondInterface {}
 
 
     private static class TheConverter<T> implements ObjectConverter<T>{

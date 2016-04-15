@@ -168,19 +168,27 @@ class MapperConfig implements Cloneable {
 
         // search the most significant
         Class toProcess = clazz;
-        while (toProcess != Object.class && converter == null) {
+        while (toProcess != null && converter == null) {
 
             converter = matchingConverters.get(toProcess);
             if (converter != null) {
                 break;
             }
 
-            for (Class interfaceToSearch : toProcess.getInterfaces()) {
+            Class[] interfaces = toProcess.getInterfaces();
+            if (interfaces.length > 0) {
+                for (Class interfaceToSearch : interfaces) {
 
-                converter = matchingConverters.get(interfaceToSearch);
-                if (converter != null) {
-                    break;
+                    converter = matchingConverters.get(interfaceToSearch);
+                    if (converter != null) {
+                        break;
+                    }
                 }
+            }
+
+            if (converter == null && toProcess.isInterface()) {
+                toProcess = Object.class;
+                continue;
             }
 
             toProcess = toProcess.getSuperclass();
