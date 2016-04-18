@@ -172,7 +172,7 @@ public class ObjectTypeTest {
             String javaType = jsonObject.getString("//javaType");
             Class targetClass = javaType != null ? getSubClass(targetType, javaType) : (Class) targetType;
 
-            return parser.readObject(jsonObject, targetClass, false);
+            return parser.readObject(jsonObject, targetClass);
         }
 
 

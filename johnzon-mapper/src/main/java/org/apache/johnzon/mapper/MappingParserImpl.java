@@ -112,10 +112,10 @@ public class MappingParserImpl implements MappingParser {
 
     @Override
     public <T> T readObject(JsonValue jsonValue, Type targetType) {
-        return readObject(jsonValue, targetType, targetType instanceof Class);
+        return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType);
     }
 
-    public <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
+    private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
         if (JsonStructure.class == targetType || JsonObject.class == targetType || JsonValue.class == targetType) {
             return (T) jsonValue;
         }
@@ -188,7 +188,7 @@ public class MappingParserImpl implements MappingParser {
 
             ObjectConverter objectConverter = config.findObjectConverter((Class) type);
             if (objectConverter != null) {
-                return objectConverter.fromJson(object, type, this);
+                return objectConverter.fromJson(object, type, new SuppressConversionMappingParser(this, object));
             }
         }
 
@@ -587,6 +587,35 @@ public class MappingParserImpl implements MappingParser {
             throw new MapperException("Using fallback converter, " +
                                       "this only works in write mode but not in read. Please register a custom converter to do so.");
         }
+    }
+
+
+    /**
+     * Internal class to suppress {@link ObjectConverter} lookup if and only if
+     * the {@link JsonValue} is the same refernece than the lookup was done before.
+     */
+    private static class SuppressConversionMappingParser implements MappingParser {
+        private final MappingParserImpl delegate;
+        private final JsonObject suppressConversionFor;
+
+        public SuppressConversionMappingParser(MappingParserImpl delegate, JsonObject suppressConversionFor) {
+            this.delegate = delegate;
+            this.suppressConversionFor = suppressConversionFor;
+        }
+
+        @Override
+        public <T> T readObject(Type targetType) {
+            return delegate.readObject(targetType);
+        }
+
+        @Override
+        public <T> T readObject(JsonValue jsonValue, Type targetType) {
+            if (suppressConversionFor == jsonValue) {
+                return delegate.readObject(jsonValue, targetType, false);
+            }
+            return delegate.readObject(jsonValue, targetType);
+        }
+
     }
 
 }
