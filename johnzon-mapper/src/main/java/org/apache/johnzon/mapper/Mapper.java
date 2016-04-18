@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 
+import javax.json.JsonException;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonValue;
@@ -85,11 +86,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        try {
-            writeObject(object, generator);
-        } finally {
-            generator.close();
-        }
+        writeObject(object, generator);
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
@@ -98,11 +95,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        try {
-            writeObject(object, generator);
-        } finally {
-            generator.close();
-        }
+        writeObject(object, generator);
     }
 
     public void writeObject(final Object object, final Writer stream) {
@@ -140,8 +133,26 @@ public class Mapper implements Closeable {
 
     private void writeObject(Object object, JsonGenerator generator) {
         MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
-        mappingGenerator.doWriteObject(object, true);
-        generator.close();
+
+        RuntimeException originalException = null;
+        try {
+            mappingGenerator.doWriteObject(object, true);
+        } catch (RuntimeException e) {
+            originalException = e;
+        } finally {
+
+            try {
+                generator.close();
+            } catch (JsonException e) {
+
+                if (originalException != null) {
+                    throw originalException;
+                } else {
+                    throw e;
+                }
+            }
+        }
+
     }
 
     public String writeArrayAsString(final Collection<?> instance) {
