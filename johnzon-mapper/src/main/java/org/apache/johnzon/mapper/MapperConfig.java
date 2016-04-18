@@ -187,8 +187,8 @@ class MapperConfig implements Cloneable {
             }
 
             if (converter == null && toProcess.isInterface()) {
-                toProcess = Object.class;
-                continue;
+                converter = matchingConverters.get(Object.class);
+                break;
             }
 
             toProcess = toProcess.getSuperclass();
