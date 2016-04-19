@@ -23,6 +23,7 @@ import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -38,6 +39,16 @@ public class JsonbConfig {
     public static final String PROPERTY_VISIBILITY_STRATEGY = "jsonb.property-visibility-strategy";
     public static final String ADAPTERS = "jsonb.adapters";
     public static final String BINARY_DATA_STRATEGY = "jsonb.binary-data-strategy";
+    public static final String DATE_FORMAT = "jsonb.date-format";
+    public static final String LOCALE = "jsonb.locale";
+
+    public final JsonbConfig withDateFormat(final String dateFormat, final Locale locale) {
+        return setProperty(DATE_FORMAT, dateFormat).setProperty(LOCALE, locale != null ? locale : Locale.getDefault());
+    }
+
+    public final JsonbConfig withLocale(final Locale locale) {
+        return setProperty(LOCALE, locale);
+    }
 
     public final JsonbConfig setProperty(final String name, final Object value) {
         configuration.put(name, value);

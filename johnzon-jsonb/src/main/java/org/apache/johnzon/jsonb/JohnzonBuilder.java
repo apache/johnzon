@@ -57,12 +57,15 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SimpleTimeZone;
@@ -71,6 +74,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
+import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
 import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
@@ -120,42 +124,42 @@ public class JohnzonBuilder implements JsonbBuilder {
         final PropertyNamingStrategy propertyNamingStrategy = new PropertyNamingStrategyFactory(namingStrategyValue.orElse(IDENTITY)).create();
         final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(LEXICOGRAPHICAL);
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
-            .map(PropertyVisibilityStrategy.class::cast).orElse(new PropertyVisibilityStrategy() {
-                private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
+                .map(PropertyVisibilityStrategy.class::cast).orElse(new PropertyVisibilityStrategy() {
+                    private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
 
-                @Override
-                public boolean isVisible(final Field field) {
-                    final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
-                    return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
-                }
-
-                @Override
-                public boolean isVisible(final Method method) {
-                    final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
-                    return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
-                }
-
-                private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
-                    Package p = type.getPackage();
-                    while (p != null) {
-                        final JsonbVisibility visibility = p.getAnnotation(JsonbVisibility.class);
-                        if (visibility != null) {
-                            try {
-                                return visibility.value().newInstance();
-                            } catch (final InstantiationException | IllegalAccessException e) {
-                                throw new IllegalArgumentException(e);
-                            }
-                        }
-                        final String name = p.getName();
-                        final int end = name.lastIndexOf('.');
-                        if (end < 0) {
-                            break;
-                        }
-                        p = Package.getPackage(name.substring(0, end));
+                    @Override
+                    public boolean isVisible(final Field field) {
+                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
+                        return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
                     }
-                    return this;
-                }
-            });
+
+                    @Override
+                    public boolean isVisible(final Method method) {
+                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
+                        return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
+                    }
+
+                    private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
+                        Package p = type.getPackage();
+                        while (p != null) {
+                            final JsonbVisibility visibility = p.getAnnotation(JsonbVisibility.class);
+                            if (visibility != null) {
+                                try {
+                                    return visibility.value().newInstance();
+                                } catch (final InstantiationException | IllegalAccessException e) {
+                                    throw new IllegalArgumentException(e);
+                                }
+                            }
+                            final String name = p.getName();
+                            final int end = name.lastIndexOf('.');
+                            if (end < 0) {
+                                break;
+                            }
+                            p = Package.getPackage(name.substring(0, end));
+                        }
+                        return this;
+                    }
+                });
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
 
@@ -182,18 +186,18 @@ public class JohnzonBuilder implements JsonbBuilder {
             throw new IllegalArgumentException("Unsupported factory: " + val);
         }).orElseGet(this::findFactory);
         final JsonbAccessMode accessMode = new JsonbAccessMode(
-            propertyNamingStrategy, orderValue, visibilityStrategy,
-            !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-            defaultConverters,
-            factory);
+                propertyNamingStrategy, orderValue, visibilityStrategy,
+                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                defaultConverters,
+                factory);
         builder.setAccessMode(accessMode);
 
 
         // user adapters
         config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter -> {
             final ParameterizedType pt = ParameterizedType.class.cast(
-                Stream.of(adapter.getClass().getGenericInterfaces())
-                    .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+                    Stream.of(adapter.getClass().getGenericInterfaces())
+                            .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
             if (pt == null) {
                 throw new IllegalArgumentException(adapter + " doesn't implement JsonbAdapter");
             }
@@ -287,7 +291,8 @@ public class JohnzonBuilder implements JsonbBuilder {
         return ofNullable(Thread.currentThread().getContextClassLoader()).orElseGet(ClassLoader::getSystemClassLoader);
     }
 
-    private static Map<AdapterKey, Adapter<?, ?>> createJava8Converters(final MapperBuilder builder) { // TODO: move these converters in converter package
+    // TODO: move these converters in converter package
+    private Map<AdapterKey, Adapter<?, ?>> createJava8Converters(final MapperBuilder builder) {
         final Map<AdapterKey, Adapter<?, ?>> converters = new HashMap<>();
 
         final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
@@ -468,9 +473,103 @@ public class JohnzonBuilder implements JsonbBuilder {
                 return OffsetTime.parse(text);
             }
         }));
+        addDateFormatConfigConverters(converters, zoneIDUTC);
+
 
         converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
         return converters;
+    }
+
+    private void addDateFormatConfigConverters(final Map<AdapterKey, Adapter<?, ?>> converters, final ZoneId zoneIDUTC) {
+        // config, override defaults
+        config.getProperty(JsonbConfig.DATE_FORMAT).map(String.class::cast).ifPresent(dateFormat -> {
+            final Optional<Locale> locale = config.getProperty(JsonbConfig.LOCALE).map(Locale.class::cast);
+            final DateTimeFormatter formatter = locale.isPresent() ? ofPattern(dateFormat, locale.get()) : ofPattern(dateFormat);
+
+            // Note: we try and fallback in the parsing cause we don't know if the date format provided is
+            // for date, datetime, time
+
+            converters.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new Converter<Date>() {
+                private volatile boolean useFormatter = true;
+
+                @Override
+                public String toString(final Date instance) {
+                    return LocalDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
+                }
+
+                @Override
+                public Date fromString(final String text) {
+                    if (useFormatter) {
+                        try {
+                            return Date.from(LocalDateTime.parse(text, formatter).toInstant(ZoneOffset.UTC));
+                        } catch (final DateTimeParseException dpe) {
+                            useFormatter = false;
+                        }
+                    }
+                    return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
+                }
+            }));
+            converters.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new Converter<LocalDateTime>() {
+                private volatile boolean useFormatter = true;
+
+                @Override
+                public String toString(final LocalDateTime instance) {
+                    return instance.toString();
+                }
+
+                @Override
+                public LocalDateTime fromString(final String text) {
+                    if (useFormatter) {
+                        try {
+                            return LocalDateTime.parse(text, formatter);
+                        } catch (final DateTimeParseException dpe) {
+                            useFormatter = false;
+                        }
+                    }
+                    return LocalDateTime.parse(text);
+                }
+            }));
+            converters.put(new AdapterKey(LocalDate.class, String.class), new ConverterAdapter<>(new Converter<LocalDate>() {
+                private volatile boolean useFormatter = true;
+
+                @Override
+                public String toString(final LocalDate instance) {
+                    return instance.toString();
+                }
+
+                @Override
+                public LocalDate fromString(final String text) {
+                    if (useFormatter) {
+                        try {
+                            return LocalDate.parse(text, formatter);
+                        } catch (final DateTimeParseException dpe) {
+                            useFormatter = false;
+                        }
+                    }
+                    return LocalDate.parse(text);
+                }
+            }));
+            converters.put(new AdapterKey(ZonedDateTime.class, String.class), new ConverterAdapter<>(new Converter<ZonedDateTime>() {
+                private volatile boolean useFormatter = true;
+
+                @Override
+                public String toString(final ZonedDateTime instance) {
+                    return instance.toString();
+                }
+
+                @Override
+                public ZonedDateTime fromString(final String text) {
+                    if (useFormatter) {
+                        try {
+                            return ZonedDateTime.parse(text, formatter);
+                        } catch (final DateTimeParseException dpe) {
+                            useFormatter = false;
+                        }
+                    }
+                    return ZonedDateTime.parse(text);
+                }
+            }));
+        });
     }
 
     private static void logIfDeprecatedTimeZone(final String text) {
