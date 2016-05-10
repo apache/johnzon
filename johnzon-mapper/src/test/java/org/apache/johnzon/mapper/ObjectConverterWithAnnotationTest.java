@@ -87,6 +87,146 @@ public class ObjectConverterWithAnnotationTest {
     }
 
 
+    @Test
+    public void testSerializeObjectWithCollectionAndObjectConverter() {
+
+        Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .setAttributeOrder(String.CASE_INSENSITIVE_ORDER)
+                                           .build();
+
+        CycleRace tourDeFrance = new CycleRace(false, true,
+                                               Arrays.asList(new Cyclist("Christopher Froome", new Bike("Specialized / S-Works", BikeType.ROAD)),
+                                                             new Cyclist("Alejandro Valverde", new Bike("Canyon", BikeType.ROAD)),
+                                                             new Cyclist("Andr\u00e9 Greipel", new Bike("Trek", BikeType.ROAD))));// i know they don't have Trek bikes ;)
+
+        String json = mapper.writeObjectAsString(tourDeFrance);
+        Assert.assertNotNull(json);
+        Assert.assertEquals("{" +
+                              "\"cyclists\":[" +
+                                "{" +
+                                  "\"bike\":{" +
+                                    "\"" + MANUFACTURER_ID + "\":0," +
+                                    "\"" + TYPE_INDEX + "\":0" +
+                                  "}," +
+                                  "\"name\":\"Christopher Froome\"" +
+                                "}," +
+                                "{" +
+                                  "\"bike\":{" +
+                                    "\"" + MANUFACTURER_ID + "\":1," +
+                                    "\"" + TYPE_INDEX + "\":0" +
+                                  "}," +
+                                  "\"name\":\"Alejandro Valverde\"" +
+                                "}," +
+                                "{" +
+                                  "\"bike\":{" +
+                                    "\"" + MANUFACTURER_ID + "\":2," +
+                                    "\"" + TYPE_INDEX + "\":0" +
+                                  "}," +
+                                  "\"name\":\"Andr\u00e9 Greipel\"" +
+                                "}" +
+                              "]," +
+                              "\"monument\":false," +
+                              "\"tour\":true" +
+                            "}", json);
+    }
+
+    @Test
+    public void testDeserializeObjectWithCollectionAndObjectConverter() {
+
+        CycleRace expected = new CycleRace(true, false,
+                                           Arrays.asList(new Cyclist("Alexander Kristoff", new Bike("Canyon", BikeType.ROAD))));
+
+        Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .build();
+
+        String json = "{" +
+                        "\"cyclists\":[" +
+                          "{" +
+                            "\"bike\": {" +
+                              "\"" + MANUFACTURER_ID + "\":1," +
+                              "\"" + TYPE_INDEX +"\":0" +
+                            "}," +
+                            "\"name\":\"Alexander Kristoff\"" +
+                          "}" +
+                        "]," +
+                        "\"monument\":true," +
+                        "\"tour\":false" +
+                      "}";
+
+        Object tourDeFlanderen = mapper.readObject(json, CycleRace.class);
+        Assert.assertNotNull(tourDeFlanderen);
+        Assert.assertEquals(expected, tourDeFlanderen);
+    }
+
+
+    public static class CycleRace {
+        private boolean monument;
+        private boolean tour;
+
+        private List<Cyclist> cyclists;
+
+        public CycleRace() {
+        }
+
+        public CycleRace(boolean monument, boolean tour, List<Cyclist> cyclists) {
+            this.monument = monument;
+            this.tour = tour;
+            this.cyclists = cyclists;
+        }
+
+        public boolean isMonument() {
+            return monument;
+        }
+
+        public void setMonument(boolean monument) {
+            this.monument = monument;
+        }
+
+        public boolean isTour() {
+            return tour;
+        }
+
+        public void setTour(boolean tour) {
+            this.tour = tour;
+        }
+
+        public List<Cyclist> getCyclists() {
+            return cyclists;
+        }
+
+        public void setCyclists(List<Cyclist> cyclists) {
+            this.cyclists = cyclists;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            CycleRace cycleRace = (CycleRace) o;
+
+            if (monument != cycleRace.monument) {
+                return false;
+            }
+            if (tour != cycleRace.tour) {
+                return false;
+            }
+            return cyclists != null ? cyclists.equals(cycleRace.cyclists) : cycleRace.cyclists == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (monument ? 1 : 0);
+            result = 31 * result + (tour ? 1 : 0);
+            result = 31 * result + (cyclists != null ? cyclists.hashCode() : 0);
+            return result;
+        }
+    }
 
     public static class Cyclist {
 
