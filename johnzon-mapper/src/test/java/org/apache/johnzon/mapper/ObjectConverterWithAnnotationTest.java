@@ -49,6 +49,7 @@ public class ObjectConverterWithAnnotationTest {
     public void testSerializeWithObjectConverter() {
 
         Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .setAttributeOrder(String.CASE_INSENSITIVE_ORDER)
                                            .build();
 
         Cyclist cyclist = new Cyclist("Peter Sagan", new Bike("Specialized / S-Works", BikeType.ROAD));
@@ -56,11 +57,11 @@ public class ObjectConverterWithAnnotationTest {
         String json = mapper.writeObjectAsString(cyclist);
         Assert.assertNotNull(json);
         Assert.assertEquals("{" +
-                              "\"name\":\"Peter Sagan\"," +
                               "\"bike\":{" +
                                 "\"" + MANUFACTURER_ID + "\":0," +
                                 "\"" + TYPE_INDEX + "\":0" +
-                              "}" +
+                              "}," +
+                              "\"name\":\"Peter Sagan\"" +
                             "}", json);
 
     }
