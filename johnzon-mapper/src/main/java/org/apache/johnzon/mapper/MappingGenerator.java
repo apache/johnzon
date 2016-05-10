@@ -53,9 +53,12 @@ public interface MappingGenerator {
      *     "firstName":"Karl", "lastName":"SomeName", "address":{"street":"mystreet"}
      * </pre>
      * @param o the object to write
+     * @param generator the jsonp generator to use
      * @return itself, for easier chaining of commands
      */
-    MappingGenerator writeObject(Object o);
+    MappingGenerator writeObject(Object o, JsonGenerator generator);
 
 
+    // @Experimental
+    <T> String convert(T obj);
 }

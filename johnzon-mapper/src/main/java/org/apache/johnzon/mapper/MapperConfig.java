@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentMap;
  */
 class MapperConfig implements Cloneable {
 
-    private static final ObjectConverter NO_CONVERTER = new ObjectConverter() {
+    private static final ObjectConverter.Codec NO_CONVERTER = new ObjectConverter.Codec() {
         @Override
         public void writeJson(Object instance, MappingGenerator jsonbGenerator) {
             // just a dummy
@@ -59,15 +59,18 @@ class MapperConfig implements Cloneable {
     private final AccessMode accessMode;
     private final Charset encoding;
     private final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
-    private final Map<Class<?>, ObjectConverter<?>> objectConverters;
+    private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters;
+    private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders;
     private final Comparator<String> attributeOrder;
 
-    private final Map<Class<?>, ObjectConverter<?>> objectConverterCache;
+    private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
+    private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
 
     //disable checkstyle for 10+ parameters
     //CHECKSTYLE:OFF
     public MapperConfig(final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters,
-                        final Map<Class<?>, ObjectConverter<?>> objectConverters,
+                        final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters,
+                        final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders,
                         final int version, final boolean close,
                         final boolean skipNull, final boolean skipEmptyArray,
                         final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL,
@@ -75,7 +78,8 @@ class MapperConfig implements Cloneable {
                         final AccessMode accessMode, final Charset encoding,
                         final Comparator<String> attributeOrder) {
     //CHECKSTYLE:ON
-        this.objectConverters = objectConverters;
+        this.objectConverterWriters = objectConverterWriters;
+        this.objectConverterReaders = objectConverterReaders;
         this.version = version;
         this.close = close;
         this.skipNull = skipNull;
@@ -88,7 +92,8 @@ class MapperConfig implements Cloneable {
         this.adapters = adapters;
         this.attributeOrder = attributeOrder;
 
-        this.objectConverterCache = new HashMap<Class<?>, ObjectConverter<?>>(objectConverters.size());
+        this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
+        this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
     }
 
     public Adapter findAdapter(final Type aClass) {
@@ -123,13 +128,22 @@ class MapperConfig implements Cloneable {
      *
      * @throws IllegalArgumentException if {@code clazz} is {@code null}
      */
-    public ObjectConverter findObjectConverter(Class clazz) {
+    public ObjectConverter.Reader findObjectConverterReader(Class clazz) {
+        return findObjectConverter(clazz, objectConverterReaders, objectConverterReaderCache);
+    }
+    public ObjectConverter.Writer findObjectConverterWriter(Class clazz) {
+        return findObjectConverter(clazz, objectConverterWriters, objectConverterWriterCache);
+    }
+
+    private <T> T findObjectConverter(final Class clazz,
+                                                final Map<Class<?>, T> from,
+                                                final Map<Class<?>, T> cache) {
         if (clazz == null) {
             throw new IllegalArgumentException("clazz must not be null");
         }
 
         // first lets look in our cache
-        ObjectConverter<?> converter = objectConverterCache.get(clazz);
+        T converter = cache.get(clazz);
         if (converter != null && converter != NO_CONVERTER) {
             return converter;
         }
@@ -142,9 +156,9 @@ class MapperConfig implements Cloneable {
         // we get called the first time for this class
         // lets search...
 
-        Map<Class<?>, ObjectConverter<?>> matchingConverters = new HashMap<Class<?>, ObjectConverter<?>>();
+        Map<Class<?>, T> matchingConverters = new HashMap<Class<?>, T>();
 
-        for (Map.Entry<Class<?>, ObjectConverter<?>> entry : objectConverters.entrySet()) {
+        for (Map.Entry<Class<?>, T> entry : from.entrySet()) {
 
             if (clazz == entry.getKey()) {
                 converter = entry.getValue();
@@ -157,12 +171,12 @@ class MapperConfig implements Cloneable {
         }
 
         if (converter != null) {
-            objectConverterCache.put(clazz, converter);
+            cache.put(clazz, converter);
             return converter;
         }
 
         if (matchingConverters.isEmpty()) {
-            objectConverterCache.put(clazz, NO_CONVERTER);
+            cache.put(clazz, (T) NO_CONVERTER);
             return null;
         }
 
@@ -195,9 +209,9 @@ class MapperConfig implements Cloneable {
         }
 
         if (converter == null) {
-            objectConverterCache.put(clazz, NO_CONVERTER);
+            cache.put(clazz, (T) NO_CONVERTER);
         } else {
-            objectConverterCache.put(clazz, converter);
+            cache.put(clazz, converter);
         }
 
         return converter;
@@ -243,8 +257,12 @@ class MapperConfig implements Cloneable {
         return adapters;
     }
 
-    public Map<Class<?>, ObjectConverter<?>> getObjectConverters() {
-        return objectConverters;
+    public Map<Class<?>, ObjectConverter.Writer<?>> getObjectConverterWriters() {
+        return objectConverterWriters;
+    }
+
+    public Map<Class<?>, ObjectConverter.Reader<?>> getObjectConverterReaders() {
+        return objectConverterReaders;
     }
 
     public Comparator<String> getAttributeOrder() {

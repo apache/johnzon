@@ -136,7 +136,7 @@ public class Mapper implements Closeable {
 
         RuntimeException originalException = null;
         try {
-            mappingGenerator.doWriteObject(object, true);
+            mappingGenerator.doWriteObject(object, generator, true);
         } catch (RuntimeException e) {
             originalException = e;
         } finally {

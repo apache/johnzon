@@ -23,11 +23,14 @@ import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
+import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
+import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
@@ -39,8 +42,11 @@ import javax.json.bind.annotation.JsonbVisibility;
 import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
+import javax.json.bind.serializer.JsonbDeserializer;
+import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParserFactory;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -72,6 +78,8 @@ import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
@@ -107,6 +115,25 @@ public class JohnzonBuilder implements JsonbBuilder {
             builder.setGeneratorFactory(jsonp.createGeneratorFactory(generatorConfig()));
             builder.setReaderFactory(jsonp.createReaderFactory(emptyMap()));
         }
+        final Supplier<JsonParserFactory> parserFactoryProvider = new Supplier<JsonParserFactory>() { // thread safety is not mandatory
+            private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
+
+            @Override
+            public JsonParserFactory get() {
+                JsonParserFactory factory = ref.get();
+                if (factory == null) {
+                    factory = doCreate();
+                    if (!ref.compareAndSet(null, factory)) {
+                        factory = ref.get();
+                    }
+                }
+                return factory;
+            }
+
+            private JsonParserFactory doCreate() {
+                return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
+            }
+        };
 
         if (config == null) {
             config = new JsonbConfig();
@@ -189,7 +216,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 propertyNamingStrategy, orderValue, visibilityStrategy,
                 !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
                 defaultConverters,
-                factory);
+                factory, parserFactoryProvider);
         builder.setAccessMode(accessMode);
 
 
@@ -240,6 +267,40 @@ public class JohnzonBuilder implements JsonbBuilder {
         builder.setReadAttributeBeforeWrite(
                 config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
 
+        config.getProperty(JsonbConfig.SERIALIZERS).map(JsonbSerializer[].class::cast).ifPresent(serializers -> {
+            Stream.of(serializers).forEach(s -> {
+                final ParameterizedType pt = findPT(s, JsonbSerializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(s + " doesn't implement JsonbSerializer");
+                }
+                final Type[] args = pt.getActualTypeArguments();
+                // TODO: support PT in ObjectConverter (list)
+                if (args.length != 1 || !Class.class.isInstance(args[0])) {
+                    throw new IllegalArgumentException("We only support serializer on Class for now");
+                }
+                builder.addObjectConverter(
+                        Class.class.cast(args[0]), (ObjectConverter.Writer)
+                        (instance, jsonbGenerator) -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
+            });
+        });
+        config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
+            Stream.of(deserializers).forEach(d -> {
+                final ParameterizedType pt = findPT(d, JsonbDeserializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(d + " doesn't implement JsonbDeserializer");
+                }
+                final Type[] args = pt.getActualTypeArguments();
+                if (args.length != 1 || !Class.class.isInstance(args[0])) {
+                    throw new IllegalArgumentException("We only support deserializer on Class for now");
+                }
+                // TODO: support PT in ObjectConverter (list)
+                builder.addObjectConverter(
+                        Class.class.cast(args[0]), (ObjectConverter.Reader)
+                        (jsonObject, targetType, parser) -> d.deserialize(
+                                parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
+            });
+        });
+
         final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite();
         final Mapper mapper = builder.addCloseable(accessMode).build();
 
@@ -259,6 +320,13 @@ public class JohnzonBuilder implements JsonbBuilder {
                 }
             }
         } : new JohnsonJsonb(mapper);
+    }
+
+    private ParameterizedType findPT(final Object s, final Class<?> type) {
+        return ParameterizedType.class.cast(
+                            Stream.of(s.getClass().getGenericInterfaces())
+                                    .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type)
+                                    .findFirst().orElse(null));
     }
 
     private Object getBeanManager() {

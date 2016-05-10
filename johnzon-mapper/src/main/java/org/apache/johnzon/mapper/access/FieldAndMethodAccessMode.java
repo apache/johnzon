@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.ObjectConverter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -122,6 +123,12 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         public Object read(final Object instance) {
             return reader.read(instance);
         }
+
+        @Override
+        public ObjectConverter.Writer<?> findObjectConverterWriter() {
+            final ObjectConverter.Writer<?> objectConverter = Reader.class.cast(type1).findObjectConverterWriter();
+            return objectConverter == null ? reader.findObjectConverterWriter() : objectConverter;
+        }
     }
 
     public static final class CompositeWriter extends CompositeDecoratedType implements Writer {
@@ -135,6 +142,12 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         @Override
         public void write(final Object instance, final Object value) {
             writer.write(instance, value);
+        }
+
+        @Override
+        public ObjectConverter.Reader<?> findObjectConverterReader() {
+            final ObjectConverter.Reader<?> objectConverter = Writer.class.cast(type1).findObjectConverterReader();
+            return objectConverter == null ? writer.findObjectConverterReader() : objectConverter;
         }
     }
 }

@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.ObjectConverter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
@@ -36,10 +37,12 @@ public interface AccessMode {
 
     interface Writer extends DecoratedType {
         void write(Object instance, Object value);
+        ObjectConverter.Reader<?> findObjectConverterReader();
     }
 
     interface Reader extends DecoratedType {
         Object read(Object instance);
+        ObjectConverter.Writer<?> findObjectConverterWriter();
     }
 
     interface Factory {

@@ -18,18 +18,17 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.internal.AdapterKey;
+
+import javax.json.JsonValue;
+import javax.json.stream.JsonGenerator;
+import javax.xml.bind.DatatypeConverter;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
-
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
-import javax.xml.bind.DatatypeConverter;
-
-import org.apache.johnzon.mapper.internal.AdapterKey;
 
 public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
@@ -49,18 +48,23 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
     @Override
-    public MappingGenerator writeObject(Object object) {
+    public MappingGenerator writeObject(Object object, JsonGenerator generator) {
         if (object == null) {
             return this;
         } else if (object instanceof JsonValue) {
             generator.write((JsonValue) object);
         } else {
-            doWriteObject(object, false);
+            doWriteObject(object, generator, false);
         }
         return this;
     }
 
-    public void doWriteObject(Object object, boolean writeBody) {
+    @Override
+    public <T> String convert(final T obj) {
+        return (String) config.findAdapter(obj.getClass()).to(obj);
+    }
+
+    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody) {
         try {
             if (object instanceof Map) {
                 if (writeBody) {
@@ -94,7 +98,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 generator.writeStartObject();
             }
 
-            ObjectConverter objectConverter = config.findObjectConverter(objectClass);
+            ObjectConverter.Writer objectConverter = config.findObjectConverterWriter(objectClass);
             if (writeBody && objectConverter != null) {
                 objectConverter.writeJson(object, this);
             } else {
@@ -269,7 +273,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
                             final boolean primitive, final boolean array,
                             final boolean collection, final boolean map,
                             final Adapter itemConverter,
-                            final String key, final Object value, final ObjectConverter objectConverter) throws InvocationTargetException, IllegalAccessException {
+                            final String key, final Object value,
+                            final ObjectConverter.Writer objectConverter) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
             if (length == 0 && config.isSkipEmptyArray()) {
@@ -319,9 +324,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             } else {
 
-                ObjectConverter objectConverterToUse = objectConverter;
+                ObjectConverter.Writer objectConverterToUse = objectConverter;
                 if (objectConverterToUse == null) {
-                    objectConverterToUse = config.findObjectConverter(type);
+                    objectConverterToUse = config.findObjectConverterWriter(type);
                 }
 
                 if (objectConverterToUse != null) {
@@ -358,7 +363,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             } else if (o == null) {
                 generator.writeNull();
             } else {
-                doWriteObject(o, true);
+                doWriteObject(o, generator, true);
             }
         }
     }

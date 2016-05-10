@@ -21,6 +21,8 @@ package javax.json.bind;
 import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
+import javax.json.bind.serializer.JsonbDeserializer;
+import javax.json.bind.serializer.JsonbSerializer;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -41,6 +43,8 @@ public class JsonbConfig {
     public static final String BINARY_DATA_STRATEGY = "jsonb.binary-data-strategy";
     public static final String DATE_FORMAT = "jsonb.date-format";
     public static final String LOCALE = "jsonb.locale";
+    public static final String SERIALIZERS = "jsonb.serializers";
+    public static final String DESERIALIZERS = "jsonb.derializers";
 
     public final JsonbConfig withDateFormat(final String dateFormat, final Locale locale) {
         return setProperty(DATE_FORMAT, dateFormat).setProperty(LOCALE, locale != null ? locale : Locale.getDefault());
@@ -101,5 +105,13 @@ public class JsonbConfig {
 
     public final JsonbConfig withBinaryDataStrategy(final String binaryDataStrategy) {
         return setProperty(BINARY_DATA_STRATEGY, binaryDataStrategy);
+    }
+
+    public final JsonbConfig withSerializers(final JsonbSerializer... serializers) {
+        return setProperty(SERIALIZERS, serializers);
+    }
+
+    public final JsonbConfig withDeserializers(final JsonbDeserializer... deserializers) {
+        return setProperty(DESERIALIZERS, deserializers);
     }
 }

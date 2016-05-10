@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper.access;
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
+import org.apache.johnzon.mapper.ObjectConverter;
 
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
@@ -153,6 +154,11 @@ public class MethodAccessMode extends BaseAccessMode {
                 throw new MapperException(e);
             }
         }
+
+        @Override
+        public ObjectConverter.Reader<?> findObjectConverterReader() {
+            return null;
+        }
     }
 
     public static class MethodReader extends MethodDecoratedType implements Reader {
@@ -167,6 +173,11 @@ public class MethodAccessMode extends BaseAccessMode {
             } catch (final Exception e) {
                 throw new MapperException(e);
             }
+        }
+
+        @Override
+        public ObjectConverter.Writer<?> findObjectConverterWriter() {
+            return null;
         }
     }
 
@@ -187,6 +198,11 @@ public class MethodAccessMode extends BaseAccessMode {
                     throw new MapperException(e);
                 }
             }
+        }
+
+        @Override
+        public ObjectConverter.Reader<?> findObjectConverterReader() {
+            return null;
         }
     }
 }

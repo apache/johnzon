@@ -85,7 +85,7 @@ public class Mappings {
         final int version;
         final Adapter converter;
         final Adapter itemConverter;
-        final ObjectConverter objectConverter;
+        final ObjectConverter.Writer objectConverter;
         final boolean primitive;
         final boolean array;
         final boolean map;
@@ -95,6 +95,7 @@ public class Mappings {
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
                       final MapperConverter converter,
+                      final ObjectConverter.Writer providedObjectConverter,
                       final int version) {
             this.reader = reader;
             this.version = version;
@@ -104,14 +105,14 @@ public class Mappings {
 
             Adapter theConverter = null;
             Adapter theItemConverter = null;
-            ObjectConverter theObjectConverter = null;
+            ObjectConverter.Writer theObjectConverter = providedObjectConverter;
 
             if (converter != null) {
 
-                if (converter instanceof ObjectConverter) {
-                    theObjectConverter = (ObjectConverter) converter;
-                } else {
-
+                if (converter instanceof ObjectConverter.Writer) {
+                    theObjectConverter = (ObjectConverter.Writer) converter;
+                }
+                if (theObjectConverter == null) {
                     Adapter adapter;
                     if (converter instanceof Converter) {
                         adapter = new ConverterAdapter((Converter) converter);
@@ -155,12 +156,12 @@ public class Mappings {
         public final Type paramType;
         public final Adapter converter;
         public final Adapter itemConverter;
-        public final ObjectConverter objectConverter;
+        public final ObjectConverter.Reader objectConverter;
         public final boolean primitive;
         public final boolean array;
 
         public Setter(final AccessMode.Writer writer, final boolean primitive, final boolean array,
-                      final Type paramType, final MapperConverter converter,
+                      final Type paramType, final MapperConverter converter, final ObjectConverter.Reader providedObjectConverter,
                       final int version) {
             this.writer = writer;
             this.paramType = paramType;
@@ -170,14 +171,14 @@ public class Mappings {
 
             Adapter theConverter = null;
             Adapter theItemConverter = null;
-            ObjectConverter theObjectConverter = null;
+            ObjectConverter.Reader theObjectConverter = providedObjectConverter;
 
             if (converter != null) {
 
-                if (converter instanceof ObjectConverter) {
-                    theObjectConverter = (ObjectConverter) converter;
-                } else {
-
+                if (converter instanceof ObjectConverter.Reader) {
+                    theObjectConverter = (ObjectConverter.Reader) converter;
+                }
+                if (theObjectConverter == null){
                     Adapter adapter;
                     if (converter instanceof Converter) {
                         adapter = new ConverterAdapter((Converter) converter);
@@ -398,7 +399,8 @@ public class Mappings {
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
                 value, isPrimitive(param), returnType != null && returnType.isArray(), param,
-                findConverter(copyDate, value), writeIgnore != null ? writeIgnore.minVersion() : -1);
+                findConverter(copyDate, value), value.findObjectConverterReader(),
+                writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
         }
     }
@@ -417,7 +419,7 @@ public class Mappings {
                     || (returnType != null && Collection.class.isAssignableFrom(returnType)),
                 (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                     || (returnType != null && Map.class.isAssignableFrom(returnType)),
-                findConverter(copyDate, value),
+                findConverter(copyDate, value), value.findObjectConverterWriter(),
                 readIgnore != null ? readIgnore.minVersion() : -1);
             getters.put(key, getter);
         }
@@ -465,11 +467,11 @@ public class Mappings {
 
         final Getter getter = getters.get(key);
         final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, config.getVersion());
-        getters.put(key, new Getter(getter == null ? newReader : new CompositeReader(getter.reader, newReader), false, false, false, true, null, -1));
+        getters.put(key, new Getter(getter == null ? newReader : new CompositeReader(getter.reader, newReader), false, false, false, true, null, null, -1));
 
         final Setter newSetter = setters.get(key);
         final MapUnwrapperWriter newWriter = new MapUnwrapperWriter(objectSetters, path);
-        setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, -1));
+        setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, null, -1));
     }
 
     private MapperConverter findConverter(final boolean copyDate, final AccessMode.DecoratedType decoratedType) {
@@ -574,6 +576,11 @@ public class Mappings {
         }
 
         @Override
+        public ObjectConverter.Writer<?> findObjectConverterWriter() {
+            return null;
+        }
+
+        @Override
         public Type getType() {
             return VIRTUAL_TYPE;
         }
@@ -648,6 +655,11 @@ public class Mappings {
         }
 
         @Override
+        public ObjectConverter.Reader<?> findObjectConverterReader() {
+            return null;
+        }
+
+        @Override
         public Type getType() {
             return VIRTUAL_TYPE;
         }
@@ -708,6 +720,17 @@ public class Mappings {
         }
 
         @Override
+        public ObjectConverter.Writer<?> findObjectConverterWriter() {
+            for (final AccessMode.Reader w : delegates) {
+                final ObjectConverter.Writer<?> objectConverter = w.findObjectConverterWriter();
+                if (objectConverter != null) {
+                    return objectConverter;
+                }
+            }
+            return null;
+        }
+
+        @Override
         public Type getType() {
             return VIRTUAL_TYPE;
         }
@@ -764,6 +787,17 @@ public class Mappings {
             for (final AccessMode.Writer w : delegates) {
                 w.write(instance, value);
             }
+        }
+
+        @Override
+        public ObjectConverter.Reader<?> findObjectConverterReader() {
+            for (final AccessMode.Writer w : delegates) {
+                final ObjectConverter.Reader<?> objectConverter = w.findObjectConverterReader();
+                if (objectConverter != null) {
+                    return objectConverter;
+                }
+            }
+            return null;
         }
 
         @Override

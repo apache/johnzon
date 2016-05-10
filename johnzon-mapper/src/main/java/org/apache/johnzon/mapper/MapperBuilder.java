@@ -122,7 +122,8 @@ public class MapperBuilder {
     private AccessMode accessMode;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
     private ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(DEFAULT_CONVERTERS);
-    private Map<Class<?>, ObjectConverter<?>> objectConverters = new HashMap<Class<?>, ObjectConverter<?>>();
+    private Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders = new HashMap<Class<?>, ObjectConverter.Reader<?>>();
+    private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
 
     public Mapper build() {
@@ -187,7 +188,7 @@ public class MapperBuilder {
         return new Mapper(
                 readerFactory, generatorFactory,
                 new MapperConfig(
-                        adapters, objectConverters,
+                        adapters, objectConverterWriters, objectConverterReaders,
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
@@ -342,8 +343,13 @@ public class MapperBuilder {
         return this;
     }
 
-    public <T> MapperBuilder addObjectConverter(final Class<T> targetType, final ObjectConverter<T> objectConverter) {
-        this.objectConverters.put(targetType, objectConverter);
+    public <T> MapperBuilder addObjectConverter(final Class<T> targetType, final MapperConverter objectConverter) {
+        if (ObjectConverter.Reader.class.isInstance(objectConverter)) {
+            this.objectConverterReaders.put(targetType, ObjectConverter.Reader.class.cast(objectConverter));
+        }
+        if (ObjectConverter.Writer.class.isInstance(objectConverter)) {
+            this.objectConverterWriters.put(targetType, ObjectConverter.Writer.class.cast(objectConverter));
+        }
         return this;
     }
 

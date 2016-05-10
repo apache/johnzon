@@ -115,6 +115,11 @@ public class MappingParserImpl implements MappingParser {
         return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType);
     }
 
+    @Override
+    public <T> T convert(final Class<T> clazz, final String value) {
+        return (T) config.findAdapter(clazz).to(value);
+    }
+
     private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
         if (JsonStructure.class == targetType || JsonObject.class == targetType || JsonValue.class == targetType) {
             return (T) jsonValue;
@@ -186,7 +191,7 @@ public class MappingParserImpl implements MappingParser {
                 throw new MapperException("ObjectConverters are only supported for Classes not Types");
             }
 
-            ObjectConverter objectConverter = config.findObjectConverter((Class) type);
+            ObjectConverter.Reader objectConverter = config.findObjectConverterReader((Class) type);
             if (objectConverter != null) {
                 return objectConverter.fromJson(object, type, new SuppressConversionMappingParser(this, object));
             }
@@ -535,7 +540,7 @@ public class MappingParserImpl implements MappingParser {
     }
 
     private Object toValue(final Object baseInstance, final JsonValue jsonValue, final Adapter converter,
-                           final Adapter itemConverter, final Type type, final ObjectConverter objectConverter) {
+                           final Adapter itemConverter, final Type type, final ObjectConverter.Reader objectConverter) {
 
         if (objectConverter != null) {
 
@@ -627,6 +632,10 @@ public class MappingParserImpl implements MappingParser {
             return delegate.readObject(jsonValue, targetType);
         }
 
+        @Override
+        public <T> T convert(final Class<T> clazz, final String value) {
+            return delegate.convert(clazz, value);
+        }
     }
 
 }

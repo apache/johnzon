@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper.access;
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
+import org.apache.johnzon.mapper.ObjectConverter;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -149,6 +150,11 @@ public class FieldAccessMode extends BaseAccessMode {
                 throw new MapperException(e);
             }
         }
+
+        @Override
+        public ObjectConverter.Reader<?> findObjectConverterReader() {
+            return null;
+        }
     }
 
     public static class FieldReader extends FieldDecoratedType  implements Reader {
@@ -163,6 +169,11 @@ public class FieldAccessMode extends BaseAccessMode {
             } catch (final Exception e) {
                 throw new MapperException(e);
             }
+        }
+
+        @Override
+        public ObjectConverter.Writer<?> findObjectConverterWriter() {
+            return null;
         }
 
         @Override

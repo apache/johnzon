@@ -25,8 +25,11 @@ import org.apache.johnzon.jsonb.converter.JsonbLocalDateTimeConverter;
 import org.apache.johnzon.jsonb.converter.JsonbNumberConverter;
 import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
 import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
+import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
+import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
@@ -44,9 +47,14 @@ import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbPropertyOrder;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeAdapter;
+import javax.json.bind.annotation.JsonbTypeDeserializer;
+import javax.json.bind.annotation.JsonbTypeSerializer;
 import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
+import javax.json.bind.serializer.JsonbDeserializer;
+import javax.json.bind.serializer.JsonbSerializer;
+import javax.json.stream.JsonParserFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -74,6 +82,7 @@ import java.util.OptionalLong;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
@@ -89,10 +98,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     private final Map<AdapterKey, Adapter<?, ?>> defaultConverters;
     private final JohnzonAdapterFactory factory;
     private final Collection<JohnzonAdapterFactory.Instance<?>> toRelease = new ArrayList<>();
+    private final Supplier<JsonParserFactory> parserFactory;
 
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
-                           final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory) {
+                           final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory,
+                           final Supplier<JsonParserFactory> parserFactory) {
         this.naming = propertyNamingStrategy;
         this.order = orderValue;
         this.visibility = visibilityStrategy;
@@ -100,6 +111,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         this.delegate = new FieldAndMethodAccessMode(true, true);
         this.defaultConverters = defaultConverters;
         this.factory = factory;
+        this.parserFactory = parserFactory;
     }
 
     @Override
@@ -266,13 +278,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final Adapter converter;
         if (adapter != null) {
             final Class<? extends JsonbAdapter> value = adapter.value();
-            final ParameterizedType pt = ParameterizedType.class.cast(
-                    Stream.of(value.getGenericInterfaces())
-                            .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+            final ParameterizedType pt = findPt(value, JsonbAdapter.class);
             if (pt == null) {
                 throw new IllegalArgumentException(value + " doesn't implement JsonbAdapter");
             }
-            final JohnzonAdapterFactory.Instance<? extends JsonbAdapter> instance = newAdapter(value);
+            final JohnzonAdapterFactory.Instance<? extends JsonbAdapter> instance = newInstance(value);
             toRelease.add(instance);
             final Type[] actualTypeArguments = pt.getActualTypeArguments();
             converter = new JohnzonJsonbAdapter(instance.getValue(), actualTypeArguments[0], actualTypeArguments[1]);
@@ -296,7 +306,13 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return converter;
     }
 
-    private JohnzonAdapterFactory.Instance<? extends JsonbAdapter> newAdapter(final Class<? extends JsonbAdapter> value) {
+    private ParameterizedType findPt(final Class<?> value, final Class<?> type) {
+        return ParameterizedType.class.cast(
+                        Stream.of(value.getGenericInterfaces())
+                                .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type).findFirst().orElse(null));
+    }
+
+    private JohnzonAdapterFactory.Instance newInstance(final Class<?> value) {
         return factory.create(value);
     }
 
@@ -326,6 +342,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             }
 
             // we are visible
+            final JsonbTypeSerializer serializer = initialReader.getAnnotation(JsonbTypeSerializer.class);
             final JsonbProperty property = initialReader.getAnnotation(JsonbProperty.class);
             final JsonbNillable nillable = initialReader.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
@@ -341,6 +358,21 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
+            }
+
+            final ObjectConverter.Writer writer;
+            if (serializer != null) {
+                final Class<? extends JsonbSerializer> value = serializer.value();
+                final ParameterizedType pt = findPt(value, JsonbSerializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(value + " doesn't implement JsonbSerializer");
+                }
+                final JohnzonAdapterFactory.Instance<? extends JsonbSerializer> instance = newInstance(value);
+                toRelease.add(instance);
+                writer = (instance1, jsonbGenerator) ->
+                        instance.getValue().serialize(instance1, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator));
+            } else {
+                writer = null;
             }
 
             // handle optionals since mapper is still only java 7
@@ -368,6 +400,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 @Override
                 public Object read(final Object instance) {
                     return reader.apply(instance);
+                }
+
+                @Override
+                public ObjectConverter.Writer<?> findObjectConverterWriter() {
+                    return writer;
                 }
 
                 @Override
@@ -427,6 +464,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             }
 
             // we are visible
+            final JsonbTypeDeserializer deserializer = initialWriter.getAnnotation(JsonbTypeDeserializer.class);
             final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
             final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
@@ -442,6 +480,21 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         toConverter(initialWriter.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(e);
+            }
+
+            final ObjectConverter.Reader reader;
+            if (deserializer != null) {
+                final Class<? extends JsonbDeserializer> value = deserializer.value();
+                final ParameterizedType pt = findPt(value, JsonbDeserializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(value + " doesn't implement JsonbDeserializer");
+                }
+                final JohnzonAdapterFactory.Instance<? extends JsonbDeserializer> instance = newInstance(value);
+                toRelease.add(instance);
+                reader = (jsonObject, targetType, parser) ->
+                        instance.getValue().deserialize(parserFactory.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType);
+            } else {
+                reader = null;
             }
 
             // handle optionals since mapper is still only java 7
@@ -469,6 +522,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 @Override
                 public void write(final Object instance, final Object val) {
                     writer.accept(instance, val);
+                }
+
+                @Override
+                public ObjectConverter.Reader<?> findObjectConverterReader() {
+                    return reader;
                 }
 
                 @Override

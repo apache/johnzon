@@ -348,7 +348,7 @@ public class ObjectConverterWithAnnotationTest {
         TRIATHLON
     }
 
-    public static class BikeConverter implements ObjectConverter<Bike> {
+    public static class BikeConverter implements ObjectConverter.Codec<Bike> {
 
         public static final List<String> MANUFACTURERS = Arrays.asList("Specialized / S-Works", "Canyon", "Trek", "Scott");
 

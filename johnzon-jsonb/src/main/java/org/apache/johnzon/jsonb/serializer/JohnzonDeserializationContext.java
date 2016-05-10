@@ -16,32 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper;
+package org.apache.johnzon.jsonb.serializer;
 
-import javax.json.JsonObject;
+import org.apache.johnzon.mapper.MappingParser;
+
+import javax.json.bind.serializer.DeserializationContext;
+import javax.json.stream.JsonParser;
 import java.lang.reflect.Type;
 
-/**
- * Convert a given Java Type a nested JSON representation.
- * And the other way around.
- *
- * An example would be to convert a custom Project POJO, like Dog.class
- * to it's JSON representation
- *
- */
-public final class ObjectConverter {
-    private ObjectConverter() {
-        // no-op
+public class JohnzonDeserializationContext implements DeserializationContext {
+    private final MappingParser runtime;
+
+    public JohnzonDeserializationContext(final MappingParser runtime) {
+        this.runtime = runtime;
     }
 
-    public interface Writer<T> extends MapperConverter {
-        void writeJson(T instance, MappingGenerator jsonbGenerator);
+    @Override
+    public <T> T deserialize(final Class<T> clazz, final JsonParser parser) {
+        return null;
     }
 
-    public interface Reader<T> extends MapperConverter {
-        T fromJson(JsonObject jsonObject, Type targetType, MappingParser parser);
+    @Override
+    public <T> T deserialize(final Type type, final JsonParser parser) {
+        return null;
     }
 
-    public interface Codec<T> extends ObjectConverter.Writer<T>, ObjectConverter.Reader<T> {
+    @Override
+    public <T> T convertDefault(final Class<T> clazz, final String value) {
+        return null;
     }
 }

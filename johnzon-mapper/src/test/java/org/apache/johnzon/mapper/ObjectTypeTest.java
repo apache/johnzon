@@ -160,11 +160,11 @@ public class ObjectTypeTest {
     }
 
 
-    public static class TestWithTypeConverter implements ObjectConverter<Dog> {
+    public static class TestWithTypeConverter implements ObjectConverter.Codec<Dog> {
         @Override
         public void writeJson(Dog instance, MappingGenerator mappingGenerator) {
             mappingGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
-            mappingGenerator.writeObject(instance);
+            mappingGenerator.writeObject(instance, mappingGenerator.getJsonGenerator());
         }
 
         @Override
@@ -287,7 +287,7 @@ public class ObjectTypeTest {
     }
 
 
-    public static class DBAccessPoodleConverter implements ObjectConverter<Poodle> {
+    public static class DBAccessPoodleConverter implements ObjectConverter.Codec<Poodle> {
 
         public static final String POODLE_1_NAME = "Poodle1";
         public static final String POODLE_2_NAME = "Poodle2";

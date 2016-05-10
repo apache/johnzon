@@ -36,14 +36,14 @@ public class MapperConfigTest {
     @Test
     public void testFindObjectConverterConverterForSpecificClass() {
 
-        ObjectConverter<ClassWithoutSupertypes> theConverter = new TheConverter<ClassWithoutSupertypes>();
+        ObjectConverter.Codec<ClassWithoutSupertypes> theConverter = new TheConverter<ClassWithoutSupertypes>();
 
-        Map<Class<?>, ObjectConverter<?>> converterMap = new HashMap<Class<?>, ObjectConverter<?>>(1);
+        Map<Class<?>, ObjectConverter.Codec<?>> converterMap = new HashMap<Class<?>, ObjectConverter.Codec<?>>(1);
         converterMap.put(ClassWithoutSupertypes.class, theConverter);
 
         MapperConfig config = createConfig(converterMap);
 
-        ObjectConverter converter = config.findObjectConverter(ClassWithoutSupertypes.class);
+        ObjectConverter.Reader converter = config.findObjectConverterReader(ClassWithoutSupertypes.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(theConverter, converter);
     }
@@ -51,11 +51,11 @@ public class MapperConfigTest {
     @Test
     public void testFindObjectConverterConverterForInterface() {
 
-        ObjectConverter<TheInterface> theConverter = new TheConverter<TheInterface>();
+        ObjectConverter.Codec<TheInterface> theConverter = new TheConverter<TheInterface>();
 
-        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter<?>>singletonMap(TheInterface.class, theConverter));
+        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter.Codec<?>>singletonMap(TheInterface.class, theConverter));
 
-        ObjectConverter converter = config.findObjectConverter(ClassForTheInterface.class);
+        ObjectConverter.Writer converter = config.findObjectConverterWriter(ClassForTheInterface.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(theConverter, converter);
     }
@@ -63,11 +63,11 @@ public class MapperConfigTest {
     @Test
     public void testFindObjectConverterConverterOnlyForSuperclass() {
 
-        ObjectConverter<ClassForTheInterface> theConverter = new TheConverter<ClassForTheInterface>();
+        ObjectConverter.Codec<ClassForTheInterface> theConverter = new TheConverter<ClassForTheInterface>();
 
-        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter<?>>singletonMap(ClassForTheInterface.class, theConverter));
+        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter.Codec<?>>singletonMap(ClassForTheInterface.class, theConverter));
 
-        ObjectConverter converter = config.findObjectConverter(ExtendingClassForTheInterface.class);
+        ObjectConverter.Reader converter = config.findObjectConverterReader(ExtendingClassForTheInterface.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(theConverter, converter);
     }
@@ -75,36 +75,40 @@ public class MapperConfigTest {
     @Test
     public void testFindObjectConverterConverterForInterfaceAndClass() {
 
-        ObjectConverter<TheInterface> interfaceConverter = new TheConverter<TheInterface>();
-        ObjectConverter<ClassForTheInterface> theConverter = new TheConverter<ClassForTheInterface>();
+        ObjectConverter.Codec<TheInterface> interfaceConverter = new TheConverter<TheInterface>();
+        ObjectConverter.Codec<ClassForTheInterface> theConverter = new TheConverter<ClassForTheInterface>();
 
-        Map<Class<?>, ObjectConverter<?>> converterMap = new HashMap<Class<?>, ObjectConverter<?>>(2);
+        Map<Class<?>, ObjectConverter.Codec<?>> converterMap = new HashMap<Class<?>, ObjectConverter.Codec<?>>(2);
         converterMap.put(TheInterface.class, interfaceConverter);
         converterMap.put(ClassForTheInterface.class, theConverter);
 
         MapperConfig config = createConfig(converterMap);
 
-        ObjectConverter converter = config.findObjectConverter(ClassForTheInterface.class);
-        Assert.assertNotNull(converter);
-        Assert.assertEquals(theConverter, converter);
+        {
+            ObjectConverter.Reader converter = config.findObjectConverterReader(ClassForTheInterface.class);
+            Assert.assertNotNull(converter);
+            Assert.assertEquals(theConverter, converter);
+        }
 
-        converter = config.findObjectConverter(ExtendingClassForTheInterface.class);
-        Assert.assertNotNull(converter);
-        Assert.assertEquals(theConverter, converter);
+        {
+            ObjectConverter.Writer converter = config.findObjectConverterWriter(ExtendingClassForTheInterface.class);
+            Assert.assertNotNull(converter);
+            Assert.assertEquals(theConverter, converter);
+        }
     }
 
     @Test
     public void testFindObjectConverterConverterForMoreInterfaces() {
 
-        ObjectConverter<TheInterface> firstConverter = new TheConverter<TheInterface>();
-        ObjectConverter<TheSecondInterface> secondConverter = new TheConverter<TheSecondInterface>();
+        ObjectConverter.Codec<TheInterface> firstConverter = new TheConverter<TheInterface>();
+        ObjectConverter.Codec<TheSecondInterface> secondConverter = new TheConverter<TheSecondInterface>();
 
-        Map<Class<?>, ObjectConverter<?>> converterMap = new HashMap<Class<?>, ObjectConverter<?>>(2);
+        Map<Class<?>, ObjectConverter.Codec<?>> converterMap = new HashMap<Class<?>, ObjectConverter.Codec<?>>(2);
         converterMap.put(TheInterface.class, firstConverter);
         converterMap.put(TheSecondInterface.class, secondConverter);
         MapperConfig config = createConfig(converterMap);
 
-        ObjectConverter converter = config.findObjectConverter(ClassWithTwoInterfaces.class);
+        ObjectConverter.Writer converter = config.findObjectConverterWriter(ClassWithTwoInterfaces.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(converterMap.get(ClassWithTwoInterfaces.class.getInterfaces()[0]), converter);
     }
@@ -114,40 +118,44 @@ public class MapperConfigTest {
 
         TheAbstractConverter<ClassForTheInterface> theConverter = new TheAbstractConverter<ClassForTheInterface>() {};
 
-        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter<?>>singletonMap(ClassForTheInterface.class, theConverter));
+        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter.Codec<?>>singletonMap(ClassForTheInterface.class, theConverter));
 
-        ObjectConverter converter = config.findObjectConverter(ClassForTheInterface.class);
-        Assert.assertNotNull(converter);
-        Assert.assertEquals(theConverter, converter);
+        {
+            ObjectConverter.Writer converter = config.findObjectConverterWriter(ClassForTheInterface.class);
+            Assert.assertNotNull(converter);
+            Assert.assertEquals(theConverter, converter);
+        }
 
-        converter = config.findObjectConverter(ExtendingClassForTheInterface.class);
-        Assert.assertNotNull(converter);
-        Assert.assertEquals(theConverter, converter);
+        {
+            ObjectConverter.Writer converter = config.findObjectConverterWriter(ExtendingClassForTheInterface.class);
+            Assert.assertNotNull(converter);
+            Assert.assertEquals(theConverter, converter);
+        }
     }
 
     @Test
     public void testfindObjectConverterConverterForObject() {
         TheConverter<Object> theConverter = new TheConverter<Object>();
 
-        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter<?>>singletonMap(Object.class, theConverter));
+        MapperConfig config = createConfig(Collections.<Class<?>, ObjectConverter.Codec<?>>singletonMap(Object.class, theConverter));
 
-        ObjectConverter converter = config.findObjectConverter(ClassForTheInterface.class);
+        ObjectConverter.Reader converter = config.findObjectConverterReader(ClassForTheInterface.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(theConverter, converter);
 
-        converter = config.findObjectConverter(TheInterface.class);
+        converter = config.findObjectConverterReader(TheInterface.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(theConverter, converter);
 
-        converter = config.findObjectConverter(InterfaceExtendingTwoInterfaces.class);
+        converter = config.findObjectConverterReader(InterfaceExtendingTwoInterfaces.class);
         Assert.assertNotNull(converter);
         Assert.assertEquals(theConverter, converter);
     }
 
 
-    private MapperConfig createConfig(Map<Class<?>, ObjectConverter<?>> converter) {
+    private MapperConfig createConfig(Map<Class<?>, ObjectConverter.Codec<?>> converter) {
         return new MapperConfig(new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(0),
-                                converter,
+                                Map.class.cast(converter), Map.class.cast(converter),
                                 -1,
                                 true,
                                 true,
@@ -173,7 +181,7 @@ public class MapperConfigTest {
     private interface InterfaceExtendingTwoInterfaces extends TheInterface, TheSecondInterface {}
 
 
-    private static class TheConverter<T> implements ObjectConverter<T>{
+    private static class TheConverter<T> implements ObjectConverter.Codec<T>{
         @Override
         public void writeJson(T instance, MappingGenerator jsonbGenerator) {
             // dummy
@@ -186,7 +194,7 @@ public class MapperConfigTest {
         }
     }
 
-    private static abstract class TheAbstractConverter<T extends TheInterface> implements ObjectConverter<T> {
+    private static abstract class TheAbstractConverter<T extends TheInterface> implements ObjectConverter.Codec<T> {
         @Override
         public void writeJson(T instance, MappingGenerator jsonbGenerator) {
             // dummy
