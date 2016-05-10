@@ -133,7 +133,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
             writeValue(valueClass,
                     primitive, array, collection, map, itemConverter,
-                    key == null ? "null" : key.toString(), value);
+                    key == null ? "null" : key.toString(), value, null);
         }
         return generator;
     }
@@ -260,7 +260,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     getter.collection, getter.map,
                     getter.itemConverter,
                     getterEntry.getKey(),
-                    val);
+                    val, getter.objectConverter);
         }
         return generator;
     }
@@ -269,7 +269,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                             final boolean primitive, final boolean array,
                             final boolean collection, final boolean map,
                             final Adapter itemConverter,
-                            final String key, final Object value) throws InvocationTargetException, IllegalAccessException {
+                            final String key, final Object value, final ObjectConverter objectConverter) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
             if (length == 0 && config.isSkipEmptyArray()) {
@@ -315,13 +315,18 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (writePrimitives(key, adapted.getClass(), adapted)) {
                     return;
                 }
-                writeValue(String.class, true, false, false, false, null, key, adapted);
+                writeValue(String.class, true, false, false, false, null, key, adapted, null);
                 return;
             } else {
-                ObjectConverter objectConverter = config.findObjectConverter(type);
-                if (objectConverter != null) {
+
+                ObjectConverter objectConverterToUse = objectConverter;
+                if (objectConverterToUse == null) {
+                    objectConverterToUse = config.findObjectConverter(type);
+                }
+
+                if (objectConverterToUse != null) {
                     generator.writeStartObject(key);
-                    objectConverter.writeJson(value, this);
+                    objectConverterToUse.writeJson(value, this);
                     generator.writeEnd();
                     return;
                 }

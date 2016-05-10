@@ -85,6 +85,7 @@ public class Mappings {
         final int version;
         final Adapter converter;
         final Adapter itemConverter;
+        final ObjectConverter objectConverter;
         final boolean primitive;
         final boolean array;
         final boolean map;
@@ -93,23 +94,43 @@ public class Mappings {
         public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
-                      final Adapter<?, ?> converter,
+                      final MapperConverter converter,
                       final int version) {
             this.reader = reader;
             this.version = version;
             this.array = array;
             this.collection = collection;
             this.primitive = primitive;
-            if (converter != null && matches(reader.getType(), converter)) {
-                this.converter = converter;
-                this.itemConverter = null;
-            } else if (converter != null) {
-                this.converter = null;
-                this.itemConverter = converter;
-            } else {
-                this.converter = null;
-                this.itemConverter = null;
+
+            Adapter theConverter = null;
+            Adapter theItemConverter = null;
+            ObjectConverter theObjectConverter = null;
+
+            if (converter != null) {
+
+                if (converter instanceof ObjectConverter) {
+                    theObjectConverter = (ObjectConverter) converter;
+                } else {
+
+                    Adapter adapter;
+                    if (converter instanceof Converter) {
+                        adapter = new ConverterAdapter((Converter) converter);
+                    } else {
+                        adapter = (Adapter) converter;
+                    }
+
+                    if (matches(reader.getType(), adapter)) {
+                        theConverter = adapter;
+                    } else {
+                        theItemConverter = adapter;
+                    }
+                }
             }
+
+            this.converter = theConverter;
+            this.itemConverter = theItemConverter;
+            this.objectConverter = theObjectConverter;
+
             this.map = map && this.converter == null;
         }
 
@@ -132,29 +153,49 @@ public class Mappings {
         public final AccessMode.Writer writer;
         public final int version;
         public final Type paramType;
-        public final Adapter<?, ?> converter;
-        public final Adapter<?, ?> itemConverter;
+        public final Adapter converter;
+        public final Adapter itemConverter;
+        public final ObjectConverter objectConverter;
         public final boolean primitive;
         public final boolean array;
 
         public Setter(final AccessMode.Writer writer, final boolean primitive, final boolean array,
-                      final Type paramType, final Adapter<?, ?> converter,
+                      final Type paramType, final MapperConverter converter,
                       final int version) {
             this.writer = writer;
             this.paramType = paramType;
             this.version = version;
             this.primitive = primitive;
             this.array = array;
-            if (converter != null && matches(writer.getType(), converter)) {
-                this.converter = converter;
-                this.itemConverter = null;
-            } else if (converter != null) {
-                this.converter = null;
-                this.itemConverter = converter;
-            } else {
-                this.converter = null;
-                this.itemConverter = null;
+
+            Adapter theConverter = null;
+            Adapter theItemConverter = null;
+            ObjectConverter theObjectConverter = null;
+
+            if (converter != null) {
+
+                if (converter instanceof ObjectConverter) {
+                    theObjectConverter = (ObjectConverter) converter;
+                } else {
+
+                    Adapter adapter;
+                    if (converter instanceof Converter) {
+                        adapter = new ConverterAdapter((Converter) converter);
+                    } else {
+                        adapter = (Adapter) converter;
+                    }
+
+                    if (matches(writer.getType(), adapter)) {
+                        theConverter = adapter;
+                    } else {
+                        theItemConverter = adapter;
+                    }
+                }
             }
+
+            this.converter = theConverter;
+            this.itemConverter = theItemConverter;
+            this.objectConverter = theObjectConverter;
         }
 
         @Override
@@ -431,8 +472,8 @@ public class Mappings {
         setters.put(key, new Setter(newSetter == null ? newWriter : new CompositeWriter(newSetter.writer, newWriter), false, false, VIRTUAL_TYPE, null, -1));
     }
 
-    private Adapter findConverter(final boolean copyDate, final AccessMode.DecoratedType decoratedType) {
-        Adapter converter = decoratedType.findConverter();
+    private MapperConverter findConverter(final boolean copyDate, final AccessMode.DecoratedType decoratedType) {
+        MapperConverter converter = decoratedType.findConverter();
         if (converter != null) {
             return converter;
         }
@@ -442,13 +483,7 @@ public class Mappings {
         Type typeToTest = decoratedType.getType();
         if (annotation != null) {
             try {
-                MapperConverter mapperConverter = annotation.value().newInstance();
-                if (mapperConverter instanceof Converter) {
-                    converter = new ConverterAdapter((Converter) mapperConverter);
-                } else {
-                    throw new UnsupportedOperationException("TODO implement");
-                }
-
+                converter = annotation.value().newInstance();
             } catch (final Exception e) {
                 throw new IllegalArgumentException(e);
             }
@@ -472,7 +507,7 @@ public class Mappings {
                 converter = adapters.get(key); // first ensure user didnt override it
                 if (converter == null) {
                     converter = new ConverterAdapter(new EnumConverter(type));
-                    adapters.put(key, converter);
+                    adapters.put(key, (Adapter<?, ?>) converter);
                 }
             } else {
                 for (final Map.Entry<AdapterKey, Adapter<?, ?>> adapterEntry : adapters.entrySet()) {

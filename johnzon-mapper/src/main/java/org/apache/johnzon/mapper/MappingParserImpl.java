@@ -294,7 +294,7 @@ public class MappingParserImpl implements MappingParser {
                         }
                     }
                 }
-                final Object convertedValue = toValue(existingInstance, jsonValue, value.converter, value.itemConverter, value.paramType);
+                final Object convertedValue = toValue(existingInstance, jsonValue, value.converter, value.itemConverter, value.paramType, value.objectConverter);
                 if (convertedValue != null) {
                     setterMethod.write(t, convertedValue);
                 }
@@ -527,14 +527,25 @@ public class MappingParserImpl implements MappingParser {
                                  object.get(mapping.factory.getParameterNames()[i]),
                                  mapping.factory.getParameterConverter()[i],
                                  mapping.factory.getParameterItemConverter()[i],
-                                 mapping.factory.getParameterTypes()[i]);
+                                 mapping.factory.getParameterTypes()[i],
+                                 null); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
         }
 
         return objects;
     }
 
     private Object toValue(final Object baseInstance, final JsonValue jsonValue, final Adapter converter,
-                           final Adapter itemConverter, final Type type) {
+                           final Adapter itemConverter, final Type type, final ObjectConverter objectConverter) {
+
+        if (objectConverter != null) {
+
+            if (jsonValue instanceof JsonObject) {
+                return objectConverter.fromJson((JsonObject) jsonValue, type, this);
+            } else {
+                throw new UnsupportedOperationException("Array handling with ObjectConverter currently not implemented");
+            }
+        }
+
         return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter)
                                  : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
                                                                                           : convertTo(converter, jsonValue);
