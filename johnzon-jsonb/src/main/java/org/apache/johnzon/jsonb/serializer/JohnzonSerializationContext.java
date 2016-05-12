@@ -40,9 +40,4 @@ public class JohnzonSerializationContext implements SerializationContext {
     public <T> void serialize(final T object, final JsonGenerator generator) {
         runtime.writeObject(object, generator);
     }
-
-    @Override
-    public <T> String convertDefault(final T obj, final JsonGenerator generator) {
-        return runtime.convert(obj);
-    }
 }

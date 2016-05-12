@@ -59,11 +59,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
         return this;
     }
 
-    @Override
-    public <T> String convert(final T obj) {
-        return (String) config.findAdapter(obj.getClass()).to(obj);
-    }
-
     public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody) {
         try {
             if (object instanceof Map) {

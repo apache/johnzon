@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
 
 @JsonbAnnotation
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.ANNOTATION_TYPE, ElementType.FIELD, ElementType.METHOD})
+@Target({ElementType.ANNOTATION_TYPE, ElementType.TYPE,  ElementType.FIELD, ElementType.METHOD})
 public @interface JsonbTypeAdapter {
     Class<? extends JsonbAdapter> value();
 }

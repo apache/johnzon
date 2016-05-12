@@ -18,12 +18,15 @@
  */
 package org.apache.johnzon.jsonb.serializer;
 
+import org.apache.johnzon.core.JsonReaderImpl;
 import org.apache.johnzon.mapper.MappingParser;
 
+import javax.json.JsonValue;
 import javax.json.bind.serializer.DeserializationContext;
 import javax.json.stream.JsonParser;
 import java.lang.reflect.Type;
 
+// TODO: test it
 public class JohnzonDeserializationContext implements DeserializationContext {
     private final MappingParser runtime;
 
@@ -33,16 +36,15 @@ public class JohnzonDeserializationContext implements DeserializationContext {
 
     @Override
     public <T> T deserialize(final Class<T> clazz, final JsonParser parser) {
-        return null;
+        return runtime.readObject(read(parser), clazz);
     }
 
     @Override
     public <T> T deserialize(final Type type, final JsonParser parser) {
-        return null;
+        return runtime.readObject(read(parser), type);
     }
 
-    @Override
-    public <T> T convertDefault(final Class<T> clazz, final String value) {
-        return null;
+    private JsonValue read(final JsonParser parser) { // TODO: use jsonp 1.1 and not johnzon internals
+        return new JsonReaderImpl(parser).readValue();
     }
 }

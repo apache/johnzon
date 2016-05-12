@@ -28,6 +28,4 @@ public interface DeserializationContext {
     <T> T deserialize(Class<T> clazz, JsonParser parser);
 
     <T> T deserialize(Type type, JsonParser parser);
-
-    <T> T convertDefault(Class<T> clazz, String value);
 }

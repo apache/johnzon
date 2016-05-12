@@ -24,6 +24,4 @@ public interface SerializationContext {
     <T> void serialize(String key, T object, JsonGenerator generator);
 
     <T> void serialize(T object, JsonGenerator generator);
-
-    <T> String convertDefault(T obj, JsonGenerator generator);
 }

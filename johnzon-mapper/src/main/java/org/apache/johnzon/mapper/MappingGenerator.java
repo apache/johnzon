@@ -57,8 +57,4 @@ public interface MappingGenerator {
      * @return itself, for easier chaining of commands
      */
     MappingGenerator writeObject(Object o, JsonGenerator generator);
-
-
-    // @Experimental
-    <T> String convert(T obj);
 }

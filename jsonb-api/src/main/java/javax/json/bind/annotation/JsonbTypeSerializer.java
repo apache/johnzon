@@ -26,10 +26,11 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
 
 @JsonbAnnotation
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ANNOTATION_TYPE, FIELD, METHOD})
+@Target({ANNOTATION_TYPE, TYPE, FIELD, METHOD})
 public @interface JsonbTypeSerializer {
     Class<? extends JsonbSerializer> value();
 }

@@ -18,9 +18,8 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.lang.reflect.Type;
-
 import javax.json.JsonValue;
+import java.lang.reflect.Type;
 
 /**
  * Handles reading Json for Objects.
@@ -31,6 +30,4 @@ public interface MappingParser {
     <T> T readObject(Type targetType);
 
     <T> T readObject(JsonValue jsonValue, Type targetType);
-
-    <T> T convert(Class<T> clazz, String value);
 }

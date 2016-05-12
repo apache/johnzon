@@ -26,6 +26,14 @@ import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonString;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import javax.xml.bind.DatatypeConverter;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -55,15 +63,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonString;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-import javax.xml.bind.DatatypeConverter;
 
 /**
  * This class is not concurrently usable as it contains state.
@@ -113,11 +112,6 @@ public class MappingParserImpl implements MappingParser {
     @Override
     public <T> T readObject(JsonValue jsonValue, Type targetType) {
         return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType);
-    }
-
-    @Override
-    public <T> T convert(final Class<T> clazz, final String value) {
-        return (T) config.findAdapter(clazz).to(value);
     }
 
     private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
@@ -630,11 +624,6 @@ public class MappingParserImpl implements MappingParser {
                 return delegate.readObject(jsonValue, targetType, false);
             }
             return delegate.readObject(jsonValue, targetType);
-        }
-
-        @Override
-        public <T> T convert(final Class<T> clazz, final String value) {
-            return delegate.convert(clazz, value);
         }
     }
 
