@@ -76,6 +76,70 @@ mapper.writeObject(object, outputStream);
 final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.class);
 ]]></pre>
 
+The mapper uses a direct java to json representation.
+
+For instance this java bean:
+
+<pre class="prettyprint linenums"><![CDATA[
+public class MyModel {
+  private int id;
+  private String name;
+  
+  // getters/setters
+}
+]]></pre>
+
+will be mapped to:
+
+<pre class="prettyprint linenums"><![CDATA[
+{
+  "id": 1234,
+  "name": "Johnzon doc"
+}
+]]></pre>
+
+Note that Johnzon supports several customization either directly on the MapperBuilder of through annotations.
+
+#### @JohnzonIgnore
+
+@JohnzonIgnore is used to ignore a field. You can optionally say you ignore the field until some version
+if the mapper has a version:
+
+<pre class="prettyprint linenums"><![CDATA[
+public class MyModel {
+  @JohnzonIgnore
+  private String name;
+  
+  // getters/setters
+}
+]]></pre>
+
+Or to support name for version 3, 4, ... but ignore it for 1 and 2:
+
+
+<pre class="prettyprint linenums"><![CDATA[
+public class MyModel {
+  @JohnzonIgnore(minVersion = 3)
+  private String name;
+  
+  // getters/setters
+}
+]]></pre>
+
+#### @JohnzonConverter
+
+Converters are used for advanced mapping between java and json.
+
+There are several converter types:
+
+1. Converter: map java to json and the opposite based on the string representation
+2. Adapter: a converter not limited to String
+3. Reader: to converter from json to java at low level
+4. Writer: to converter from java to json at low level
+
+The most common is to customize date format but they all take :
+
+
 ### JAX-RS (stable)
 
 <pre class="prettyprint linenums"><![CDATA[
@@ -94,6 +158,51 @@ JAX-RS module provides two providers (and underlying MessageBodyReaders and Mess
 
 Note: Wildcard providers are basically the same as other provider but instead of application/json they support */json, */*+json, */x-json, */javascript, */x-javascript. This
 split makes it easier to mix json and other MediaType in the same resource (like text/plain, xml etc since JAX-RS API always matches as true wildcard type in some version whatever the subtype is).
+
+### TomEE Configuration
+
+TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want however to customize it you need to follow this procedure:
+
+1. Create a WEB-INF/openejb-jar.xml:
+
+<pre class="prettyprint linenums"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<openejb-jar>
+  <pojo-deployment class-name="jaxrs-application">
+    <properties>
+      # optional but requires to skip scanned providers if set to true
+      cxf.jaxrs.skip-provider-scanning = true
+      # list of providers we want
+      cxf.jaxrs.providers = johnzon,org.apache.openejb.server.cxf.rs.EJBAccessExceptionMapper
+    </properties>
+  </pojo-deployment>
+</openejb-jar>
+]]></pre>
+
+2. Create a WEB-INF/resources.xml to define johnzon service which will be use to instantiate the provider
+
+<pre class="prettyprint linenums"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+  <Service id="johnzon" class-name="org.apache.johnzon.jaxrs.ConfigurableJohnzonProvider">
+    # 1M
+    maxSize = 1048576
+    bufferSize = 1048576
+
+    # ordered attributes
+    attributeOrder = $order
+
+    # Additional types to ignore
+    ignores = org.apache.cxf.jaxrs.ext.multipart.MultipartBody
+  </Service>
+
+  <Service id="order" class-name="com.company.MyAttributeSorter" />
+
+</resources>
+]]></pre>
+
+Note: as you can see you mainly just need to define a service with the id johnzon (same as in openejb-jar.xml)
+and you can reference other instances using $id for services and @id for resources.
 
 ### Websocket (beta)
 
@@ -159,7 +268,7 @@ On server and client side configuration is easy: just provide the `encoders` and
         }
     }
 
-##### Mapper Samples
+##### WebSocket Samples
 
 Server configuration is as simple as providing `encoders` and `decoders` parameters to `@ServerEndpoint`:
 
