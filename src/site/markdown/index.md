@@ -134,11 +134,66 @@ There are several converter types:
 
 1. Converter: map java to json and the opposite based on the string representation
 2. Adapter: a converter not limited to String
-3. Reader: to converter from json to java at low level
-4. Writer: to converter from java to json at low level
+3. ObjectConverter.Reader: to converter from json to java at low level
+4. ObjectConverter.Writer: to converter from java to json at low level
+4. ObjectConverter.Codec: a Reader and Writer
 
-The most common is to customize date format but they all take :
+The most common is to customize date format but they all take. For that simple case we often use a Converter:
 
+<pre class="prettyprint linenums"><![CDATA[
+public class LocalDateConverter implements Converter<LocalDate> {
+    @Override
+    public String toString(final LocalDate instance) {
+        return instance.toString();
+    }
+
+    @Override
+    public LocalDate fromString(final String text) {
+        return LocalDate.parse(text);
+    }
+}
+]]></pre>
+
+If you need a more advanced use case and modify the structure of the json (wrapping the value for instance)
+you will likely need Reader/Writer or a Codec.
+
+Then once your converter developed you can either register globally on the MapperBuilder or simply decorate
+the field you want to convert with @JohnzonConverter:
+
+<pre class="prettyprint linenums"><![CDATA[
+public class MyModel {
+  @JohnzonConverter(LocalDateConverter.class)
+  private LocalDate date;
+  
+  // getters/setters
+}
+]]></pre>
+
+#### @JohnzonProperty
+
+Sometimes the json name is not java friendly (_foo or foo-bar or even 200 for instance). For that cases
+@JohnzonProperty allows to customize the name used:
+
+<pre class="prettyprint linenums"><![CDATA[
+public class MyModel {
+  @JohnzonProperty("__date")
+  private LocalDate date;
+  
+  // getters/setters
+}
+]]></pre>
+
+#### AccessMode
+
+On MapperBuilder you have several AccessMode available by default but you can also create your own one.
+
+The default available names are:
+
+* field: to use fields model and ignore getters/setters
+* method: use getters/setters (means if you have a getter but no setter you will serialize the property but not read it)
+* strict-method (default based on Pojo convention): same as method but getters for collections are not used to write
+
+You can use these names with setAccessModeName().
 
 ### JAX-RS (stable)
 
@@ -158,6 +213,8 @@ JAX-RS module provides two providers (and underlying MessageBodyReaders and Mess
 
 Note: Wildcard providers are basically the same as other provider but instead of application/json they support */json, */*+json, */x-json, */javascript, */x-javascript. This
 split makes it easier to mix json and other MediaType in the same resource (like text/plain, xml etc since JAX-RS API always matches as true wildcard type in some version whatever the subtype is).
+
+Tip: ConfigurableJohnzonProvider maps most of MapperBuilder configuration letting you configure it through any IoC including not programming language based formats.
 
 ### TomEE Configuration
 
@@ -203,6 +260,12 @@ TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want h
 
 Note: as you can see you mainly just need to define a service with the id johnzon (same as in openejb-jar.xml)
 and you can reference other instances using $id for services and @id for resources.
+
+### JSON-B (not yet fully compliant)
+
+Johnzon provides a module johnzon-jsonb and jsonb-api implementing JSON-B standard based on Johnzon Mapper.
+
+It fully reuses the JSON-B as API.
 
 ### Websocket (beta)
 
