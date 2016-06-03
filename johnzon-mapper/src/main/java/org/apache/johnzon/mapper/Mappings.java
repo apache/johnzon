@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
@@ -27,6 +28,7 @@ import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -60,11 +62,14 @@ public class Mappings {
         public final Adapter adapter;
         public final ObjectConverter.Reader reader;
         public final ObjectConverter.Writer writer;
+        public final Getter anyGetter;
+        public final Method anySetter;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
                                final Adapter<?, ?> adapter,
-                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer) {
+                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
+                               final Getter anyGetter, final Method anySetter) {
             this.clazz = clazz;
             this.factory = factory;
             this.getters = getters;
@@ -72,6 +77,8 @@ public class Mappings {
             this.adapter = adapter;
             this.writer = writer;
             this.reader = reader;
+            this.anyGetter = anyGetter;
+            this.anySetter = anySetter;
         }
     }
 
@@ -145,15 +152,15 @@ public class Mappings {
         @Override
         public String toString() {
             return "Getter{" +
-                "reader=" + reader +
-                ", version=" + version +
-                ", converter=" + converter +
-                ", itemConverter=" + itemConverter +
-                ", primitive=" + primitive +
-                ", array=" + array +
-                ", map=" + map +
-                ", collection=" + collection +
-                '}';
+                    "reader=" + reader +
+                    ", version=" + version +
+                    ", converter=" + converter +
+                    ", itemConverter=" + itemConverter +
+                    ", primitive=" + primitive +
+                    ", array=" + array +
+                    ", map=" + map +
+                    ", collection=" + collection +
+                    '}';
         }
     }
 
@@ -185,7 +192,7 @@ public class Mappings {
                 if (converter instanceof ObjectConverter.Reader) {
                     theObjectConverter = (ObjectConverter.Reader) converter;
                 }
-                if (theObjectConverter == null){
+                if (theObjectConverter == null) {
                     Adapter adapter;
                     if (converter instanceof Converter) {
                         adapter = new ConverterAdapter((Converter) converter);
@@ -209,14 +216,14 @@ public class Mappings {
         @Override
         public String toString() {
             return "Setter{" +
-                "writer=" + writer +
-                ", version=" + version +
-                ", paramType=" + paramType +
-                ", converter=" + converter +
-                ", itemConverter=" + itemConverter +
-                ", primitive=" + primitive +
-                ", array=" + array +
-                '}';
+                    "writer=" + writer +
+                    ", version=" + version +
+                    ", paramType=" + paramType +
+                    ", converter=" + converter +
+                    ", itemConverter=" + itemConverter +
+                    ", primitive=" + primitive +
+                    ", array=" + array +
+                    '}';
         }
     }
 
@@ -284,11 +291,11 @@ public class Mappings {
         } else if (type == long.class || type == Long.class) {
             return true;
         } else if (type == int.class || type == Integer.class
-            || type == byte.class || type == Byte.class
-            || type == short.class || type == Short.class) {
+                || type == byte.class || type == Byte.class
+                || type == short.class || type == Short.class) {
             return true;
         } else if (type == double.class || type == Double.class
-            || type == float.class || type == Float.class) {
+                || type == float.class || type == Float.class) {
             return true;
         } else if (type == boolean.class || type == Boolean.class) {
             return true;
@@ -372,10 +379,16 @@ public class Mappings {
             addSetterIfNeeded(setters, key, writer.getValue(), copyDate);
         }
 
+        final Method anyGetter = accessMode.findAnyGetter(clazz);
         final ClassMapping mapping = new ClassMapping(
                 clazz, accessMode.findFactory(clazz), getters, setters,
                 accessMode.findAdapter(clazz),
-                accessMode.findReader(clazz), accessMode.findWriter(clazz));
+                accessMode.findReader(clazz),
+                accessMode.findWriter(clazz),
+                anyGetter != null ? new Getter(
+                        new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
+                        false, false, false, true, null, null, -1) : null,
+                accessMode.findAnySetter(clazz));
 
         accessMode.afterParsed(clazz);
 
@@ -386,8 +399,8 @@ public class Mappings {
         Class<?> clazz = inClazz;
         // unproxy to get a clean model
         while (clazz != null && clazz != Object.class
-            && (clazz.getName().contains("$$") || clazz.getName().contains("$proxy")
-            || clazz.getName().startsWith("org.apache.openjpa.enhance.") /* subclassing mode, not the default */)) {
+                && (clazz.getName().contains("$$") || clazz.getName().contains("$proxy")
+                || clazz.getName().startsWith("org.apache.openjpa.enhance.") /* subclassing mode, not the default */)) {
             clazz = clazz.getSuperclass();
         }
         if (clazz == null || clazz == Object.class) { // shouldn't occur but a NPE protection
@@ -412,9 +425,9 @@ public class Mappings {
             final Type param = value.getType();
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
-                value, isPrimitive(param), returnType != null && returnType.isArray(), param,
-                findConverter(copyDate, value), value.findObjectConverterReader(),
-                writeIgnore != null ? writeIgnore.minVersion() : -1);
+                    value, isPrimitive(param), returnType != null && returnType.isArray(), param,
+                    findConverter(copyDate, value), value.findObjectConverterReader(),
+                    writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
         }
     }
@@ -428,13 +441,13 @@ public class Mappings {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
             final Getter getter = new Getter(value, isPrimitive(returnType),
-                returnType != null && returnType.isArray(),
-                (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
-                    || (returnType != null && Collection.class.isAssignableFrom(returnType)),
-                (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
-                    || (returnType != null && Map.class.isAssignableFrom(returnType)),
-                findConverter(copyDate, value), value.findObjectConverterWriter(),
-                readIgnore != null ? readIgnore.minVersion() : -1);
+                    returnType != null && returnType.isArray(),
+                    (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                            || (returnType != null && Collection.class.isAssignableFrom(returnType)),
+                    (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
+                            || (returnType != null && Map.class.isAssignableFrom(returnType)),
+                    findConverter(copyDate, value), value.findObjectConverterWriter(),
+                    readIgnore != null ? readIgnore.minVersion() : -1);
             getters.put(key, getter);
         }
     }
@@ -507,8 +520,8 @@ public class Mappings {
             final ParameterizedType type = ParameterizedType.class.cast(decoratedType.getType());
             final Type rawType = type.getRawType();
             if (Class.class.isInstance(rawType)
-                && Collection.class.isAssignableFrom(Class.class.cast(rawType))
-                && type.getActualTypeArguments().length >= 1) {
+                    && Collection.class.isAssignableFrom(Class.class.cast(rawType))
+                    && type.getActualTypeArguments().length >= 1) {
                 typeToTest = type.getActualTypeArguments()[0];
             } // TODO: map
         }
@@ -533,7 +546,7 @@ public class Mappings {
                     if (adapterEntry.getKey().getFrom() == type && !(
                             // ignore internal converters to let primitives be correctly handled
                             ConverterAdapter.class.isInstance(adapterEntry.getValue()) &&
-                            ConverterAdapter.class.cast(adapterEntry.getValue()).getConverter().getClass().getName().startsWith("org.apache.johnzon.mapper."))) {
+                                    ConverterAdapter.class.cast(adapterEntry.getValue()).getConverter().getClass().getName().startsWith("org.apache.johnzon.mapper."))) {
 
                         if (converter != null) {
                             throw new IllegalArgumentException("Ambiguous adapter for " + decoratedType);
@@ -652,7 +665,7 @@ public class Mappings {
                 final String key = setter.getKey();
                 final Object rawValue = nested.get(key);
                 Object val = value == null || setterValue.converter == null ?
-                    rawValue : Converter.class.cast(setterValue.converter).toString(rawValue);
+                        rawValue : Converter.class.cast(setterValue.converter).toString(rawValue);
                 if (val == null) {
                     continue;
                 }

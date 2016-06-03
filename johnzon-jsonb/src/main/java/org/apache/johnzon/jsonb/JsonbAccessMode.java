@@ -29,9 +29,11 @@ import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.TypeAwareAdapter;
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
@@ -104,6 +106,17 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     private final Collection<JohnzonAdapterFactory.Instance<?>> toRelease = new ArrayList<>();
     private final Supplier<JsonParserFactory> parserFactory;
     private final ConcurrentMap<Class<?>, ParsingCacheEntry> parsingCache = new ConcurrentHashMap<>();
+    private final BaseAccessMode partialDelegate = new BaseAccessMode(false, false) {
+        @Override
+        protected Map<String, Reader> doFindReaders(Class<?> clazz) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected Map<String, Writer> doFindWriters(Class<?> clazz) {
+            throw new UnsupportedOperationException();
+        }
+    };
 
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
@@ -329,7 +342,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final Map<String, Reader> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Reader> entry : readers.entrySet()) {
             final Reader initialReader = entry.getValue();
-            if (isTransient(initialReader, visibility)) {
+            if (isTransient(initialReader, visibility) || initialReader.getAnnotation(JohnzonAny.class) != null) {
                 continue;
             }
 
@@ -525,8 +538,19 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     @Override
+    public Method findAnyGetter(final Class<?> clazz) {
+        return partialDelegate.findAnyGetter(clazz);
+    }
+
+    @Override
+    public Method findAnySetter(final Class<?> clazz) {
+        return partialDelegate.findAnySetter(clazz);
+    }
+
+    @Override
     public void afterParsed(final Class<?> clazz) {
         parsingCache.remove(clazz);
+        partialDelegate.afterParsed(clazz);
     }
 
     private boolean isReversedAdapter(final Class<?> payloadType, final Class<?> aClass, final Adapter<?, ?> instance) {

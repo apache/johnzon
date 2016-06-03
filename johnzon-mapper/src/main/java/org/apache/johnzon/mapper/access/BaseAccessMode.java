@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.MapperConverter;
@@ -31,6 +32,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -212,6 +214,42 @@ public abstract class BaseAccessMode implements AccessMode {
                 return constructorItemParameterConverters;
             }
         };
+    }
+
+    @Override
+    public Method findAnyGetter(final Class<?> clazz) {
+        Method m = null;
+        for (final Method current : clazz.getMethods()) {
+            if (current.getAnnotation(JohnzonAny.class) != null) {
+                if (current.getParameterTypes().length == 0) {
+                    if (!Map.class.isAssignableFrom(current.getReturnType())) {
+                        throw new IllegalArgumentException("@JohnzonAny getters can only return a Map<String, Object>");
+                    }
+                    if (m != null) {
+                        throw new IllegalArgumentException("Ambiguous @JohnzonAny on " + m + " and " + current);
+                    }
+                    m = current;
+                }
+            }
+        }
+        return m;
+    }
+
+    @Override
+    public Method findAnySetter(final Class<?> clazz) {
+        Method m = null;
+        for (final Method current : clazz.getMethods()) {
+            if (current.getAnnotation(JohnzonAny.class) != null) {
+                final Class<?>[] parameterTypes = current.getParameterTypes();
+                if (parameterTypes.length == 2 && parameterTypes[0] == String.class && parameterTypes[1] == Object.class) {
+                    if (m != null) {
+                        throw new IllegalArgumentException("Ambiguous @JohnzonAny on " + m + " and " + current);
+                    }
+                    m = current;
+                }
+            }
+        }
+        return m;
     }
 
     private <T> Map<String, T> sanitize(final Class<?> type, final Map<String, T> delegate) {

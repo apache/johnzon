@@ -183,6 +183,35 @@ public class MyModel {
 }
 ]]></pre>
 
+#### @JohnzonAny
+
+If you don't fully know you model but want to handle all keys you can use @JohnzonAny to capture/serialize them all:
+
+<pre class="prettyprint linenums"><![CDATA[
+public class AnyMe {
+    private String name; // known
+    private Map<String, Object> any = new TreeMap<String, Object>(); // unknown
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(final String name) {
+        this.name = name;
+    }
+
+    @Any
+    public Map<String, Object> getAny() {
+        return any;
+    }
+
+    @Any
+    public void handle(final String key, final Object val) {
+        any.put(key, val);
+    }
+}
+]]></pre>
+
 #### AccessMode
 
 On MapperBuilder you have several AccessMode available by default but you can also create your own one.

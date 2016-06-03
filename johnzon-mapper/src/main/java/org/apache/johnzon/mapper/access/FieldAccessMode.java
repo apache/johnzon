@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.ObjectConverter;
@@ -40,7 +41,7 @@ public class FieldAccessMode extends BaseAccessMode {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
         for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
             final String key = f.getKey();
-            if (isIgnored(key)) {
+            if (isIgnored(key) || f.getValue().getAnnotation(JohnzonAny.class) != null) {
                 continue;
             }
 

@@ -270,6 +270,15 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     getterEntry.getKey(),
                     val, getter.objectConverter);
         }
+
+        // @JohnzonAny doesn't respect comparator since it is a map and not purely in the model we append it after and
+        // sorting is up to the user for this part (TreeMap if desired)
+        if (classMapping.anyGetter != null) {
+            final Map<String, Object> any = Map.class.cast(classMapping.anyGetter.reader.read(object));
+            if (any != null) {
+                writeMapBody(any, null);
+            }
+        }
     }
 
     private void writeValue(final Class<?> type,

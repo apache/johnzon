@@ -317,6 +317,20 @@ public class MappingParserImpl implements MappingParser {
                 }
             }
         }
+        if (classMapping.anySetter != null) {
+            for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
+                final String key = entry.getKey();
+                if (!classMapping.setters.containsKey(key)) {
+                    try {
+                        classMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null));
+                    } catch (final IllegalAccessException e) {
+                        throw new IllegalStateException(e);
+                    } catch (final InvocationTargetException e) {
+                        throw new MapperException(e.getCause());
+                    }
+                }
+            }
+        }
 
         return t;
     }

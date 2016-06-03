@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.ObjectConverter;
@@ -48,7 +49,7 @@ public class MethodAccessMode extends BaseAccessMode {
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
             final Method readMethod = descriptor.getReadMethod();
             if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(descriptor.getName())) {
+                if (isIgnored(descriptor.getName()) || readMethod.getAnnotation(JohnzonAny.class) != null) {
                     continue;
                 }
                 readers.put(extractKey(descriptor), new MethodReader(readMethod, fixType(clazz, readMethod.getGenericReturnType())));

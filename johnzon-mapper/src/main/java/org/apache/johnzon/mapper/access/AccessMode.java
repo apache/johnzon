@@ -22,6 +22,7 @@ import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.ObjectConverter;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.Map;
@@ -60,6 +61,8 @@ public interface AccessMode {
     ObjectConverter.Reader<?> findReader(Class<?> clazz);
     ObjectConverter.Writer<?> findWriter(Class<?> clazz);
     Adapter<?, ?> findAdapter(Class<?> clazz);
+    Method findAnyGetter(Class<?> clazz);
+    Method findAnySetter(Class<?> clazz);
 
     /**
      * Called once johnzon will not use AccessMode anymore. Can be used to clean up any local cache.
