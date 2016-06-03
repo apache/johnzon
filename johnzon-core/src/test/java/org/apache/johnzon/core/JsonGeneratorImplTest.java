@@ -18,14 +18,7 @@
  */
 package org.apache.johnzon.core;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.HashMap;
+import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonReader;
@@ -34,8 +27,14 @@ import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.HashMap;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class JsonGeneratorImplTest {
     @Test
@@ -282,6 +281,73 @@ public class JsonGeneratorImplTest {
                         "    }\n" +
                         "  ]\n" +
                         "}", new String(baos.toByteArray()));
+    }
+
+    @Test
+    public void prettyArray() {
+        { // root
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }}).createGenerator(baos);
+            generator.writeStartArray().write("a").write("b").write(1).writeEnd().close();
+            assertEquals("[\n" +
+                    "  \"a\",\n" +
+                    "  \"b\",\n" +
+                    "  1\n" +
+                    "]", new String(baos.toByteArray()));
+        }
+        { // nested
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }}).createGenerator(baos);
+            generator.writeStartArray().writeStartArray().write("a").write("b").writeEnd().writeStartArray().writeEnd().writeEnd().close();
+            assertEquals("[\n" +
+                    "  [\n" +
+                    "    \"a\",\n" +
+                    "    \"b\"\n" +
+                    "  ],\n" +
+                    "  [\n" +
+                    "  ]\n" +
+                    "]", new String(baos.toByteArray()));
+        }
+        { // empty
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }}).createGenerator(baos);
+            generator.writeStartArray().writeEnd().close();
+            assertEquals("[\n]", new String(baos.toByteArray()));
+        }
+        { // empty nested
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }}).createGenerator(baos);
+            generator.writeStartArray().writeStartArray().writeEnd().writeStartArray().writeEnd().writeEnd().close();
+            assertEquals("[\n" +
+                    "  [\n" +
+                    "  ],\n" +
+                    "  [\n" +
+                    "  ]\n" +
+                    "]", new String(baos.toByteArray()));
+        }
+        { // nested in object
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final JsonGenerator generator = Json.createGeneratorFactory(new HashMap<String, Object>() {{
+                put(JsonGenerator.PRETTY_PRINTING, true);
+            }}).createGenerator(baos);
+            generator.writeStartObject().writeStartArray("foo").writeStartArray().writeEnd().writeStartArray().writeEnd().writeEnd().writeEnd().close();
+            assertEquals("{\n" +
+                    "  \"foo\":[\n" +
+                    "    [\n" +
+                    "    ],\n" +
+                    "    [\n" +
+                    "    ]\n" +
+                    "  ]\n" +
+                    "}", new String(baos.toByteArray()));
+        }
     }
     
     @Test

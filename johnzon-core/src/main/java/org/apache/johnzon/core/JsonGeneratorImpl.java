@@ -18,6 +18,14 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonArray;
+import javax.json.JsonException;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
+import javax.json.stream.JsonGenerationException;
+import javax.json.stream.JsonGenerator;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -29,15 +37,6 @@ import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-
-import javax.json.JsonArray;
-import javax.json.JsonException;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerationException;
-import javax.json.stream.JsonGenerator;
 
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
@@ -60,7 +59,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         private final boolean acceptsKey;
         private final boolean acceptsValue;
 
-        private GeneratorState(final boolean acceptsKey, final boolean acceptsValue) {
+        GeneratorState(final boolean acceptsKey, final boolean acceptsValue) {
             this.acceptsKey = acceptsKey;
             this.acceptsValue = acceptsValue;
         }
@@ -156,10 +155,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     @Override
     public JsonGenerator writeStartArray() {
         prepareValue();
-        state.push(GeneratorState.START_ARRAY);
-        depth++;
         writeIndent();
+        state.push(GeneratorState.START_ARRAY);
         justWrite(START_ARRAY_CHAR);
+        depth++;
         writeEol();
         return this;
     }
@@ -354,7 +353,9 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         checkArrayOrObject(false);
         final GeneratorState last = state.pop();
         depth--;
-        writeEol();
+        if (last != GeneratorState.START_ARRAY) {
+            writeEol();
+        }
         writeIndent();
         if (last == GeneratorState.IN_ARRAY || last == GeneratorState.START_ARRAY) {
             justWrite(END_ARRAY_CHAR);
@@ -667,6 +668,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     private void writeValueAsJsonString(final String value) {
         prepareValue();
+        final GeneratorState peek = state.peek();
+        if (peek == GeneratorState.START_ARRAY || peek == GeneratorState.IN_ARRAY) {
+            writeIndent();
+        }
         justWrite(QUOTE_CHAR);
         writeEscaped0(value);
         justWrite(QUOTE_CHAR);
@@ -675,18 +680,30 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     private void writeValue(final String value) {
         prepareValue();
+        final GeneratorState peek = state.peek();
+        if (peek == GeneratorState.START_ARRAY || peek == GeneratorState.IN_ARRAY) {
+            writeIndent();
+        }
         justWrite(String.valueOf(value));
         alignState();
     }
 
     private void writeValue(final int value) {
         prepareValue();
+        final GeneratorState peek = state.peek();
+        if (peek == GeneratorState.START_ARRAY || peek == GeneratorState.IN_ARRAY) {
+            writeIndent();
+        }
         writeInt0(value);
         alignState();
     }
 
     private void writeValue(final long value) {
         prepareValue();
+        final GeneratorState peek = state.peek();
+        if (peek == GeneratorState.START_ARRAY || peek == GeneratorState.IN_ARRAY) {
+            writeIndent();
+        }
         writeLong0(value);
         alignState();
     }
