@@ -271,7 +271,7 @@ public abstract class BaseAccessMode implements AccessMode {
 
     private Class<?> findClass(final Class<?> clazz, final GenericDeclaration genericDeclaration) {
 
-        if (clazz == genericDeclaration) {
+        if (clazz == null || clazz == genericDeclaration) {
             return clazz;
         }
 
