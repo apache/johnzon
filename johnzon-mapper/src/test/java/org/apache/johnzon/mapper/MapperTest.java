@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertArrayEquals;
@@ -159,31 +160,49 @@ public class MapperTest {
     }
 
     @Test
-    public void readMapWithJustObject() {
+    public void justObjectAsModel() {
+        final Mapper encodingAwareMapper = new MapperBuilder().setEncoding("UTF-8" /*otherwise guess algo fails for too small string*/).build();
+        final Mapper simpleMapper = new MapperBuilder().build();
         { // object
-            final Object raw = new MapperBuilder().build()
-                    .readObject(new ByteArrayInputStream(("{\"a\":1,\"b\":true,\"c\":null,\"d\":[1, 2], " +
-                                    "\"e\":[\"i\", \"j\"],\"k\":{\"a\":1,\"b\":true,\"c\":null,\"d\":[1, 2], \"e\":[\"i\", \"j\"]}}").getBytes()),
-                            Object.class);
+            final String object = "{\"a\":1,\"b\":true,\"c\":null,\"d\":[1,2]," +
+                    "\"e\":[\"i\",\"j\"],\"k\":{\"a\":1,\"b\":true,\"c\":null,\"d\":[1,2],\"e\":[\"i\",\"j\"]}}";
+            final Mapper mapper = simpleMapper;
+            final Object raw = mapper.readObject(new ByteArrayInputStream(object.getBytes()), Object.class);
             final Map<String, Object> data = Map.class.cast(raw);
             assertOneDimension(data, 6);
 
             final Map<String, Object> k = (Map<String, Object>) data.get("k");
             assertNotNull(k);
             assertOneDimension(k, 5);
+
+            final Map<String, Object> sorted = new TreeMap<String, Object>(data);
+            assertEquals(object.replace(",\"c\":null", ""), mapper.writeObjectAsString(sorted));
         }
         { // primitives
-            assertEquals(Boolean.TRUE, new MapperBuilder().build().readObject(new ByteArrayInputStream("true".getBytes()), Object.class));
-            assertEquals(Boolean.FALSE, new MapperBuilder().build().readObject(new ByteArrayInputStream("false".getBytes()), Object.class));
-            assertEquals(1., new MapperBuilder().setEncoding("UTF-8" /*otherwise guess algo fails, too small string*/).build()
+            // read
+            assertEquals(Boolean.TRUE, simpleMapper.readObject(new ByteArrayInputStream("true".getBytes()), Object.class));
+            assertEquals(Boolean.FALSE, simpleMapper.readObject(new ByteArrayInputStream("false".getBytes()), Object.class));
+            assertEquals(1., encodingAwareMapper
                     .readObject(new ByteArrayInputStream("1".getBytes()), Object.class));
-            assertEquals("val", new MapperBuilder().build().readObject(new ByteArrayInputStream("\"val\"".getBytes()), Object.class));
-            assertEquals(asList("val1", "val2"), new MapperBuilder().build().readObject(new ByteArrayInputStream("[\"val1\", \"val2\"]".getBytes()), Object.class));
+            assertEquals("val", simpleMapper.readObject(new ByteArrayInputStream("\"val\"".getBytes()), Object.class));
+            assertEquals(asList("val1", "val2"), simpleMapper.readObject(new ByteArrayInputStream("[\"val1\", \"val2\"]".getBytes()), Object.class));
             assertEquals(new HashMap<String, Object>() {{
                 put("a", "val");
                 put("b", true);
                 put("c", 1);
-            }}, new MapperBuilder().build().readObject(new ByteArrayInputStream("{\"a\":\"val\", \"b\": true, \"c\": 1}".getBytes()), Object.class));
+            }}, simpleMapper.readObject(new ByteArrayInputStream("{\"a\":\"val\", \"b\": true, \"c\": 1}".getBytes()), Object.class));
+
+            // write
+            assertEquals("true", simpleMapper.writeObjectAsString(true));
+            assertEquals("false", simpleMapper.writeObjectAsString(false));
+            assertEquals("1", simpleMapper.writeObjectAsString(1));
+            assertEquals("\"val\"", simpleMapper.writeObjectAsString("val"));
+            assertEquals("[\"val1\",\"val2\"]", simpleMapper.writeObjectAsString(asList("val1", "val2")));
+            assertEquals("{\"a\":\"val\",\"b\":true,\"c\":1}", simpleMapper.writeObjectAsString(new TreeMap<String, Object>() {{
+                put("a", "val");
+                put("b", true);
+                put("c", 1);
+            }}));
         }
     }
 

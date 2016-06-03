@@ -102,9 +102,12 @@ public class Mapper implements Closeable {
     }
 
     public void writeObject(final Object object, final Writer stream) {
-        if (JsonValue.class.isInstance(object) || String.class.isInstance(object) || Number.class.isInstance(object) || object == null) {
+        if (JsonValue.class.isInstance(object)
+                || Boolean.class.isInstance(object) || String.class.isInstance(object) || Number.class.isInstance(object)
+                || object == null) {
             try {
-                stream.write(String.valueOf(object));
+                final String valueOf = String.valueOf(object);
+                stream.write(String.class.isInstance(object) ? '"' + valueOf + '"' : valueOf);
             } catch (final IOException e) {
                 throw new MapperException(e);
             } finally {

@@ -57,4 +57,6 @@ public interface AccessMode {
     Comparator<String> fieldComparator(Class<?> clazz);
     Map<String, Reader> findReaders(Class<?> clazz);
     Map<String, Writer> findWriters(Class<?> clazz);
+    ObjectConverter.Reader<?> findReader(Class<?> clazz);
+    ObjectConverter.Writer<?> findWriter(Class<?> clazz);
 }

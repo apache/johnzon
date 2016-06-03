@@ -22,6 +22,7 @@ import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.MapperConverter;
+import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
@@ -79,6 +80,16 @@ public abstract class BaseAccessMode implements AccessMode {
     // editable during builder time, dont do it at runtime or you get no guarantee
     public Map<Class<?>, String[]> getFieldsToRemove() {
         return fieldsToRemove;
+    }
+
+    @Override
+    public ObjectConverter.Reader<?> findReader(final Class<?> clazz) {
+        return null; // TODO: converter?
+    }
+
+    @Override
+    public ObjectConverter.Writer<?> findWriter(final Class<?> clazz) {
+        return null; // TODO: converter?
     }
 
     @Override

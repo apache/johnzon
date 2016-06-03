@@ -560,6 +560,16 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return result;
     }
 
+    @Override
+    public Reader findReader(final Class<?> clazz) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
+    @Override
+    public Writer findWriter(final Class<?> clazz) {
+        throw new UnsupportedOperationException("TODO");
+    }
+
     private boolean isOptional(final DecoratedType value) {
         return ParameterizedType.class.isInstance(value.getType()) && Optional.class == ParameterizedType.class.cast(value.getType()).getRawType();
     }
