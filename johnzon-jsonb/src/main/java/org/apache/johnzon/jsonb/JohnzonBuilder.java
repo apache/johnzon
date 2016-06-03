@@ -189,6 +189,9 @@ public class JohnzonBuilder implements JsonbBuilder {
                 });
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
+        config.getProperty("johnzon.enforceQuoteString")
+                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .ifPresent(builder::setEnforceQuoteString);
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 

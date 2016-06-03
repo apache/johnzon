@@ -20,6 +20,7 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
+import javax.json.bind.Jsonb;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
@@ -75,7 +76,9 @@ public class JsonbWriteTest {
     public void date() {
         final DateFormatting simple = new DateFormatting();
         simple.setDate(LocalDateTime.now());
-        assertEquals("{\"date\":\"" + LocalDateTime.now().getYear() + "\"}", JsonbProvider.provider().create().build().toJson(simple));
+        final Jsonb build = JsonbProvider.provider().create().build();
+        final int currentYear = LocalDateTime.now().getYear();
+        assertEquals("{\"date\":\"" + currentYear + "\"}", build.toJson(simple));
     }
 
     public static class Simple {

@@ -57,16 +57,19 @@ public class Mappings {
         final AccessMode.Factory factory;
         final Map<String, Getter> getters;
         final Map<String, Setter> setters;
-        final ObjectConverter.Reader<?> reader;
-        final ObjectConverter.Writer<?> writer;
+        final Adapter adapter;
+        final ObjectConverter.Reader reader;
+        final ObjectConverter.Writer writer;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
+                               final Adapter<?, ?> adapter,
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer) {
             this.clazz = clazz;
             this.factory = factory;
             this.getters = getters;
             this.setters = setters;
+            this.adapter = adapter;
             this.writer = writer;
             this.reader = reader;
         }
@@ -369,7 +372,15 @@ public class Mappings {
             }
             addSetterIfNeeded(setters, key, writer.getValue(), copyDate);
         }
-        return new ClassMapping(clazz, accessMode.findFactory(clazz), getters, setters, accessMode.findReader(clazz), accessMode.findWriter(clazz));
+
+        final ClassMapping mapping = new ClassMapping(
+                clazz, accessMode.findFactory(clazz), getters, setters,
+                accessMode.findAdapter(clazz),
+                accessMode.findReader(clazz), accessMode.findWriter(clazz));
+
+        accessMode.afterParsed(clazz);
+
+        return mapping;
     }
 
     protected Class<?> findModelClass(final Class<?> inClazz) {

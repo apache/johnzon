@@ -98,7 +98,7 @@ public class MappingParserImpl implements MappingParser {
     public <T> T readObject(Type targetType) {
 
         try {
-            if (jsonReader instanceof JsonReaderImpl) {
+            if (jsonReader.getClass().getName().equals("org.apache.johnzon.core.JsonReaderImpl")) {
                 // later in JSON-P 1.1 we can remove this hack again
                 return readObject(((JsonReaderImpl) jsonReader).readValue(), targetType);
             }
@@ -264,6 +264,15 @@ public class MappingParserImpl implements MappingParser {
         if (classMapping == null) {
             throw new MapperException("Can't map " + type);
         }
+
+        if (applyObjectConverter && classMapping.reader != null) {
+            return classMapping.reader.fromJson(object, type, new SuppressConversionMappingParser(this, object));
+        }
+        /* doesn't work yet
+        if (classMapping.adapter != null) {
+            return classMapping.adapter.from(t);
+        }
+        */
 
         if (classMapping.factory == null) {
             throw new MapperException(classMapping.clazz + " not instantiable");

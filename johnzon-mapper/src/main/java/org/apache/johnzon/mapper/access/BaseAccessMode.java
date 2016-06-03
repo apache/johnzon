@@ -93,6 +93,16 @@ public abstract class BaseAccessMode implements AccessMode {
     }
 
     @Override
+    public Adapter<?, ?> findAdapter(Class<?> clazz) {
+        return null; // TODO: converter?
+    }
+
+    @Override
+    public void afterParsed(final Class<?> clazz) {
+        // no-op
+    }
+
+    @Override
     public Factory findFactory(final Class<?> clazz) {
         Constructor<?> constructor = null;
         for (final Constructor<?> c : clazz.getDeclaredConstructors()) {

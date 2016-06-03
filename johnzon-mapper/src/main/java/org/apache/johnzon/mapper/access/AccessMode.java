@@ -59,4 +59,12 @@ public interface AccessMode {
     Map<String, Writer> findWriters(Class<?> clazz);
     ObjectConverter.Reader<?> findReader(Class<?> clazz);
     ObjectConverter.Writer<?> findWriter(Class<?> clazz);
+    Adapter<?, ?> findAdapter(Class<?> clazz);
+
+    /**
+     * Called once johnzon will not use AccessMode anymore. Can be used to clean up any local cache.
+     *
+     * @param clazz the parsed class.
+     */
+    void afterParsed(Class<?> clazz);
 }

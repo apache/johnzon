@@ -163,6 +163,7 @@ public class MapperTest {
     public void justObjectAsModel() {
         final Mapper encodingAwareMapper = new MapperBuilder().setEncoding("UTF-8" /*otherwise guess algo fails for too small string*/).build();
         final Mapper simpleMapper = new MapperBuilder().build();
+        final Mapper enforcedQuotes = new MapperBuilder().setEnforceQuoteString().build();
         { // object
             final String object = "{\"a\":1,\"b\":true,\"c\":null,\"d\":[1,2]," +
                     "\"e\":[\"i\",\"j\"],\"k\":{\"a\":1,\"b\":true,\"c\":null,\"d\":[1,2],\"e\":[\"i\",\"j\"]}}";
@@ -196,7 +197,7 @@ public class MapperTest {
             assertEquals("true", simpleMapper.writeObjectAsString(true));
             assertEquals("false", simpleMapper.writeObjectAsString(false));
             assertEquals("1", simpleMapper.writeObjectAsString(1));
-            assertEquals("\"val\"", simpleMapper.writeObjectAsString("val"));
+            assertEquals("\"val\"", enforcedQuotes.writeObjectAsString("val"));
             assertEquals("[\"val1\",\"val2\"]", simpleMapper.writeObjectAsString(asList("val1", "val2")));
             assertEquals("{\"a\":\"val\",\"b\":true,\"c\":1}", simpleMapper.writeObjectAsString(new TreeMap<String, Object>() {{
                 put("a", "val");

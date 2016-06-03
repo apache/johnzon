@@ -119,6 +119,7 @@ public class MapperBuilder {
     private boolean treatByteArrayAsBase64;
     private boolean treatByteArrayAsBase64URL;
     private boolean readAttributeBeforeWrite;
+    private boolean enforceQuoteString;
     private AccessMode accessMode;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
     private ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(DEFAULT_CONVERTERS);
@@ -192,7 +193,7 @@ public class MapperBuilder {
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
-                        accessMode, encoding, attributeOrder),
+                        accessMode, encoding, attributeOrder, enforceQuoteString),
                 closeables);
     }
 
@@ -353,4 +354,12 @@ public class MapperBuilder {
         return this;
     }
 
+    public MapperBuilder setEnforceQuoteString() {
+        return setEnforceQuoteString(true);
+    }
+
+    public MapperBuilder setEnforceQuoteString(final boolean val) {
+        this.enforceQuoteString = val;
+        return this;
+    }
 }

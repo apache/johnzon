@@ -107,7 +107,7 @@ public class Mapper implements Closeable {
                 || object == null) {
             try {
                 final String valueOf = String.valueOf(object);
-                stream.write(String.class.isInstance(object) ? '"' + valueOf + '"' : valueOf);
+                stream.write(config.isEnforceQuoteString() && String.class.isInstance(object) && !valueOf.startsWith("\"") ? '"' + valueOf + '"' : valueOf);
             } catch (final IOException e) {
                 throw new MapperException(e);
             } finally {

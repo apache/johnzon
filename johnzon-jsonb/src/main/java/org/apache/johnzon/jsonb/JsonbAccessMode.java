@@ -30,10 +30,12 @@ import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.TypeAwareAdapter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.ReversedAdapter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
@@ -80,6 +82,8 @@ import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -99,6 +103,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     private final JohnzonAdapterFactory factory;
     private final Collection<JohnzonAdapterFactory.Instance<?>> toRelease = new ArrayList<>();
     private final Supplier<JsonParserFactory> parserFactory;
+    private final ConcurrentMap<Class<?>, ParsingCacheEntry> parsingCache = new ConcurrentHashMap<>();
 
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
@@ -341,40 +346,6 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 finalReader = initialReader;
             }
 
-            // we are visible
-            final JsonbTypeSerializer serializer = initialReader.getAnnotation(JsonbTypeSerializer.class);
-            final JsonbProperty property = initialReader.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = initialReader.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = nillable != null || (property != null && property.nillable());
-            final JsonbTypeAdapter adapter = initialReader.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbDateFormat dateFormat = initialReader.getAnnotation(JsonbDateFormat.class);
-            final JsonbNumberFormat numberFormat = initialReader.getAnnotation(JsonbNumberFormat.class);
-            validateAnnotations(initialReader, adapter, dateFormat, numberFormat);
-
-            final Adapter<?, ?> converter;
-            try {
-                converter = adapter == null && dateFormat == null && numberFormat == null ?
-                        defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
-                        toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
-            } catch (final InstantiationException | IllegalAccessException e) {
-                throw new IllegalArgumentException(e);
-            }
-
-            final ObjectConverter.Writer writer;
-            if (serializer != null) {
-                final Class<? extends JsonbSerializer> value = serializer.value();
-                final ParameterizedType pt = findPt(value, JsonbSerializer.class);
-                if (pt == null) {
-                    throw new IllegalArgumentException(value + " doesn't implement JsonbSerializer");
-                }
-                final JohnzonAdapterFactory.Instance<? extends JsonbSerializer> instance = newInstance(value);
-                toRelease.add(instance);
-                writer = (instance1, jsonbGenerator) ->
-                        instance.getValue().serialize(instance1, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator));
-            } else {
-                writer = null;
-            }
-
             // handle optionals since mapper is still only java 7
             final Type type;
             final Function<Object, Object> reader;
@@ -395,6 +366,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 reader = finalReader::read;
             }
 
+            final WriterConverters writerConverters = new WriterConverters(initialReader);
+            final JsonbProperty property = initialReader.getAnnotation(JsonbProperty.class);
+            final JsonbNillable nillable = initialReader.getClassOrPackageAnnotation(JsonbNillable.class);
+            final boolean isNillable = nillable != null || (property != null && property.nillable());
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Reader() {
                 @Override
@@ -404,7 +379,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
                 @Override
                 public ObjectConverter.Writer<?> findObjectConverterWriter() {
-                    return writer;
+                    return writerConverters.writer;
                 }
 
                 @Override
@@ -424,7 +399,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
                 @Override
                 public Adapter<?, ?> findConverter() {
-                    return converter;
+                    return writerConverters.converter;
                 }
 
                 @Override
@@ -463,40 +438,6 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 finalWriter = initialWriter;
             }
 
-            // we are visible
-            final JsonbTypeDeserializer deserializer = initialWriter.getAnnotation(JsonbTypeDeserializer.class);
-            final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = nillable != null || (property != null && property.nillable());
-            final JsonbTypeAdapter adapter = initialWriter.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbDateFormat dateFormat = initialWriter.getAnnotation(JsonbDateFormat.class);
-            final JsonbNumberFormat numberFormat = initialWriter.getAnnotation(JsonbNumberFormat.class);
-            validateAnnotations(initialWriter, adapter, dateFormat, numberFormat);
-
-            final Adapter<?, ?> converter;
-            try {
-                converter = adapter == null && dateFormat == null && numberFormat == null ?
-                        defaultConverters.get(new AdapterKey(initialWriter.getType(), String.class)) :
-                        toConverter(initialWriter.getType(), adapter, dateFormat, numberFormat);
-            } catch (final InstantiationException | IllegalAccessException e) {
-                throw new IllegalArgumentException(e);
-            }
-
-            final ObjectConverter.Reader reader;
-            if (deserializer != null) {
-                final Class<? extends JsonbDeserializer> value = deserializer.value();
-                final ParameterizedType pt = findPt(value, JsonbDeserializer.class);
-                if (pt == null) {
-                    throw new IllegalArgumentException(value + " doesn't implement JsonbDeserializer");
-                }
-                final JohnzonAdapterFactory.Instance<? extends JsonbDeserializer> instance = newInstance(value);
-                toRelease.add(instance);
-                reader = (jsonObject, targetType, parser) ->
-                        instance.getValue().deserialize(parserFactory.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType);
-            } else {
-                reader = null;
-            }
-
             // handle optionals since mapper is still only java 7
             final Type type;
             final BiConsumer<Object, Object> writer;
@@ -517,6 +458,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 writer = finalWriter::write;
             }
 
+            final ReaderConverters converters = new ReaderConverters(initialWriter);
+            final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
+            final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
+            final boolean isNillable = nillable != null || (property != null && property.nillable());
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Writer() {
                 @Override
@@ -526,7 +471,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
                 @Override
                 public ObjectConverter.Reader<?> findObjectConverterReader() {
-                    return reader;
+                    return converters.reader;
                 }
 
                 @Override
@@ -546,7 +491,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
                 @Override
                 public Adapter<?, ?> findConverter() {
-                    return converter;
+                    return converters.converter;
                 }
 
                 @Override
@@ -561,13 +506,52 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     @Override
-    public Reader findReader(final Class<?> clazz) {
-        throw new UnsupportedOperationException("TODO");
+    public ObjectConverter.Reader<?> findReader(final Class<?> clazz) {
+        return getClassEntry(clazz).readers.reader;
     }
 
     @Override
-    public Writer findWriter(final Class<?> clazz) {
-        throw new UnsupportedOperationException("TODO");
+    public ObjectConverter.Writer<?> findWriter(final Class<?> clazz) {
+        return getClassEntry(clazz).writers.writer;
+    }
+
+    @Override
+    public Adapter<?, ?> findAdapter(final Class<?> clazz) { // TODO: find a way to not parse twice
+        final Adapter<?, ?> converter = getClassEntry(clazz).readers.converter;
+        if (converter != null && isReversedAdapter(clazz, converter.getClass(), converter)) {
+            return new ReversedAdapter<>(converter);
+        }
+        return converter;
+    }
+
+    @Override
+    public void afterParsed(final Class<?> clazz) {
+        parsingCache.remove(clazz);
+    }
+
+    private boolean isReversedAdapter(final Class<?> payloadType, final Class<?> aClass, final Adapter<?, ?> instance) {
+        if (TypeAwareAdapter.class.isInstance(instance)) {
+            return !payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getTo()))
+                    && payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getFrom()));
+        }
+        final Type[] genericInterfaces = aClass.getGenericInterfaces();
+        return Stream.of(genericInterfaces).filter(ParameterizedType.class::isInstance)
+                .filter(i -> Adapter.class.isAssignableFrom(Class.class.cast(ParameterizedType.class.cast(i).getRawType())))
+                .findFirst()
+                .map(pt -> payloadType.isAssignableFrom(Class.class.cast(ParameterizedType.class.cast(pt).getActualTypeArguments()[0])))
+                .orElseGet(() -> {
+                    final Class<?> superclass = aClass.getSuperclass();
+                    return superclass != Object.class && isReversedAdapter(payloadType, superclass, instance);
+                });
+    }
+
+    private ParsingCacheEntry getClassEntry(final Class<?> clazz) {
+        ParsingCacheEntry cache = parsingCache.get(clazz);
+        if (cache == null) {
+            cache = new ParsingCacheEntry(new ClassDecoratedType(clazz));
+            parsingCache.putIfAbsent(clazz, cache);
+        }
+        return cache;
     }
 
     private boolean isOptional(final DecoratedType value) {
@@ -635,5 +619,118 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     public void close() throws IOException {
         toRelease.forEach(JohnzonAdapterFactory.Instance::release);
         toRelease.clear();
+    }
+
+    private class ReaderConverters {
+        private Adapter<?, ?> converter;
+        private ObjectConverter.Reader reader;
+
+        ReaderConverters(final DecoratedType annotationHolder) {
+            final JsonbTypeDeserializer deserializer = annotationHolder.getAnnotation(JsonbTypeDeserializer.class);
+            final JsonbTypeAdapter adapter = annotationHolder.getAnnotation(JsonbTypeAdapter.class);
+            final JsonbDateFormat dateFormat = annotationHolder.getAnnotation(JsonbDateFormat.class);
+            final JsonbNumberFormat numberFormat = annotationHolder.getAnnotation(JsonbNumberFormat.class);
+            validateAnnotations(annotationHolder, adapter, dateFormat, numberFormat);
+
+            try {
+                converter = adapter == null && dateFormat == null && numberFormat == null ?
+                        defaultConverters.get(new AdapterKey(annotationHolder.getType(), String.class)) :
+                        toConverter(annotationHolder.getType(), adapter, dateFormat, numberFormat);
+            } catch (final InstantiationException | IllegalAccessException e) {
+                throw new IllegalArgumentException(e);
+            }
+
+            if (deserializer != null) {
+                final Class<? extends JsonbDeserializer> value = deserializer.value();
+                final ParameterizedType pt = findPt(value, JsonbDeserializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(value + " doesn't implement JsonbDeserializer");
+                }
+                final JohnzonAdapterFactory.Instance<? extends JsonbDeserializer> instance = newInstance(value);
+                toRelease.add(instance);
+                reader = (jsonObject, targetType, parser) ->
+                        instance.getValue().deserialize(parserFactory.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType);
+            } else {
+                reader = null;
+            }
+        }
+    }
+
+    private class WriterConverters {
+        private Adapter<?, ?> converter;
+        private ObjectConverter.Writer writer;
+
+        WriterConverters(final DecoratedType initialReader) {
+            final JsonbTypeSerializer serializer = initialReader.getAnnotation(JsonbTypeSerializer.class);
+            final JsonbTypeAdapter adapter = initialReader.getAnnotation(JsonbTypeAdapter.class);
+            final JsonbDateFormat dateFormat = initialReader.getAnnotation(JsonbDateFormat.class);
+            final JsonbNumberFormat numberFormat = initialReader.getAnnotation(JsonbNumberFormat.class);
+            validateAnnotations(initialReader, adapter, dateFormat, numberFormat);
+
+            try {
+                converter = adapter == null && dateFormat == null && numberFormat == null ?
+                        defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
+                        toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
+            } catch (final InstantiationException | IllegalAccessException e) {
+                throw new IllegalArgumentException(e);
+            }
+
+            if (serializer != null) {
+                final Class<? extends JsonbSerializer> value = serializer.value();
+                final ParameterizedType pt = findPt(value, JsonbSerializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(value + " doesn't implement JsonbSerializer");
+                }
+                final JohnzonAdapterFactory.Instance<? extends JsonbSerializer> instance = newInstance(value);
+                toRelease.add(instance);
+                writer = (instance1, jsonbGenerator) ->
+                        instance.getValue().serialize(instance1, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator));
+            } else {
+                writer = null;
+            }
+        }
+    }
+
+    private static class ClassDecoratedType implements DecoratedType {
+        private final Class<?> annotations;
+
+        ClassDecoratedType(final Class<?> clazz) {
+            this.annotations = clazz;
+        }
+
+        @Override
+        public Type getType() {
+            return annotations;
+        }
+
+        @Override
+        public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
+            return annotations.getAnnotation(clazz);
+        }
+
+        @Override
+        public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+            return null;
+        }
+
+        @Override
+        public Adapter<?, ?> findConverter() {
+            return null;
+        }
+
+        @Override
+        public boolean isNillable() {
+            return false;
+        }
+    }
+
+    private class ParsingCacheEntry {
+        private final ReaderConverters readers;
+        private final WriterConverters writers;
+
+        ParsingCacheEntry(final DecoratedType type) {
+            readers = new ReaderConverters(type);
+            writers = new WriterConverters(type);
+        }
     }
 }

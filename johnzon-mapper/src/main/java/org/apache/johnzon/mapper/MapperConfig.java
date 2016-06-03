@@ -62,6 +62,7 @@ class MapperConfig implements Cloneable {
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders;
     private final Comparator<String> attributeOrder;
+    private final boolean enforceQuoteString;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -76,7 +77,8 @@ class MapperConfig implements Cloneable {
                         final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL,
                         final boolean readAttributeBeforeWrite,
                         final AccessMode accessMode, final Charset encoding,
-                        final Comparator<String> attributeOrder) {
+                        final Comparator<String> attributeOrder,
+                        final boolean enforceQuoteString) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -91,6 +93,7 @@ class MapperConfig implements Cloneable {
         this.encoding = encoding;
         this.adapters = adapters;
         this.attributeOrder = attributeOrder;
+        this.enforceQuoteString = enforceQuoteString;
 
         this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
@@ -267,5 +270,9 @@ class MapperConfig implements Cloneable {
 
     public Comparator<String> getAttributeOrder() {
         return attributeOrder;
+    }
+
+    public boolean isEnforceQuoteString() {
+        return enforceQuoteString;
     }
 }

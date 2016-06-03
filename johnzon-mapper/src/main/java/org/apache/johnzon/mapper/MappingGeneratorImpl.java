@@ -224,11 +224,20 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
 
-    private JsonGenerator doWriteObjectBody(final Object object) throws IllegalAccessException, InvocationTargetException {
+    private void doWriteObjectBody(final Object object) throws IllegalAccessException, InvocationTargetException {
         final Class<?> objectClass = object.getClass();
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(objectClass);
         if (classMapping == null) {
             throw new MapperException("No mapping for " + objectClass.getName());
+        }
+
+        if (classMapping.writer != null) {
+            classMapping.writer.writeJson(object, this);
+            return;
+        }
+        if (classMapping.adapter != null) {
+            doWriteObjectBody(classMapping.adapter.to(object));
+            return;
         }
 
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
@@ -261,7 +270,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     getterEntry.getKey(),
                     val, getter.objectConverter);
         }
-        return generator;
     }
 
     private void writeValue(final Class<?> type,
