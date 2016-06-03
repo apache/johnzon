@@ -64,6 +64,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.util.Arrays.asList;
+
 /**
  * This class is not concurrently usable as it contains state.
  */
@@ -121,7 +123,7 @@ public class MappingParserImpl implements MappingParser {
         if (JsonObject.class.isInstance(jsonValue)) {
             return (T) buildObject(targetType, JsonObject.class.cast(jsonValue), applyObjectConverter);
         }
-        if (JsonString.class.isInstance(jsonValue) && targetType == String.class) {
+        if (JsonString.class.isInstance(jsonValue) && (targetType == String.class || targetType == Object.class)) {
             return (T) JsonString.class.cast(jsonValue).getString();
         }
         if (JsonNumber.class.isInstance(jsonValue)) {
@@ -132,7 +134,7 @@ public class MappingParserImpl implements MappingParser {
             if (targetType == long.class || targetType == Long.class) {
                 return (T) Long.valueOf(number.longValue());
             }
-            if (targetType == double.class || targetType == Double.class) {
+            if (targetType == double.class || targetType == Double.class || targetType == Object.class) {
                 return (T) Double.valueOf(number.doubleValue());
             }
             if (targetType == BigDecimal.class) {
@@ -157,16 +159,18 @@ public class MappingParserImpl implements MappingParser {
                 }
 
                 return (T) mapCollection(mapping, jsonArray, null);
-
+            }
+            if (Object.class == targetType) {
+                return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null))));
             }
         }
         if (JsonValue.NULL == jsonValue) {
             return null;
         }
-        if (JsonValue.TRUE == jsonValue && (Boolean.class == targetType || boolean.class == targetType)) {
+        if (JsonValue.TRUE == jsonValue && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.TRUE;
         }
-        if (JsonValue.FALSE == jsonValue && (Boolean.class == targetType || boolean.class == targetType)) {
+        if (JsonValue.FALSE == jsonValue && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.FALSE;
         }
         throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);

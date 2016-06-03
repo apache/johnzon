@@ -39,6 +39,7 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,6 +57,7 @@ public class Mapper implements Closeable {
     protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry = new ConcurrentHashMap<Adapter<?, ?>, AdapterKey>();
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
+    protected final Charset charset;
 
     Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory, MapperConfig config,
                   final Collection<Closeable> closeables) {
@@ -65,6 +67,7 @@ public class Mapper implements Closeable {
         this.mappings = new Mappings(config);
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
+        this.charset = config.getEncoding() == null ? null : config.getEncoding();
     }
 
 
@@ -131,7 +134,7 @@ public class Mapper implements Closeable {
         writeObject(object, generator);
     }
 
-    private void writeObject(Object object, JsonGenerator generator) {
+    private void writeObject(final Object object, final JsonGenerator generator) {
         MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
 
         RuntimeException originalException = null;
@@ -183,11 +186,11 @@ public class Mapper implements Closeable {
     }
 
     public <T> T readObject(final InputStream stream, final Type clazz) {
-        return mapObject(clazz, readerFactory.createReader(stream(stream)));
+        return mapObject(clazz, charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset));
     }
 
     public <T> Collection<T> readCollection(final InputStream stream, final ParameterizedType genericType) {
-        return mapObject(genericType, readerFactory.createReader(stream(stream)));
+        return mapObject(genericType, charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset));
     }
 
     public <T> T readJohnzonCollection(final InputStream stream, final JohnzonCollectionType<T> genericType) {
@@ -208,7 +211,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> T readTypedArray(final InputStream stream, final Class<?> elementType, final Class<T> arrayType) {
-        final JsonReader reader = readerFactory.createReader(stream(stream));
+        final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset);
         return arrayType.cast(mapArray(elementType, reader));
     }
 
@@ -218,7 +221,7 @@ public class Mapper implements Closeable {
     }
 
     public <T> T[] readArray(final InputStream stream, final Class<T> clazz) {
-        final JsonReader reader = readerFactory.createReader(stream(stream));
+        final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset);
         return (T[]) mapArray(clazz, reader);
     }
 
