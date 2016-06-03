@@ -191,7 +191,8 @@ public class MapperTest {
                 put("a", "val");
                 put("b", true);
                 put("c", 1);
-            }}, simpleMapper.readObject(new ByteArrayInputStream("{\"a\":\"val\", \"b\": true, \"c\": 1}".getBytes()), Object.class));
+                put("d", true);
+            }}, simpleMapper.readObject(new ByteArrayInputStream("{\"a\":\"val\", \"b\": true, \"c\": 1, \"d\": true}".getBytes()), Object.class));
 
             // write
             assertEquals("true", simpleMapper.writeObjectAsString(true));
@@ -199,11 +200,19 @@ public class MapperTest {
             assertEquals("1", simpleMapper.writeObjectAsString(1));
             assertEquals("\"val\"", enforcedQuotes.writeObjectAsString("val"));
             assertEquals("[\"val1\",\"val2\"]", simpleMapper.writeObjectAsString(asList("val1", "val2")));
-            assertEquals("{\"a\":\"val\",\"b\":true,\"c\":1}", simpleMapper.writeObjectAsString(new TreeMap<String, Object>() {{
+            assertEquals("{\"a\":\"val\",\"b\":true,\"c\":1,\"d\":true}", simpleMapper.writeObjectAsString(new TreeMap<String, Object>() {{
                 put("a", "val");
                 put("b", true);
                 put("c", 1);
+                put("d", true);
             }}));
+        }
+        { // in model
+            PrimitiveObject p = new PrimitiveObject();
+            p.bool = true;
+            final Mapper fieldMapper = new MapperBuilder().setAccessModeName("field").build();
+            assertEquals("{\"bool\":true}", fieldMapper.writeObjectAsString(p));
+            assertEquals(Boolean.TRUE, PrimitiveObject.class.cast(fieldMapper.readObject(new StringReader("{\"bool\":true}"), PrimitiveObject.class)).bool);
         }
     }
 
@@ -1060,4 +1069,7 @@ public class MapperTest {
         }
     }
 
+    public static class PrimitiveObject {
+        public Object bool;
+    }
 }

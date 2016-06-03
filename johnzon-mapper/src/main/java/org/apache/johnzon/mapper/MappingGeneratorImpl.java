@@ -339,6 +339,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     return;
                 }
             }
+            if (writePrimitives(key, type, value)) {
+                return;
+            }
             generator.writeStartObject(key);
             doWriteObjectBody(value);
             generator.writeEnd();

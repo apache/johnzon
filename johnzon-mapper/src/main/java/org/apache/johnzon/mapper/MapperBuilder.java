@@ -80,6 +80,7 @@ public class MapperBuilder {
         DEFAULT_CONVERTERS.put(new AdapterKey(String.class, String.class), new ConverterAdapter<String>(new StringConverter()));
         DEFAULT_CONVERTERS.put(new AdapterKey(BigDecimal.class, String.class), new ConverterAdapter<BigDecimal>(new BigDecimalConverter()));
         DEFAULT_CONVERTERS.put(new AdapterKey(BigInteger.class, String.class), new ConverterAdapter<BigInteger>(new BigIntegerConverter()));
+        /* primitives should be hanlded low level and adapters will wrap them in string which is unlikely
         DEFAULT_CONVERTERS.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<Byte>(new CachedDelegateConverter<Byte>(new ByteConverter())));
         DEFAULT_CONVERTERS.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<Character>(new CharacterConverter()));
         DEFAULT_CONVERTERS.put(new AdapterKey(Double.class, String.class), new ConverterAdapter<Double>(new DoubleConverter()));
@@ -96,6 +97,7 @@ public class MapperBuilder {
         DEFAULT_CONVERTERS.put(new AdapterKey(long.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Long.class, String.class)));
         DEFAULT_CONVERTERS.put(new AdapterKey(short.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Short.class, String.class)));
         DEFAULT_CONVERTERS.put(new AdapterKey(boolean.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Boolean.class, String.class)));
+        */
         DEFAULT_CONVERTERS.put(new AdapterKey(Locale.class, String.class), new LocaleConverter());
     }
 
@@ -126,6 +128,7 @@ public class MapperBuilder {
     private Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders = new HashMap<Class<?>, ObjectConverter.Reader<?>>();
     private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
+    private boolean primitiveConverters;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -184,6 +187,25 @@ public class MapperBuilder {
             } else {
                 throw new IllegalStateException("AccessMode is not an BaseAccessMode");
             }
+        }
+
+        if (primitiveConverters) {
+            adapters.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<Byte>(new CachedDelegateConverter<Byte>(new ByteConverter())));
+            adapters.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<Character>(new CharacterConverter()));
+            adapters.put(new AdapterKey(Double.class, String.class), new ConverterAdapter<Double>(new DoubleConverter()));
+            adapters.put(new AdapterKey(Float.class, String.class), new ConverterAdapter<Float>(new FloatConverter()));
+            adapters.put(new AdapterKey(Integer.class, String.class), new ConverterAdapter<Integer>(new IntegerConverter()));
+            adapters.put(new AdapterKey(Long.class, String.class), new ConverterAdapter<Long>(new LongConverter()));
+            adapters.put(new AdapterKey(Short.class, String.class), new ConverterAdapter<Short>(new ShortConverter()));
+            adapters.put(new AdapterKey(Boolean.class, String.class), new ConverterAdapter<Boolean>(new CachedDelegateConverter<Boolean>(new BooleanConverter())));
+            adapters.put(new AdapterKey(byte.class, String.class), adapters.get(new AdapterKey(Byte.class, String.class)));
+            adapters.put(new AdapterKey(char.class, String.class), adapters.get(new AdapterKey(Character.class, String.class)));
+            adapters.put(new AdapterKey(double.class, String.class), adapters.get(new AdapterKey(Double.class, String.class)));
+            adapters.put(new AdapterKey(float.class, String.class), adapters.get(new AdapterKey(Float.class, String.class)));
+            adapters.put(new AdapterKey(int.class, String.class), adapters.get(new AdapterKey(Integer.class, String.class)));
+            adapters.put(new AdapterKey(long.class, String.class), adapters.get(new AdapterKey(Long.class, String.class)));
+            adapters.put(new AdapterKey(short.class, String.class), adapters.get(new AdapterKey(Short.class, String.class)));
+            adapters.put(new AdapterKey(boolean.class, String.class), adapters.get(new AdapterKey(Boolean.class, String.class)));
         }
 
         return new Mapper(
@@ -360,6 +382,11 @@ public class MapperBuilder {
 
     public MapperBuilder setEnforceQuoteString(final boolean val) {
         this.enforceQuoteString = val;
+        return this;
+    }
+
+    public MapperBuilder setPrimitiveConverters(final boolean val) {
+        this.primitiveConverters = val;
         return this;
     }
 }

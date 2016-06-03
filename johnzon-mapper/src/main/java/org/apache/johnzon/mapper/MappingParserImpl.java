@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper;
 import org.apache.johnzon.core.JsonLongImpl;
 import org.apache.johnzon.core.JsonReaderImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
@@ -35,6 +36,9 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.xml.bind.DatatypeConverter;
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -73,9 +77,10 @@ public class MappingParserImpl implements MappingParser {
 
     private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
-
+    private static final CharacterConverter CHARACTER_CONVERTER = new CharacterConverter(); // this one is particular, share the logic
 
     protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry;
+    protected final ConcurrentMap<Class<?>, Method> valueOfs = new ConcurrentHashMap<Class<?>, Method>();
 
     private final MapperConfig config;
     private final Mappings mappings;
@@ -572,6 +577,38 @@ public class MappingParserImpl implements MappingParser {
             return text;
         }
         final Adapter converter = findAdapter(aClass);
+        Method method = valueOfs.get(aClass);
+        if (method == null && Class.class.isInstance(aClass)) { // handle primitives
+            final Class cast = Class.class.cast(aClass);
+            try {
+                method = cast.getMethod("valueOf", String.class);
+                if (Modifier.isPublic(method.getModifiers()) && Modifier.isStatic(method.getModifiers())) {
+                    valueOfs.putIfAbsent(cast, method);
+                } else {
+                    method = null;
+                }
+            } catch (final NoSuchMethodException e) {
+                // if a real primitive (very unlikely) try the wrapper
+                if (char.class == aClass) {
+                    return CHARACTER_CONVERTER.fromString(text);
+                }
+                try {
+                    return convertTo(Class.class.cast(cast.getField("TYPE").get(null)), text);
+                } catch (final Exception e1) {
+                    // no-op
+                }
+                // no-op
+            }
+        }
+        if (method != null) {
+            try {
+                return method.invoke(null, text);
+            } catch (final IllegalAccessException e) {
+                throw new IllegalStateException(e);
+            } catch (final InvocationTargetException e) {
+                throw new MapperException(e.getCause());
+            }
+        }
         if (converter == null) {
             config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), FALLBACK_CONVERTER);
             return FALLBACK_CONVERTER.to(text);
