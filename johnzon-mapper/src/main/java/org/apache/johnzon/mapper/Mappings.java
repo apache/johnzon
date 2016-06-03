@@ -53,13 +53,13 @@ import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 public class Mappings {
     public static class ClassMapping {
-        final Class<?> clazz;
-        final AccessMode.Factory factory;
-        final Map<String, Getter> getters;
-        final Map<String, Setter> setters;
-        final Adapter adapter;
-        final ObjectConverter.Reader reader;
-        final ObjectConverter.Writer writer;
+        public final Class<?> clazz;
+        public final AccessMode.Factory factory;
+        public final Map<String, Getter> getters;
+        public final Map<String, Setter> setters;
+        public final Adapter adapter;
+        public final ObjectConverter.Reader reader;
+        public final ObjectConverter.Writer writer;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
@@ -76,9 +76,9 @@ public class Mappings {
     }
 
     public static class CollectionMapping {
-        final Class<?> raw;
-        final Type arg;
-        final boolean primitive;
+        public final Class<?> raw;
+        public final Type arg;
+        public final boolean primitive;
 
         public CollectionMapping(final boolean primitive, final Class<?> collectionType, final Type fieldArgType) {
             this.raw = collectionType;
@@ -88,15 +88,15 @@ public class Mappings {
     }
 
     public static class Getter {
-        final AccessMode.Reader reader;
-        final int version;
-        final Adapter converter;
-        final Adapter itemConverter;
-        final ObjectConverter.Writer objectConverter;
-        final boolean primitive;
-        final boolean array;
-        final boolean map;
-        final boolean collection;
+        public final AccessMode.Reader reader;
+        public final int version;
+        public final Adapter converter;
+        public final Adapter itemConverter;
+        public final ObjectConverter.Writer objectConverter;
+        public final boolean primitive;
+        public final boolean array;
+        public final boolean map;
+        public final boolean collection;
 
         public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
@@ -227,12 +227,11 @@ public class Mappings {
 
     protected final MapperConfig config;
 
-
     public Mappings(final MapperConfig config) {
         this.config = config;
     }
 
-    public <T> CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
+    public CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
         CollectionMapping collectionMapping = collections.get(genericType);
         if (collectionMapping == null) {
             collectionMapping = createCollectionMapping(genericType);

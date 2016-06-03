@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
  * Contains internal configuration for all the mapper stuff.
  * It needs to be immutable and 100% runtime oriented.
  */
-class MapperConfig implements Cloneable {
+public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     private static final ObjectConverter.Codec NO_CONVERTER = new ObjectConverter.Codec() {
         @Override
