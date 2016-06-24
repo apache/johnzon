@@ -37,12 +37,12 @@
   <name>Apache Johnzon</name>
   <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
-  <url>http://incubator.apache.org/projects/johnzon.html</url>
+  <url>http://johnzon.apache.org</url>
 
   <properties>
     <jsonspecversion>1.0-alpha-1</jsonspecversion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <johnzon.site.url>https://svn.apache.org/repos/asf/incubator/johnzon/site/publish/</johnzon.site.url>
+    <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
     <felix.plugin.version>2.5.3</felix.plugin.version>
@@ -353,7 +353,7 @@
              <instructions>
                  <_removeheaders>Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool</_removeheaders>
                  <_versionpolicy>${bnd.version.policy}</_versionpolicy>
-                 <Bundle-DocURL>http://johnzon.incubator.apache.org/</Bundle-DocURL>
+                 <Bundle-DocURL>http://johnzon.apache.org/</Bundle-DocURL>
              </instructions>
          </configuration>
         </plugin>
@@ -396,9 +396,9 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-johnzon.git</developerConnection>
-    <url>https://git-wip-us.apache.org/repos/asf?p=incubator-johnzon.git</url>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/johnzon.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/johnzon.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf?p=johnzon.git</url>
     <tag>HEAD</tag>
   </scm>
 
@@ -569,21 +569,23 @@
   <mailingLists>
     <mailingList>
       <name>Johnzon Commits List</name>
-      <subscribe>commits-subscribe@johnzon.incubator.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@johnzon.incubator.apache.org</unsubscribe>
-      <post>commits@johnzon.incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-commits/</archive>
+      <subscribe>commits-subscribe@johnzon.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@johnzon.apache.org</unsubscribe>
+      <post>commits@johnzon.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/johnzon-commits/</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-commits/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-commits/</otherArchive>
       </otherArchives>
     </mailingList>
     <mailingList>
       <name>Johnzon Developer List</name>
-      <subscribe>dev-subscribe@johnzon.incubator.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@johnzon.incubator.apache.org</unsubscribe>
-      <post>dev@johnzon.incubator.apache.org</post>
-      <archive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-dev/</archive>
+      <subscribe>dev-subscribe@johnzon.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@johnzon.apache.org</unsubscribe>
+      <post>dev@johnzon.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/johnzon-dev/</archive>
       <otherArchives>
+        <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-johnzon-dev/</otherArchive>
         <otherArchive>http://mail-archives.apache.org/mod_mbox/incubator-fleece-dev/</otherArchive>
       </otherArchives>
     </mailingList>
