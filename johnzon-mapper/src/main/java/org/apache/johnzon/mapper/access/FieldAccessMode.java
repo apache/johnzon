@@ -41,7 +41,7 @@ public class FieldAccessMode extends BaseAccessMode {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
         for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
             final String key = f.getKey();
-            if (isIgnored(key) || f.getValue().getAnnotation(JohnzonAny.class) != null) {
+            if (isIgnored(key) || Meta.getAnnotation(f.getValue(), JohnzonAny.class) != null) {
                 continue;
             }
 
@@ -67,7 +67,7 @@ public class FieldAccessMode extends BaseAccessMode {
     }
 
     private String extractKey(final Field f, final String key) {
-        final JohnzonProperty property = f.getAnnotation(JohnzonProperty.class);
+        final JohnzonProperty property = Meta.getAnnotation(f, JohnzonProperty.class);
         return property != null ? property.value() : key;
     }
 
@@ -109,8 +109,8 @@ public class FieldAccessMode extends BaseAccessMode {
         @Override
         public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
             final Class<?> declaringClass = field.getDeclaringClass();
-            final T annotation = declaringClass.getAnnotation(clazz);
-            return annotation == null ? declaringClass.getPackage().getAnnotation(clazz) : annotation;
+            final T annotation = Meta.getAnnotation(declaringClass, clazz);
+            return annotation == null ? Meta.getAnnotation(declaringClass.getPackage(), clazz) : annotation;
         }
 
         @Override
@@ -129,7 +129,7 @@ public class FieldAccessMode extends BaseAccessMode {
 
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
-            return field.getAnnotation(clazz);
+            return Meta.getAnnotation(field, clazz);
         }
 
         @Override

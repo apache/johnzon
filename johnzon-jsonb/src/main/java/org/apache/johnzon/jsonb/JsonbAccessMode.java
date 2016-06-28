@@ -36,6 +36,7 @@ import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
+import org.apache.johnzon.mapper.access.Meta;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.ReversedAdapter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
@@ -172,12 +173,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             itemConverters = new Adapter<?, ?>[types.length];
             int i = 0;
             for (final Parameter parameter : (finalConstructor == null ? finalFactory : finalConstructor).getParameters()) {
-                final JsonbProperty property = parameter.getAnnotation(JsonbProperty.class);
+                final JsonbProperty property = getAnnotation(parameter, JsonbProperty.class);
                 params[i] = property != null ? property.value() : parameter.getName();
 
-                final JsonbTypeAdapter adapter = parameter.getAnnotation(JsonbTypeAdapter.class);
-                final JsonbDateFormat dateFormat = parameter.getAnnotation(JsonbDateFormat.class);
-                final JsonbNumberFormat numberFormat = parameter.getAnnotation(JsonbNumberFormat.class);
+                final JsonbTypeAdapter adapter = getAnnotation(parameter, JsonbTypeAdapter.class);
+                final JsonbDateFormat dateFormat = getAnnotation(parameter, JsonbDateFormat.class);
+                final JsonbNumberFormat numberFormat = getAnnotation(parameter, JsonbNumberFormat.class);
                 if (adapter == null && dateFormat == null && numberFormat == null) {
                     converters[i] = defaultConverters.get(parameter.getType());
                     itemConverters[i] = null;
@@ -326,8 +327,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
     private ParameterizedType findPt(final Class<?> value, final Class<?> type) {
         return ParameterizedType.class.cast(
-                        Stream.of(value.getGenericInterfaces())
-                                .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type).findFirst().orElse(null));
+                Stream.of(value.getGenericInterfaces())
+                        .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type).findFirst().orElse(null));
     }
 
     private JohnzonAdapterFactory.Instance newInstance(final Class<?> value) {
@@ -603,12 +604,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return !(FieldAccessMode.FieldDecoratedType.class.isInstance(t) ?
                 visibility.isVisible(FieldAccessMode.FieldDecoratedType.class.cast(t).getField())
                 : (MethodAccessMode.MethodDecoratedType.class.isInstance(t) &&
-                        visibility.isVisible(MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod())));
+                visibility.isVisible(MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod())));
     }
 
     private Comparator<String> orderComparator(final Class<?> clazz) {
         final Comparator<String> keyComparator;
-        final JsonbPropertyOrder orderAnnotation = clazz.getAnnotation(JsonbPropertyOrder.class);
+        final JsonbPropertyOrder orderAnnotation = Meta.getAnnotation(clazz, JsonbPropertyOrder.class);
         if (orderAnnotation != null) {
             final List<String> indexed = new ArrayList<>(asList(orderAnnotation.value()));
             keyComparator = (o1, o2) -> {
@@ -643,6 +644,15 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     public void close() throws IOException {
         toRelease.forEach(JohnzonAdapterFactory.Instance::release);
         toRelease.clear();
+    }
+
+    // belongs to Meta but java 8
+    private static <T extends Annotation> T getAnnotation(final Parameter param, final Class<T> api) {
+        final T annotation = param.getAnnotation(api);
+        if (annotation != null) {
+            return annotation;
+        }
+        return Meta.findMeta(param.getAnnotations(), api);
     }
 
     private class ReaderConverters {
@@ -729,12 +739,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
-            return annotations.getAnnotation(clazz);
+            return Meta.getAnnotation(annotations, clazz);
         }
 
         @Override
         public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
-            return null;
+            return Meta.getAnnotation(clazz.getPackage(), clazz);
         }
 
         @Override

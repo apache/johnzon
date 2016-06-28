@@ -49,7 +49,7 @@ public class MethodAccessMode extends BaseAccessMode {
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
             final Method readMethod = descriptor.getReadMethod();
             if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(descriptor.getName()) || readMethod.getAnnotation(JohnzonAny.class) != null) {
+                if (isIgnored(descriptor.getName()) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
                     continue;
                 }
                 readers.put(extractKey(descriptor), new MethodReader(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
@@ -80,7 +80,7 @@ public class MethodAccessMode extends BaseAccessMode {
     }
 
     private String extractKey(final PropertyDescriptor f) {
-        final JohnzonProperty property = f.getReadMethod() == null ? null : f.getReadMethod().getAnnotation(JohnzonProperty.class);
+        final JohnzonProperty property = f.getReadMethod() == null ? null : Meta.getAnnotation(f.getReadMethod(), JohnzonProperty.class);
         return property != null ? property.value() : f.getName();
     }
 
@@ -113,8 +113,8 @@ public class MethodAccessMode extends BaseAccessMode {
         @Override
         public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
             final Class<?> declaringClass = method.getDeclaringClass();
-            final T annotation = declaringClass.getAnnotation(clazz);
-            return annotation == null ? declaringClass.getPackage().getAnnotation(clazz) : annotation;
+            final T annotation = Meta.getAnnotation(declaringClass, clazz);
+            return annotation == null ? Meta.getAnnotation(declaringClass.getPackage(), clazz) : annotation;
         }
 
         @Override
@@ -133,7 +133,7 @@ public class MethodAccessMode extends BaseAccessMode {
 
         @Override
         public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
-            return method.getAnnotation(clazz);
+            return Meta.getAnnotation(method, clazz);
         }
 
         @Override
