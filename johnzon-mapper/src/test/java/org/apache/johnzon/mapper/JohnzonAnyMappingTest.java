@@ -58,6 +58,8 @@ public class JohnzonAnyMappingTest {
 
     public static class AnyMe {
         private String name;
+
+        @JohnzonIgnore
         private Map<String, Object> any = new TreeMap<String, Object>();
 
         public String getName() {

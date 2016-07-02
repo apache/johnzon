@@ -52,7 +52,7 @@ public class MethodAccessMode extends BaseAccessMode {
                 if (isIgnored(descriptor.getName()) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
                     continue;
                 }
-                readers.put(extractKey(descriptor), new MethodReader(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
+                readers.put(extractKey(descriptor.getName(), readMethod, null), new MethodReader(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
             }
         }
         return readers;
@@ -68,20 +68,24 @@ public class MethodAccessMode extends BaseAccessMode {
             }
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null) {
-                writers.put(extractKey(descriptor), new MethodWriter(writeMethod, fixType(clazz, writeMethod.getGenericParameterTypes()[0])));
+                writers.put(extractKey(descriptor.getName(), writeMethod, descriptor.getReadMethod()),
+                        new MethodWriter(writeMethod, fixType(clazz, writeMethod.getGenericParameterTypes()[0])));
             } else if (supportGetterAsWritter
                     && Collection.class.isAssignableFrom(descriptor.getPropertyType())
                     && descriptor.getReadMethod() != null) {
                 final Method readMethod = descriptor.getReadMethod();
-                writers.put(extractKey(descriptor), new MethodGetterAsWriter(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
+                writers.put(extractKey(descriptor.getName(), readMethod, null), new MethodGetterAsWriter(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
             }
         }
         return writers;
     }
 
-    private String extractKey(final PropertyDescriptor f) {
-        final JohnzonProperty property = f.getReadMethod() == null ? null : Meta.getAnnotation(f.getReadMethod(), JohnzonProperty.class);
-        return property != null ? property.value() : f.getName();
+    private String extractKey(final String name, final Method from, final Method or) {
+        JohnzonProperty property = Meta.getAnnotation(from, JohnzonProperty.class);
+        if (property == null && or != null) {
+            property = Meta.getAnnotation(or, JohnzonProperty.class);
+        }
+        return property != null ? property.value() : name;
     }
 
     protected boolean isIgnored(final String name) {

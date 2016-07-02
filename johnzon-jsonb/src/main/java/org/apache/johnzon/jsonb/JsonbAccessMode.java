@@ -127,7 +127,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         this.order = orderValue;
         this.visibility = visibilityStrategy;
         this.caseSensitive = caseSensitive;
-        this.delegate = new FieldAndMethodAccessMode(true, true);
+        this.delegate = new FieldAndMethodAccessMode(true, true, false);
         this.defaultConverters = defaultConverters;
         this.factory = factory;
         this.parserFactory = parserFactory;

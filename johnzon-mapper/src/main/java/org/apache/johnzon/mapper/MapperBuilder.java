@@ -167,10 +167,10 @@ public class MapperBuilder {
                 accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, true);
             } else if ("strict-method".equalsIgnoreCase(accessModeName)) {
                 accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, false);
-            } else if ("both".equalsIgnoreCase(accessModeName)) {
-                accessMode = new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess);
+            } else if ("both".equalsIgnoreCase(accessModeName) || accessModeName == null) {
+                accessMode = new FieldAndMethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections);
             } else {
-                accessMode = new MethodAccessMode(supportConstructors, supportHiddenAccess, useGetterForCollections);
+                throw new IllegalArgumentException("Unsupported access mode: " + accessModeName);
             }
         }
         if (!ignoredForFields.isEmpty()) {

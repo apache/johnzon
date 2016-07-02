@@ -19,50 +19,172 @@
 package org.apache.johnzon.mapper.access;
 
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonIgnore;
+import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.ObjectConverter;
 
+import java.beans.Introspector;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-// methods override fields
+// annotated entity overrides the other one, methods are used instead of field if both are there
 public class FieldAndMethodAccessMode extends BaseAccessMode {
     private final FieldAccessMode fields;
     private final MethodAccessMode methods;
 
-    public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor) {
+    public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor,
+                                    final boolean useGettersAsWriter) {
         super(useConstructor, acceptHiddenConstructor);
         this.fields = new FieldAccessMode(useConstructor, acceptHiddenConstructor);
-        this.methods = new MethodAccessMode(useConstructor, acceptHiddenConstructor, false);
+        this.methods = new MethodAccessMode(useConstructor, acceptHiddenConstructor, useGettersAsWriter);
     }
 
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
-        final Map<String, Reader> readers = new HashMap<String, Reader>(fields.findReaders(clazz));
-        for (final Map.Entry<String, Reader> entry : methods.findReaders(clazz).entrySet()) {
+        final Map<String, Reader> fieldsReaders = this.fields.findReaders(clazz);
+        final Map<String, Reader> methodReaders = this.methods.findReaders(clazz);
+
+        final Map<String, Reader> readers = new HashMap<String, Reader>();
+
+        for (final Map.Entry<String, Reader> entry : fieldsReaders.entrySet()) {
+            final String key = entry.getKey();
+            Method m = getMethod("get" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz);
+            if (m == null && (boolean.class == entry.getValue().getType() || Boolean.class == entry.getValue().getType())) {
+                m = getMethod("is" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz);
+            }
+            boolean skip = false;
+            if (m != null) {
+                for (final Reader w : methodReaders.values()) {
+                    if (MethodAccessMode.MethodDecoratedType.class.cast(w).getMethod().equals(m)) {
+                        if (w.getAnnotation(JohnzonProperty.class) != null || w.getAnnotation(JohnzonIgnore.class) != null) {
+                            skip = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (skip) {
+                continue;
+            }
+            readers.put(entry.getKey(), entry.getValue());
+        }
+
+        for (final Map.Entry<String, Reader> entry : methodReaders.entrySet()) {
+            final Method mr = MethodAccessMode.MethodDecoratedType.class.cast(entry.getValue()).getMethod();
+            final String fieldName = Introspector.decapitalize(mr.getName().startsWith("is") ? mr.getName().substring(2) : mr.getName().substring(3));
+            final Field f = getField(fieldName, clazz);
+            boolean skip = false;
+            if (f != null) {
+                for (final Reader w : fieldsReaders.values()) {
+                    if (FieldAccessMode.FieldDecoratedType.class.cast(w).getField().equals(f)) {
+                        if (w.getAnnotation(JohnzonProperty.class) != null || w.getAnnotation(JohnzonIgnore.class) != null) {
+                            skip = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (skip) {
+                continue;
+            }
+
             final Reader existing = readers.get(entry.getKey());
             if (existing == null) {
                 readers.put(entry.getKey(), entry.getValue());
             } else {
-                readers.put(entry.getKey(), new CompositeReader(existing, entry.getValue()));
+                readers.put(entry.getKey(), new CompositeReader(entry.getValue(), existing));
             }
         }
+
         return readers;
+    }
+
+    private Method getMethod(final String methodName, final Class<?> type, final Class<?>... args) {
+        try {
+            return type.getMethod(methodName, args);
+        } catch (final NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    private Field getField(final String fieldName, final Class<?> type) {
+        Class<?> t = type;
+        while (t != Object.class && t != null) {
+            try {
+                return t.getDeclaredField(fieldName);
+            } catch (final NoSuchFieldException e) {
+                // no-op
+            }
+            t = t.getSuperclass();
+        }
+        return null;
     }
 
     @Override
     public Map<String, Writer> doFindWriters(final Class<?> clazz) {
-        final Map<String, Writer> writers = new HashMap<String, Writer>(fields.findWriters(clazz));
-        for (final Map.Entry<String, Writer> entry : methods.findWriters(clazz).entrySet()) {
+        final Map<String, Writer> fieldWriters = this.fields.findWriters(clazz);
+        final Map<String, Writer> metodWriters = this.methods.findWriters(clazz);
+
+        final Map<String, Writer> writers = new HashMap<String, Writer>();
+
+        for (final Map.Entry<String, Writer> entry : fieldWriters.entrySet()) {
+            final String key = entry.getKey();
+            final Method m = getMethod("set" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz, toType(entry.getValue().getType()));
+            boolean skip = false;
+            if (m != null) {
+                for (final Writer w : metodWriters.values()) {
+                    if (MethodAccessMode.MethodDecoratedType.class.cast(w).getMethod().equals(m)) {
+                        if (w.getAnnotation(JohnzonProperty.class) != null) {
+                            skip = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (skip) {
+                continue;
+            }
+            writers.put(entry.getKey(), entry.getValue());
+        }
+
+        for (final Map.Entry<String, Writer> entry : metodWriters.entrySet()) {
+            final Method mr = MethodAccessMode.MethodDecoratedType.class.cast(entry.getValue()).getMethod();
+            final String fieldName = Introspector.decapitalize(mr.getName().startsWith("is") ? mr.getName().substring(2) : mr.getName().substring(3));
+            final Field f = getField(fieldName, clazz);
+            boolean skip = false;
+            if (f != null) {
+                for (final Writer w : fieldWriters.values()) {
+                    if (FieldAccessMode.FieldDecoratedType.class.cast(w).getField().equals(f)) {
+                        if (w.getAnnotation(JohnzonProperty.class) != null) {
+                            skip = true;
+                        }
+                        break;
+                    }
+                }
+            }
+            if (skip) {
+                continue;
+            }
+
             final Writer existing = writers.get(entry.getKey());
             if (existing == null) {
                 writers.put(entry.getKey(), entry.getValue());
             } else {
-                writers.put(entry.getKey(), new CompositeWriter(existing, entry.getValue()));
+                writers.put(entry.getKey(), new CompositeWriter(entry.getValue(), existing));
             }
         }
         return writers;
+    }
+
+    private Class<?> toType(final Type type) {
+        return Class.class.isInstance(type) ? Class.class.cast(type) :
+                (ParameterizedType.class.isInstance(type) ? toType(ParameterizedType.class.cast(type).getRawType()) :
+                Object.class /*fallback*/);
     }
 
     public static abstract class CompositeDecoratedType implements DecoratedType {

@@ -189,6 +189,7 @@ If you don't fully know you model but want to handle all keys you can use @Johnz
 
 <pre class="prettyprint linenums"><![CDATA[
 public class AnyMe {
+    @JohnzonAny // ignore normal serialization of this field
     private String name; // known
     private Map<String, Object> any = new TreeMap<String, Object>(); // unknown
 
@@ -221,6 +222,7 @@ The default available names are:
 * field: to use fields model and ignore getters/setters
 * method: use getters/setters (means if you have a getter but no setter you will serialize the property but not read it)
 * strict-method (default based on Pojo convention): same as method but getters for collections are not used to write
+* both: field and method accessors are merged together
 
 You can use these names with setAccessModeName().
 

@@ -24,7 +24,6 @@
               http://jboss.org/schema/arquillian/arquillian_1_0.xsd">
   <container qualifier="tomee" default="true">
     <configuration>
-      <property name="classifier">jaxrs</property>
       <property name="httpsPort">-1</property>
       <property name="httpPort">-1</property>
       <property name="stopPort">-1</property>
