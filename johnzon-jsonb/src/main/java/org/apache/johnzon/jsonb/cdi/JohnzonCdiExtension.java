@@ -69,7 +69,7 @@ public class JohnzonCdiExtension implements Extension {
 
     void cleanUp(@Observes final BeforeShutdown beforeShutdown) {
         canWrite = false;
-        jsonbs.forEach(this::untrack);
+        new ArrayList<>(jsonbs).forEach(this::untrack);
         jsonbs.clear();
     }
 }

@@ -307,7 +307,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             });
         });
 
-        final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite();
+        final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && config.getProperty("johnzon.cdi.activated").map(Boolean.class::cast).orElse(Boolean.TRUE);
         final Mapper mapper = builder.addCloseable(accessMode).build();
 
         return useCdi ? new JohnsonJsonb(mapper) {
