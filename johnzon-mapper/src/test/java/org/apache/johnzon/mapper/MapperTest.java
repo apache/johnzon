@@ -177,6 +177,7 @@ public class MapperTest {
             assertOneDimension(k, 5);
 
             final Map<String, Object> sorted = new TreeMap<String, Object>(data);
+            sorted.put("k", new TreeMap((Map) sorted.get("k")));
             assertEquals(object.replace(",\"c\":null", ""), mapper.writeObjectAsString(sorted));
         }
         { // primitives
