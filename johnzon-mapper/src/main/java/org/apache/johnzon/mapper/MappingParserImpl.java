@@ -69,6 +69,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
+import static javax.json.JsonValue.ValueType.FALSE;
+import static javax.json.JsonValue.ValueType.NULL;
+import static javax.json.JsonValue.ValueType.NUMBER;
+import static javax.json.JsonValue.ValueType.TRUE;
 
 /**
  * This class is not concurrently usable as it contains state.
@@ -341,16 +345,7 @@ public class MappingParserImpl implements MappingParser {
             //X TODO maybe we can put this into MapperConfig?
             //X      config.getAdapter(AdapterKey)
             //X      config.getAdapterKey(Adapter)
-            AdapterKey adapterKey = reverseAdaptersRegistry.get(converter);
-            if (adapterKey == null) {
-                for (final Map.Entry<AdapterKey, Adapter<?, ?>> entry : config.getAdapters().entrySet()) {
-                    if (entry.getValue() == converter) {
-                        adapterKey = entry.getKey();
-                        reverseAdaptersRegistry.put(converter, adapterKey);
-                        break;
-                    }
-                }
-            }
+            final AdapterKey adapterKey = getAdapterKey(converter);
 
             final Object param;
             try {
@@ -361,9 +356,68 @@ public class MappingParserImpl implements MappingParser {
             }
             return converter.to(param);
         }
+
+        final AdapterKey key = getAdapterKey(converter);
+        final JsonValue.ValueType valueType = jsonValue.getValueType();
+        if (NULL.equals(valueType)) {
+            return null;
+        }
+        if (TRUE.equals(valueType) || FALSE.equals(valueType)) {
+            if (key != null) {
+                if (boolean.class == key.getTo() || Boolean.class == key.getTo()) {
+                    return converter.to(Boolean.parseBoolean(jsonValue.toString()));
+                }
+            }
+        }
+        if (NUMBER.equals(valueType)) {
+            if (key != null) {
+                if (Long.class == key.getTo() || long.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue).longValue());
+                } else if (Integer.class == key.getTo() || int.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue).intValue());
+                } else if (Double.class == key.getTo() || double.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue).doubleValue());
+                } else if (Float.class == key.getTo() || float.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue).doubleValue());
+                } else if (BigInteger.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue).bigIntegerValue());
+                } else if (BigDecimal.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue).bigDecimalValue());
+                }
+            }
+        }
         return converter.to(jsonValue.toString());
+
     }
 
+    private AdapterKey getAdapterKey(final Adapter converter) {
+        AdapterKey adapterKey = reverseAdaptersRegistry.get(converter);
+        if (adapterKey == null) {
+            for (final Map.Entry<AdapterKey, Adapter<?, ?>> entry : config.getAdapters().entrySet()) {
+                if (entry.getValue() == converter) {
+                    adapterKey = entry.getKey();
+                    reverseAdaptersRegistry.put(converter, adapterKey);
+                    break;
+                }
+            }
+        }
+        if (adapterKey == null) {
+            final Type[] types = converter.getClass().getGenericInterfaces();
+            for (final Type t : types) {
+                if (!ParameterizedType.class.isInstance(t)) {
+                    continue;
+                }
+                final ParameterizedType pt = ParameterizedType.class.cast(t);
+                if (Adapter.class == pt.getRawType()) {
+                    final Type[] actualTypeArguments = pt.getActualTypeArguments();
+                    adapterKey = new AdapterKey(actualTypeArguments[0], actualTypeArguments[1]);
+                    reverseAdaptersRegistry.putIfAbsent(converter, adapterKey);
+                    break;
+                }
+            }
+        }
+        return adapterKey;
+    }
 
 
     private Object toObject(final Object baseInstance, final JsonValue jsonValue,
