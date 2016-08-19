@@ -23,7 +23,7 @@
   <parent>
     <artifactId>johnzon</artifactId>
     <groupId>org.apache.johnzon</groupId>
-    <version>0.9.5</version>
+    <version>0.9.6-SNAPSHOT</version>
   </parent>
 
   <artifactId>johnzon-maven-plugin</artifactId>
