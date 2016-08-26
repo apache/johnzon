@@ -18,12 +18,12 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonNumber;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import javax.json.JsonNumber;
-
-final class JsonDoubleImpl implements JsonNumber {
+final class JsonDoubleImpl implements JsonNumber, Serializable {
     private final double value;
 
     JsonDoubleImpl(final double value) {

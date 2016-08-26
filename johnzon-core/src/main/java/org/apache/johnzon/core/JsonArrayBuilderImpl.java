@@ -18,17 +18,16 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
 
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private List<JsonValue> tmpList;
@@ -77,7 +76,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        addValue(value ? JsonValue.TRUE : JsonValue.FALSE);
+        addValue(value ? SerializablePrimitives.TRUE : SerializablePrimitives.FALSE);
         return this;
     }
 

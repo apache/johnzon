@@ -173,13 +173,13 @@ public class MappingParserImpl implements MappingParser {
                 return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null))));
             }
         }
-        if (JsonValue.NULL == jsonValue) {
+        if (JsonValue.NULL.equals(jsonValue)) {
             return null;
         }
-        if (JsonValue.TRUE == jsonValue && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
+        if (jsonValue.equals(JsonValue.TRUE) && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.TRUE;
         }
-        if (JsonValue.FALSE == jsonValue && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
+        if (jsonValue.equals(JsonValue.FALSE) && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.FALSE;
         }
         throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);
@@ -301,7 +301,7 @@ public class MappingParserImpl implements MappingParser {
             }
 
             final AccessMode.Writer setterMethod = value.writer;
-            if (jsonValue == JsonValue.NULL) { // forced
+            if (JsonValue.NULL.equals(jsonValue)) { // forced
                 setterMethod.write(t, null);
             } else {
                 Object existingInstance = null;
@@ -422,15 +422,15 @@ public class MappingParserImpl implements MappingParser {
 
     private Object toObject(final Object baseInstance, final JsonValue jsonValue,
                             final Type type, final Adapter itemConverter) {
-        if (jsonValue == null || JsonValue.NULL == jsonValue) {
+        if (jsonValue == null || JsonValue.NULL.equals(jsonValue)) {
             return null;
         }
 
         if (type == Boolean.class || type == boolean.class) {
-            if (jsonValue == JsonValue.TRUE) {
+            if (jsonValue.equals(JsonValue.TRUE)) {
                 return true;
             }
-            if (jsonValue == JsonValue.FALSE) {
+            if (jsonValue.equals(JsonValue.FALSE)) {
                 return false;
             }
             throw new MapperException("Unable to parse " + jsonValue + " to boolean");
@@ -441,10 +441,10 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (Object.class == type) { // handling specific types here to keep exception in standard handling
-            if (jsonValue == JsonValue.TRUE) {
+            if (jsonValue.equals(JsonValue.TRUE)) {
                 return true;
             }
-            if (jsonValue == JsonValue.FALSE) {
+            if (jsonValue.equals(JsonValue.FALSE)) {
                 return false;
             }
             if (JsonNumber.class.isInstance(jsonValue)) {
@@ -584,7 +584,7 @@ public class MappingParserImpl implements MappingParser {
         }
 
         for (final JsonValue value : jsonArray) {
-            collection.add(value == JsonValue.NULL ? null : toObject(null, value, mapping.arg, itemConverter));
+            collection.add(JsonValue.NULL.equals(value) ? null : toObject(null, value, mapping.arg, itemConverter));
         }
 
         if (EnumSet.class == mapping.raw) {

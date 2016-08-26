@@ -77,13 +77,13 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     @Override
     public JsonObjectBuilder add(final String name, final boolean value) {
-        putValue(name, value ? JsonValue.TRUE : JsonValue.FALSE);
+        putValue(name, value ? SerializablePrimitives.TRUE : SerializablePrimitives.FALSE);
         return this;
     }
 
     @Override
     public JsonObjectBuilder addNull(final String name) {
-        putValue(name, JsonValue.NULL);
+        putValue(name, SerializablePrimitives.NULL);
         return this;
     }
 

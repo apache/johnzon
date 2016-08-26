@@ -18,16 +18,15 @@
  */
 package org.apache.johnzon.core;
 
-import java.io.Serializable;
-import java.util.AbstractList;
-import java.util.Iterator;
-import java.util.List;
-
 import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import java.io.Serializable;
+import java.util.AbstractList;
+import java.util.Iterator;
+import java.util.List;
 
 class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serializable {
     private Integer hashCode = null;
@@ -119,9 +118,9 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
     public boolean getBoolean(final int index) {
         final JsonValue val = value(index, JsonValue.class);
 
-        if (val == JsonValue.TRUE) {
+        if (SerializablePrimitives.TRUE.equals(val)) {
             return true;
-        } else if (val == JsonValue.FALSE) {
+        } else if (SerializablePrimitives.FALSE.equals(val)) {
             return false;
         } else {
             throw new ClassCastException();
@@ -144,20 +143,12 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
         }
 
         final JsonValue val = get(index);
-
-        if (val == JsonValue.TRUE) {
-            return true;
-        } else if (val == JsonValue.FALSE) {
-            return false;
-        } else {
-            return defaultValue;
-        }
-
+        return SerializablePrimitives.TRUE.equals(val) || !SerializablePrimitives.FALSE.equals(val) && defaultValue;
     }
 
     @Override
     public boolean isNull(final int index) {
-        return value(index, JsonValue.class) == JsonValue.NULL;
+        return JsonValue.NULL.equals(value(index, JsonValue.class));
     }
 
     @Override

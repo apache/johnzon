@@ -18,21 +18,20 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-
 
 final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements JsonObject, Serializable {
-    private Integer hashCode = null;
+    private transient Integer hashCode = null;
     private final Map<String, JsonValue> unmodifieableBackingMap;
 
     private <T> T value(final String name, final Class<T> clazz) {
@@ -109,20 +108,14 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public boolean getBoolean(final String name) {
-        return value(name, JsonValue.class) == JsonValue.TRUE;
+        return SerializablePrimitives.TRUE.equals(value(name, JsonValue.class));
     }
 
     @Override
     public boolean getBoolean(final String name, final boolean defaultValue) {
         final Object v = unmodifieableBackingMap.get(name);
         if (v != null) {
-            if (v == JsonValue.TRUE) {
-                return true;
-            } else if (v == JsonValue.FALSE) {
-                return false;
-            } else {
-                return defaultValue;
-            }
+            return SerializablePrimitives.TRUE.equals(v) || !SerializablePrimitives.FALSE.equals(v) && defaultValue;
         } else {
             return defaultValue;
         }
@@ -130,7 +123,7 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public boolean isNull(final String name) {
-        return value(name, JsonValue.class) == JsonValue.NULL;
+        return JsonValue.NULL.equals(value(name, JsonValue.class));
     }
 
     @Override

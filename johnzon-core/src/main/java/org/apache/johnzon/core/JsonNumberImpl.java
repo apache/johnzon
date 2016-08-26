@@ -18,14 +18,14 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonNumber;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import javax.json.JsonNumber;
-
-final class JsonNumberImpl implements JsonNumber {
+final class JsonNumberImpl implements JsonNumber, Serializable {
     private final BigDecimal value;
-    private Integer hashCode = null;
+    private transient Integer hashCode = null;
 
     JsonNumberImpl(final BigDecimal decimal) {
         if(decimal == null) {

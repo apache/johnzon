@@ -19,11 +19,12 @@
 package org.apache.johnzon.core;
 
 import javax.json.JsonString;
+import java.io.Serializable;
 
-final class JsonStringImpl implements JsonString {
+final class JsonStringImpl implements JsonString, Serializable {
     private final String value;
     private String escape;
-    private Integer hashCode = null;
+    private transient Integer hashCode = null;
 
 
     JsonStringImpl(final String value) {

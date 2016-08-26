@@ -18,12 +18,12 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonNumber;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import javax.json.JsonNumber;
-
-public final class JsonLongImpl implements JsonNumber {
+public final class JsonLongImpl implements JsonNumber, Serializable {
     private final long value;
 
     JsonLongImpl(final long value) {
