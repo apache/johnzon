@@ -31,11 +31,11 @@ import java.io.ObjectOutputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
@@ -81,38 +81,36 @@ public class SerializationTest {
     public void jsonObject() throws IOException, ClassNotFoundException {
         final Map<String, JsonValue> map = new LinkedHashMap<String, JsonValue>();
         map.put("test", new JsonStringImpl("val"));
+        map.put("test2", JsonValue.TRUE);
         final JsonObject source = new JsonObjectImpl(Collections.unmodifiableMap(map));
         final JsonObject serialization = serialDeser(source);
         assertNotSame(source, serialization);
         assertTrue(serialization.containsKey("test"));
         assertEquals("val", serialization.getString("test"));
-        assertEquals(1, serialization.size());
+        assertEquals(true, serialization.getBoolean("test2"));
+        assertEquals(2, serialization.size());
     }
 
     @Test
     public void jsonArray() throws IOException, ClassNotFoundException {
         final List<JsonValue> list = new ArrayList<JsonValue>();
         list.add(new JsonStringImpl("test"));
+        list.add(JsonValue.TRUE); // not ser but we should be able to handle that
         final JsonArray source = new JsonArrayImpl(Collections.unmodifiableList(list));
         final JsonArray serialization = serialDeser(source);
         assertNotSame(source, serialization);
-        assertEquals(1, serialization.size());
-        assertEquals("test", JsonString.class.cast(serialization.iterator().next()).getString());
-    }
-
-    @Test
-    public void jsonPrimitives() throws IOException, ClassNotFoundException { // NOTE: spec jar primitives are not serializable
-        for (final JsonValue v : asList(SerializablePrimitives.FALSE, SerializablePrimitives.TRUE, SerializablePrimitives.NULL)) {
-            assertEquals(v, serialDeser(v));
-        }
+        assertEquals(2, serialization.size());
+        final Iterator<JsonValue> iterator = serialization.iterator();
+        assertEquals("test", JsonString.class.cast(iterator.next()).getString());
+        assertEquals(JsonValue.TRUE, iterator.next());
     }
 
     @Test
     public void primitiveInObject() throws IOException, ClassNotFoundException {
         assertTrue(serialDeser(JsonProviderImpl.provider().createObjectBuilder()
                 .add("bool", true)
-                .build()
-                .getBoolean("bool")));
+                .build())
+                .getBoolean("bool"));
     }
 
     private static <T> T serialDeser(final T instance) throws IOException, ClassNotFoundException {

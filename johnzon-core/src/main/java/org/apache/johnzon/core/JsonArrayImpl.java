@@ -23,6 +23,7 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.AbstractList;
 import java.util.Iterator;
@@ -118,9 +119,9 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
     public boolean getBoolean(final int index) {
         final JsonValue val = value(index, JsonValue.class);
 
-        if (SerializablePrimitives.TRUE.equals(val)) {
+        if (JsonValue.TRUE.equals(val)) {
             return true;
-        } else if (SerializablePrimitives.FALSE.equals(val)) {
+        } else if (JsonValue.FALSE.equals(val)) {
             return false;
         } else {
             throw new ClassCastException();
@@ -143,7 +144,7 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
         }
 
         final JsonValue val = get(index);
-        return SerializablePrimitives.TRUE.equals(val) || !SerializablePrimitives.FALSE.equals(val) && defaultValue;
+        return JsonValue.TRUE.equals(val) || !JsonValue.FALSE.equals(val) && defaultValue;
     }
 
     @Override
@@ -200,5 +201,9 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
     @Override
     public int size() {
         return unmodifieableBackingList.size();
+    }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return new SerializableValue(toString());
     }
 }

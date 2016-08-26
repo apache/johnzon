@@ -79,19 +79,19 @@ public class JsonReaderImpl implements JsonReader {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
-                return SerializablePrimitives.FALSE;
+                return JsonValue.FALSE;
             case VALUE_TRUE:
                 if (parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
-                return SerializablePrimitives.TRUE;
+                return JsonValue.TRUE;
             case VALUE_NULL:
                 if (parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 close();
-                return SerializablePrimitives.NULL;
+                return JsonValue.NULL;
             case VALUE_NUMBER:
                 if (parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());

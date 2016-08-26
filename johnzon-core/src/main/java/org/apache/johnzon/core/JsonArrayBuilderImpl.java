@@ -76,7 +76,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        addValue(value ? SerializablePrimitives.TRUE : SerializablePrimitives.FALSE);
+        addValue(value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 

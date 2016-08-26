@@ -23,6 +23,7 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
@@ -108,14 +109,14 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public boolean getBoolean(final String name) {
-        return SerializablePrimitives.TRUE.equals(value(name, JsonValue.class));
+        return JsonValue.TRUE.equals(value(name, JsonValue.class));
     }
 
     @Override
     public boolean getBoolean(final String name, final boolean defaultValue) {
         final Object v = unmodifieableBackingMap.get(name);
         if (v != null) {
-            return SerializablePrimitives.TRUE.equals(v) || !SerializablePrimitives.FALSE.equals(v) && defaultValue;
+            return JsonValue.TRUE.equals(v) || !JsonValue.FALSE.equals(v) && defaultValue;
         } else {
             return defaultValue;
         }
@@ -175,5 +176,9 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
     @Override
     public Set<java.util.Map.Entry<String, JsonValue>> entrySet() {
         return unmodifieableBackingMap.entrySet();
+    }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return new SerializableValue(toString());
     }
 }

@@ -18,17 +18,16 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
 
 class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     private Map<String, JsonValue> tmpMap;
@@ -77,13 +76,13 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     @Override
     public JsonObjectBuilder add(final String name, final boolean value) {
-        putValue(name, value ? SerializablePrimitives.TRUE : SerializablePrimitives.FALSE);
+        putValue(name, value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonObjectBuilder addNull(final String name) {
-        putValue(name, SerializablePrimitives.NULL);
+        putValue(name, JsonValue.NULL);
         return this;
     }
 
