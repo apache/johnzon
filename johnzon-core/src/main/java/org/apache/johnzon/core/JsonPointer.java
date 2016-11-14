@@ -18,11 +18,17 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
 import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>This class is an immutable representation of a JSON Pointer as specified in
@@ -49,7 +55,8 @@ import javax.json.JsonValue;
 public class JsonPointer {
 
     private final String jsonPointer;
-    private final String[] referenceTokens;
+    private final List<String> referenceTokens = new ArrayList<String>();
+    private final String lastReferenceToken;
 
     /**
      * Constructs and initializes a JsonPointer.
@@ -63,11 +70,16 @@ public class JsonPointer {
             throw new NullPointerException("jsonPointer must not be null");
         }
         if (!jsonPointer.equals("") && !jsonPointer.startsWith("/")) {
-            throw new JsonException("A non-empty JSON pointer must begin with a '/'");
+            throw new JsonException("A non-empty JsonPointer string must begin with a '/'");
         }
 
         this.jsonPointer = jsonPointer;
-        referenceTokens = jsonPointer.split("/", -1);
+        String[] encodedReferenceTokens = jsonPointer.split("/", -1);
+
+        for (String encodedReferenceToken : encodedReferenceTokens) {
+            referenceTokens.add(JsonPointerUtil.decode(encodedReferenceToken));
+        }
+        lastReferenceToken = referenceTokens.get(referenceTokens.size() - 1);
     }
 
     /**
@@ -113,43 +125,14 @@ public class JsonPointer {
         if (target == null) {
             throw new NullPointerException("target must not be null");
         }
-
-        if (jsonPointer.equals("")) {
+        if (isEmptyJsonPointer()) {
             return target;
         }
 
         JsonValue jsonValue = target;
-
-        for (int i = 1; i < referenceTokens.length; i++) {
-            String decodedReferenceToken = JsonPointerUtil.decode(referenceTokens[i]);
-
-            if (jsonValue instanceof JsonObject) {
-                JsonObject jsonObject = (JsonObject) jsonValue;
-                jsonValue = jsonObject.get(decodedReferenceToken);
-
-                if (jsonValue == null) {
-                    throw new JsonException("The JsonObject " + jsonObject + " contains no value for token " + decodedReferenceToken);
-                }
-            } else if (jsonValue instanceof JsonArray) {
-                JsonArray jsonArray = (JsonArray) jsonValue;
-
-                try {
-                    int index = Integer.parseInt(decodedReferenceToken);
-                    if (index >= jsonArray.size()) {
-                        throw new JsonException("The JsonArray " + jsonArray + " contains no element for index " + index);
-                    }
-                    if (decodedReferenceToken.startsWith("0") && decodedReferenceToken.length() > 1) {
-                        throw new JsonException("The token " + decodedReferenceToken + " with leading zeros is not allowed to reference an element of a JsonArray");
-                    }
-
-                    jsonValue = jsonArray.get(index);
-                } catch (NumberFormatException e) {
-                    throw new JsonException("The token " + decodedReferenceToken + " for the JsonArray " + jsonArray + " is not a number", e);
-                }
-            }
-
+        for (int i = 1; i < referenceTokens.size(); i++) {
+            jsonValue = getValue(jsonValue, referenceTokens.get(i), i, referenceTokens.size() - 1);
         }
-
         return jsonValue;
     }
 
@@ -179,35 +162,19 @@ public class JsonPointer {
      *                              or if the pointer contains references to non-existing objects or arrays.
      */
     public JsonStructure add(JsonStructure target, JsonValue value) {
-        return null;
-    }
+        validateAdd(target);
+        if (isEmptyJsonPointer()) {
+            if (value.getClass() != target.getClass()) {
+                throw new JsonException("The value must have the same type as the target");
+            }
+            return (JsonStructure) value;
+        }
 
-    /**
-     * Replaces the value at the referenced location in the specified
-     * {@code target} with the specified {@code value}.
-     *
-     * @param target the target referenced by this {@code JsonPointer}
-     * @param value  the value to be stored at the referenced location
-     * @return the transformed {@code target} after the value is replaced.
-     * @throws NullPointerException if {@code target} is {@code null}
-     * @throws JsonException        if the referenced value does not exist,
-     *                              or if the reference is the target.
-     */
-    public JsonStructure replace(JsonStructure target, JsonValue value) {
-        return null;
-    }
-
-    /**
-     * Removes the value at the reference location in the specified {@code target}
-     *
-     * @param target the target referenced by this {@code JsonPointer}
-     * @return the transformed {@code target} after the value is removed.
-     * @throws NullPointerException if {@code target} is {@code null}
-     * @throws JsonException        if the referenced value does not exist,
-     *                              or if the reference is the target.
-     */
-    public JsonStructure remove(JsonStructure target) {
-        return null;
+        if (target instanceof JsonObject) {
+            return add((JsonObject) target, value);
+        } else {
+            return add((JsonArray) target, value);
+        }
     }
 
     /**
@@ -224,7 +191,9 @@ public class JsonPointer {
      * @see #add(JsonStructure, JsonValue)
      */
     public JsonObject add(JsonObject target, JsonValue value) {
-        return (JsonObject) this.add((JsonStructure) target, value);
+        validateAdd(target);
+
+        return (JsonObject) add(target, 1, referenceTokens.size() - 1, value);
     }
 
     /**
@@ -241,7 +210,28 @@ public class JsonPointer {
      * @see #add(JsonStructure, JsonValue)
      */
     public JsonArray add(JsonArray target, JsonValue value) {
-        return (JsonArray) this.add((JsonStructure) target, value);
+        validateAdd(target);
+
+        return (JsonArray) add(target, 1, referenceTokens.size() - 1, value);
+    }
+
+    /**
+     * Replaces the value at the referenced location in the specified
+     * {@code target} with the specified {@code value}.
+     *
+     * @param target the target referenced by this {@code JsonPointer}
+     * @param value  the value to be stored at the referenced location
+     * @return the transformed {@code target} after the value is replaced.
+     * @throws NullPointerException if {@code target} is {@code null}
+     * @throws JsonException        if the referenced value does not exist,
+     *                              or if the reference is the target.
+     */
+    public JsonStructure replace(JsonStructure target, JsonValue value) {
+        if (target instanceof JsonObject) {
+            return replace((JsonObject) target, value);
+        } else {
+            return replace((JsonArray) target, value);
+        }
     }
 
     /**
@@ -253,11 +243,10 @@ public class JsonPointer {
      * @throws NullPointerException if {@code target} is {@code null}
      * @throws JsonException        if the referenced value does not exist,
      *                              or if the reference is the target.
-     *                              {@code target} with the specified {@code value}.
      * @see #replace(JsonStructure, JsonValue)
      */
     public JsonObject replace(JsonObject target, JsonValue value) {
-        return (JsonObject) this.replace((JsonStructure) target, value);
+        return add(remove(target), value);
     }
 
     /**
@@ -269,11 +258,27 @@ public class JsonPointer {
      * @throws NullPointerException if {@code target} is {@code null}
      * @throws JsonException        if the referenced value does not exist,
      *                              or if the reference is the target.
-     *                              {@code target} with the specified {@code value}.
      * @see #replace(JsonStructure, JsonValue)
      */
     public JsonArray replace(JsonArray target, JsonValue value) {
-        return (JsonArray) this.replace((JsonStructure) target, value);
+        return add(remove(target), value);
+    }
+
+    /**
+     * Removes the value at the reference location in the specified {@code target}
+     *
+     * @param target the target referenced by this {@code JsonPointer}
+     * @return the transformed {@code target} after the value is removed.
+     * @throws NullPointerException if {@code target} is {@code null}
+     * @throws JsonException        if the referenced value does not exist,
+     *                              or if the reference is the target.
+     */
+    public JsonStructure remove(JsonStructure target) {
+        if (target instanceof JsonObject) {
+            return remove((JsonObject) target);
+        } else {
+            return remove((JsonArray) target);
+        }
     }
 
     /**
@@ -287,7 +292,9 @@ public class JsonPointer {
      * @see #remove(JsonStructure)
      */
     public JsonObject remove(JsonObject target) {
-        return (JsonObject) this.remove((JsonStructure) target);
+        validateRemove(target);
+
+        return (JsonObject) remove(target, 1, referenceTokens.size() - 1);
     }
 
     /**
@@ -301,8 +308,169 @@ public class JsonPointer {
      * @see #remove(JsonStructure)
      */
     public JsonArray remove(JsonArray target) {
-        return (JsonArray) this.remove((JsonStructure) target);
+        validateRemove(target);
+
+        return (JsonArray) remove(target, 1, referenceTokens.size() - 1);
     }
 
+    private void validateAdd(JsonValue target) {
+        validateJsonPointer(target, referenceTokens.size() - 1);
+    }
+
+    private void validateRemove(JsonValue target) {
+        validateJsonPointer(target, referenceTokens.size());
+        if (isEmptyJsonPointer()) {
+            throw new JsonException("The reference must not be the target");
+        }
+    }
+
+    private boolean isEmptyJsonPointer() {
+        return jsonPointer.equals("");
+    }
+
+    private JsonValue getValue(JsonValue jsonValue, String referenceToken, int currentPosition, int referencePosition) {
+        if (jsonValue instanceof JsonObject) {
+            JsonObject jsonObject = (JsonObject) jsonValue;
+            jsonValue = jsonObject.get(referenceToken);
+
+            if (jsonValue != null) {
+                return jsonValue;
+            }
+            throw new JsonException("'" + jsonObject + "' contains no value for name '" + referenceToken + "'");
+        } else if (jsonValue instanceof JsonArray) {
+            validateArrayIndex(referenceToken);
+
+            try {
+                JsonArray jsonArray = (JsonArray) jsonValue;
+                int arrayIndex = Integer.parseInt(referenceToken);
+                validateArraySize(jsonArray, arrayIndex, jsonArray.size());
+                return jsonArray.get(arrayIndex);
+            } catch (NumberFormatException e) {
+                throw new JsonException("'" + referenceToken + "' is no valid array index", e);
+            }
+        } else {
+            if (currentPosition != referencePosition) {
+                return jsonValue;
+            }
+            throw new JsonException("'" + jsonValue + "' contains no element for '" + referenceToken + "'");
+        }
+    }
+
+    private JsonValue add(JsonValue jsonValue, int currentPosition, int referencePosition, JsonValue newValue) {
+        if (jsonValue instanceof JsonObject) {
+            JsonObject jsonObject = (JsonObject) jsonValue;
+            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+
+            if (jsonObject.isEmpty()) {
+                objectBuilder.add(lastReferenceToken, newValue);
+            } else {
+                for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
+                    objectBuilder.add(entry.getKey(), add(entry.getValue(), currentPosition + 1, referencePosition, newValue));
+                    if (currentPosition == referencePosition) {
+                        objectBuilder.add(lastReferenceToken, newValue);
+                    }
+                }
+            }
+            return objectBuilder.build();
+        } else if (jsonValue instanceof JsonArray) {
+            JsonArray jsonArray = (JsonArray) jsonValue;
+            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+
+            int arrayIndex = -1;
+            if (currentPosition == referencePosition) {
+                arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, true);
+            }
+
+            int jsonArraySize = jsonArray.size();
+            for (int i = 0; i <= jsonArraySize; i++) {
+                if (i == arrayIndex) {
+                    arrayBuilder.add(newValue);
+                }
+                if (i == jsonArraySize) {
+                    break;
+                }
+                arrayBuilder.add(add(jsonArray.get(i), currentPosition + 1, referencePosition, newValue));
+            }
+            return arrayBuilder.build();
+        }
+        return jsonValue;
+    }
+
+    private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition) {
+        if (jsonValue instanceof JsonObject) {
+            JsonObject jsonObject = (JsonObject) jsonValue;
+            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+
+            for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
+                if (currentPosition == referencePosition
+                        && lastReferenceToken.equals(entry.getKey())) {
+                    continue;
+                }
+                objectBuilder.add(entry.getKey(), remove(entry.getValue(), currentPosition + 1, referencePosition));
+            }
+            return objectBuilder.build();
+        } else if (jsonValue instanceof JsonArray) {
+            JsonArray jsonArray = (JsonArray) jsonValue;
+            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+
+            int arrayIndex = -1;
+            if (currentPosition == referencePosition) {
+                arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, false);
+            }
+
+            int jsonArraySize = jsonArray.size();
+            for (int i = 0; i < jsonArraySize; i++) {
+                if (i == arrayIndex) {
+                    continue;
+                }
+                arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1, referencePosition));
+            }
+            return arrayBuilder.build();
+        }
+        return jsonValue;
+    }
+
+    private int getArrayIndex(String referenceToken, JsonArray jsonArray, boolean addOperation) {
+        if (addOperation && referenceToken.equals("-")) {
+            return jsonArray.size();
+        }
+
+        validateArrayIndex(referenceToken);
+
+        try {
+            int arrayIndex = Integer.parseInt(referenceToken);
+            int arraySize = addOperation ? jsonArray.size() + 1 : jsonArray.size();
+            validateArraySize(jsonArray, arrayIndex, arraySize);
+            return arrayIndex;
+        } catch (NumberFormatException e) {
+            throw new JsonException("'" + referenceToken + "' is no valid array index", e);
+        }
+    }
+
+    private void validateJsonPointer(JsonValue target, int size) throws NullPointerException, JsonException {
+        if (target == null) {
+            throw new NullPointerException("target must not be null");
+        }
+
+        JsonValue jsonValue = target;
+        for (int i = 1; i < size; i++) {
+            jsonValue = getValue(jsonValue, referenceTokens.get(i), i, referenceTokens.size() - 1);
+        }
+    }
+
+    private void validateArrayIndex(String referenceToken) throws JsonException {
+        if (referenceToken.startsWith("+") || referenceToken.startsWith("-")) {
+            throw new JsonException("An array index must not start with '" + referenceToken.charAt(0) + "'");
+        }
+        if (referenceToken.startsWith("0") && referenceToken.length() > 1) {
+            throw new JsonException("An array index must not start with a leading '0'");
+        }
+    }
+
+    private void validateArraySize(JsonArray jsonArray, int arrayIndex, int arraySize) throws JsonException {
+        if (arrayIndex >= arraySize) {
+            throw new JsonException("'" + jsonArray + "' contains no element for index " + arrayIndex);
+        }
+    }
 
 }
