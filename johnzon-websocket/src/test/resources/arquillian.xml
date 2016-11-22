@@ -35,6 +35,7 @@
       <!-- override jsonp api -->
       <property name="lib">${project.build.directory}/ee-api</property>
       <property name="additionalLibs">
+        remove:javaee-api
         mvn:org.apache.geronimo.specs:geronimo-json_1.1_spec:${geronimo-jsonp.version}
       </property>
     </configuration>
