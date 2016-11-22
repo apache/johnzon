@@ -593,7 +593,7 @@ public class MappingParserImpl implements MappingParser {
             } else if (collection.size() == 1) {
                 return Collection.class.cast(EnumSet.of(Enum.class.cast(collection.iterator().next())));
             } else {
-                final List<Enum<?>> list = List.class.cast(collection);
+                final List<Enum> list = List.class.cast(collection);
                 return Collection.class.cast(EnumSet.of(list.get(0), list.subList(1, list.size()).toArray(new Enum[list.size() - 1])));
             }
         }

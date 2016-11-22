@@ -32,6 +32,13 @@ import java.util.List;
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private List<JsonValue> tmpList;
 
+    public JsonArrayBuilderImpl() {
+    }
+
+    public JsonArrayBuilderImpl(JsonArray initialData) {
+        tmpList = new ArrayList<>(initialData);
+    }
+
     @Override
     public JsonArrayBuilder add(final JsonValue value) {
         addValue(value);
@@ -104,7 +111,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         }
         
         if(tmpList==null){
-            tmpList=new ArrayList<JsonValue>();
+            tmpList=new ArrayList<>();
         }
         
         tmpList.add(value);

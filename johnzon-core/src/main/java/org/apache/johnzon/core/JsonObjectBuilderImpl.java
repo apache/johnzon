@@ -32,6 +32,14 @@ import java.util.Map;
 class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     private Map<String, JsonValue> tmpMap;
 
+    public JsonObjectBuilderImpl() {
+    }
+
+    public JsonObjectBuilderImpl(JsonObject initialData) {
+        tmpMap = new LinkedHashMap<>(initialData);
+    }
+
+
     @Override
     public JsonObjectBuilder add(final String name, final JsonValue value) {
         putValue(name, value);
@@ -97,14 +105,26 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         putValue(name, builder.build());
         return this;
     }
-    
+
+    @Override
+    public JsonObjectBuilder addAll(JsonObjectBuilder builder) {
+        tmpMap.putAll(builder.build());
+        return this;
+    }
+
+    @Override
+    public JsonObjectBuilder remove(String name) {
+        tmpMap.remove(name);
+        return this;
+    }
+
     private void putValue(String name, JsonValue value){
         if(name == null || value == null) {
             throw npe();
         }
         
         if(tmpMap==null){
-            tmpMap=new LinkedHashMap<String, JsonValue>();
+            tmpMap = new LinkedHashMap<>();
         }
         
         tmpMap.put(name, value);

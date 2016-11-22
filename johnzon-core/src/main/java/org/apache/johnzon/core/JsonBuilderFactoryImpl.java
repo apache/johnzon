@@ -25,8 +25,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 class JsonBuilderFactoryImpl implements JsonBuilderFactory {
@@ -56,8 +58,19 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
     }
 
     @Override
+    public JsonObjectBuilder createObjectBuilder(JsonObject initialData) {
+        return new JsonObjectBuilderImpl(initialData);
+    }
+
+    @Override
     public JsonArrayBuilder createArrayBuilder() {
         return new JsonArrayBuilderImpl();
+    }
+
+
+    @Override
+    public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
+        return new JsonArrayBuilderImpl(initialData);
     }
 
     @Override

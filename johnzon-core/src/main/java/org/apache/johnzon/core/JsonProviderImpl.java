@@ -25,11 +25,17 @@ import java.io.Serializable;
 import java.io.Writer;
 import java.util.Map;
 
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonPatchBuilder;
+import javax.json.JsonPointer;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 import javax.json.spi.JsonProvider;
@@ -116,6 +122,36 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         return DELEGATE.createBuilderFactory(stringMap);
     }
 
+    @Override
+    public JsonPointer createJsonPointer(String path) {
+        return DELEGATE.createJsonPointer(path);
+    }
+
+    @Override
+    public JsonPatch createPatch(JsonStructure source, JsonStructure target) {
+        return DELEGATE.createPatch(source, target);
+    }
+
+    @Override
+    public JsonPatchBuilder createPatchBuilder() {
+        return DELEGATE.createPatchBuilder();
+    }
+
+    @Override
+    public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
+        return DELEGATE.createPatchBuilder(initialData);
+    }
+
+    @Override
+    public JsonValue createMergePatch(JsonValue source, JsonValue target) {
+        return DELEGATE.createMergePatch(source, target);
+    }
+
+    @Override
+    public JsonValue mergePatch(JsonValue source, JsonValue patch) {
+        return DELEGATE.mergePatch(source, patch);
+    }
+
     static class JsonProviderDelegate extends JsonProvider {
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
@@ -196,6 +232,36 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         @Override
         public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
             return (config == null || config.isEmpty()) ? builderFactory : new JsonBuilderFactoryImpl(config);
+        }
+
+        @Override
+        public JsonPointer createJsonPointer(String path) {
+            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+        }
+
+        @Override
+        public JsonPatch createPatch(JsonStructure source, JsonStructure target) {
+            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+        }
+
+        @Override
+        public JsonPatchBuilder createPatchBuilder() {
+            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+        }
+
+        @Override
+        public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
+            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+        }
+
+        @Override
+        public JsonValue createMergePatch(JsonValue source, JsonValue target) {
+            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+        }
+
+        @Override
+        public JsonValue mergePatch(JsonValue source, JsonValue patch) {
+            throw new UnsupportedOperationException("TODO JSON-P 1.1");
         }
     }
 }

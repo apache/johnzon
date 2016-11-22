@@ -40,14 +40,14 @@
   <url>http://johnzon.apache.org</url>
 
   <properties>
-    <jsonspecversion>1.0-alpha-1</jsonspecversion>
+    <jsonspecversion>1.0-SNAPSHOT</jsonspecversion>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
     <felix.plugin.version>2.5.3</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
-    <java-compile.version>1.6</java-compile.version>
+    <java-compile.version>1.8</java-compile.version>
     <cxf.version>3.0.0</cxf.version>
     <javadoc.params /> <!-- for java 8 set disable doclint (by profile) -->
     <checkstyle.version>2.15</checkstyle.version> <!-- checkstyle > 2.15 version do not support java 6 -->
@@ -66,7 +66,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-json_1.0_spec</artifactId>
+      <artifactId>geronimo-json_1.1_spec</artifactId>
       <version>${jsonspecversion}</version>
       <scope>provided</scope>
     </dependency>
