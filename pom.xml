@@ -625,12 +625,14 @@
       <id>rmannibucau</id>
       <name>Romain Manni-Bucau</name>
       <email>rmannibucau AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
       <id>jlmonteiro</id>
       <name>Jean-Louis Monteiro</name>
       <email>jlmonteiro AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
@@ -638,20 +640,22 @@
       <name>Mark Struberg</name>
       <email>struberg AT apache.org</email>
       <roles>
-        <role>Champion</role>
+        <role>PMC</role>
       </roles>
     </developer>
 
     <developer>
-      <id>gpetracek</id>
-      <name>Gerhard Petracek</name>
-      <email>gpetracek AT apache.org</email>
+      <id>rsandtner</id>
+      <name>Reinhard Sandtner</name>
+      <email>rsandtner AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
       <id>dblevins</id>
       <name>David Blevins</name>
       <email>dblevins AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
@@ -667,13 +671,14 @@
       <properties>
         <picUrl>http://www.gravatar.com/avatar/af23e69dbed585db0ce6445d0adb4985.png</picUrl>
       </properties>
+      <roles><role>PMC</role></roles>
     </developer>
   </developers>
 
   <contributors>
     <contributor>
        <name>Thiago Veronezi</name>
-  </contributor>
+    </contributor>
      <contributor>
        <name>Karl Grosse</name>
     </contributor>
