@@ -21,7 +21,7 @@
   <parent>
     <artifactId>johnzon</artifactId>
     <groupId>org.apache.johnzon</groupId>
-    <version>0.9.6-SNAPSHOT</version>
+    <version>0.9.4-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -49,7 +49,6 @@
       <scope>compile</scope>
       <classifier>javadoc</classifier>
     </dependency>
-
     <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-core</artifactId>

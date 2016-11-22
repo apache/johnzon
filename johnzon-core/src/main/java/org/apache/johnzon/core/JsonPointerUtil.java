@@ -20,18 +20,30 @@ package org.apache.johnzon.core;
 
 public class JsonPointerUtil {
 
+    private JsonPointerUtil() {
+
+    }
+
     /**
-     *
-     * @param s
-     * @return
+     * Transforms "~" to "~0" and then "/" to "~1"
      */
     public static String encode(String s) {
-        return null;
+        if (s == null || s.length() == 0) {
+            return s;
+        }
+
+        return s.replace("~", "~0").replace("/", "~1");
     }
 
+    /**
+     * Transforms "~1" to "/" and then "~0" to "~",
+     */
     public static String decode(String s) {
-        return null;
-    }
+        if (s == null || s.length() == 0) {
+            return s;
+        }
 
+        return s.replace("~1", "/").replace("~0", "~");
+    }
 
 }
