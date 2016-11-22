@@ -24,35 +24,15 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonPointer;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * <p>This class is an immutable representation of a JSON Pointer as specified in
- * <a href="http://tools.ietf.org/html/rfc6901">RFC 6901</a>.
- * </p>
- * <p> A JSON Pointer, when applied to a target {@link JsonValue},
- * defines a reference location in the target.</p>
- * <p> An empty JSON Pointer string defines a reference to the target itself.</p>
- * <p> If the JSON Pointer string is non-empty, it must be a sequence
- * of '/' prefixed tokens, and the target must either be a {@link JsonArray}
- * or {@link JsonObject}. If the target is a {@code JsonArray}, the pointer
- * defines a reference to an array element, and the last token specifies the index.
- * If the target is a {@link JsonObject}, the pointer defines a reference to a
- * name/value pair, and the last token specifies the name.
- * </p>
- * <p> The method {@link JsonPointer#getValue getValue()} returns the referenced value.
- * The methods {@link JsonPointer#add add()}, {@link JsonPointer#replace replace()},
- * and {@link JsonPointer#remove remove()} executes the operations specified in
- * <a href="http://tools.ietf.org/html/rfc6902">RFC 6902</a>. </p>
- *
- * @since 1.1
- */
 
-public class JsonPointer {
+public class JsonPointerImpl implements JsonPointer {
 
     private final String jsonPointer;
     private final List<String> referenceTokens = new ArrayList<String>();
@@ -65,7 +45,7 @@ public class JsonPointer {
      * @throws NullPointerException if {@code jsonPointer} is {@code null}
      * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
      */
-    public JsonPointer(String jsonPointer) {
+    public JsonPointerImpl(String jsonPointer) {
         if (jsonPointer == null) {
             throw new NullPointerException("jsonPointer must not be null");
         }
@@ -98,7 +78,7 @@ public class JsonPointer {
             return false;
         }
 
-        JsonPointer that = (JsonPointer) obj;
+        JsonPointerImpl that = (JsonPointerImpl) obj;
         return jsonPointer.equals(that.jsonPointer);
     }
 

@@ -236,7 +236,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
         @Override
         public JsonPointer createJsonPointer(String path) {
-            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+            return new JsonPointerImpl(path);
         }
 
         @Override

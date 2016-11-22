@@ -37,17 +37,17 @@ public class JsonPointerTest {
 
     @Test(expected = NullPointerException.class)
     public void testConstructorWithJsonPointerNull() {
-        new JsonPointer(null);
+        new JsonPointerImpl(null);
     }
 
     @Test(expected = JsonException.class)
     public void testConstructorWithInvalidJsonPointer() {
-        new JsonPointer("a");
+        new JsonPointerImpl("a");
     }
 
     @Test(expected = NullPointerException.class)
     public void testGetValueWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         jsonPointer.getValue(null);
     }
 
@@ -55,7 +55,7 @@ public class JsonPointerTest {
     public void testGetValueWithWholeDocument() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals(jsonDocument.toString(), result.toString());
     }
@@ -64,7 +64,7 @@ public class JsonPointerTest {
     public void testGetValue0() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("0", result.toString());
     }
@@ -73,7 +73,7 @@ public class JsonPointerTest {
     public void testGetValue1() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/a~1b");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/a~1b");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("1", result.toString());
     }
@@ -82,7 +82,7 @@ public class JsonPointerTest {
     public void testGetValue2() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/c%d");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/c%d");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("2", result.toString());
     }
@@ -91,7 +91,7 @@ public class JsonPointerTest {
     public void testGetValue3() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/e^f");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/e^f");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("3", result.toString());
     }
@@ -100,7 +100,7 @@ public class JsonPointerTest {
     public void testGetValue4() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/g|h");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/g|h");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("4", result.toString());
     }
@@ -109,7 +109,7 @@ public class JsonPointerTest {
     public void testGetValue5() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/i\\j");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/i\\j");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("5", result.toString());
     }
@@ -118,7 +118,7 @@ public class JsonPointerTest {
     public void testGetValue6() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/k\"l");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/k\"l");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("6", result.toString());
     }
@@ -127,7 +127,7 @@ public class JsonPointerTest {
     public void testGetValue7() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/ ");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/ ");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("7", result.toString());
     }
@@ -136,7 +136,7 @@ public class JsonPointerTest {
     public void testGetValue8() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/m~0n");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/m~0n");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("8", result.toString());
     }
@@ -145,7 +145,7 @@ public class JsonPointerTest {
     public void testGetValueWithElementNotExistent() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/fool");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/fool");
         jsonPointer.getValue(jsonDocument);
     }
 
@@ -153,7 +153,7 @@ public class JsonPointerTest {
     public void testGetValueWithWholeJsonArray() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/foo");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("[\"bar\",\"baz\"]", result.toString());
     }
@@ -162,7 +162,7 @@ public class JsonPointerTest {
     public void testGetValueWithJsonArray() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/foo/0");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/0");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("\"bar\"", result.toString());
     }
@@ -171,7 +171,7 @@ public class JsonPointerTest {
     public void testGetValueWithJsonArrayIndexOutOfRange() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/foo/2");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/2");
         jsonPointer.getValue(jsonDocument);
     }
 
@@ -179,7 +179,7 @@ public class JsonPointerTest {
     public void testGetValueWithJsonArrayIndexNoNumber() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/foo/a");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/a");
         jsonPointer.getValue(jsonDocument);
     }
 
@@ -187,7 +187,7 @@ public class JsonPointerTest {
     public void testGetValueWithJsonArrayLeadingZeroIndex() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/foo/01");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/01");
         JsonValue result = jsonPointer.getValue(jsonDocument);
         assertEquals("\"bar\"", result.toString());
     }
@@ -196,19 +196,19 @@ public class JsonPointerTest {
     public void testGetValueWithJsonArrayInvalidIndex() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointer jsonPointer = new JsonPointer("/foo/-1");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/-1");
         jsonPointer.getValue(jsonDocument);
     }
 
     @Test(expected = NullPointerException.class)
     public void testAddJsonStructureWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         jsonPointer.add((JsonStructure) null, new JsonStringImpl("qux"));
     }
 
     @Test(expected = JsonException.class)
     public void testAddJsonStructureWithTypeValueNotTypeTarget() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonObject target = Json.createObjectBuilder().build();
         JsonArray value = Json.createArrayBuilder().build();
 
@@ -217,7 +217,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddJsonStructureWithEmptyJsonPointer() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonStructure target = Json.createObjectBuilder().build();
         JsonObject value = Json.createObjectBuilder()
                 .add("foo", "bar").build(); // { "foo": "bar" }
@@ -228,19 +228,19 @@ public class JsonPointerTest {
 
     @Test(expected = NullPointerException.class)
     public void testAddJsonObjectWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         jsonPointer.add((JsonObject) null, new JsonStringImpl("qux"));
     }
 
     @Test(expected = NullPointerException.class)
     public void testAddJsonArrayWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         jsonPointer.add((JsonArray) null, new JsonStringImpl("qux"));
     }
 
     @Test(expected = JsonException.class)
     public void testAddArrayElementWithInvalidIndex() {
-        JsonPointer jsonPointer = new JsonPointer("/+");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/+");
         JsonStructure target = Json.createArrayBuilder().build();
 
         jsonPointer.add(target, new JsonStringImpl("qux"));
@@ -248,7 +248,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testAddArrayElementWithIndexOutOfRange() {
-        JsonPointer jsonPointer = new JsonPointer("/1");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/1");
         JsonStructure target = Json.createArrayBuilder().build();
 
         jsonPointer.add(target, new JsonStringImpl("qux"));
@@ -256,7 +256,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testAddArrayElementWithLeadingZeroIndex() {
-        JsonPointer jsonPointer = new JsonPointer("/01");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/01");
         JsonStructure target = Json.createArrayBuilder()
                 .add("foo").build();
 
@@ -265,7 +265,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testAddArrayElementWithIndexNoNumber() {
-        JsonPointer jsonPointer = new JsonPointer("/a");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/a");
         JsonStructure target = Json.createArrayBuilder()
                 .add("foo").build();
 
@@ -274,7 +274,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddObject() {
-        JsonPointer jsonPointer = new JsonPointer("/child");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/child");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", "bar").build(); // {"foo":"bar"}
         JsonObject value = Json.createObjectBuilder()
@@ -286,7 +286,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddObjectMember() {
-        JsonPointer jsonPointer = new JsonPointer("/baz");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/baz");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", "bar").build(); // {"foo":"bar"}
 
@@ -296,7 +296,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddFirstObjectMember() {
-        JsonPointer jsonPointer = new JsonPointer("/foo");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo");
         JsonStructure target = Json.createObjectBuilder().build(); // {}
 
         JsonStructure result = jsonPointer.add(target, new JsonStringImpl("bar"));
@@ -305,7 +305,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testAddObjectMemberWithNonexistentTarget() {
-        JsonPointer jsonPointer = new JsonPointer("/baz/bat");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/baz/bat");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", "bar").build(); // {"foo":"bar"}
 
@@ -314,7 +314,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddReplaceObjectMember() {
-        JsonPointer jsonPointer = new JsonPointer("/baz");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/baz");
         JsonStructure target = Json.createObjectBuilder()
                 .add("baz", "qux")
                 .add("foo", "bar").build(); // {"baz":"qux","foo":"bar"}
@@ -325,7 +325,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddArray() {
-        JsonPointer jsonPointer = new JsonPointer("/0/-");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/0/-");
         JsonStructure target = Json.createArrayBuilder()
                 .add(Json.createArrayBuilder()
                         .add("bar")).build(); // [["bar"]]
@@ -339,7 +339,7 @@ public class JsonPointerTest {
 
     @Test
     public void testAddArrayElement() {
-        JsonPointer jsonPointer = new JsonPointer("/foo/1");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/1");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", Json.createArrayBuilder()
                         .add("bar")
@@ -351,13 +351,13 @@ public class JsonPointerTest {
 
     @Test(expected = NullPointerException.class)
     public void testRemoveJsonObjectWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("/");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/");
         jsonPointer.remove((JsonObject) null);
     }
 
     @Test(expected = JsonException.class)
     public void testRemoveJsonObjectWithEmptyJsonPointer() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonObject target = Json.createObjectBuilder().build();
 
         jsonPointer.remove(target);
@@ -365,13 +365,13 @@ public class JsonPointerTest {
 
     @Test(expected = NullPointerException.class)
     public void testRemoveJsonArrayWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("/");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/");
         jsonPointer.remove((JsonArray) null);
     }
 
     @Test(expected = JsonException.class)
     public void testRemoveJsonArrayWithEmptyJsonPointer() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonArray target = Json.createArrayBuilder().build();
 
         jsonPointer.remove(target);
@@ -379,7 +379,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveArrayElementWithIndexNoNumber() {
-        JsonPointer jsonPointer = new JsonPointer("/foo/a");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/a");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", Json.createArrayBuilder()
                         .add("bar")
@@ -391,7 +391,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveArrayElementWithIndexOutOfRange() {
-        JsonPointer jsonPointer = new JsonPointer("/foo/3");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/3");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", Json.createArrayBuilder()
                         .add("bar")
@@ -403,7 +403,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveArrayElementWithInvalidIndex() {
-        JsonPointer jsonPointer = new JsonPointer("/foo/+");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/+");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", Json.createArrayBuilder()
                         .add("bar")
@@ -415,7 +415,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveArrayElementWithLeadingZeroIndex() {
-        JsonPointer jsonPointer = new JsonPointer("/foo/01");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/foo/01");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", Json.createArrayBuilder()
                         .add("bar")
@@ -427,7 +427,7 @@ public class JsonPointerTest {
 
     @Test
     public void testRemoveArrayElement() {
-        JsonPointer jsonPointer = new JsonPointer("/0/1");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/0/1");
         JsonStructure target = Json.createArrayBuilder()
                 .add(Json.createArrayBuilder()
                         .add("bar")
@@ -440,7 +440,7 @@ public class JsonPointerTest {
 
     @Test
     public void testRemoveObjectMember() {
-        JsonPointer jsonPointer = new JsonPointer("/baz");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/baz");
         JsonStructure target = Json.createObjectBuilder()
                 .add("baz", "qux")
                 .add("foo", "bar").build(); // {"baz":"qux","foo":"bar"}
@@ -451,13 +451,13 @@ public class JsonPointerTest {
 
     @Test(expected = NullPointerException.class)
     public void testReplaceJsonObjectWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("/");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/");
         jsonPointer.replace((JsonObject) null, new JsonStringImpl("qux"));
     }
 
     @Test(expected = JsonException.class)
     public void testReplaceJsonObjectWithEmptyJsonPointer() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonObject target = Json.createObjectBuilder().build();
 
         jsonPointer.replace(target, new JsonStringImpl("qux"));
@@ -465,13 +465,13 @@ public class JsonPointerTest {
 
     @Test(expected = NullPointerException.class)
     public void testReplaceJsonArrayWithTargetNull() {
-        JsonPointer jsonPointer = new JsonPointer("/");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/");
         jsonPointer.replace((JsonArray) null, new JsonStringImpl("qux"));
     }
 
     @Test(expected = JsonException.class)
     public void testReplaceJsonArrayWithEmptyJsonPointer() {
-        JsonPointer jsonPointer = new JsonPointer("");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("");
         JsonArray target = Json.createArrayBuilder().build();
 
         jsonPointer.replace(target, new JsonStringImpl("qux"));
@@ -479,7 +479,7 @@ public class JsonPointerTest {
 
     @Test
     public void testReplaceArrayElement() {
-        JsonPointer jsonPointer = new JsonPointer("/1/1");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/1/1");
         JsonStructure target = Json.createArrayBuilder()
                 .add("bar")
                 .add(Json.createArrayBuilder()
@@ -492,7 +492,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceArrayElementWithIndexOutOfRange() {
-        JsonPointer jsonPointer = new JsonPointer("/1/2");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/1/2");
         JsonStructure target = Json.createArrayBuilder()
                 .add("bar")
                 .add(Json.createArrayBuilder()
@@ -504,7 +504,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceArrayElementWithIndexNoNumber() {
-        JsonPointer jsonPointer = new JsonPointer("/1/a");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/1/a");
         JsonStructure target = Json.createArrayBuilder()
                 .add("bar")
                 .add(Json.createArrayBuilder()
@@ -516,7 +516,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceArrayElementWithLeadingZeroIndex() {
-        JsonPointer jsonPointer = new JsonPointer("/1/01");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/1/01");
         JsonStructure target = Json.createArrayBuilder()
                 .add("bar")
                 .add(Json.createArrayBuilder()
@@ -528,7 +528,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceArrayElementWithInvalidIndex() {
-        JsonPointer jsonPointer = new JsonPointer("/1/+");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/1/+");
         JsonStructure target = Json.createArrayBuilder()
                 .add("bar")
                 .add(Json.createArrayBuilder()
@@ -540,7 +540,7 @@ public class JsonPointerTest {
 
     @Test
     public void testReplaceObjectMember() {
-        JsonPointer jsonPointer = new JsonPointer("/baz");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/baz");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", "bar")
                 .add("baz", "qux").build(); // {"foo":"bar","baz":"qux"}
@@ -551,7 +551,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceObjectMemberWithNonexistentTarget1() {
-        JsonPointer jsonPointer = new JsonPointer("/baz/a");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/baz/a");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", "bar")
                 .add("baz", "qux").build(); // {"foo":"bar","baz":"qux"}
@@ -562,7 +562,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceObjectMemberWithNonexistentTarget2() {
-        JsonPointer jsonPointer = new JsonPointer("/fo");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl("/fo");
         JsonStructure target = Json.createObjectBuilder()
                 .add("foo", "bar")
                 .add("baz", "qux").build(); // {"foo":"bar","baz":"qux"}
@@ -573,15 +573,15 @@ public class JsonPointerTest {
 
     @Test
     public void testEqualsTrue() {
-        JsonPointer jsonPointer1 = new JsonPointer("/foo/1");
-        JsonPointer jsonPointer2 = new JsonPointer("/foo/1");
+        JsonPointerImpl jsonPointer1 = new JsonPointerImpl("/foo/1");
+        JsonPointerImpl jsonPointer2 = new JsonPointerImpl("/foo/1");
         assertTrue(jsonPointer1.equals(jsonPointer2));
     }
 
     @Test
     public void testEqualsFalse() {
-        JsonPointer jsonPointer1 = new JsonPointer("/foo/1");
-        JsonPointer jsonPointer2 = new JsonPointer("/foo/2");
+        JsonPointerImpl jsonPointer1 = new JsonPointerImpl("/foo/1");
+        JsonPointerImpl jsonPointer2 = new JsonPointerImpl("/foo/2");
         assertFalse(jsonPointer1.equals(jsonPointer2));
     }
 
