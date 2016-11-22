@@ -40,7 +40,7 @@
   <url>http://johnzon.apache.org</url>
 
   <properties>
-    <jsonspecversion>1.0-SNAPSHOT</jsonspecversion>
+    <geronimo-jsonp.version>1.0-SNAPSHOT</geronimo-jsonp.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
@@ -67,7 +67,7 @@
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-json_1.1_spec</artifactId>
-      <version>${jsonspecversion}</version>
+      <version>${geronimo-jsonp.version}</version>
       <scope>provided</scope>
     </dependency>
 
