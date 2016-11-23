@@ -18,6 +18,7 @@ package org.apache.johnzon.core;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonPatch;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
@@ -26,6 +27,12 @@ public class JsonPatchBuilderImpl implements JsonPatchBuilder {
     public JsonPatchBuilderImpl() {
         super();
     }
+
+    public JsonPatchBuilderImpl(JsonArray initialData) {
+        super();
+    }
+
+
 
     @Override
     public JsonStructure apply(JsonStructure target) {
@@ -118,7 +125,7 @@ public class JsonPatchBuilderImpl implements JsonPatchBuilder {
     }
 
     @Override
-    public JsonArray build() {
+    public JsonPatch build() {
         throw new UnsupportedOperationException("JSON-P 1.1");
     }
 }

@@ -246,12 +246,12 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
         @Override
         public JsonPatchBuilder createPatchBuilder() {
-            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+            return new JsonPatchBuilderImpl();
         }
 
         @Override
         public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
-            throw new UnsupportedOperationException("TODO JSON-P 1.1");
+            return new JsonPatchBuilderImpl(initialData);
         }
 
         @Override
