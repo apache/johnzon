@@ -22,6 +22,7 @@ package org.apache.johnzon.core;
 import java.util.Arrays;
 import java.util.List;
 
+import javax.json.JsonException;
 import javax.json.JsonPatch;
 import javax.json.JsonPointer;
 import javax.json.JsonStructure;
@@ -42,11 +43,33 @@ class JsonPatchImpl implements JsonPatch {
 
         //X TODO JsonPointer should use generics like JsonPatch
         JsonStructure patched = target;
+
         for (PatchValue patch : patches) {
 
             switch (patch.operation) {
                 case ADD:
                     patched = patch.path.add(patched, patch.value);
+                    break;
+                case REMOVE:
+                    patched = patch.path.remove(patched);
+                    break;
+                case REPLACE:
+                    // first remove the existing element and then add the new value
+                    patched = patch.path.add(patch.path.remove(patched), patch.value);
+                    break;
+                case MOVE:
+                    JsonValue valueToMove = patch.from.getValue(patched);
+                    patched = patch.path.add(patch.from.remove(patched), valueToMove);
+                    break;
+                case COPY:
+                    JsonValue toCopy = patch.from.getValue(patched);
+                    patched = patch.path.add(patched, toCopy);
+                    break;
+                case TEST:
+                    JsonValue toTest = patch.path.getValue(patched);
+                    if (!toTest.equals(patch.value)) {
+                        throw new JsonException("JsonPatchOperation.TEST fails! Values are not equal");
+                    }
                     break;
                 default:
                     throw new IllegalStateException("unsupported operation: " + patch.operation);
