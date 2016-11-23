@@ -24,6 +24,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonException;
 import javax.json.JsonObject;
+import javax.json.JsonPointer;
 import javax.json.JsonReader;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
@@ -73,9 +74,16 @@ public class JsonPointerTest {
     public void testGetValue1() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointerImpl jsonPointer = new JsonPointerImpl("/a~1b");
-        JsonValue result = jsonPointer.getValue(jsonDocument);
-        assertEquals("1", result.toString());
+        {
+            JsonPointerImpl jsonPointer = new JsonPointerImpl("/a~1b");
+            JsonValue result = jsonPointer.getValue(jsonDocument);
+            assertEquals("1", result.toString());
+        }
+        {
+            JsonPointer jsonPointer = Json.createJsonPointer("/a~1b");
+            JsonValue result = jsonPointer.getValue(jsonDocument);
+            assertEquals("1", result.toString());
+        }
     }
 
     @Test
@@ -91,18 +99,32 @@ public class JsonPointerTest {
     public void testGetValue3() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointerImpl jsonPointer = new JsonPointerImpl("/e^f");
-        JsonValue result = jsonPointer.getValue(jsonDocument);
-        assertEquals("3", result.toString());
+        {
+            JsonPointerImpl jsonPointer = new JsonPointerImpl("/e^f");
+            JsonValue result = jsonPointer.getValue(jsonDocument);
+            assertEquals("3", result.toString());
+        }
+        {
+            JsonPointer jsonPointer = Json.createJsonPointer("/e^f");
+            JsonValue result = jsonPointer.getValue(jsonDocument);
+            assertEquals("3", result.toString());
+        }
     }
 
     @Test
     public void testGetValue4() {
         JsonStructure jsonDocument = getJsonDocument();
 
-        JsonPointerImpl jsonPointer = new JsonPointerImpl("/g|h");
-        JsonValue result = jsonPointer.getValue(jsonDocument);
-        assertEquals("4", result.toString());
+        {
+            JsonPointerImpl jsonPointer = new JsonPointerImpl("/g|h");
+            JsonValue result = jsonPointer.getValue(jsonDocument);
+            assertEquals("4", result.toString());
+        }
+        {
+            JsonPointer jsonPointer = Json.createJsonPointer("/g|h");
+            JsonValue result = jsonPointer.getValue(jsonDocument);
+            assertEquals("4", result.toString());
+        }
     }
 
     @Test
