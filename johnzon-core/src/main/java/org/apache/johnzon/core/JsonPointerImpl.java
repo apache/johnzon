@@ -35,7 +35,7 @@ import java.util.Map;
 public class JsonPointerImpl implements JsonPointer {
 
     private final String jsonPointer;
-    private final List<String> referenceTokens = new ArrayList<String>();
+    private final List<String> referenceTokens = new ArrayList<>();
     private final String lastReferenceToken;
 
     /**
@@ -150,11 +150,7 @@ public class JsonPointerImpl implements JsonPointer {
             return (JsonStructure) value;
         }
 
-        if (target instanceof JsonObject) {
-            return add((JsonObject) target, value);
-        } else {
-            return add((JsonArray) target, value);
-        }
+        return addInternal(target, value);
     }
 
     /**
@@ -173,7 +169,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonObject add(JsonObject target, JsonValue value) {
         validateAdd(target);
 
-        return (JsonObject) add(target, 1, referenceTokens.size() - 1, value);
+        return addInternal(target, value);
     }
 
     /**
@@ -192,7 +188,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonArray add(JsonArray target, JsonValue value) {
         validateAdd(target);
 
-        return (JsonArray) add(target, 1, referenceTokens.size() - 1, value);
+        return addInternal(target, value);
     }
 
     /**
@@ -336,7 +332,14 @@ public class JsonPointerImpl implements JsonPointer {
         }
     }
 
-    private JsonValue add(JsonValue jsonValue, int currentPosition, int referencePosition, JsonValue newValue) {
+    private <T extends JsonStructure> T addInternal(T jsonValue, JsonValue newValue) {
+        List<String> currentPath = new ArrayList<>();
+        currentPath.add("");
+
+        return (T) addInternal(jsonValue, newValue, currentPath);
+    }
+
+    private JsonValue addInternal(JsonValue jsonValue, JsonValue newValue, List<String> currentPath) {
         if (jsonValue instanceof JsonObject) {
             JsonObject jsonObject = (JsonObject) jsonValue;
             JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
@@ -345,8 +348,13 @@ public class JsonPointerImpl implements JsonPointer {
                 objectBuilder.add(lastReferenceToken, newValue);
             } else {
                 for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
-                    objectBuilder.add(entry.getKey(), add(entry.getValue(), currentPosition + 1, referencePosition, newValue));
-                    if (currentPosition == referencePosition) {
+
+                    currentPath.add(entry.getKey());
+                    objectBuilder.add(entry.getKey(), addInternal(entry.getValue(), newValue, currentPath));
+                    currentPath.remove(entry.getKey());
+
+                    if (currentPath.size() == referenceTokens.size() - 1 &&
+                        currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2))) {
                         objectBuilder.add(lastReferenceToken, newValue);
                     }
                 }
@@ -357,7 +365,9 @@ public class JsonPointerImpl implements JsonPointer {
             JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
 
             int arrayIndex = -1;
-            if (currentPosition == referencePosition) {
+            if (currentPath.size() == referenceTokens.size() - 1 &&
+                currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2))) {
+
                 arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, true);
             }
 
@@ -369,7 +379,11 @@ public class JsonPointerImpl implements JsonPointer {
                 if (i == jsonArraySize) {
                     break;
                 }
-                arrayBuilder.add(add(jsonArray.get(i), currentPosition + 1, referencePosition, newValue));
+
+                String path = String.valueOf(i);
+                currentPath.add(path);
+                arrayBuilder.add(addInternal(jsonArray.get(i), newValue, currentPath));
+                currentPath.remove(path);
             }
             return arrayBuilder.build();
         }

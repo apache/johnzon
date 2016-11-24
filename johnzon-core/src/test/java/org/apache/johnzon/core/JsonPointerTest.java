@@ -26,12 +26,15 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonPointer;
 import javax.json.JsonReader;
+import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 public class JsonPointerTest {
@@ -606,6 +609,54 @@ public class JsonPointerTest {
         JsonPointerImpl jsonPointer2 = new JsonPointerImpl("/foo/2");
         assertFalse(jsonPointer1.equals(jsonPointer2));
     }
+
+    @Test
+    public void testAddObjectMemberToNestedObject() {
+
+        JsonObject object = Json.createObjectBuilder()
+                                .add("object1", Json.createObjectBuilder()
+                                                    .add("key1", "value1"))
+                                .add("object2", Json.createObjectBuilder()
+                                                    .add("key2", "value2"))
+                                .build();
+
+        JsonPointerImpl pointer = new JsonPointerImpl("/object2/key3");
+
+        JsonObject pointered = pointer.add(object, new JsonStringImpl("value3"));
+        assertNotNull(pointered);
+        assertNotSame(object, pointered);
+
+        JsonObject object1 = pointered.getJsonObject("object1");
+        assertEquals(1, object1.size());
+        assertEquals("value1", object1.getString("key1"));
+
+        JsonObject object2 = pointered.getJsonObject("object2");
+        assertEquals(2, object2.size());
+        assertEquals("value2", object2.getString("key2"));
+        assertEquals("value3", object2.getString("key3"));
+    }
+
+    @Test
+    public void testGetValueFromNestedObject() {
+
+        JsonObject family = Json.createObjectBuilder()
+                                .add("family", Json.createObjectBuilder()
+                                                   .add("father", Json.createObjectBuilder()
+                                                                      .add("name", "Anakin Skywalker"))
+                                                   .add("mother", Json.createObjectBuilder()
+                                                                      .add("name", "Padme Amidala"))
+                                                   .add("children", Json.createArrayBuilder()
+                                                                        .add(Json.createObjectBuilder()
+                                                                                 .add("name", "Luke Skywalker"))
+                                                                        .add(Json.createObjectBuilder()
+                                                                                 .add("name", "Leia Skywalker"))))
+                                .build();
+
+        JsonValue padme = new JsonPointerImpl("/family/mother/name").getValue(family);
+        assertTrue("padme must be instanceOf JsonString", padme instanceof JsonString);
+        assertEquals("Padme Amidala", ((JsonString) padme).getString());
+    }
+
 
     private JsonStructure getJsonDocument() {
         JsonReader reader = Json.createReaderFactory(Collections.<String, Object>emptyMap()).createReader(
