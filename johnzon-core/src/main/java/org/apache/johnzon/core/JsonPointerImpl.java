@@ -289,6 +289,10 @@ public class JsonPointerImpl implements JsonPointer {
         return (JsonArray) remove(target, 1, referenceTokens.size() - 1);
     }
 
+    String getJsonPointer() {
+        return jsonPointer;
+    }
+
     private void validateAdd(JsonValue target) {
         validateJsonPointer(target, referenceTokens.size() - 1);
     }

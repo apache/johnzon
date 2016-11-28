@@ -44,7 +44,7 @@ public class JsonPatchTest {
                                 .readObject();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/baz"),
+                                                                             "/baz",
                                                                              null, // no from
                                                                              new JsonStringImpl("qux")));
 
@@ -66,7 +66,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/foo/1"),
+                                                                             "/foo/1",
                                                                              null, // no from
                                                                              new JsonStringImpl("qux")));
 
@@ -92,7 +92,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/foo/-"),
+                                                                             "/foo/-",
                                                                              null, // no from
                                                                              new JsonStringImpl("qux")));
 
@@ -116,7 +116,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/-"),
+                                                                             "/-",
                                                                              null, // no from
                                                                              new JsonStringImpl("qux")));
 
@@ -138,7 +138,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/baz/bat"),
+                                                                             "/baz/bat",
                                                                              null, // no from
                                                                              new JsonStringImpl("qux")));
 
@@ -153,7 +153,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/5"),
+                                                                             "/5",
                                                                              null,
                                                                              new JsonStringImpl("baz")));
 
@@ -170,7 +170,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
-                                                                             Json.createJsonPointer("/baz"),
+                                                                             "/baz",
                                                                              null,
                                                                              null));
 
@@ -193,7 +193,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
-                                                                             Json.createJsonPointer("/foo/1"),
+                                                                             "/foo/1",
                                                                              null,
                                                                              null));
 
@@ -219,7 +219,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
-                                                                             Json.createJsonPointer("/1"),
+                                                                             "/1",
                                                                              null,
                                                                              null));
 
@@ -241,7 +241,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
-                                                                             Json.createJsonPointer("/nomatch"),
+                                                                             "/nomatch",
                                                                              null,
                                                                              null));
 
@@ -256,7 +256,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
-                                                                             Json.createJsonPointer("/5"),
+                                                                             "/5",
                                                                              null,
                                                                              null));
 
@@ -273,7 +273,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
-                                                                             Json.createJsonPointer("/baz"),
+                                                                             "/baz",
                                                                              null,
                                                                              new JsonStringImpl("boo")));
 
@@ -296,7 +296,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
-                                                                             Json.createJsonPointer("/foo/1"),
+                                                                             "/foo/1",
                                                                              null,
                                                                              new JsonStringImpl("boo")));
 
@@ -323,7 +323,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
-                                                                             Json.createJsonPointer("/0"),
+                                                                             "/0",
                                                                              null,
                                                                              new JsonStringImpl("boo")));
 
@@ -345,7 +345,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
-                                                                             Json.createJsonPointer("/nomatch"),
+                                                                             "/nomatch",
                                                                              null,
                                                                              new JsonStringImpl("notneeded")));
 
@@ -360,7 +360,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
-                                                                             Json.createJsonPointer("/1"),
+                                                                             "/1",
                                                                              null,
                                                                              new JsonStringImpl("notneeded")));
 
@@ -380,8 +380,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/qux/thud"),
-                                                                             Json.createJsonPointer("/foo/waldo"),
+                                                                             "/qux/thud",
+                                                                             "/foo/waldo",
                                                                              null));
 
         JsonObject patched = patch.apply(object);
@@ -413,8 +413,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/foo/3"),
-                                                                             Json.createJsonPointer("/foo/1"),
+                                                                             "/foo/3",
+                                                                             "/foo/1",
                                                                              null));
 
         JsonObject patched = patch.apply(object);
@@ -442,8 +442,8 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/0"),
-                                                                             Json.createJsonPointer("/3"),
+                                                                             "/0",
+                                                                             "/3",
                                                                              null));
 
         JsonArray patched = patch.apply(array);
@@ -466,8 +466,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/bar"),
-                                                                             Json.createJsonPointer("/foo/2"),
+                                                                             "/bar",
+                                                                             "/foo/2",
                                                                              null));
 
         JsonObject patched = patch.apply(object);
@@ -492,8 +492,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/baz"),
-                                                                             Json.createJsonPointer("/nomatch"),
+                                                                             "/baz",
+                                                                             "/nomatch",
                                                                              null));
 
         patch.apply(object);
@@ -508,8 +508,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/nomatch/child"),
-                                                                             Json.createJsonPointer("/foo"),
+                                                                             "/nomatch/child",
+                                                                             "/foo",
                                                                              null));
 
         patch.apply(object);
@@ -524,8 +524,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/object/key"),
-                                                                             Json.createJsonPointer("/object"),
+                                                                             "/object/key",
+                                                                             "/object",
                                                                              null));
 
         patch.apply(object);
@@ -540,8 +540,8 @@ public class JsonPatchTest {
                                .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/baz"),
-                                                                             Json.createJsonPointer("/foo"),
+                                                                             "/baz",
+                                                                             "/foo",
                                                                              null));
 
         JsonObject patched = patch.apply(object);
@@ -563,8 +563,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                                 Json.createJsonPointer("/foo/-"),
-                                                                                 Json.createJsonPointer("/foo/0"),
+                                                                                 "/foo/-",
+                                                                                 "/foo/0",
                                                                                  null));
 
         JsonObject patched = patch.apply(object);
@@ -589,8 +589,8 @@ public class JsonPatchTest {
 
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/0"),
-                                                                             Json.createJsonPointer("/1"),
+                                                                             "/0",
+                                                                             "/1",
                                                                              null));
 
         JsonArray patched = patch.apply(array);
@@ -615,8 +615,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/partner/partner/name"),
-                                                                             Json.createJsonPointer("/name"),
+                                                                             "/partner/partner/name",
+                                                                             "/name",
                                                                              null));
 
         JsonObject patched = patch.apply(object);
@@ -641,8 +641,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/notneeded"),
-                                                                             Json.createJsonPointer("/nomatch"),
+                                                                             "/notneeded",
+                                                                             "/nomatch",
                                                                              null));
 
         patch.apply(object);
@@ -656,8 +656,8 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/path/nomatch"),
-                                                                             Json.createJsonPointer("/foo"),
+                                                                             "/path/nomatch",
+                                                                             "/foo",
                                                                              null));
 
         patch.apply(object);
@@ -672,8 +672,8 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/-"),
-                                                                             Json.createJsonPointer("/2"),
+                                                                             "/-",
+                                                                             "/2",
                                                                              null));
 
         patch.apply(array);
@@ -687,8 +687,8 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/1"),
-                                                                             Json.createJsonPointer("/-"),
+                                                                             "/1",
+                                                                             "/-",
                                                                              null));
 
         patch.apply(array);
@@ -703,7 +703,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/foo"),
+                                                                             "/foo",
                                                                              null,
                                                                              new JsonStringImpl("qux")));
 
@@ -720,7 +720,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/foo"),
+                                                                             "/foo",
                                                                              null,
                                                                              Json.createArrayBuilder().build()));
 
@@ -738,7 +738,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/parents"),
+                                                                             "/parents",
                                                                              null,
                                                                              Json.createArrayBuilder() // yessss, we really want to create a new JsonArray ;)
                                                                                  .add("Odin")
@@ -761,7 +761,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/numbers"),
+                                                                             "/numbers",
                                                                              null,
                                                                              Json.createArrayBuilder() // different ordering
                                                                                  .add(2)
@@ -781,7 +781,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/foo/1"),
+                                                                             "/foo/1",
                                                                              null,
                                                                              new JsonStringImpl("baz")));
 
@@ -800,7 +800,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/2"),
+                                                                             "/2",
                                                                              null,
                                                                              new JsonStringImpl("qux")));
 
@@ -819,7 +819,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/0"),
+                                                                             "/0",
                                                                              null,
                                                                              new JsonStringImpl("bar")));
 
@@ -830,7 +830,7 @@ public class JsonPatchTest {
     public void testTestingObjectMemeberNonexistentTarget() {
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/nomatch"),
+                                                                             "/nomatch",
                                                                              null,
                                                                              JsonValue.EMPTY_JSON_OBJECT));
 
@@ -841,7 +841,7 @@ public class JsonPatchTest {
     public void testTestingArrayElementIndexOutOfBounds() {
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
-                                                                             Json.createJsonPointer("/3"),
+                                                                             "/3",
                                                                              null,
                                                                              JsonValue.EMPTY_JSON_OBJECT));
 
@@ -858,7 +858,7 @@ public class JsonPatchTest {
                                 .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/foo"),
+                                                                             "/foo",
                                                                              null,
                                                                              new JsonStringImpl("abcd")));
 
@@ -875,7 +875,7 @@ public class JsonPatchTest {
     public void testAddArrayElementToEmptyArray() {
 
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/-"),
+                                                                             "/-",
                                                                              null,
                                                                              new JsonStringImpl("foo")));
 
@@ -896,33 +896,33 @@ public class JsonPatchTest {
         // i know this can be done with PatchBuilder but
         // currently it's not implemented and its fun ;)
         JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/family/father"),
+                                                                             "/family/father",
                                                                              null,
                                                                              Json.createObjectBuilder()
                                                                                  .add("name", "Gaio Modry Effect")
                                                                                  .build()),
                                                 new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/family/mother"),
+                                                                             "/family/mother",
                                                                              null,
                                                                              Json.createObjectBuilder()
                                                                                  .add("name", "Cassius vom Hause Clarabella")
                                                                                  .build()),
                                                 new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
-                                                                             Json.createJsonPointer("/family/children/0"),
-                                                                             Json.createJsonPointer("/family/mother"),
+                                                                             "/family/children/0",
+                                                                             "/family/mother",
                                                                              null),
                                                 new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
-                                                                             Json.createJsonPointer("/family/mother"),
+                                                                             "/family/mother",
                                                                              null,
                                                                              Json.createObjectBuilder()
                                                                                  .add("name", "Aimee vom Hause Clarabella")
                                                                                  .build()),
                                                 new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
-                                                                             Json.createJsonPointer("/pedigree"),
-                                                                             Json.createJsonPointer("/family"),
+                                                                             "/pedigree",
+                                                                             "/family",
                                                                              null),
                                                 new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
-                                                                             Json.createJsonPointer("/family"),
+                                                                             "/family",
                                                                              null,
                                                                              null));
 

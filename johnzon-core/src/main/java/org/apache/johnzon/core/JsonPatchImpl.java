@@ -20,11 +20,16 @@ package org.apache.johnzon.core;
 
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import javax.json.JsonPatch;
-import javax.json.JsonPointer;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
@@ -35,6 +40,14 @@ class JsonPatchImpl implements JsonPatch {
 
     JsonPatchImpl(PatchValue... patches) {
         this.patches = Arrays.asList(patches);
+    }
+
+    JsonPatchImpl(List<PatchValue> patches) {
+        if (patches == null) {
+            this.patches = Collections.emptyList();
+        } else {
+            this.patches = Collections.unmodifiableList(patches);
+        }
     }
 
 
@@ -81,21 +94,119 @@ class JsonPatchImpl implements JsonPatch {
     }
 
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        JsonPatchImpl jsonPatch = (JsonPatchImpl) o;
+
+        return patches.equals(jsonPatch.patches);
+    }
+
+    @Override
+    public int hashCode() {
+        return patches.hashCode();
+    }
+
+
+    JsonArray toJsonArray() {
+
+        JsonArrayBuilder builder = Json.createArrayBuilder();
+        for (PatchValue patch : patches) {
+            builder.add(patch.toJson());
+        }
+
+        return builder.build();
+    }
+
+
 
     static class PatchValue {
         private final JsonPatchOperation operation;
-        private final JsonPointer path;
-        private final JsonPointer from;
+        private final JsonPointerImpl path;
+        private final JsonPointerImpl from;
         private final JsonValue value;
 
         PatchValue(JsonPatchOperation operation,
-                   JsonPointer path,
-                   JsonPointer from,
+                   String path,
+                   String from,
                    JsonValue value) {
             this.operation = operation;
-            this.path = path;
-            this.from = from;
+            this.path = new JsonPointerImpl(path);
+
+            // ignore from if we do not need it
+            if (operation == JsonPatchOperation.MOVE || operation == JsonPatchOperation.COPY) {
+                this.from = new JsonPointerImpl(from);
+            } else {
+                this.from = null;
+            }
+
             this.value = value;
+        }
+
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            PatchValue that = (PatchValue) o;
+
+            if (operation != that.operation) {
+                return false;
+            }
+            if (!path.equals(that.path)) {
+                return false;
+            }
+            if (from != null ? !from.equals(that.from) : that.from != null) {
+                return false;
+            }
+            return value != null ? value.equals(that.value) : that.value == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = operation.hashCode();
+            result = 31 * result + path.hashCode();
+            result = 31 * result + (from != null ? from.hashCode() : 0);
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            return result;
+        }
+
+
+        @Override
+        public String toString() {
+            return "{" +
+                   "op: " + operation +
+                   ", path: " + path +
+                   ", from: " + from +
+                   ", value: " + value +
+                   '}';
+        }
+
+        JsonObject toJson() {
+            JsonObjectBuilder builder = Json.createObjectBuilder()
+                                            .add("op", operation.name().toLowerCase())
+                                            .add("path", path.getJsonPointer());
+
+            if (from != null) {
+                builder.add("from", from.getJsonPointer());
+            }
+
+            if (value != null) {
+                builder.add("value", value);
+            }
+
+            return builder.build();
         }
     }
 }

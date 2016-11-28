@@ -22,110 +22,183 @@ import javax.json.JsonPatch;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import java.util.ArrayList;
+import java.util.List;
 
-public class JsonPatchBuilderImpl implements JsonPatchBuilder {
-    public JsonPatchBuilderImpl() {
-        super();
+class JsonPatchBuilderImpl implements JsonPatchBuilder {
+
+    private final List<JsonPatchImpl.PatchValue> operations;
+
+
+    JsonPatchBuilderImpl() {
+        operations = new ArrayList<>();
     }
 
-    public JsonPatchBuilderImpl(JsonArray initialData) {
-        super();
+    JsonPatchBuilderImpl(JsonArray initialData) {
+        operations = new ArrayList<>(initialData.size());
+
+        for (JsonValue value : initialData) {
+
+            JsonObject operation = (JsonObject) value;
+
+            JsonPatchOperation op = JsonPatchOperation.valueOf(operation.getString("op").toUpperCase());
+            String path = operation.getString("path");
+            String from = operation.getString("from", null);
+            JsonValue jsonValue = operation.get("value");
+
+            operations.add(new JsonPatchImpl.PatchValue(op,
+                                                        path,
+                                                        from,
+                                                        jsonValue));
+        }
     }
 
 
 
+    //X TODO this should get simplified to only one method like JsonPatch
     @Override
     public JsonStructure apply(JsonStructure target) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return build().apply(target);
     }
 
     @Override
     public JsonObject apply(JsonObject target) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return build().apply(target);
     }
 
     @Override
     public JsonArray apply(JsonArray target) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return build().apply(target);
     }
+
 
     @Override
     public JsonPatchBuilder add(String path, JsonValue value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+                                                         path,
+                                                         null,
+                                                         value));
     }
 
     @Override
     public JsonPatchBuilder add(String path, String value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return add(path, toJsonString(value));
     }
 
     @Override
     public JsonPatchBuilder add(String path, int value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return add(path, toJsonNumber(value));
     }
 
     @Override
     public JsonPatchBuilder add(String path, boolean value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return add(path, toJsonBoolean(value));
     }
+
 
     @Override
     public JsonPatchBuilder remove(String path) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
+                                                         path,
+                                                         null,
+                                                         null));
     }
+
 
     @Override
     public JsonPatchBuilder replace(String path, JsonValue value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+                                                         path,
+                                                         null,
+                                                         value));
     }
 
     @Override
     public JsonPatchBuilder replace(String path, String value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return replace(path, toJsonString(value));
     }
 
     @Override
     public JsonPatchBuilder replace(String path, int value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return replace(path, toJsonNumber(value));
     }
 
     @Override
     public JsonPatchBuilder replace(String path, boolean value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return replace(path, toJsonBoolean(value));
     }
+
 
     @Override
     public JsonPatchBuilder move(String path, String from) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
+                                                         path,
+                                                         from,
+                                                         null));
     }
+
 
     @Override
     public JsonPatchBuilder copy(String path, String from) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
+                                                         path,
+                                                         from,
+                                                         null));
     }
+
 
     @Override
     public JsonPatchBuilder test(String path, JsonValue value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+                                                         path,
+                                                         null,
+                                                         value));
     }
 
     @Override
     public JsonPatchBuilder test(String path, String value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return test(path, toJsonString(value));
     }
 
     @Override
     public JsonPatchBuilder test(String path, int value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return test(path, toJsonNumber(value));
     }
 
     @Override
     public JsonPatchBuilder test(String path, boolean value) {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+        return test(path, toJsonBoolean(value));
     }
+
 
     @Override
     public JsonPatch build() {
-        throw new UnsupportedOperationException("JSON-P 1.1");
+
+        // add operations to another list
+        // so we can clear and reuse the builder
+        JsonPatchImpl patch = new JsonPatchImpl(new ArrayList<>(operations));
+        operations.clear();
+
+        return patch;
+
     }
+
+
+    private JsonPatchBuilder addOperation(JsonPatchImpl.PatchValue operation) {
+        operations.add(operation);
+        return this;
+    }
+
+    private static JsonValue toJsonBoolean(boolean value) {
+        return value ? JsonValue.TRUE : JsonValue.FALSE;
+    }
+
+    private static JsonValue toJsonString(String value) {
+        return value == null ? JsonValue.NULL : new JsonStringImpl(value);
+    }
+
+    private static JsonValue toJsonNumber(int value) {
+        return new JsonLongImpl(value);
+    }
+
 }
