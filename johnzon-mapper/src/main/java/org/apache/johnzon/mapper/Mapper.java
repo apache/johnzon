@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 
 import javax.json.JsonException;
@@ -42,8 +41,6 @@ import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 import static org.apache.johnzon.mapper.internal.Streams.noClose;
@@ -54,7 +51,6 @@ public class Mapper implements Closeable {
     protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
-    protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry = new ConcurrentHashMap<Adapter<?, ?>, AdapterKey>();
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
     protected final Charset charset;
