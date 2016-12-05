@@ -38,6 +38,7 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.adapter.JsonbAdapter;
+import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbVisibility;
 import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.config.PropertyNamingStrategy;
@@ -156,6 +157,9 @@ public class JohnzonBuilder implements JsonbBuilder {
 
                     @Override
                     public boolean isVisible(final Field field) {
+                        if (field.getAnnotation(JsonbProperty.class) != null) {
+                            return true;
+                        }
                         final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
                         return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
                     }
@@ -167,9 +171,17 @@ public class JohnzonBuilder implements JsonbBuilder {
                     }
 
                     private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
+                        JsonbVisibility visibility = type.getAnnotation(JsonbVisibility.class);
+                        if (visibility != null) {
+                            try {
+                                return visibility.value().newInstance();
+                            } catch (final InstantiationException | IllegalAccessException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        }
                         Package p = type.getPackage();
                         while (p != null) {
-                            final JsonbVisibility visibility = p.getAnnotation(JsonbVisibility.class);
+                            visibility = p.getAnnotation(JsonbVisibility.class);
                             if (visibility != null) {
                                 try {
                                     return visibility.value().newInstance();
