@@ -25,6 +25,7 @@ import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.cxf.transport.local.LocalConduit;
 import org.apache.johnzon.jaxrs.jsonb.jaxrs.JsonbJaxrsProvider;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -101,6 +102,18 @@ public class JsonbJaxRsTest {
         assertEquals(2, johnzon.length);
         for (int i = 0; i < johnzon.length; i++) {
             assertEquals("johnzon" + (i + 1), johnzon[i].getName());
+        }
+    }
+
+    @Test
+    public void testBinaryDownload() {
+        byte[] content = client(MediaType.TEXT_PLAIN_TYPE)
+                .path("johnzon/mybinary")
+                .get(byte[].class);
+
+        Assert.assertEquals(100, content.length);
+        for (int i=0; i < 100; i++) {
+            Assert.assertEquals((byte) i, content[i]);
         }
     }
 
@@ -201,6 +214,18 @@ public class JsonbJaxRsTest {
         @Path("primitive")
         public Integer primitive() {
             return 1986;
+        }
+
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        @Path("mybinary")
+        public byte[] binary() {
+            byte[] content = new byte[100];
+            for (int i=0; i < 100; i++) {
+                content[i] = (byte) i;
+            }
+
+            return content;
         }
     }
 }
