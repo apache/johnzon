@@ -39,7 +39,7 @@ Johnzon comes with four main modules.
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-core</artifactId>
-  <version>${project.version}</version>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
@@ -60,7 +60,7 @@ This is the implementation of the specification. You'll surely want to add the A
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-mapper</artifactId>
-  <version>${project.version}</version>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
@@ -232,7 +232,7 @@ You can use these names with setAccessModeName().
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-jaxrs</artifactId>
-  <version>${project.version}</version>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
@@ -304,7 +304,7 @@ It fully reuses the JSON-B as API.
 <dependency>
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon-websocket</artifactId>
-  <version>${project.version}</version>
+  <version>${johnzon.version}</version>
 </dependency>
 ]]></pre>
 
