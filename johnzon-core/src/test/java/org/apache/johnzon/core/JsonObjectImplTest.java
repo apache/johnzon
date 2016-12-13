@@ -19,9 +19,14 @@
 package org.apache.johnzon.core;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 
 import org.junit.Test;
 
@@ -32,4 +37,92 @@ public class JsonObjectImplTest {
         ob.add("a", new JsonStringImpl("b"));
         assertEquals("{\"a\":\"b\"}", ob.build().toString());
     }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testGetBooleanMissingKeyShouldThrowNullPointerException() {
+        getObject().getBoolean("missing");
+    }
+
+    @Test
+    public void testGetBooleanWithDefaultMissingKeyShouldReturnDefault() {
+        assertTrue(getObject().getBoolean("missing", true));
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testGetIntMissingKeyShouldThrowNullPointerException() {
+        getObject().getInt("missing");
+    }
+
+    @Test
+    public void testGetIntWithDefaultShouldReturnDefault() {
+        assertEquals(42, getObject().getInt("missing", 42));
+    }
+
+
+    @Test
+    public void testGetJsonArrayMissingKeyShouldReturnNull() {
+        assertNull(getObject().getJsonArray("missing"));
+    }
+
+
+    @Test
+    public void testGetJsonNumberMissingKeyShouldReturnNull() {
+        assertNull(getObject().getJsonNumber("missing"));
+    }
+
+
+    @Test
+    public void testGetJsonObjectMissingKeyShouldReturnNull() {
+        assertNull(getObject().getJsonObject("missing"));
+    }
+
+
+    @Test
+    public void testGetJsonStringMissingKeyShouldReturnNull() {
+        assertNull(getObject().getJsonString("missing"));
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testGetStringMissingKeyShouldThrowNullPointerException() {
+        getObject().getString("missing");
+    }
+
+    @Test
+    public void testGetStringWithDefaultShouldReturnDefault() {
+        String expected = "default";
+        assertEquals(expected, getObject().getString("missing", expected));
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testIsNullMissingKeyShouldThrowNullPointerException() {
+        getObject().isNull("missing");
+    }
+
+    @Test
+    public void testIsNullShouldReturnTrue() {
+        assertTrue(Json.createObjectBuilder()
+                       .add("key", JsonValue.NULL)
+                       .build()
+                       .isNull("key"));
+    }
+
+    @Test
+    public void testIsNullShouldReturnFalse() {
+        assertFalse(Json.createObjectBuilder()
+                        .add("key", "value")
+                        .build()
+                        .isNull("key"));
+    }
+
+
+    private JsonObject getObject() {
+        return Json.createObjectBuilder()
+                   .build();
+    }
+
+
 }

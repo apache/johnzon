@@ -36,11 +36,20 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
     private final Map<String, JsonValue> unmodifieableBackingMap;
 
     private <T> T value(final String name, final Class<T> clazz) {
-        final Object v = unmodifieableBackingMap.get(name);
+        final JsonValue v = unmodifieableBackingMap.get(name);
         if (v != null) {
             return clazz.cast(v);
         }
-        throw new NullPointerException("no mapping for " + name);
+        return null;
+    }
+
+    private <T> T valueOrExcpetion(final String name, final Class<T> clazz) {
+        T value = value(name, clazz);
+        if (value == null) {
+            throw new NullPointerException("no mapping for " + name);
+        }
+
+        return value;
     }
 
     JsonObjectImpl(final Map<String, JsonValue> backingMap) {
@@ -70,51 +79,42 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public String getString(final String name) {
-        return getJsonString(name).getString();
+        return valueOrExcpetion(name, JsonString.class).getString();
     }
 
     @Override
     public String getString(final String name, final String defaultValue) {
-        final Object v = unmodifieableBackingMap.get(name);
-        if (v != null) {
-            if (v instanceof JsonString) {
-                return JsonString.class.cast(v).getString();
-            } else {
-                return defaultValue;
-            }
-        } else {
-            return defaultValue;
+        final Object v = value(name, JsonValue.class);
+        if (v != null && v instanceof JsonString) {
+            return JsonString.class.cast(v).getString();
         }
 
+        return defaultValue;
     }
 
     @Override
     public int getInt(final String name) {
-        return getJsonNumber(name).intValue();
+        return valueOrExcpetion(name, JsonNumber.class).intValue();
     }
 
     @Override
     public int getInt(final String name, final int defaultValue) {
-        final Object v = unmodifieableBackingMap.get(name);
-        if (v != null) {
-            if (v instanceof JsonNumber) {
-                return JsonNumber.class.cast(v).intValue();
-            } else {
-                return defaultValue;
-            }
-        } else {
-            return defaultValue;
+        final Object v = value(name, JsonValue.class);
+        if (v != null && v instanceof JsonNumber) {
+            return JsonNumber.class.cast(v).intValue();
         }
+
+        return defaultValue;
     }
 
     @Override
     public boolean getBoolean(final String name) {
-        return JsonValue.TRUE.equals(value(name, JsonValue.class));
+        return JsonValue.TRUE.equals(valueOrExcpetion(name, JsonValue.class));
     }
 
     @Override
     public boolean getBoolean(final String name, final boolean defaultValue) {
-        final Object v = unmodifieableBackingMap.get(name);
+        final Object v = value(name, JsonValue.class);
         if (v != null) {
             return JsonValue.TRUE.equals(v) || !JsonValue.FALSE.equals(v) && defaultValue;
         } else {
@@ -124,7 +124,7 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public boolean isNull(final String name) {
-        return JsonValue.NULL.equals(value(name, JsonValue.class));
+        return JsonValue.NULL.equals(valueOrExcpetion(name, JsonValue.class));
     }
 
     @Override
