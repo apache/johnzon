@@ -79,12 +79,10 @@
       <item name="Mailing Lists" href="/mail-lists.html"/>
     </menu>
     
-    <menu name="Releases">
-        <item name="Johnzon 0.1-incubating"       href="/archives/0.1-incubating/index.html"/>
-        <item name="Johnzon 0.2-incubating"       href="/archives/0.2-incubating/index.html"/>
-        <item name="Johnzon 0.5-incubating"       href="/archives/0.5-incubating/index.html"/>
-        <item name="Johnzon 0.6-incubating"       href="/archives/0.6-incubating/index.html"/>
+    <menu name="Old Releases">
         <item name="Johnzon 0.7-incubating"       href="/archives/0.7-incubating/index.html"/>
+        <item name="Johnzon 0.2-incubating"       href="/archives/0.2-incubating/index.html"/>
+        <item name="Johnzon 0.1-incubating"       href="/archives/0.1-incubating/index.html"/>
     </menu>
 
     <menu ref="reports" inherit="bottom"/>
