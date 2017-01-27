@@ -184,14 +184,14 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
     private Class<?> toType(final Type type) {
         return Class.class.isInstance(type) ? Class.class.cast(type) :
                 (ParameterizedType.class.isInstance(type) ? toType(ParameterizedType.class.cast(type).getRawType()) :
-                Object.class /*fallback*/);
+                        Object.class /*fallback*/);
     }
 
-    public static abstract class CompositeDecoratedType implements DecoratedType {
-        protected final DecoratedType type1;
-        private final DecoratedType type2;
+    public static abstract class CompositeDecoratedType<T extends DecoratedType> implements DecoratedType {
+        protected final T type1;
+        protected final T type2;
 
-        private CompositeDecoratedType(final DecoratedType type1, final DecoratedType type2) {
+        private CompositeDecoratedType(final T type1, final T type2) {
             this.type1 = type1;
             this.type2 = type2;
         }
@@ -233,43 +233,37 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         }
     }
 
-    public static final class CompositeReader extends CompositeDecoratedType implements Reader {
-        private final Reader reader;
-
-        private CompositeReader(final Reader type1, final DecoratedType type2) {
+    public static final class CompositeReader extends CompositeDecoratedType<Reader> implements Reader {
+        private CompositeReader(final Reader type1, final Reader type2) {
             super(type1, type2);
-            reader = type1;
         }
 
         @Override
         public Object read(final Object instance) {
-            return reader.read(instance);
+            return type1.read(instance);
         }
 
         @Override
         public ObjectConverter.Writer<?> findObjectConverterWriter() {
-            final ObjectConverter.Writer<?> objectConverter = Reader.class.cast(type1).findObjectConverterWriter();
-            return objectConverter == null ? reader.findObjectConverterWriter() : objectConverter;
+            final ObjectConverter.Writer<?> objectConverter = type2.findObjectConverterWriter();
+            return objectConverter == null ? type1.findObjectConverterWriter() : objectConverter;
         }
     }
 
-    public static final class CompositeWriter extends CompositeDecoratedType implements Writer {
-        private final Writer writer;
-
-        private CompositeWriter(final Writer type1, final DecoratedType type2) {
+    public static final class CompositeWriter extends CompositeDecoratedType<Writer> implements Writer {
+        private CompositeWriter(final Writer type1, final Writer type2) {
             super(type1, type2);
-            writer = type1;
         }
 
         @Override
         public void write(final Object instance, final Object value) {
-            writer.write(instance, value);
+            type1.write(instance, value);
         }
 
         @Override
         public ObjectConverter.Reader<?> findObjectConverterReader() {
-            final ObjectConverter.Reader<?> objectConverter = Writer.class.cast(type1).findObjectConverterReader();
-            return objectConverter == null ? writer.findObjectConverterReader() : objectConverter;
+            final ObjectConverter.Reader<?> objectConverter = type2.findObjectConverterReader();
+            return objectConverter == null ? type1.findObjectConverterReader() : objectConverter;
         }
     }
 }
