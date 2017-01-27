@@ -19,21 +19,26 @@
 package org.apache.johnzon.mapper;
 
 
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
-
-import javax.json.JsonObject;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+
+import javax.json.JsonObject;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 
 @RunWith(Parameterized.class)
 public class ObjectTypeTest {
@@ -68,8 +73,8 @@ public class ObjectTypeTest {
     public void testReadWithObjectConverter() {
 
         Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
-                                           .addObjectConverter(Dog.class, new TestWithTypeConverter())
-                                           .build();
+                .addObjectConverter(Dog.class, new TestWithTypeConverter())
+                .build();
 
         Dog dog = mapper.readObject(getJson(), Dog.class);
         Assert.assertNotNull(dog);
@@ -82,8 +87,8 @@ public class ObjectTypeTest {
         String expectedJson = "[{\"poodleName\":\"Poodle1\"},{\"poodleName\":\"Poodle2\"}]";
 
         Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
-                                           .addObjectConverter(Poodle.class, new DBAccessPoodleConverter())
-                                           .build();
+                .addObjectConverter(Poodle.class, new DBAccessPoodleConverter())
+                .build();
 
         String json = mapper.writeObjectAsString(new ArrayList<Poodle>(DBAccessPoodleConverter.POODLES.values()));
         Assert.assertNotNull(json);
@@ -94,8 +99,8 @@ public class ObjectTypeTest {
     public void testReadWithAdvancedObjectConverter() {
 
         Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
-                                           .addObjectConverter(Poodle.class, new DBAccessPoodleConverter())
-                                           .build();
+                .addObjectConverter(Poodle.class, new DBAccessPoodleConverter())
+                .build();
 
         List<Poodle> poodles = mapper.readObject("[{\"poodleName\":\"Poodle1\"},{\"poodleName\":\"Poodle2\"}]", new ParameterizedType() {
             @Override
@@ -121,6 +126,33 @@ public class ObjectTypeTest {
         }
     }
 
+    @Test
+    public void multiple() {
+        assumeFalse("field".equals(accessMode) /*we need setType*/);
+
+        final Multiple multiple = new Multiple();
+        multiple.dogs = asList(new Dog(), new Beagle());
+        final Mapper mapper = new MapperBuilder()
+                .setAccessModeName(accessMode)
+                .setReadAttributeBeforeWrite(true)
+                .setAttributeOrder(new Comparator<String>() {
+                    @Override
+                    public int compare(final String o1, final String o2) {
+                        return o1.compareTo(o2); // type before value
+                    }
+                }).build();
+        final String json = "{\"dogs\":[" +
+                "{\"type\":\"org.apache.johnzon.mapper.ObjectTypeTest$Dog\",\"value\":{}}," +
+                "{\"type\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\",\"value\":{}}]}";
+        assertEquals(json, mapper.writeObjectAsString(multiple));
+
+        final Multiple deser = mapper.readObject(json, Multiple.class);
+        assertEquals(2, deser.dogs.size());
+        assertTrue(Dog.class.isInstance(deser.dogs.get(0)));
+        assertFalse(Beagle.class.isInstance(deser.dogs.get(0)));
+        assertTrue(Beagle.class.isInstance(deser.dogs.get(1)));
+    }
+
 
     private Mutt getJavaObject() {
         Poodle mum = new Poodle();
@@ -143,20 +175,20 @@ public class ObjectTypeTest {
 
     private String getJson() {
         return "{" +
-                                          "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
-                                          "\"father\":{" +
-                                            "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
-                                              "\"father\":{" +
-                                                "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
-                                                "\"name\":\"Wuffi\"" +
-                                              "}," +
-                                              "\"name\":\"Gnarl\"}," +
-                                          "\"mother\":{" +
-                                            "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\"," +
-                                            "\"hairCut\":true," +
-                                            "\"name\":\"Rosa\"}," +
-                                          "\"name\":\"Snoopie\"" +
-                                        "}";
+                "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Mutt\"," +
+                "\"father\":{" +
+                "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                "\"father\":{" +
+                "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\"," +
+                "\"name\":\"Wuffi\"" +
+                "}," +
+                "\"name\":\"Gnarl\"}," +
+                "\"mother\":{" +
+                "\"//javaType\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\"," +
+                "\"hairCut\":true," +
+                "\"name\":\"Rosa\"}," +
+                "\"name\":\"Snoopie\"" +
+                "}";
     }
 
 
@@ -174,7 +206,6 @@ public class ObjectTypeTest {
 
             return parser.readObject(jsonObject, targetClass);
         }
-
 
 
         /**
@@ -195,7 +226,7 @@ public class ObjectTypeTest {
                     if (targetType instanceof Class) {
                         targetClass = (Class) targetType;
                     } else if (targetType instanceof ParameterizedType) {
-                        targetClass = (Class)((ParameterizedType) targetType).getRawType();
+                        targetClass = (Class) ((ParameterizedType) targetType).getRawType();
                     }
                     if (targetClass != null && targetClass.isAssignableFrom(subClass)) {
                         return subClass;
@@ -206,6 +237,72 @@ public class ObjectTypeTest {
             }
 
             return (Class) targetType;
+        }
+    }
+
+    public static class Multiple {
+        @JohnzonConverter(TypeAdapter.class)
+        private List<Dog> dogs;
+
+        @JohnzonConverter(TypeAdapter.class)
+        public List<Dog> getDogs() {
+            return dogs;
+        }
+
+        @JohnzonConverter(TypeAdapter.class)
+        public void setDogs(final List<Dog> dogs) {
+            this.dogs = dogs;
+        }
+    }
+
+    public static class TypeAdapter implements TypeAwareAdapter<Dog, TypeInstance> {
+        @Override
+        public Dog to(final TypeInstance typeInstance) {
+            return typeInstance.value;
+        }
+
+        @Override
+        public TypeInstance from(final Dog dog) {
+            final TypeInstance typeInstance = new TypeInstance();
+            typeInstance.type = dog.getClass().getName();
+            typeInstance.value = dog;
+            return typeInstance;
+        }
+
+        @Override
+        public Type getTo() {
+            return TypeInstance.class;
+        }
+
+        @Override
+        public Type getFrom() {
+            return Dog.class;
+        }
+    }
+
+    public static class TypeInstance {
+        private String type;
+        private Dog value;
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(final String type) {
+            this.type = type;
+            try {
+                this.value = Dog.class.cast(Thread.currentThread().getContextClassLoader().loadClass(type).newInstance());
+            } catch (final Exception e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+
+        public Dog getValue() {
+            return value;
+        }
+
+        public void setValue(final Dog value) {
+            this.value = value;
         }
     }
 
@@ -293,6 +390,7 @@ public class ObjectTypeTest {
         public static final String POODLE_2_NAME = "Poodle2";
 
         public static final Map<String, Poodle> POODLES = new LinkedHashMap<String, Poodle>(2);
+
         static {
             Poodle poodle1 = new Poodle();
             poodle1.setHairCut(true);

@@ -18,8 +18,8 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
-import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.MapperConverter;
 import org.apache.johnzon.mapper.TypeAwareAdapter;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
@@ -34,7 +34,7 @@ public class Converters {
     }
 
     // TODO: more ParameterizedType and maybe TypeClosure support
-    public static boolean matches(final Type type, final Adapter<?, ?> adapter) {
+    public static boolean matches(final Type type, final MapperConverter adapter) {
         Type convertType = null;
         if (ConverterAdapter.class.isInstance(adapter)) {
             final Converter delegate = ConverterAdapter.class.cast(adapter).getConverter();
