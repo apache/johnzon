@@ -83,7 +83,7 @@ public class JsonPointerTest {
             assertEquals("1", result.toString());
         }
         {
-            JsonPointer jsonPointer = Json.createJsonPointer("/a~1b");
+            JsonPointer jsonPointer = Json.createPointer("/a~1b");
             JsonValue result = jsonPointer.getValue(jsonDocument);
             assertEquals("1", result.toString());
         }
@@ -108,7 +108,7 @@ public class JsonPointerTest {
             assertEquals("3", result.toString());
         }
         {
-            JsonPointer jsonPointer = Json.createJsonPointer("/e^f");
+            JsonPointer jsonPointer = Json.createPointer("/e^f");
             JsonValue result = jsonPointer.getValue(jsonDocument);
             assertEquals("3", result.toString());
         }
@@ -124,7 +124,7 @@ public class JsonPointerTest {
             assertEquals("4", result.toString());
         }
         {
-            JsonPointer jsonPointer = Json.createJsonPointer("/g|h");
+            JsonPointer jsonPointer = Json.createPointer("/g|h");
             JsonValue result = jsonPointer.getValue(jsonDocument);
             assertEquals("4", result.toString());
         }

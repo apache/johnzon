@@ -20,7 +20,6 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonPatch;
 import javax.json.JsonPatchBuilder;
-import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,24 +50,6 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
                                                         from,
                                                         jsonValue));
         }
-    }
-
-
-
-    //X TODO this should get simplified to only one method like JsonPatch
-    @Override
-    public JsonStructure apply(JsonStructure target) {
-        return build().apply(target);
-    }
-
-    @Override
-    public JsonObject apply(JsonObject target) {
-        return build().apply(target);
-    }
-
-    @Override
-    public JsonArray apply(JsonArray target) {
-        return build().apply(target);
     }
 
 

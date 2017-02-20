@@ -116,6 +116,16 @@ public class JsonPointerImpl implements JsonPointer {
         return jsonValue;
     }
 
+    @Override
+    public boolean containsValue(JsonStructure target) {
+        try {
+            getValue(target);
+            return true;
+        } catch (JsonException je) {
+            return false;
+        }
+    }
+
     /**
      * Adds or replaces a value at the referenced location in the specified
      * {@code target} with the specified {@code value}.

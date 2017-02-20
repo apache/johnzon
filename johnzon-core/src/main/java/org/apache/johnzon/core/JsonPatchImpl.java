@@ -114,7 +114,8 @@ class JsonPatchImpl implements JsonPatch {
     }
 
 
-    JsonArray toJsonArray() {
+    @Override
+    public JsonArray toJsonArray() {
 
         JsonArrayBuilder builder = Json.createArrayBuilder();
         for (PatchValue patch : patches) {
