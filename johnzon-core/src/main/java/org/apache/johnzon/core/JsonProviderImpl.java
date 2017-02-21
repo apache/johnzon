@@ -306,6 +306,11 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
             return new JsonPatchBuilderImpl(initialData);
         }
 
+        @Override
+        public JsonPointer createPointer(String path) {
+            return new JsonPointerImpl(path);
+        }
+
         //X TODO add missing methods
 
     }
