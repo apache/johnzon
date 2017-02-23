@@ -167,7 +167,7 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     @Override
     public JsonObject build() {
         
-        if(attributeMap ==null) {
+        if(attributeMap == null || attributeMap.isEmpty()) {
             return new JsonObjectImpl(Collections.EMPTY_MAP);
         } else {
             Map<String, JsonValue> dump = (Collections.unmodifiableMap(attributeMap));

@@ -104,4 +104,16 @@ public class JsonObjectBuilderImplTest {
 
         assertEquals("{\"c\":\"d\"}", builder.build().toString());
     }
+
+    @Test(expected = NullPointerException.class)
+    public void testNullCheckValue() {
+        final JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("a", (Integer) null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testNullCheckName() {
+        final JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add(null, "b");
+    }
 }
