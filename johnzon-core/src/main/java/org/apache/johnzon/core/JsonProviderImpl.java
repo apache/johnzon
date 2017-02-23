@@ -219,7 +219,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
         private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
         private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
-        private final JsonBuilderFactory builderFactory = new JsonBuilderFactoryImpl(null);
+        private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null);
 
         @Override
         public JsonParser createParser(final InputStream in) {
@@ -284,6 +284,16 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         @Override
         public JsonObjectBuilder createObjectBuilder() {
             return builderFactory.createObjectBuilder();
+        }
+
+        @Override
+        public JsonObjectBuilder createObjectBuilder(JsonObject jsonObject) {
+            return builderFactory.createObjectBuilder(jsonObject);
+        }
+
+        @Override
+        public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
+            return builderFactory.createObjectBuilder(initialValues);
         }
 
         @Override

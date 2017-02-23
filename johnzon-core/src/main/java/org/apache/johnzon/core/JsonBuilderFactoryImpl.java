@@ -77,4 +77,8 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
     }
+
+    public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
+        return new JsonObjectBuilderImpl(initialValues);
+    }
 }
