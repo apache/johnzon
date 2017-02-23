@@ -302,6 +302,15 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         }
 
         @Override
+        public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
+            return builderFactory.createArrayBuilder(initialData);
+        }
+
+        public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+            return builderFactory.createArrayBuilder(initialData);
+        }
+
+        @Override
         public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
             return (config == null || config.isEmpty()) ? builderFactory : new JsonBuilderFactoryImpl(config);
         }

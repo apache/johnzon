@@ -20,12 +20,14 @@ package org.apache.johnzon.core;
 
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonException;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,7 +41,38 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         tmpList = new ArrayList<>(initialData);
     }
 
-    @Override
+    public JsonArrayBuilderImpl(Collection<Object> initialData) {
+        tmpList = new ArrayList<>();
+        for (Object initialValue : initialData) {
+            add(initialValue);
+        }
+    }
+
+    public JsonArrayBuilder add(final Object value) {
+        if (value instanceof JsonValue) {
+            add((JsonValue) value);
+        } else if (value instanceof BigDecimal) {
+            add((BigDecimal) value);
+        } else if (value instanceof BigInteger) {
+            add((BigInteger) value);
+        } else if (value instanceof Boolean) {
+            add((boolean) value);
+        } else if (value instanceof Double) {
+            add((double) value);
+        } else if (value instanceof Integer) {
+            add((int) value);
+        } else if (value instanceof Long) {
+            add((long) value);
+        } else if (value instanceof String) {
+            add((String) value);
+        } else {
+            throw new JsonException("Illegal JSON type! type=" + value.getClass());
+        }
+
+        return this;
+    }
+
+        @Override
     public JsonArrayBuilder add(final JsonValue value) {
         addValue(value);
         return this;

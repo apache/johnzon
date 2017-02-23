@@ -19,6 +19,7 @@
 package org.apache.johnzon.core;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -73,6 +74,10 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
         return new JsonArrayBuilderImpl(initialData);
     }
 
+    public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+        return new JsonArrayBuilderImpl(initialData);
+    }
+
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
@@ -81,4 +86,5 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
     public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
         return new JsonObjectBuilderImpl(initialValues);
     }
+
 }
