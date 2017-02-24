@@ -184,8 +184,9 @@ public class MapperTest {
             // read
             assertEquals(Boolean.TRUE, simpleMapper.readObject(new ByteArrayInputStream("true".getBytes()), Object.class));
             assertEquals(Boolean.FALSE, simpleMapper.readObject(new ByteArrayInputStream("false".getBytes()), Object.class));
-            assertEquals(1., encodingAwareMapper
-                    .readObject(new ByteArrayInputStream("1".getBytes()), Object.class));
+            assertEquals(1.,
+                         encodingAwareMapper.readObject(new ByteArrayInputStream("1".getBytes()), Object.class),
+                         0.1);
             assertEquals("val", simpleMapper.readObject(new ByteArrayInputStream("\"val\"".getBytes()), Object.class));
             assertEquals(asList("val1", "val2"), simpleMapper.readObject(new ByteArrayInputStream("[\"val1\", \"val2\"]".getBytes()), Object.class));
             assertEquals(new HashMap<String, Object>() {{

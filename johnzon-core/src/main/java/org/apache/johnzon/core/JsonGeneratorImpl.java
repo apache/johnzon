@@ -431,6 +431,26 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     @Override
+    public JsonGenerator writeKey(final String key) {
+        final GeneratorState currentState = currentState();
+        if (!currentState.acceptsKey) {
+            throw new JsonGenerationException("state " + currentState + " does not accept a key");
+        }
+        if (currentState == GeneratorState.IN_OBJECT) {
+            justWrite(COMMA_CHAR);
+            writeEol();
+        }
+
+        writeIndent();
+
+        writeCachedKey(key);
+        state.push(GeneratorState.AFTER_KEY);
+        return this;
+    }
+
+
+
+    @Override
     public void close() {
         try {
             if (currentState() != GeneratorState.END) {
@@ -648,22 +668,6 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     private GeneratorState currentState() {
         return state.peek();
-    }
-
-    private void writeKey(final String key) {
-        final GeneratorState currentState = currentState();
-        if (!currentState.acceptsKey) {
-            throw new IllegalStateException("state " + currentState + " does not accept a key");
-        }
-        if (currentState == GeneratorState.IN_OBJECT) {
-            justWrite(COMMA_CHAR);
-            writeEol();
-        }
-
-        writeIndent();
-
-        writeCachedKey(key);
-        state.push(GeneratorState.AFTER_KEY);
     }
 
     private void writeValueAsJsonString(final String value) {

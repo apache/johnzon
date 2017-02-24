@@ -22,12 +22,16 @@ import static org.junit.Assert.assertEquals;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonArrayBuilderImplTest {
@@ -166,5 +170,36 @@ public class JsonArrayBuilderImplTest {
     public void addDoubleNpeIfNegIfinite() {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
         builder.add((double) Double.NEGATIVE_INFINITY);
+    }
+
+
+    @Test
+    public void testCreateArrayBuilderWithJsonArrayInitialData() {
+        final JsonArrayBuilder builder = Json.createArrayBuilder();
+        builder.add("a");
+        builder.add("b");
+        builder.add("c");
+        JsonArray jsonArray = builder.build();
+
+        JsonArrayBuilder otherBuilder = Json.createArrayBuilder(jsonArray);
+        otherBuilder.add("d");
+
+        JsonArray jsonArray2 = otherBuilder.build();
+        Assert.assertEquals("[\"a\",\"b\",\"c\",\"d\"]", jsonArray2.toString());
+    }
+
+    @Test
+    public void testCreateArrayBuilderWithCollectionInitialData() {
+        //X TODO should be Collection<String>, but the current Json API is not nice enough...
+        Collection<Object> initialData = new ArrayList<>();
+        initialData.add("a");
+        initialData.add("b");
+        initialData.add("c");
+
+        JsonArrayBuilder otherBuilder = Json.createArrayBuilder(initialData);
+        otherBuilder.add("d");
+
+        JsonArray jsonArray2 = otherBuilder.build();
+        Assert.assertEquals("[\"a\",\"b\",\"c\",\"d\"]", jsonArray2.toString());
     }
 }

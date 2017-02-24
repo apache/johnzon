@@ -23,13 +23,26 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.Collection;
 import java.util.Map;
 
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonMergePatch;
+import javax.json.JsonNumber;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonPatch;
+import javax.json.JsonPatchBuilder;
+import javax.json.JsonPointer;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 import javax.json.spi.JsonProvider;
@@ -115,13 +128,98 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> stringMap) {
         return DELEGATE.createBuilderFactory(stringMap);
     }
+    
+    @Override
+    public JsonPatchBuilder createPatchBuilder() {
+        return DELEGATE.createPatchBuilder();
+    }
+
+    @Override
+    public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
+        return DELEGATE.createPatchBuilder(initialData);
+    }
+
+    @Override
+    public JsonObjectBuilder createObjectBuilder(JsonObject jsonObject) {
+        return DELEGATE.createObjectBuilder(jsonObject);
+    }
+
+    @Override
+    public JsonObjectBuilder createObjectBuilder(Map<String, Object> map) {
+        return DELEGATE.createObjectBuilder(map);
+    }
+
+    @Override
+    public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
+        return DELEGATE.createArrayBuilder(initialData);
+    }
+
+    @Override
+    public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+        return DELEGATE.createArrayBuilder(initialData);
+    }
+
+    @Override
+    public JsonPointer createPointer(String path) {
+        return DELEGATE.createPointer(path);
+    }
+
+    @Override
+    public JsonString createValue(String value) {
+        return DELEGATE.createValue(value);
+    }
+
+    @Override
+    public JsonNumber createValue(int value) {
+        return DELEGATE.createValue(value);
+    }
+
+    @Override
+    public JsonNumber createValue(long value) {
+        return DELEGATE.createValue(value);
+    }
+
+    @Override
+    public JsonNumber createValue(double value) {
+        return DELEGATE.createValue(value);
+    }
+
+    @Override
+    public JsonNumber createValue(BigDecimal value) {
+        return DELEGATE.createValue(value);
+    }
+
+    @Override
+    public JsonNumber createValue(BigInteger value) {
+        return DELEGATE.createValue(value);
+    }
+
+    @Override
+    public JsonPatch createPatch(JsonArray array) {
+        return DELEGATE.createPatch(array);
+    }
+
+    @Override
+    public JsonPatch createDiff(JsonStructure source, JsonStructure target) {
+        return DELEGATE.createDiff(source, target);
+    }
+
+    @Override
+    public JsonMergePatch createMergePatch(JsonValue patch) {
+        return DELEGATE.createMergePatch(patch);
+    }
+
+    @Override
+    public JsonMergePatch createMergeDiff(JsonValue source, JsonValue target) {
+        return DELEGATE.createMergeDiff(source, target);
+    }
 
     static class JsonProviderDelegate extends JsonProvider {
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
         private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
         private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
-        private final JsonBuilderFactory builderFactory = new JsonBuilderFactoryImpl(null);
+        private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null);
 
         @Override
         public JsonParser createParser(final InputStream in) {
@@ -189,13 +287,50 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         }
 
         @Override
+        public JsonObjectBuilder createObjectBuilder(JsonObject jsonObject) {
+            return builderFactory.createObjectBuilder(jsonObject);
+        }
+
+        @Override
+        public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
+            return builderFactory.createObjectBuilder(initialValues);
+        }
+
+        @Override
         public JsonArrayBuilder createArrayBuilder() {
             return builderFactory.createArrayBuilder();
+        }
+
+        @Override
+        public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
+            return builderFactory.createArrayBuilder(initialData);
+        }
+
+        public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+            return builderFactory.createArrayBuilder(initialData);
         }
 
         @Override
         public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
             return (config == null || config.isEmpty()) ? builderFactory : new JsonBuilderFactoryImpl(config);
         }
+
+        @Override
+        public JsonPatchBuilder createPatchBuilder() {
+            return new JsonPatchBuilderImpl();
+        }
+
+        @Override
+        public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
+            return new JsonPatchBuilderImpl(initialData);
+        }
+
+        @Override
+        public JsonPointer createPointer(String path) {
+            return new JsonPointerImpl(path);
+        }
+
+        //X TODO add missing methods
+
     }
 }

@@ -19,14 +19,17 @@
 package org.apache.johnzon.core;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 class JsonBuilderFactoryImpl implements JsonBuilderFactory {
@@ -56,12 +59,32 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
     }
 
     @Override
+    public JsonObjectBuilder createObjectBuilder(JsonObject initialData) {
+        return new JsonObjectBuilderImpl(initialData);
+    }
+
+    @Override
     public JsonArrayBuilder createArrayBuilder() {
         return new JsonArrayBuilderImpl();
+    }
+
+
+    @Override
+    public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
+        return new JsonArrayBuilderImpl(initialData);
+    }
+
+    public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+        return new JsonArrayBuilderImpl(initialData);
     }
 
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
     }
+
+    public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
+        return new JsonObjectBuilderImpl(initialValues);
+    }
+
 }

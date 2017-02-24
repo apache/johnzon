@@ -18,44 +18,32 @@
  */
 package org.apache.johnzon.core;
 
-class SimpleStack<T> {
+public class JsonPointerUtil {
 
-    private Element<T> head;
-
-    void push(final T element) {
-
-        final Element<T> tmp = new Element<T>();
-        tmp.payload = element;
-        tmp.previous = head;
-        head = tmp;
+    private JsonPointerUtil() {
 
     }
 
-    T pop() {
-
-        final T tmp = head.payload;
-        head = head.previous;
-        return tmp;
-
-    }
-
-    T peek() {
-        return head.payload;
-    }
-
-    boolean isEmpty() {
-        return head == null;
-    }
-
-    private static class Element<T> {
-
-        public Element() {
-
+    /**
+     * Transforms "~" to "~0" and then "/" to "~1"
+     */
+    public static String encode(String s) {
+        if (s == null || s.length() == 0) {
+            return s;
         }
 
-        private Element<T> previous;
-        private T payload;
+        return s.replace("~", "~0").replace("/", "~1");
+    }
 
+    /**
+     * Transforms "~1" to "/" and then "~0" to "~",
+     */
+    public static String decode(String s) {
+        if (s == null || s.length() == 0) {
+            return s;
+        }
+
+        return s.replace("~1", "/").replace("~0", "~");
     }
 
 }
