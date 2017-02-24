@@ -311,6 +311,36 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         }
 
         @Override
+        public JsonString createValue(String value) {
+            return new JsonStringImpl(value);
+        }
+
+        @Override
+        public JsonNumber createValue(int value) {
+            return new JsonLongImpl(value);
+        }
+
+        @Override
+        public JsonNumber createValue(long value) {
+            return new JsonLongImpl(value);
+        }
+
+        @Override
+        public JsonNumber createValue(double value) {
+            return new JsonDoubleImpl(value);
+        }
+
+        @Override
+        public JsonNumber createValue(BigDecimal value) {
+            return new JsonNumberImpl(value);
+        }
+
+        @Override
+        public JsonNumber createValue(BigInteger value) {
+            return new JsonLongImpl(value.longValue());
+        }
+
+        @Override
         public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
             return (config == null || config.isEmpty()) ? builderFactory : new JsonBuilderFactoryImpl(config);
         }
