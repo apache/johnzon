@@ -40,7 +40,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
             JsonObject operation = (JsonObject) value;
 
-            JsonPatchOperation op = JsonPatchOperation.valueOf(operation.getString("op").toUpperCase());
+            JsonPatch.Operation op = JsonPatch.Operation.fromOperationName(operation.getString("op"));
             String path = operation.getString("path");
             String from = operation.getString("from", null);
             JsonValue jsonValue = operation.get("value");
@@ -55,7 +55,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatchBuilder add(String path, JsonValue value) {
-        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                          path,
                                                          null,
                                                          value));
@@ -79,7 +79,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatchBuilder remove(String path) {
-        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REMOVE,
                                                          path,
                                                          null,
                                                          null));
@@ -88,7 +88,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatchBuilder replace(String path, JsonValue value) {
-        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                          path,
                                                          null,
                                                          value));
@@ -112,7 +112,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatchBuilder move(String path, String from) {
-        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatch.Operation.MOVE,
                                                          path,
                                                          from,
                                                          null));
@@ -121,7 +121,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatchBuilder copy(String path, String from) {
-        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatch.Operation.COPY,
                                                          path,
                                                          from,
                                                          null));
@@ -130,7 +130,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatchBuilder test(String path, JsonValue value) {
-        return addOperation(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        return addOperation(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                          path,
                                                          null,
                                                          value));

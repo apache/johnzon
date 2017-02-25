@@ -32,12 +32,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddString() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/foo",
                                                                                 null,
                                                                                 new JsonStringImpl("bar")));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/foo", "bar")
+        JsonPatch patch = Json.createPatchBuilder().add("/foo", "bar")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -46,13 +46,13 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddStringNull() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/foo",
                                                                                 null,
                                                                                 JsonValue.NULL));
 
         String nullString = null;
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/foo", nullString)
+        JsonPatch patch = Json.createPatchBuilder().add("/foo", nullString)
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -61,14 +61,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddJsonObject() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/foo",
                                                                                 null,
                                                                                 Json.createObjectBuilder()
                                                                                     .add("bar", "qux")
                                                                                     .build()));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/foo", Json.createObjectBuilder()
+        JsonPatch patch = Json.createPatchBuilder().add("/foo", Json.createObjectBuilder()
                                                                      .add("bar", "qux")
                                                                      .build())
                                                     .build();
@@ -79,14 +79,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddJsonArray() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/path",
                                                                                 null,
                                                                                 Json.createArrayBuilder()
                                                                                     .add("test")
                                                                                     .build()));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/path", Json.createArrayBuilder()
+        JsonPatch patch = Json.createPatchBuilder().add("/path", Json.createArrayBuilder()
                                                                       .add("test")
                                                                       .build())
                                                     .build();
@@ -97,12 +97,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddJsonValueNull() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/path",
                                                                                 null,
                                                                                 JsonValue.NULL));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/path", JsonValue.NULL)
+        JsonPatch patch = Json.createPatchBuilder().add("/path", JsonValue.NULL)
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -111,12 +111,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddInt() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/foo",
                                                                                 null,
                                                                                 new JsonStringImpl("bar")));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/foo", "bar")
+        JsonPatch patch = Json.createPatchBuilder().add("/foo", "bar")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -125,37 +125,37 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddBoolean() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/path/true",
                                                                                 null,
                                                                                 JsonValue.TRUE),
-                                                   new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+                                                   new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/path/false",
                                                                                 null,
                                                                                 JsonValue.FALSE));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().add("/path/true", true)
-                                                    .add("/path/false", false)
-                                                    .build();
+        JsonPatch patch = Json.createPatchBuilder().add("/path/true", true)
+                                                   .add("/path/false", false)
+                                                   .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
     }
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderAddMissingPath() {
-        new JsonPatchBuilderImpl().add(null, 0);
+        Json.createPatchBuilder().add(null, 0);
     }
 
 
     @Test
     public void testPatchBuilderRemove() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REMOVE,
                                                                                 "/path/to/remove",
                                                                                 null,
                                                                                 null));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().remove("/path/to/remove")
+        JsonPatch patch = Json.createPatchBuilder().remove("/path/to/remove")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -163,19 +163,19 @@ public class JsonPatchBuilderTest {
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderRemoveMissingPath() {
-        new JsonPatchBuilderImpl().remove(null);
+        Json.createPatchBuilder().remove(null);
     }
 
 
     @Test
     public void testPatchBuilderReplaceString() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                  "/path/to/replace",
                                                                                  null,
                                                                                  new JsonStringImpl("new value")));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().replace("/path/to/replace", "new value")
+        JsonPatch patch = Json.createPatchBuilder().replace("/path/to/replace", "new value")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -184,12 +184,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceInt() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                 "/replace/me",
                                                                                 null,
                                                                                 new JsonLongImpl(42)));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().replace("/replace/me", 42)
+        JsonPatch patch = Json.createPatchBuilder().replace("/replace/me", 42)
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -198,16 +198,16 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceBoolean() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                 "/true/to/replace",
                                                                                 null,
                                                                                 JsonValue.FALSE),
-                                                   new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+                                                   new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                 "/false/to/replace",
                                                                                 null,
                                                                                 JsonValue.TRUE));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().replace("/true/to/replace", false)
+        JsonPatch patch = Json.createPatchBuilder().replace("/true/to/replace", false)
                                                     .replace("/false/to/replace", true)
                                                     .build();
         assertNotNull(patch);
@@ -217,14 +217,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceJsonObject() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                 "/replace/the/object",
                                                                                 null,
                                                                                 Json.createObjectBuilder()
                                                                                     .add("foo", "bar")
                                                                                     .build()));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().replace("/replace/the/object", Json.createObjectBuilder()
+        JsonPatch patch = Json.createPatchBuilder().replace("/replace/the/object", Json.createObjectBuilder()
                                                                                         .add("foo", "bar")
                                                                                         .build())
                                                     .build();
@@ -235,14 +235,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceJsonArray() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                 "/replace/my/array",
                                                                                 null,
                                                                                 Json.createArrayBuilder()
                                                                                     .add("test")
                                                                                     .build()));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().replace("/replace/my/array", Json.createArrayBuilder()
+        JsonPatch patch = Json.createPatchBuilder().replace("/replace/my/array", Json.createArrayBuilder()
                                                                                       .add("test")
                                                                                       .build())
                                                     .build();
@@ -252,19 +252,19 @@ public class JsonPatchBuilderTest {
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderReplaceMissingPath() {
-        new JsonPatchBuilderImpl().replace(null, "ignored");
+        Json.createPatchBuilder().replace(null, "ignored");
     }
 
 
     @Test
     public void testPatchBuilderMove() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.MOVE,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.MOVE,
                                                                                 "/move/to",
                                                                                 "/move/from",
                                                                                 null));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().move("/move/to", "/move/from")
+        JsonPatch patch = Json.createPatchBuilder().move("/move/to", "/move/from")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -272,24 +272,24 @@ public class JsonPatchBuilderTest {
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderMoveMissingPath() {
-        new JsonPatchBuilderImpl().move(null, "/ignored");
+        Json.createPatchBuilder().move(null, "/ignored");
     }
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderMoveMissingFrom() {
-        new JsonPatchBuilderImpl().move("/the/path", null);
+        Json.createPatchBuilder().move("/the/path", null);
     }
 
 
     @Test
     public void testPatchBuilderCopy() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.COPY,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.COPY,
                                                                                 "/to",
                                                                                 "/from",
                                                                                 null));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().copy("/to", "/from")
+        JsonPatch patch = Json.createPatchBuilder().copy("/to", "/from")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -297,24 +297,24 @@ public class JsonPatchBuilderTest {
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderCopyMissingPath() {
-        new JsonPatchBuilderImpl().copy(null, "/ignored");
+        Json.createPatchBuilder().copy(null, "/ignored");
     }
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderCopyMissingFrom() {
-        new JsonPatchBuilderImpl().copy("/the/path", null);
+        Json.createPatchBuilder().copy("/the/path", null);
     }
 
 
     @Test
     public void testPatchBuilderTestString() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                 "/to/test",
                                                                                 null,
                                                                                 new JsonStringImpl("value")));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().test("/to/test", "value")
+        JsonPatch patch = Json.createPatchBuilder().test("/to/test", "value")
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -323,16 +323,16 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestBoolean() {
 
-        JsonPatchImpl exptected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        JsonPatchImpl exptected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                  "/true/to/test",
                                                                                  null,
                                                                                  JsonValue.TRUE),
-                                                    new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+                                                    new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                  "/false/to/test",
                                                                                  null,
                                                                                  JsonValue.FALSE));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().test("/true/to/test", true)
+        JsonPatch patch = Json.createPatchBuilder().test("/true/to/test", true)
                                                     .test("/false/to/test", false)
                                                     .build();
         assertNotNull(patch);
@@ -342,12 +342,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestInt() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                 "/test/int",
                                                                                 null,
                                                                                 new JsonLongImpl(16)));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().test("/test/int", 16)
+        JsonPatch patch = Json.createPatchBuilder().test("/test/int", 16)
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -356,12 +356,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestJsonValue() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                 "/test/value",
                                                                                 null,
                                                                                 JsonValue.NULL));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().test("/test/value", JsonValue.NULL)
+        JsonPatch patch = Json.createPatchBuilder().test("/test/value", JsonValue.NULL)
                                                     .build();
         assertNotNull(patch);
         assertEquals(expected, patch);
@@ -370,14 +370,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestJsonObject() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                 "/test/the/object",
                                                                                 null,
                                                                                 Json.createObjectBuilder()
                                                                                     .add("foo", "bar")
                                                                                     .build()));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().test("/test/the/object", Json.createObjectBuilder()
+        JsonPatch patch = Json.createPatchBuilder().test("/test/the/object", Json.createObjectBuilder()
                                                                                   .add("foo", "bar")
                                                                                   .build())
                                                     .build();
@@ -388,14 +388,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestJsonArray() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
                                                                                 "/test/my/array",
                                                                                 null,
                                                                                 Json.createArrayBuilder()
                                                                                     .add("element")
                                                                                     .build()));
 
-        JsonPatch patch = new JsonPatchBuilderImpl().test("/test/my/array", Json.createArrayBuilder()
+        JsonPatch patch = Json.createPatchBuilder().test("/test/my/array", Json.createArrayBuilder()
                                                                                 .add("element")
                                                                                 .build())
                                                     .build();
@@ -405,20 +405,20 @@ public class JsonPatchBuilderTest {
 
     @Test(expected = NullPointerException.class)
     public void testPatchBuilderTestMissingPath() {
-        new JsonPatchBuilderImpl().test(null, "ignored");
+        Json.createPatchBuilder().test(null, "ignored");
     }
 
 
     @Test
     public void testPatchBuilderWithinitialData() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatchOperation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
                                                                                 "/add/an/object",
                                                                                 null,
                                                                                 Json.createObjectBuilder()
                                                                                     .add("name", "Cassius")
                                                                                     .build()),
-                                                   new JsonPatchImpl.PatchValue(JsonPatchOperation.REPLACE,
+                                                   new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
                                                                                 "/replace/me",
                                                                                 null,
                                                                                 Json.createArrayBuilder()
@@ -426,7 +426,7 @@ public class JsonPatchBuilderTest {
                                                                                     .add(27)
                                                                                     .add("test")
                                                                                     .build()),
-                                                   new JsonPatchImpl.PatchValue(JsonPatchOperation.REMOVE,
+                                                   new JsonPatchImpl.PatchValue(JsonPatch.Operation.REMOVE,
                                                                                 "/remove/it",
                                                                                 null,
                                                                                 null));

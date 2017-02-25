@@ -81,7 +81,7 @@ class JsonPatchImpl implements JsonPatch {
                 case TEST:
                     JsonValue toTest = patch.path.getValue(patched);
                     if (!toTest.equals(patch.value)) {
-                        throw new JsonException("JsonPatchOperation.TEST fails! Values are not equal");
+                        throw new JsonException("JsonPatch.Operation.TEST fails! Values are not equal");
                     }
                     break;
                 default:
@@ -128,12 +128,12 @@ class JsonPatchImpl implements JsonPatch {
 
 
     static class PatchValue {
-        private final JsonPatchOperation operation;
+        private final JsonPatch.Operation operation;
         private final JsonPointerImpl path;
         private final JsonPointerImpl from;
         private final JsonValue value;
 
-        PatchValue(JsonPatchOperation operation,
+        PatchValue(JsonPatch.Operation operation,
                    String path,
                    String from,
                    JsonValue value) {
@@ -141,7 +141,7 @@ class JsonPatchImpl implements JsonPatch {
             this.path = new JsonPointerImpl(path);
 
             // ignore from if we do not need it
-            if (operation == JsonPatchOperation.MOVE || operation == JsonPatchOperation.COPY) {
+            if (operation == JsonPatch.Operation.MOVE || operation == JsonPatch.Operation.COPY) {
                 this.from = new JsonPointerImpl(from);
             } else {
                 this.from = null;
