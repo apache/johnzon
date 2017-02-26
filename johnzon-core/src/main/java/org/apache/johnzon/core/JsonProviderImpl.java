@@ -360,6 +360,10 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
             return new JsonPointerImpl(path);
         }
 
+        public JsonPatch createPatch(JsonArray array) {
+            return createPatchBuilder(array).build();
+        }
+
         //X TODO add missing methods
 
     }

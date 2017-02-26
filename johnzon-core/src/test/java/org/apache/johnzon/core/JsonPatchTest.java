@@ -18,10 +18,12 @@
  */
 package org.apache.johnzon.core;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonPatch;
@@ -943,6 +945,29 @@ public class JsonPatchTest {
                      "\"father\":{\"name\":\"Gaio Modry Effect\"}}}", toJsonString(patched));
     }
 
+    @Test
+    public void testCreatePatch() {
+        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        arrayBuilder.add(Json.createObjectBuilder()
+                .add("op", JsonPatch.Operation.ADD.operationName())
+                .add("path", "/add")
+                .add("value", "someValue").build());
+        arrayBuilder.add(Json.createObjectBuilder()
+                .add("op", JsonPatch.Operation.TEST.operationName())
+                .add("path", "/test/someObject")
+                .add("value", "someValue").build());
+
+        JsonArray initialPatchData = arrayBuilder.build();
+
+        JsonPatch patch = Json.createPatch(initialPatchData);
+
+        String jsonToPatch = "{\"add\":{\"a\":\"b\"},\"test\":{\"someObject\":\"someValue\"}}";
+        JsonObject jsonObjectToPatch = Json.createReader(new StringReader(jsonToPatch)).readObject();
+
+        JsonObject patchedJsonObject = patch.apply(jsonObjectToPatch);
+        Assert.assertNotNull(patchedJsonObject);
+    }
+
 
 
     private static String toJsonString(JsonStructure value) {
@@ -950,5 +975,7 @@ public class JsonPatchTest {
         Json.createWriter(writer).write(value);
         return writer.toString();
     }
+
+
 
 }
