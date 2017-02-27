@@ -16,6 +16,9 @@
  */
 package org.apache.johnzon.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.io.StringReader;
 
 import javax.json.Json;
@@ -42,12 +45,131 @@ public class JsonPatchDiffTest {
         // adding "b"
         JsonPatch jsonPatch = Json.createDiff(Json.createReader(new StringReader(jsonA)).readObject(),
                 Json.createReader(new StringReader(jsonB)).readObject());
-        Assert.assertNotNull(jsonPatch);
+        assertNotNull(jsonPatch);
         JsonArray patchOperations = jsonPatch.toJsonArray();
-        Assert.assertNotNull(patchOperations);
-        Assert.assertEquals(1, patchOperations.size());
-        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/b", "xb");
+        assertNotNull(patchOperations);
+        assertEquals(1, patchOperations.size());
+        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/b", Json.createValue("xb"));
     }
+
+    @Test
+    public void testAddDiffNewObject() {
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a", Json.createObjectBuilder()
+                        .add("aa", "value")
+                        .add("ab", "another"))
+                .build();
+
+        JsonPatch patch = Json.createDiff(JsonValue.EMPTY_JSON_OBJECT, target);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        containsOperation(operations, JsonPatch.Operation.ADD, "/a", target.get("a"));
+    }
+
+    @Test
+    public void testAddDiffInNestedObject() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", Json.createObjectBuilder()
+                        .add("aa", "value"))
+                .build();
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a", Json.createObjectBuilder()
+                        .add("aa", "value")
+                        .add("bb", "another value"))
+                .build();
+
+        JsonPatch patch = Json.createDiff(source, target);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        containsOperation(operations, JsonPatch.Operation.ADD, "/a/bb", Json.createValue("another value"));
+    }
+
+    @Test
+    public void testRemoveDiffObject() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", "value")
+                .build();
+
+        JsonPatch patch = Json.createDiff(source, JsonValue.EMPTY_JSON_OBJECT);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        containsOperation(operations, JsonPatch.Operation.REMOVE, "/a");
+    }
+
+    @Test
+    public void testRemoveDiffNestedObject() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", "value")
+                .add("nested", Json.createObjectBuilder()
+                        .add("1", 1)
+                        .add("2", 2))
+                .build();
+
+        {
+            JsonPatch patch = Json.createDiff(source, JsonValue.EMPTY_JSON_OBJECT);
+            assertNotNull(patch);
+
+            JsonArray operations = patch.toJsonArray();
+            assertEquals(2, operations.size());
+
+            containsOperation(operations, JsonPatch.Operation.REMOVE, "/a");
+            containsOperation(operations, JsonPatch.Operation.REMOVE, "/nested");
+        }
+
+        {
+            JsonObject target = Json.createObjectBuilder()
+                    .add("a", "value")
+                    .add("nested", Json.createObjectBuilder()
+                            .add("1", 1))
+                    .build();
+
+            JsonPatch patch = Json.createDiff(source, target);
+            assertNotNull(patch);
+
+            JsonArray operations = patch.toJsonArray();
+            assertEquals(1, operations.size());
+
+            containsOperation(operations, JsonPatch.Operation.REMOVE, "/nested/2");
+        }
+    }
+
+    @Test
+    public void testDiffEqualObjects() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", "value")
+                .build();
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a", "value")
+                .build();
+
+        JsonPatch patch = Json.createDiff(source, target);
+        assertNotNull(patch);
+        assertEquals(0, patch.toJsonArray().size());
+    }
+
+
+    //X TODO arrays...
+    //X TODO test add/remove JsonArray
+    //X TODO test add object to JsonArray
+    //X TODO test remove object to JsonArray
+
+
 
     @Test
     @Ignore //X TODO reinhard take over ;)
@@ -62,25 +184,35 @@ public class JsonPatchDiffTest {
         // removing b, adding d2, removing 2 from e, adding f
         JsonPatch jsonPatch = Json.createDiff(Json.createReader(new StringReader(jsonA)).readObject(),
                 Json.createReader(new StringReader(jsonB)).readObject());
-        Assert.assertNotNull(jsonPatch);
+        assertNotNull(jsonPatch);
         JsonArray patchOperations = jsonPatch.toJsonArray();
-        Assert.assertNotNull(patchOperations);
-        Assert.assertEquals(4, patchOperations.size());
-        containsOperation(patchOperations, JsonPatch.Operation.REMOVE, "/b", null);
-        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/c/d2", "xd2");
-        containsOperation(patchOperations, JsonPatch.Operation.REMOVE, "/e/2", null);
-        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/f", "xe");
+        assertNotNull(patchOperations);
+        assertEquals(4, patchOperations.size());
+        containsOperation(patchOperations, JsonPatch.Operation.REMOVE, "/b");
+        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/c/d2", Json.createValue("xd2"));
+        containsOperation(patchOperations, JsonPatch.Operation.REMOVE, "/e/2");
+        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/f", Json.createValue("xe"));
     }
 
-    private void containsOperation(JsonArray patchOperations, JsonPatch.Operation patchOperation,
-                                   String jsonPointer, String value) {
+    private void containsOperation(JsonArray patchOperations,
+                                   JsonPatch.Operation patchOperation,
+                                   String jsonPointer) {
+
+        containsOperation(patchOperations, patchOperation, jsonPointer, null);
+    }
+
+    private void containsOperation(JsonArray patchOperations,
+                                   JsonPatch.Operation patchOperation,
+                                   String jsonPointer,
+                                   JsonValue value) {
+
         for (JsonValue operation : patchOperations) {
             if (operation instanceof JsonObject &&
-                    patchOperation.operationName().equalsIgnoreCase(((JsonObject) operation).getString("op"))) {
-                Assert.assertEquals(jsonPointer, ((JsonObject) operation).getString("path"));
+                    patchOperation.operationName().equalsIgnoreCase(((JsonObject) operation).getString("op")) &&
+                    ((JsonObject) operation).getString("path").equals(jsonPointer)) {
 
                 if (value != null) {
-                    Assert.assertEquals(value, ((JsonObject) operation).getString("value"));
+                    assertEquals(value, ((JsonObject) operation).get("value"));
                 }
 
                 return;

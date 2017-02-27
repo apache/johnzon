@@ -29,17 +29,17 @@ import javax.json.JsonValue;
 /**
  * Create a diff from a source and target JsonStructure
  */
-public class JsonPatchDiff {
+class JsonPatchDiff {
 
     private final JsonStructure source;
     private final JsonStructure target;
 
-    public JsonPatchDiff(JsonStructure source, JsonStructure target) {
+    JsonPatchDiff(JsonStructure source, JsonStructure target) {
         this.source = source;
         this.target = target;
     }
 
-    public JsonPatch calculateDiff() {
+    JsonPatch calculateDiff() {
         JsonPatchBuilder patchBuilder = new JsonPatchBuilderImpl();
 
         diff(patchBuilder, "/", source, target);
@@ -48,9 +48,10 @@ public class JsonPatchDiff {
     }
 
     private void diff(JsonPatchBuilder patchBuilder, String basePath, JsonStructure source, JsonStructure target) {
-        if (source instanceof JsonObject && target instanceof JsonObject) {
+        if (isJsonObject(source) && isJsonObject(target)) {
             // handle JsonObjects
             diffJsonObjects(patchBuilder, basePath, (JsonObject) source, (JsonObject) target);
+
         } else if (source instanceof JsonArray && target instanceof JsonArray) {
             // handle JsonArray
             //X TODO
@@ -66,8 +67,11 @@ public class JsonPatchDiff {
         for (Map.Entry<String, JsonValue> sourceEntry : sourceEntries) {
             String attributeName = sourceEntry.getKey();
             if (target.containsKey(attributeName)) {
-                JsonValue targetValue = ((JsonObject) target).get(attributeName);
-                if (!sourceEntry.getValue().equals(targetValue)) {
+                JsonValue targetValue = target.get(attributeName);
+
+                if (isJsonObject(targetValue) && isJsonObject(targetValue)) {
+                    diffJsonObjects(patchBuilder, basePath + attributeName + "/", (JsonObject) sourceEntry.getValue(), (JsonObject) targetValue);
+                } else if (!sourceEntry.getValue().equals(targetValue)) {
                     // replace the original value
                     patchBuilder.replace(basePath + attributeName, targetValue);
                 }
@@ -84,5 +88,10 @@ public class JsonPatchDiff {
             }
         }
 
+    }
+
+
+    private static boolean isJsonObject(JsonValue jsonValue) {
+        return jsonValue instanceof JsonObject;
     }
 }
