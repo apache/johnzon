@@ -16,20 +16,20 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.spi.JsonProvider;
+
+import org.junit.Test;
 
 public class JsonMergeBatchBuilderTest {
 
-    private static final String[][] TEST_CASES = new String[][]{
-            {
-                "{\"a\":\"b\"}",
-                "{\"a\":\"c\"}",
-                "{\"a\":\"c\"}"
-            }
-    };
-
+    @Test
     public void testSimpleMergePatch() {
-        JsonProvider provider = JsonProvider.provider();
+        // {"a":"xa","b","xb"}
+        String source = "{\"a\":\"xa\",\"b\",\"xb\"}";
+
+        // {"b":"bNew","c":"xc"}
+        String patch = "{\"b\":\"bNew\",\"c\":\"xc\"}";
+
+        //X TODO Json.createMergePatch();
 
 
     }

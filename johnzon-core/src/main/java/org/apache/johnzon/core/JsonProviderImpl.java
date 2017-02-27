@@ -364,6 +364,11 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
             return createPatchBuilder(array).build();
         }
 
+        @Override
+        public JsonPatch createDiff(JsonStructure source, JsonStructure target) {
+            return new JsonPatchDiff(source, target).calculateDiff();
+        }
+
         //X TODO add missing methods
 
     }

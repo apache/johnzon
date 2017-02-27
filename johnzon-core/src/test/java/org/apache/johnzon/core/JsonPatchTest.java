@@ -969,45 +969,6 @@ public class JsonPatchTest {
     }
 
 
-    //X @Test disabled for now
-    //X TODO implement the diff logic!
-    public void testDiff() {
-        // {"a":"xa","b":2,"c":{"d":"xd"},"e":[1,2,3]}
-        String jsonA = "{\"a\":\"xa\",\"b\":2,\"c\":{\"d\":\"xd\"},\"e\":[1,2,3]}";
-
-        // {"a":"xa","c":{"d":"xd", "d2":"xd2"},"e":[1,3],"f":"xe"}
-        String jsonB = "{\"a\":\"xa\",\"c\":{\"d\":\"xd\", \"d2\":\"xd2\"},\"e\":[1,3],\"f\":\"xe\"}";
-
-        // this results in 4 diff operations:
-        // removing b, adding d2, removing 2 from e, adding f
-        JsonPatch jsonPatch = Json.createDiff(Json.createReader(new StringReader(jsonA)).readObject(),
-                                              Json.createReader(new StringReader(jsonB)).readObject());
-        Assert.assertNotNull(jsonPatch);
-        JsonArray patchOperations = jsonPatch.toJsonArray();
-        Assert.assertNotNull(patchOperations);
-        Assert.assertEquals(4, patchOperations.size());
-        containsOperation(patchOperations, JsonPatch.Operation.REMOVE, "/b", null);
-        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/c/d2", "xd2");
-        containsOperation(patchOperations, JsonPatch.Operation.REMOVE, "/e/2", null);
-        containsOperation(patchOperations, JsonPatch.Operation.ADD, "/f", "xe");
-    }
-
-    private void containsOperation(JsonArray patchOperations, JsonPatch.Operation patchOperation,
-                                   String jsonPointer, String value) {
-        for (JsonValue operation : patchOperations) {
-            if (operation instanceof JsonObject &&
-                patchOperation.operationName().equalsIgnoreCase(((JsonObject) operation).getString("op"))) {
-                Assert.assertEquals(jsonPointer, ((JsonObject) operation).getString("path"));
-
-                if (value != null) {
-                    Assert.assertEquals(value, ((JsonObject) operation).getString("value"));
-                }
-            }
-        }
-        Assert.fail("patchOperations does not contain " + patchOperation + " " + jsonPointer);
-    }
-
-
     private static String toJsonString(JsonStructure value) {
         StringWriter writer = new StringWriter();
         Json.createWriter(writer).write(value);
