@@ -68,6 +68,32 @@ public class JsonPatchDiffTest {
         assertEquals(1, operations.size());
 
         containsOperation(operations, JsonPatch.Operation.ADD, "/a", target.get("a"));
+
+        // now try to apply that patch.
+        JsonObject patched = patch.apply(JsonValue.EMPTY_JSON_OBJECT);
+        Assert.assertEquals(target, patched);
+    }
+
+    @Test
+    public void testAddDiffNewObjectWithEscaping() {
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a~/", Json.createObjectBuilder()
+                        .add("esc/aped", "value")
+                        .add("tilde", "another"))
+                .build();
+
+        JsonPatch patch = Json.createDiff(JsonValue.EMPTY_JSON_OBJECT, target);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        containsOperation(operations, JsonPatch.Operation.ADD, "/a~/", target.get("a"));
+
+        // now try to apply that patch.
+        JsonObject patched = patch.apply(JsonValue.EMPTY_JSON_OBJECT);
+        Assert.assertEquals(target, patched);
     }
 
     @Test
