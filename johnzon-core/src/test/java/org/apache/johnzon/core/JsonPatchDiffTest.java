@@ -74,7 +74,9 @@ public class JsonPatchDiffTest {
         Assert.assertEquals(target, patched);
     }
 
+    //X TODO
     @Test
+    @Ignore("TODO define how escaping must get handled")
     public void testAddDiffNewObjectWithEscaping() {
 
         JsonObject target = Json.createObjectBuilder()
