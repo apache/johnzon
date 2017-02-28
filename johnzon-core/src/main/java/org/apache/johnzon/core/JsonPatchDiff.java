@@ -70,21 +70,22 @@ class JsonPatchDiff {
                 JsonValue targetValue = target.get(attributeName);
 
                 if (isJsonObject(targetValue) && isJsonObject(targetValue)) {
-                    diffJsonObjects(patchBuilder, basePath + attributeName + "/", (JsonObject) sourceEntry.getValue(), (JsonObject) targetValue);
+                    diffJsonObjects(patchBuilder, basePath + JsonPointerUtil.encode(attributeName) + "/",
+                            (JsonObject) sourceEntry.getValue(), (JsonObject) targetValue);
                 } else if (!sourceEntry.getValue().equals(targetValue)) {
                     // replace the original value
-                    patchBuilder.replace(basePath + attributeName, targetValue);
+                    patchBuilder.replace(basePath + JsonPointerUtil.encode(attributeName), targetValue);
                 }
             } else {
                 // the value got removed
-                patchBuilder.remove(basePath + attributeName);
+                patchBuilder.remove(basePath + JsonPointerUtil.encode(attributeName));
             }
         }
 
         Set<Map.Entry<String, JsonValue>> targetEntries = target.entrySet();
         for (Map.Entry<String, JsonValue> targetEntry : targetEntries) {
             if (!source.containsKey(targetEntry.getKey())) {
-                patchBuilder.add(basePath + targetEntry.getKey(), targetEntry.getValue());
+                patchBuilder.add(basePath + JsonPointerUtil.encode(targetEntry.getKey()), targetEntry.getValue());
             }
         }
 

@@ -74,9 +74,7 @@ public class JsonPatchDiffTest {
         Assert.assertEquals(target, patched);
     }
 
-    //X TODO
     @Test
-    @Ignore("TODO define how escaping must get handled")
     public void testAddDiffNewObjectWithEscaping() {
 
         JsonObject target = Json.createObjectBuilder()
@@ -91,7 +89,7 @@ public class JsonPatchDiffTest {
         JsonArray operations = patch.toJsonArray();
         assertEquals(1, operations.size());
 
-        containsOperation(operations, JsonPatch.Operation.ADD, "/a~/", target.get("a"));
+        containsOperation(operations, JsonPatch.Operation.ADD, "/a~0~1", target.get("a"));
 
         // now try to apply that patch.
         JsonObject patched = patch.apply(JsonValue.EMPTY_JSON_OBJECT);
