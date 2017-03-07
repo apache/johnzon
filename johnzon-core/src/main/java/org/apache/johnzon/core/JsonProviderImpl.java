@@ -155,7 +155,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     }
 
     @Override
-    public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+    public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
         return DELEGATE.createArrayBuilder(initialData);
     }
 
@@ -306,7 +306,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
             return builderFactory.createArrayBuilder(initialData);
         }
 
-        public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+        public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
             return builderFactory.createArrayBuilder(initialData);
         }
 

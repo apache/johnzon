@@ -74,7 +74,7 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
         return new JsonArrayBuilderImpl(initialData);
     }
 
-    public JsonArrayBuilder createArrayBuilder(Collection<Object> initialData) {
+    public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
         return new JsonArrayBuilderImpl(initialData);
     }
 

@@ -41,7 +41,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         tmpList = new ArrayList<>(initialData);
     }
 
-    public JsonArrayBuilderImpl(Collection<Object> initialData) {
+    public JsonArrayBuilderImpl(Collection<?> initialData) {
         tmpList = new ArrayList<>();
         for (Object initialValue : initialData) {
             add(initialValue);
