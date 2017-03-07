@@ -19,7 +19,7 @@ package org.apache.johnzon.core;
 import javax.json.JsonValue;
 
 /**
- * Creates and applies a Json Merge Patch as defined in
+ * Creates a JsonPatchBuilder which will create {@link javax.json.JsonMergePatch} as defined in
  * https://tools.ietf.org/html/rfc7396
  */
 public class JsonMergePatchBuilder {

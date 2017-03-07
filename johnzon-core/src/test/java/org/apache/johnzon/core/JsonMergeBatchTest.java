@@ -21,35 +21,71 @@ import java.io.StringReader;
 
 import javax.json.Json;
 import javax.json.JsonMergePatch;
+import javax.json.JsonNumber;
 import javax.json.JsonObject;
+import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class JsonMergeBatchTest {
 
+    private JsonProvider json = JsonProvider.provider();
+
     @Test
-    @Ignore(value = "work in progress, TODO finish")
-    public void testSimpleMergePatch() {
-        // {"a":"xa","b","xb"}
-        String source = "{\"a\":\"xa\",\"b\",\"xb\"}";
+    public void testApplyValueOnObject() {
+        // {"a":"xa","b":"xb"}
+        JsonObject source = jsonObjectFrom("{\"a\":\"xa\",\"b\":\"xb\"}");
 
         // {"b":"bNew","c":"xc"}
         // the result after this patch gets applied to source should be {"a":"xa","b","bNew","c":"xc"}
-        String patch = "{\"b\":\"bNew\",\"c\":\"xc\"}";
+        JsonValue patch = json.createValue(4711);
 
-        //X TODO Json.createMergePatch();
+        JsonMergePatch jsonMergePatch = Json.createMergePatch(patch);
+        JsonValue patchedValue = jsonMergePatch.apply(source);
+        Assert.assertEquals(4711, ((JsonNumber) patchedValue).intValue());
+    }
 
-        JsonMergePatch jsonMergePatch = Json.createMergePatch(Json.createReader(new StringReader(patch)).readObject());
+    @Test
+    public void testApplyObjectOnValue() {
+        // {"a":"xa","b":"xb"}
+        JsonValue source = json.createValue(4711);
 
-        JsonObject jsonSource = Json.createReader(new StringReader(source)).readObject();
+        // {"b":"bNew","c":"xc"}
+        // the result after this patch gets applied to source should be {"a":"xa","b","bNew","c":"xc"}
+        JsonObject patch = jsonObjectFrom("{\"a\":\"xa\",\"b\":\"xb\"}");
 
-        JsonObject jsonTarget = jsonMergePatch.apply(jsonSource).asJsonObject();
+        JsonMergePatch jsonMergePatch = Json.createMergePatch(patch);
+        JsonValue patchedValue = jsonMergePatch.apply(source);
+        Assert.assertTrue(patchedValue instanceof JsonObject);
+        Assert.assertEquals("xa", patchedValue.asJsonObject().getString("a"));
+        Assert.assertEquals("xb", patchedValue.asJsonObject().getString("b"));
+    }
+
+
+    @Test
+    public void testSimpleJsonObjectMergePatch() {
+        // {"a":"xa","b":"xb"}
+        JsonObject source = jsonObjectFrom("{\"a\":\"xa\",\"b\":\"xb\"}");
+
+        // {"b":"bNew","c":"xc"}
+        // the result after this patch gets applied to source should be {"a":"xa","b","bNew","c":"xc"}
+        JsonObject patch = jsonObjectFrom("{\"b\":\"bNew\",\"c\":\"xc\"}");
+
+        JsonMergePatch jsonMergePatch = Json.createMergePatch(patch);
+
+
+        JsonObject jsonTarget = jsonMergePatch.apply(source).asJsonObject();
         Assert.assertNotNull(jsonTarget);
         Assert.assertEquals(3, jsonTarget.entrySet().size());
         Assert.assertEquals("xa", jsonTarget.getString("a"));
         Assert.assertEquals("bNew", jsonTarget.getString("b"));
         Assert.assertEquals("xc", jsonTarget.getString("c"));
+    }
+
+
+    private JsonObject jsonObjectFrom(String val) {
+        return json.createReader(new StringReader(val)).readObject();
     }
 }

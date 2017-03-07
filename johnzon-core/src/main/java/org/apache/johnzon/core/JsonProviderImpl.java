@@ -369,6 +369,10 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
             return new JsonPatchDiff(source, target).calculateDiff();
         }
 
+        public JsonMergePatch createMergePatch(JsonValue patch) {
+            return new JsonMergePatchImpl(patch);
+        }
+
         //X TODO add missing methods
 
     }
