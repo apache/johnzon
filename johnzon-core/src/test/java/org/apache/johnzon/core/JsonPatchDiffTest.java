@@ -189,6 +189,78 @@ public class JsonPatchDiffTest {
         assertEquals(0, patch.toJsonArray().size());
     }
 
+    @Test
+    public void testDiffReplaceObject() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", "value")
+                .build();
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a", "replaced")
+                .build();
+
+        JsonPatch patch = Json.createDiff(source, target);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        containsOperation(operations, JsonPatch.Operation.REPLACE, "/a", Json.createValue("replaced"));
+    }
+
+    @Test
+    public void testDiffReplaceFromNestedObject() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", Json.createObjectBuilder()
+                        .add("aa", "value"))
+                .build();
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a", Json.createObjectBuilder()
+                        .add("aa", "replaced"))
+                .build();
+
+        JsonPatch patch = Json.createDiff(source, target);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        containsOperation(operations, JsonPatch.Operation.REPLACE, "/a/aa", Json.createValue("replaced"));
+    }
+
+    //X TODO add move support -> see https://issues.apache.org/jira/browse/JOHNZON-105
+    @Test
+    @Ignore
+    public void testDiffMoveValue() {
+
+        JsonObject source = Json.createObjectBuilder()
+                .add("a", Json.createObjectBuilder()
+                        .add("aa", "valueToMove"))
+                .add("b", JsonValue.EMPTY_JSON_OBJECT)
+                .build();
+
+        JsonObject target = Json.createObjectBuilder()
+                .add("a", JsonValue.EMPTY_JSON_OBJECT)
+                .add("b", Json.createObjectBuilder()
+                        .add("aa", "valueToMove"))
+                .build();
+
+        JsonPatch patch = Json.createDiff(source, target);
+        assertNotNull(patch);
+
+        JsonArray operations = patch.toJsonArray();
+        assertEquals(1, operations.size());
+
+        JsonObject operation = operations.getJsonObject(0);
+        assertEquals(JsonPatch.Operation.MOVE.operationName(), operation.getString("op"));
+        assertEquals("/a/aa", operation.getString("from"));
+        assertEquals("/b/aa", operation.getString("to"));
+    }
+
+
 
     //X TODO arrays...
     //X TODO test add/remove JsonArray
