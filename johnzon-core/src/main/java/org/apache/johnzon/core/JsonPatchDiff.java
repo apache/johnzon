@@ -42,40 +42,54 @@ class JsonPatchDiff {
     JsonPatch calculateDiff() {
         JsonPatchBuilder patchBuilder = new JsonPatchBuilderImpl();
 
-        diff(patchBuilder, "/", source, target);
+        diff(patchBuilder, "", source, target);
 
         return patchBuilder.build();
     }
 
-    private void diff(JsonPatchBuilder patchBuilder, String basePath, JsonStructure source, JsonStructure target) {
-        if (isJsonObject(source) && isJsonObject(target)) {
-            // handle JsonObjects
-            diffJsonObjects(patchBuilder, basePath, (JsonObject) source, (JsonObject) target);
+    private void diff(JsonPatchBuilder patchBuilder, String basePath, JsonValue source, JsonValue target) {
 
-        } else if (source instanceof JsonArray && target instanceof JsonArray) {
-            // handle JsonArray
-            //X TODO
-            throw new UnsupportedOperationException("not yet implemented.");
-        } else {
-            throw new UnsupportedOperationException("not yet implemented.");
+        if (isJsonObject(source) && isJsonObject(target)) {
+            diffJsonObjects(patchBuilder, basePath + "/", (JsonObject) source, (JsonObject) target);
+        } else if (isJsonArray(source) && isJsonArray(target)) {
+            diffJsonArray(patchBuilder, basePath + "/", (JsonArray) source, (JsonArray) target);
+        } else if (!source.equals(target)){
+            patchBuilder.replace(basePath, target);
         }
+    }
+
+    private void diffJsonArray(JsonPatchBuilder patchBuilder, String basePath, JsonArray source, JsonArray target) {
+
+        for (int i = 0; i < source.size(); i++) {
+
+            JsonValue sourceValue = source.get(i);
+
+            if (target.size() <= i) {
+                patchBuilder.remove(basePath + i);
+                continue;
+            }
+
+            diff(patchBuilder, basePath + i, sourceValue, target.get(i));
+        }
+
+        if (target.size() > source.size()) {
+
+            for (int i = target.size() - source.size(); i < target.size(); i++) {
+                patchBuilder.add(basePath + i, target.get(i));
+            }
+        }
+
     }
 
     private void diffJsonObjects(JsonPatchBuilder patchBuilder, String basePath, JsonObject source, JsonObject target) {
         Set<Map.Entry<String, JsonValue>> sourceEntries = source.entrySet();
 
         for (Map.Entry<String, JsonValue> sourceEntry : sourceEntries) {
-            String attributeName = sourceEntry.getKey();
-            if (target.containsKey(attributeName)) {
-                JsonValue targetValue = target.get(attributeName);
 
-                if (isJsonObject(targetValue) && isJsonObject(targetValue)) {
-                    diffJsonObjects(patchBuilder, basePath + JsonPointerUtil.encode(attributeName) + "/",
-                            (JsonObject) sourceEntry.getValue(), (JsonObject) targetValue);
-                } else if (!sourceEntry.getValue().equals(targetValue)) {
-                    // replace the original value
-                    patchBuilder.replace(basePath + JsonPointerUtil.encode(attributeName), targetValue);
-                }
+            String attributeName = sourceEntry.getKey();
+
+            if (target.containsKey(attributeName)) {
+                diff(patchBuilder, basePath + JsonPointerUtil.encode(attributeName), sourceEntry.getValue(), target.get(attributeName));
             } else {
                 // the value got removed
                 patchBuilder.remove(basePath + JsonPointerUtil.encode(attributeName));
@@ -95,4 +109,9 @@ class JsonPatchDiff {
     private static boolean isJsonObject(JsonValue jsonValue) {
         return jsonValue instanceof JsonObject;
     }
+
+    private static boolean isJsonArray(JsonValue targetValue) {
+        return targetValue instanceof JsonArray;
+    }
+
 }
