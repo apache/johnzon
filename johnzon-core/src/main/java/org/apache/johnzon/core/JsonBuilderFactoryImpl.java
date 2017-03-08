@@ -74,6 +74,7 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
         return new JsonArrayBuilderImpl(initialData);
     }
 
+    @Override
     public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
         return new JsonArrayBuilderImpl(initialData);
     }
@@ -83,6 +84,7 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
         return Collections.unmodifiableMap(internalConfig);
     }
 
+    @Override
     public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
         return new JsonObjectBuilderImpl(initialValues);
     }
