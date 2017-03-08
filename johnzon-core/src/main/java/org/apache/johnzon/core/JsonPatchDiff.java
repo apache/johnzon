@@ -17,7 +17,6 @@
 package org.apache.johnzon.core;
 
 import java.util.Map;
-import java.util.Set;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -29,7 +28,7 @@ import javax.json.JsonValue;
 /**
  * Create a diff from a source and target JsonStructure
  */
-class JsonPatchDiff {
+class JsonPatchDiff extends DiffBase {
 
     private final JsonStructure source;
     private final JsonStructure target;
@@ -48,7 +47,6 @@ class JsonPatchDiff {
     }
 
     private void diff(JsonPatchBuilder patchBuilder, String basePath, JsonValue source, JsonValue target) {
-
         if (isJsonObject(source) && isJsonObject(target)) {
             diffJsonObjects(patchBuilder, basePath + "/", (JsonObject) source, (JsonObject) target);
         } else if (isJsonArray(source) && isJsonArray(target)) {
@@ -59,9 +57,7 @@ class JsonPatchDiff {
     }
 
     private void diffJsonArray(JsonPatchBuilder patchBuilder, String basePath, JsonArray source, JsonArray target) {
-
         for (int i = 0; i < source.size(); i++) {
-
             JsonValue sourceValue = source.get(i);
 
             if (target.size() <= i) {
@@ -82,10 +78,8 @@ class JsonPatchDiff {
     }
 
     private void diffJsonObjects(JsonPatchBuilder patchBuilder, String basePath, JsonObject source, JsonObject target) {
-        Set<Map.Entry<String, JsonValue>> sourceEntries = source.entrySet();
 
-        for (Map.Entry<String, JsonValue> sourceEntry : sourceEntries) {
-
+        for (Map.Entry<String, JsonValue> sourceEntry : source.entrySet()) {
             String attributeName = sourceEntry.getKey();
 
             if (target.containsKey(attributeName)) {
@@ -96,8 +90,7 @@ class JsonPatchDiff {
             }
         }
 
-        Set<Map.Entry<String, JsonValue>> targetEntries = target.entrySet();
-        for (Map.Entry<String, JsonValue> targetEntry : targetEntries) {
+        for (Map.Entry<String, JsonValue> targetEntry : target.entrySet()) {
             if (!source.containsKey(targetEntry.getKey())) {
                 patchBuilder.add(basePath + JsonPointerUtil.encode(targetEntry.getKey()), targetEntry.getValue());
             }
@@ -105,13 +98,5 @@ class JsonPatchDiff {
 
     }
 
-
-    private static boolean isJsonObject(JsonValue jsonValue) {
-        return jsonValue instanceof JsonObject;
-    }
-
-    private static boolean isJsonArray(JsonValue targetValue) {
-        return targetValue instanceof JsonArray;
-    }
 
 }

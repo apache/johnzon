@@ -19,7 +19,6 @@ package org.apache.johnzon.core;
 
 import java.util.Map;
 
-import javax.json.JsonArray;
 import javax.json.JsonMergePatch;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -43,10 +42,6 @@ public class JsonMergePatchImpl implements JsonMergePatch {
     private JsonValue applyPatch(JsonValue valueToApplyPatchOn, JsonValue patch) {
         if (patch == null) {
             return JsonValue.NULL;
-        } else if (patch instanceof JsonArray) {
-            JsonArray patchArray = patch.asJsonArray();
-            //X TODO
-            throw new UnsupportedOperationException("not yet implemented TODO finish JsonArray support.");
         } else if (patch instanceof JsonObject && valueToApplyPatchOn instanceof JsonObject) {
             // we only apply an actual patch IF both sides are a JsonObject
             JsonObject patchObject = patch.asJsonObject();
