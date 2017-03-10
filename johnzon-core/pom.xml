@@ -32,4 +32,20 @@
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
   <packaging>bundle</packaging>
+  
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <!-- Set opt-in header to make ServiceLoader registrations accessible on OSGi -->
+            <SPI-Provider>*</SPI-Provider>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>
