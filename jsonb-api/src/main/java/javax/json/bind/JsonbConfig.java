@@ -32,6 +32,7 @@ import java.util.Optional;
 public class JsonbConfig {
     private final Map<String, Object> configuration = new HashMap<>();
 
+    public static final String FAIL_ON_UNKNOWN_PROPERTIES = "jsonb.fail-on-unknown-properties";
     public static final String FORMATTING = "jsonb.formatting";
     public static final String ENCODING = "jsonb.encoding";
     public static final String PROPERTY_NAMING_STRATEGY = "jsonb.property-naming-strategy";
@@ -45,6 +46,10 @@ public class JsonbConfig {
     public static final String LOCALE = "jsonb.locale";
     public static final String SERIALIZERS = "jsonb.serializers";
     public static final String DESERIALIZERS = "jsonb.derializers";
+
+    public final JsonbConfig withFailOnUnknownProperties(final Boolean failOnUnknownProperties) {
+        return setProperty(FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
+    }
 
     public final JsonbConfig withDateFormat(final String dateFormat, final Locale locale) {
         return setProperty(DATE_FORMAT, dateFormat).setProperty(LOCALE, locale != null ? locale : Locale.getDefault());
@@ -100,6 +105,18 @@ public class JsonbConfig {
     }
 
     public final JsonbConfig withAdapters(final JsonbAdapter... adapters) {
+        if (adapters == null || adapters.length == 0) {
+            return this;
+        }
+
+        final Optional<Object> opt = getProperty(ADAPTERS);
+        if (opt.isPresent()) {
+            final JsonbAdapter[] existing = JsonbAdapter[].class.cast(opt.get());
+            final JsonbAdapter[] aggregated = new JsonbAdapter[existing.length + adapters.length];
+            System.arraycopy(existing, 0, aggregated, 0, existing.length);
+            System.arraycopy(adapters, 0, aggregated, existing.length + 1, adapters.length);
+            return setProperty(ADAPTERS, aggregated);
+        }
         return setProperty(ADAPTERS, adapters);
     }
 

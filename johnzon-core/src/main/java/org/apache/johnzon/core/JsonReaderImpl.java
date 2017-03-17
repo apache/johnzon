@@ -42,7 +42,7 @@ public class JsonReaderImpl implements JsonReader {
         return JsonStructure.class.cast(readValue());
     }
 
-    //@Override
+    @Override
     public JsonValue readValue() {
         checkClosed();
 

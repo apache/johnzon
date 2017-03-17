@@ -116,6 +116,10 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         }
     }
 
+    public void setFailOnUnknownProperties(final boolean active) {
+        builder.setFailOnUnknownProperties(active);
+    }
+
     public void setSupportConstructors(final boolean supportConstructors) {
         builder.setSupportConstructors(supportConstructors);
     }

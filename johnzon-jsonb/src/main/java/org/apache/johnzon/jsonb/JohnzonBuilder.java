@@ -253,6 +253,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
             // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec should be fine by default
         });
+        config.getProperty(JsonbConfig.FAIL_ON_UNKNOWN_PROPERTIES).map(Boolean.class::cast).ifPresent(builder::setFailOnUnknownProperties);
 
         config.getProperty(JsonbConfig.BINARY_DATA_STRATEGY).map(String.class::cast).ifPresent(bin -> {
             switch (bin) {

@@ -19,7 +19,6 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.core.JsonLongImpl;
-import org.apache.johnzon.core.JsonReaderImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
@@ -82,6 +81,17 @@ public class MappingParserImpl implements MappingParser {
     private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
     private static final CharacterConverter CHARACTER_CONVERTER = new CharacterConverter(); // this one is particular, share the logic
+    private static final boolean HAS_READ_VALUE;
+    static {
+        boolean hasReadValue; // v1.0 vs v1.1
+        try {
+            JsonReader.class.getDeclaredMethod("readValue");
+            hasReadValue = true;
+        } catch (final Error | NoSuchMethodException e) {
+            hasReadValue = false;
+        }
+        HAS_READ_VALUE = hasReadValue;
+    }
 
     protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry;
     protected final ConcurrentMap<Class<?>, Method> valueOfs = new ConcurrentHashMap<Class<?>, Method>();
@@ -92,27 +102,20 @@ public class MappingParserImpl implements MappingParser {
     private final JsonReader jsonReader;
 
 
-
     public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader) {
         this.config = config;
         this.mappings = mappings;
 
         this.jsonReader = jsonReader;
 
-        reverseAdaptersRegistry = new ConcurrentHashMap<Adapter<?, ?>, AdapterKey>(config.getAdapters().size());
+        reverseAdaptersRegistry = new ConcurrentHashMap<>(config.getAdapters().size());
     }
 
 
     @Override
     public <T> T readObject(Type targetType) {
-
         try {
-            if (jsonReader.getClass().getName().equals("org.apache.johnzon.core.JsonReaderImpl")) {
-                // later in JSON-P 1.1 we can remove this hack again
-                return readObject(((JsonReaderImpl) jsonReader).readValue(), targetType);
-            }
-
-            return readObject(jsonReader.read(), targetType);
+            return readObject(HAS_READ_VALUE ? jsonReader.readValue() : jsonReader.read(), targetType);
         } finally {
             if (config.isClose()) {
                 jsonReader.close();
@@ -287,6 +290,14 @@ public class MappingParserImpl implements MappingParser {
             throw new MapperException(classMapping.clazz + " not instantiable");
         }
 
+        if (config.isFailOnUnknown()) {
+            if (!classMapping.setters.keySet().containsAll(object.keySet())) {
+                throw new MapperException("(fail on unknown properties): " + new HashSet<String>(object.keySet()) {{
+                    removeAll(classMapping.setters.keySet());
+                }});
+            }
+        }
+
         final Object t = classMapping.factory.getParameterTypes().length == 0 ?
                 classMapping.factory.create(null) : classMapping.factory.create(createParameters(classMapping, object));
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
@@ -436,8 +447,8 @@ public class MappingParserImpl implements MappingParser {
             throw new MapperException("Unable to parse " + jsonValue + " to boolean");
         }
 
-        if(config.isTreatByteArrayAsBase64() && jsonValue.getValueType() == JsonValue.ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
-            return DatatypeConverter.parseBase64Binary(((JsonString)jsonValue).getString());
+        if (config.isTreatByteArrayAsBase64() && jsonValue.getValueType() == JsonValue.ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
+            return DatatypeConverter.parseBase64Binary(((JsonString) jsonValue).getString());
         }
 
         if (Object.class == type) { // handling specific types here to keep exception in standard handling
@@ -449,7 +460,7 @@ public class MappingParserImpl implements MappingParser {
             }
             if (JsonNumber.class.isInstance(jsonValue)) {
                 final JsonNumber jsonNumber = JsonNumber.class.cast(jsonValue);
-                if(jsonNumber.isIntegral()) {
+                if (jsonNumber.isIntegral()) {
                     return jsonNumber.intValue();
                 }
                 return jsonNumber.doubleValue();
@@ -609,11 +620,11 @@ public class MappingParserImpl implements MappingParser {
         for (int i = 0; i < length; i++) {
 
             objects[i] = toValue(null,
-                                 object.get(mapping.factory.getParameterNames()[i]),
-                                 mapping.factory.getParameterConverter()[i],
-                                 mapping.factory.getParameterItemConverter()[i],
-                                 mapping.factory.getParameterTypes()[i],
-                                 null); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
+                    object.get(mapping.factory.getParameterNames()[i]),
+                    mapping.factory.getParameterConverter()[i],
+                    mapping.factory.getParameterItemConverter()[i],
+                    mapping.factory.getParameterTypes()[i],
+                    null); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
         }
 
         return objects;
@@ -632,8 +643,8 @@ public class MappingParserImpl implements MappingParser {
         }
 
         return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter)
-                                 : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
-                                                                                          : convertTo(converter, jsonValue);
+                : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
+                : convertTo(converter, jsonValue);
     }
 
 
@@ -713,7 +724,7 @@ public class MappingParserImpl implements MappingParser {
         @Override
         public Object fromString(final String text) {
             throw new MapperException("Using fallback converter, " +
-                                      "this only works in write mode but not in read. Please register a custom converter to do so.");
+                    "this only works in write mode but not in read. Please register a custom converter to do so.");
         }
     }
 

@@ -68,6 +68,10 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     }
 
     // config - main containers support the configuration of providers this way
+    public void setFailOnUnknownProperties(final boolean active) {
+        config.withFailOnUnknownProperties(active);
+    }
+
     public void setIJson(final boolean active) {
         config.withStrictIJSON(active);
     }

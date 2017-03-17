@@ -129,6 +129,7 @@ public class MapperBuilder {
     private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
     private boolean primitiveConverters;
+    private boolean failOnUnknownProperties;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -215,8 +216,13 @@ public class MapperBuilder {
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
-                        accessMode, encoding, attributeOrder, enforceQuoteString),
+                        accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties),
                 closeables);
+    }
+
+    public MapperBuilder setFailOnUnknownProperties(final boolean failOnUnknownProperties) {
+        this.failOnUnknownProperties = failOnUnknownProperties;
+        return this;
     }
 
     public MapperBuilder addCloseable(final Closeable closeable) {

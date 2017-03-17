@@ -63,6 +63,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders;
     private final Comparator<String> attributeOrder;
     private final boolean enforceQuoteString;
+    private final boolean failOnUnknown;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -78,7 +79,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean readAttributeBeforeWrite,
                         final AccessMode accessMode, final Charset encoding,
                         final Comparator<String> attributeOrder,
-                        final boolean enforceQuoteString) {
+                        final boolean enforceQuoteString, final boolean failOnUnknown) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -94,6 +95,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.adapters = adapters;
         this.attributeOrder = attributeOrder;
         this.enforceQuoteString = enforceQuoteString;
+        this.failOnUnknown = failOnUnknown;
 
         this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
@@ -218,6 +220,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         }
 
         return converter;
+    }
+
+    public boolean isFailOnUnknown() {
+        return failOnUnknown;
     }
 
     public int getVersion() {

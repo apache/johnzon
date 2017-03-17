@@ -63,7 +63,7 @@ public class Mapper implements Closeable {
         this.mappings = new Mappings(config);
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
-        this.charset = config.getEncoding() == null ? null : config.getEncoding();
+        this.charset = config.getEncoding();
     }
 
 

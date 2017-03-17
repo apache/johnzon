@@ -43,14 +43,14 @@ import static java.util.Arrays.asList;
 
 @Provider
 @Produces({
-    "*/json",
-    "*/*+json", "*/x-json",
-    "*/javascript", "*/x-javascript"
+        "*/json",
+        "*/*+json", "*/x-json",
+        "*/javascript", "*/x-javascript"
 })
 @Consumes({
-    "*/json",
-    "*/*+json", "*/x-json",
-    "*/javascript", "*/x-javascript"
+        "*/json",
+        "*/*+json", "*/x-json",
+        "*/javascript", "*/x-javascript"
 })
 public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
     // build/configuration
@@ -122,6 +122,10 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
                 throw new IllegalArgumentException(e);
             }
         }
+    }
+
+    public void setFailOnUnknownProperties(final boolean active) {
+        builder.setFailOnUnknownProperties(active);
     }
 
     public void setSupportConstructors(final boolean supportConstructors) {
