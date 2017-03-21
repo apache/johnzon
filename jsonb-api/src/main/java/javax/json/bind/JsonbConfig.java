@@ -32,7 +32,6 @@ import java.util.Optional;
 public class JsonbConfig {
     private final Map<String, Object> configuration = new HashMap<>();
 
-    public static final String FAIL_ON_UNKNOWN_PROPERTIES = "jsonb.fail-on-unknown-properties";
     public static final String FORMATTING = "jsonb.formatting";
     public static final String ENCODING = "jsonb.encoding";
     public static final String PROPERTY_NAMING_STRATEGY = "jsonb.property-naming-strategy";
@@ -46,10 +45,6 @@ public class JsonbConfig {
     public static final String LOCALE = "jsonb.locale";
     public static final String SERIALIZERS = "jsonb.serializers";
     public static final String DESERIALIZERS = "jsonb.derializers";
-
-    public final JsonbConfig withFailOnUnknownProperties(final Boolean failOnUnknownProperties) {
-        return setProperty(FAIL_ON_UNKNOWN_PROPERTIES, failOnUnknownProperties);
-    }
 
     public final JsonbConfig withDateFormat(final String dateFormat, final Locale locale) {
         return setProperty(DATE_FORMAT, dateFormat).setProperty(LOCALE, locale != null ? locale : Locale.getDefault());

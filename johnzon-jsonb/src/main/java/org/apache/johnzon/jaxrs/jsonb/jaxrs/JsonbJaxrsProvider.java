@@ -36,10 +36,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 
 // here while we dont compile in java 8 jaxrs module, when migrated we'll merge it with IgnorableTypes hierarchy at least
@@ -69,7 +71,18 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     // config - main containers support the configuration of providers this way
     public void setFailOnUnknownProperties(final boolean active) {
-        config.withFailOnUnknownProperties(active);
+        config.setProperty("johnzon.fail-on-unknown-properties", active);
+    }
+
+    public void setOtherProperties(final String others) {
+        final Properties properties = new Properties() {{
+            try {
+                load(new StringReader(others));
+            } catch (final IOException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }};
+        properties.stringPropertyNames().forEach(k -> config.setProperty(k, properties.getProperty(k)));
     }
 
     public void setIJson(final boolean active) {
@@ -105,21 +118,21 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     @Override
     public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
-            && InputStream.class != genericType && Reader.class != genericType && Response.class != genericType
-            && String.class != genericType
-            && !JsonStructure.class.isAssignableFrom(type);
+                && InputStream.class != genericType && Reader.class != genericType && Response.class != genericType
+                && String.class != genericType
+                && !JsonStructure.class.isAssignableFrom(type);
     }
 
     @Override
     public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
-            && InputStream.class != genericType
-            && OutputStream.class != genericType
-            && Writer.class != genericType
-            && StreamingOutput.class != genericType
-            && String.class != genericType
-            && Response.class != genericType
-            && !JsonStructure.class.isAssignableFrom(type);
+                && InputStream.class != genericType
+                && OutputStream.class != genericType
+                && Writer.class != genericType
+                && StreamingOutput.class != genericType
+                && String.class != genericType
+                && Response.class != genericType
+                && !JsonStructure.class.isAssignableFrom(type);
     }
 
     @Override
