@@ -23,6 +23,7 @@ import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
 import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
+import java.lang.reflect.Array;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -100,19 +101,7 @@ public class JsonbConfig {
     }
 
     public final JsonbConfig withAdapters(final JsonbAdapter... adapters) {
-        if (adapters == null || adapters.length == 0) {
-            return this;
-        }
-
-        final Optional<Object> opt = getProperty(ADAPTERS);
-        if (opt.isPresent()) {
-            final JsonbAdapter[] existing = JsonbAdapter[].class.cast(opt.get());
-            final JsonbAdapter[] aggregated = new JsonbAdapter[existing.length + adapters.length];
-            System.arraycopy(existing, 0, aggregated, 0, existing.length);
-            System.arraycopy(adapters, 0, aggregated, existing.length + 1, adapters.length);
-            return setProperty(ADAPTERS, aggregated);
-        }
-        return setProperty(ADAPTERS, adapters);
+        return accumulate(ADAPTERS, adapters, JsonbAdapter.class);
     }
 
     public final JsonbConfig withBinaryDataStrategy(final String binaryDataStrategy) {
@@ -120,10 +109,26 @@ public class JsonbConfig {
     }
 
     public final JsonbConfig withSerializers(final JsonbSerializer... serializers) {
-        return setProperty(SERIALIZERS, serializers);
+        return accumulate(SERIALIZERS, serializers, JsonbSerializer.class);
     }
 
     public final JsonbConfig withDeserializers(final JsonbDeserializer... deserializers) {
-        return setProperty(DESERIALIZERS, deserializers);
+        return accumulate(DESERIALIZERS, deserializers, JsonbDeserializer.class);
+    }
+
+    private <T> JsonbConfig accumulate(final String key, final T[] values, final Class<T> componentType) {
+        if (values == null || values.length == 0) {
+            return this;
+        }
+
+        final Optional<Object> opt = getProperty(key);
+        if (opt.isPresent()) {
+            final T[] existing = (T[]) opt.get();
+            final T[] aggregated = (T[]) Array.newInstance(componentType, existing.length + values.length);
+            System.arraycopy(existing, 0, aggregated, 0, existing.length);
+            System.arraycopy(values, 0, aggregated, existing.length + 1, values.length);
+            return setProperty(key, aggregated);
+        }
+        return setProperty(key, values);
     }
 }
