@@ -18,13 +18,15 @@
  */
 package org.apache.johnzon.core;
 
-import java.math.BigInteger;
+import org.junit.Assert;
+import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonArray;
-
-import org.junit.Assert;
-import org.junit.Test;
+import javax.json.JsonNumber;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.math.BigInteger;
 
 
 
@@ -48,4 +50,12 @@ public class JsonNumberTest {
        
     }
 
+    @Test
+    public void testBigIntegerButFromJustALongTooLong() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer).writeStartObject().write("value", new BigInteger("10002000000000000000")).writeEnd().close();
+        final String asJson = writer.toString();
+        final JsonNumber jsonNumber = Json.createReader(new StringReader(asJson)).readObject().getJsonNumber("value");
+        Assert.assertEquals(new BigInteger("10002000000000000000"), jsonNumber.bigIntegerValue());
+    }
 }

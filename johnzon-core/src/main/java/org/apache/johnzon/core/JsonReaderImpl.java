@@ -30,10 +30,10 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
 public class JsonReaderImpl implements JsonReader {
-    private final JsonParser parser;
+    private final JsonStreamParserImpl parser;
     private boolean closed = false;
 
-    public JsonReaderImpl(final JsonParser parser) {
+    public JsonReaderImpl(final JsonStreamParserImpl parser) {
         this.parser = parser;
     }
 
@@ -151,7 +151,7 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case VALUE_NUMBER:
-                    if (parser.isIntegralNumber()) {
+                    if (parser.isIntegralNumber() && parser.isNotTooLong()) {
                         builder.add(key, new JsonLongImpl(parser.getLong()));
                     } else {
                         builder.add(key, new JsonNumberImpl(parser.getBigDecimal()));

@@ -838,6 +838,10 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         }
     }
 
+    boolean isNotTooLong() {
+        return (endOfValueInBuffer - startOfValueInBuffer) < 19;
+    }
+
     @Override
     public int getInt() {
         if (previousEvent != VALUE_NUMBER) {

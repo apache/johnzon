@@ -65,7 +65,7 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
         this.supportsComments = getBool(SUPPORTS_COMMENTS, DEFAULT_SUPPORTS_COMMENT);
     }
 
-    private JsonParser getDefaultJsonParserImpl(final InputStream in) {
+    private JsonStreamParserImpl getDefaultJsonParserImpl(final InputStream in) {
         if (supportsComments) {
             return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
         }
@@ -73,7 +73,7 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
         return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
     }
 
-    private JsonParser getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
+    private JsonStreamParserImpl getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
         if (supportsComments) {
             return new CommentsJsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider);
         }
@@ -81,7 +81,7 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
         return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider);
     }
 
-    private JsonParser getDefaultJsonParserImpl(final Reader in) {
+    private JsonStreamParserImpl getDefaultJsonParserImpl(final Reader in) {
         if (supportsComments) {
             return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider);
         }
@@ -121,15 +121,15 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
         return Collections.unmodifiableMap(internalConfig);
     }
 
-    public JsonParser createInternalParser(final InputStream in) {
+    public JsonStreamParserImpl createInternalParser(final InputStream in) {
         return getDefaultJsonParserImpl(in);
     }
     
-    public JsonParser createInternalParser(final InputStream in, final Charset charset) {
+    public JsonStreamParserImpl createInternalParser(final InputStream in, final Charset charset) {
         return getDefaultJsonParserImpl(in, charset);
     }
 
-    public JsonParser createInternalParser(final Reader reader) {
+    public JsonStreamParserImpl createInternalParser(final Reader reader) {
         return getDefaultJsonParserImpl(reader);
     }
 }
