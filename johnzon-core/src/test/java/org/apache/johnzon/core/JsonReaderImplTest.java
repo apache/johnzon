@@ -42,6 +42,7 @@ import javax.json.JsonReaderFactory;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
 
@@ -61,6 +62,16 @@ public class JsonReaderImplTest {
     @SuppressWarnings("unchecked")
     protected Map<String, ?> getFactoryConfig() {
         return Collections.EMPTY_MAP;
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void badTypeObject() {
+        Json.createReaderFactory(getFactoryConfig()).createReader(new StringReader("[]")).readObject();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void badTypeArray() {
+        Json.createReaderFactory(getFactoryConfig()).createReader(new StringReader("{}")).readArray();
     }
 
     @Test

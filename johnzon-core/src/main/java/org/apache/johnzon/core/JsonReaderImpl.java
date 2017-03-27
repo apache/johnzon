@@ -107,12 +107,22 @@ public class JsonReaderImpl implements JsonReader {
 
     @Override
     public JsonObject readObject() {
-        return JsonObject.class.cast(read());
+        final JsonStructure read = read();
+        checkType(JsonObject.class, read);
+        return JsonObject.class.cast(read);
     }
 
     @Override
     public JsonArray readArray() {
-        return JsonArray.class.cast(read());
+        final JsonStructure read = read();
+        checkType(JsonArray.class, read);
+        return JsonArray.class.cast(read);
+    }
+
+    private void checkType(final Class<?> expected, final JsonStructure read) {
+        if (!expected.isInstance(read)) {
+            throw new JsonParsingException("Expecting " + expected + " but got " + read, parser.getLocation());
+        }
     }
 
     @Override
