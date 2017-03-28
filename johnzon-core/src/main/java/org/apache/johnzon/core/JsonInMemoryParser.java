@@ -30,9 +30,8 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
 
-class JsonInMemoryParser implements JsonParser {
+class JsonInMemoryParser implements JohnzonJsonParser {
 
     private final SimpleStack<Iterator<Event>> stack = new SimpleStack<Iterator<Event>>();
 
@@ -230,6 +229,11 @@ class JsonInMemoryParser implements JsonParser {
             throw new IllegalStateException("isIntegralNumber is for numbers");
         }
         return JsonNumber.class.cast(currentValue).isIntegral();
+    }
+
+    @Override
+    public boolean isNotTooLong() {
+        return true;
     }
 
     @Override

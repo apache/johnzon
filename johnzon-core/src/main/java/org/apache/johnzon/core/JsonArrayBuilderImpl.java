@@ -218,78 +218,90 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
         @Override
     public JsonArrayBuilder add(final JsonValue value) {
-        addValue(tmpList.size(), value);
+        addValue(value);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final String value) {
-        addValue(tmpList.size(), new JsonStringImpl(value));
+        addValue(new JsonStringImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigDecimal value) {
-        addValue(tmpList.size(), new JsonNumberImpl(value));
+        addValue(new JsonNumberImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigInteger value) {
-        addValue(tmpList.size(), new JsonNumberImpl(new BigDecimal(value)));
+        addValue(new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final int value) {
-        addValue(tmpList.size(), new JsonLongImpl(value));
+        addValue(new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final long value) {
-        addValue(tmpList.size(), new JsonLongImpl(value));
+        addValue(new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final double value) {
-        addValue(tmpList.size(), new JsonDoubleImpl(value));
+        addValue(new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        addValue(tmpList.size(), value ? JsonValue.TRUE : JsonValue.FALSE);
+        addValue(value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull() {
-        addValue(tmpList.size(), JsonValue.NULL);
+        addValue(JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonObjectBuilder builder) {
-        addValue(tmpList.size(), builder.build());
+        addValue(builder.build());
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonArrayBuilder builder) {
-        addValue(tmpList.size(), builder.build());
+        addValue(builder.build());
         return this;
     }
     
-    private void setValue(int idx, JsonValue value){
+    private void setValue(int idx, JsonValue value) {
         if (value == null || tmpList == null) {
             throw npe();
         }
         tmpList.set(idx, value);
     }
 
-    private void addValue(int idx, JsonValue value){
+    private void addValue(JsonValue value) {
+        if (value == null) {
+            throw npe();
+        }
+
+        if(tmpList==null){
+            tmpList=new ArrayList<>();
+        }
+
+        tmpList.add(value);
+    }
+
+    private void addValue(int idx, JsonValue value) {
         if (value == null) {
             throw npe();
         }

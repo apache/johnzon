@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.core;
 
+
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonNumber;
@@ -30,11 +31,15 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
 public class JsonReaderImpl implements JsonReader {
-    private final JsonStreamParserImpl parser;
+    private final JohnzonJsonParser parser;
     private boolean closed = false;
 
-    public JsonReaderImpl(final JsonStreamParserImpl parser) {
-        this.parser = parser;
+    public JsonReaderImpl(final JsonParser parser) {
+        if (parser instanceof JohnzonJsonParser) {
+            this.parser = (JohnzonJsonParser) parser;
+        } else {
+            this.parser = new JohnzonJsonParser.JohnzonJsonParserWrapper(parser);
+        }
     }
 
     @Override

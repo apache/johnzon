@@ -20,7 +20,6 @@ package org.apache.johnzon.core;
 
 import javax.json.JsonException;
 import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +30,7 @@ import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
 
 //This class represents either the Json tokenizer and the Json parser.
-public class JsonStreamParserImpl implements JsonChars, JsonParser{
+public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
 
     //the main buffer where the stream will be buffered
     private final char[] buffer;
@@ -836,6 +835,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         } else {
             return isCurrentNumberIntegral;
         }
+    }
+
+    @Override
+    public boolean isNotTooLong() {
+        return (endOfValueInBuffer - startOfValueInBuffer) < 19;
     }
 
     @Override
