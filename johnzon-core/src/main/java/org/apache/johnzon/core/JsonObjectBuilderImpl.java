@@ -143,9 +143,7 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     @Override
     public JsonObjectBuilder addAll(JsonObjectBuilder builder) {
-        if (builder instanceof JsonObjectBuilderImpl) {
-            attributeMap.putAll(builder.build());
-        }
+        attributeMap.putAll(builder.build());
         return this;
     }
 

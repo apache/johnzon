@@ -48,6 +48,150 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         }
     }
 
+    @Override
+    public JsonArrayBuilder addAll(final JsonArrayBuilder builder) {
+        builder.build().forEach(this::add);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final JsonValue value) {
+        addValue(index, value);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final String value) {
+        addValue(index, new JsonStringImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final BigDecimal value) {
+        addValue(index, new JsonNumberImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final BigInteger value) {
+        addValue(index, new JsonNumberImpl(new BigDecimal(value)));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final int value) {
+        addValue(index, new JsonLongImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final long value) {
+        addValue(index, new JsonLongImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final double value) {
+        addValue(index, new JsonDoubleImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final boolean value) {
+        addValue(index, value ? JsonValue.TRUE : JsonValue.FALSE);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder addNull(final int index) {
+        addValue(index, JsonValue.NULL);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final JsonObjectBuilder builder) {
+        addValue(index, builder.build());
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder add(final int index, final JsonArrayBuilder builder) {
+        addValue(index, builder.build());
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final JsonValue value) {
+        setValue(index, value);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final String value) {
+        setValue(index, new JsonStringImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final BigDecimal value) {
+        setValue(index, new JsonNumberImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final BigInteger value) {
+        setValue(index, new JsonNumberImpl(new BigDecimal(value)));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final int value) {
+        setValue(index, new JsonLongImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final long value) {
+        setValue(index, new JsonLongImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final double value) {
+        setValue(index, new JsonDoubleImpl(value));
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final boolean value) {
+        setValue(index, value ? JsonValue.TRUE : JsonValue.FALSE);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder setNull(final int index) {
+        setValue(index, JsonValue.NULL);
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final JsonObjectBuilder builder) {
+        setValue(index, builder.build());
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder set(final int index, final JsonArrayBuilder builder) {
+        setValue(index, builder.build());
+        return this;
+    }
+
+    @Override
+    public JsonArrayBuilder remove(final int index) {
+        tmpList.remove(index);
+        return this;
+    }
+
     public JsonArrayBuilder add(final Object value) {
         if (value instanceof JsonValue) {
             add((JsonValue) value);
@@ -74,93 +218,95 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
         @Override
     public JsonArrayBuilder add(final JsonValue value) {
-        addValue(value);
+        addValue(tmpList.size(), value);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final String value) {
-        addValue(new JsonStringImpl(value));
+        addValue(tmpList.size(), new JsonStringImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigDecimal value) {
-        addValue(new JsonNumberImpl(value));
+        addValue(tmpList.size(), new JsonNumberImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigInteger value) {
-        addValue(new JsonNumberImpl(new BigDecimal(value)));
+        addValue(tmpList.size(), new JsonNumberImpl(new BigDecimal(value)));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final int value) {
-        addValue(new JsonLongImpl(value));
+        addValue(tmpList.size(), new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final long value) {
-        addValue(new JsonLongImpl(value));
+        addValue(tmpList.size(), new JsonLongImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final double value) {
-        addValue(new JsonDoubleImpl(value));
+        addValue(tmpList.size(), new JsonDoubleImpl(value));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final boolean value) {
-        addValue(value ? JsonValue.TRUE : JsonValue.FALSE);
+        addValue(tmpList.size(), value ? JsonValue.TRUE : JsonValue.FALSE);
         return this;
     }
 
     @Override
     public JsonArrayBuilder addNull() {
-        addValue(JsonValue.NULL);
+        addValue(tmpList.size(), JsonValue.NULL);
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonObjectBuilder builder) {
-        addValue(builder.build());
+        addValue(tmpList.size(), builder.build());
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final JsonArrayBuilder builder) {
-        addValue(builder.build());
+        addValue(tmpList.size(), builder.build());
         return this;
     }
     
-    private void addValue(JsonValue value){
+    private void setValue(int idx, JsonValue value){
+        if (value == null || tmpList == null) {
+            throw npe();
+        }
+        tmpList.set(idx, value);
+    }
+
+    private void addValue(int idx, JsonValue value){
         if (value == null) {
             throw npe();
         }
-        
+
         if(tmpList==null){
             tmpList=new ArrayList<>();
         }
-        
-        tmpList.add(value);
+
+        tmpList.add(idx, value);
     }
 
     @Override
     public JsonArray build() {
-        
         if(tmpList == null) {
-            return new JsonArrayImpl(Collections.EMPTY_LIST);
-        } else {
-            List<JsonValue> dump = (Collections.unmodifiableList(tmpList));
-            tmpList=null;
-            return new JsonArrayImpl(dump);
+            return new JsonArrayImpl(Collections.emptyList());
         }
-        
+        return new JsonArrayImpl(Collections.unmodifiableList(tmpList));
     }
 
     private static NullPointerException npe() {

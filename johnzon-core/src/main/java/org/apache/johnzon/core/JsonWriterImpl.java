@@ -18,15 +18,15 @@
  */
 package org.apache.johnzon.core;
 
-import java.io.Serializable;
-
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
+import java.io.Serializable;
 
-class JsonWriterImpl implements JsonWriter, Serializable{
+class JsonWriterImpl implements JsonWriter, Serializable {
     private final JsonGenerator generator;
     private boolean closed = false;
 
@@ -37,37 +37,56 @@ class JsonWriterImpl implements JsonWriter, Serializable{
     @Override
     public void writeArray(final JsonArray array) {
         checkClosed();
-        generator.write(array);
-        close();
+        try {
+            generator.write(array);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public void writeObject(final JsonObject object) {
         checkClosed();
-        generator.write(object);
-        close();
+        try {
+            generator.write(object);
+        } finally {
+            close();
+        }
+    }
+
+    @Override
+    public void write(final JsonValue value) {
+        checkClosed();
+        try {
+            generator.write(value);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public void write(final JsonStructure value) {
         checkClosed();
-        generator.write(value);
-        close();
+        try {
+            generator.write(value);
+        } finally {
+            close();
+        }
     }
 
     @Override
     public void close() {
-        
-        if(!closed) {
+
+        if (!closed) {
             closed = true;
             generator.close();
         }
     }
-    
+
     private void checkClosed() {
-        if(closed) {
+        if (closed) {
             throw new IllegalStateException("writeArray(), writeObject(), write() or close() method was already called");
         }
-           
+
     }
 }
