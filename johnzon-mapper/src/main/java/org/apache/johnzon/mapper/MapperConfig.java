@@ -106,6 +106,12 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         if (converter != null) {
             return converter;
         }
+        /* could be an option but doesnt fit well our old converters
+        final Adapter<?, ?> reverseConverter = adapters.get(new AdapterKey(String.class, aClass));
+        if (reverseConverter != null) {
+            return new ReversedAdapter<>(reverseConverter);
+        }
+        */
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (clazz.isEnum()) {

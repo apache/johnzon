@@ -531,13 +531,6 @@ public class Mappings {
 
             if (Date.class.isAssignableFrom(type) && copyDate) {
                 converter = new DateWithCopyConverter(Adapter.class.cast(adapters.get(new AdapterKey(Date.class, String.class))));
-            } else if (type.isEnum()) {
-                final AdapterKey key = new AdapterKey(String.class, type);
-                converter = adapters.get(key); // first ensure user didnt override it
-                if (converter == null) {
-                    converter = new ConverterAdapter(new EnumConverter(type));
-                    adapters.put(key, (Adapter<?, ?>) converter);
-                }
             } else {
                 for (final Map.Entry<AdapterKey, Adapter<?, ?>> adapterEntry : adapters.entrySet()) {
                     if (adapterEntry.getKey().getFrom() == adapterEntry.getKey().getTo()) { // String -> String
@@ -553,6 +546,14 @@ public class Mappings {
                         }
                         converter = adapterEntry.getValue();
                     }
+                }
+            }
+            if (converter == null && type.isEnum()) {
+                final AdapterKey key = new AdapterKey(String.class, type);
+                converter = adapters.get(key); // first ensure user didnt override it
+                if (converter == null) {
+                    converter = new ConverterAdapter(new EnumConverter(type));
+                    adapters.put(key, (Adapter<?, ?>) converter);
                 }
             }
         }

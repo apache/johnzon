@@ -161,16 +161,19 @@ public class MappingParserImpl implements MappingParser {
             JsonArray jsonArray = (JsonArray) jsonValue;
 
             if (Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
-                return (T) buildArrayWithComponentType(jsonArray, ((Class) targetType).getComponentType(), null);
+                final Class componentType = ((Class) targetType).getComponentType();
+                return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType));
             }
             if (ParameterizedType.class.isInstance(targetType)) {
 
-                final Mappings.CollectionMapping mapping = mappings.findCollectionMapping((ParameterizedType) targetType);
+                final ParameterizedType pt = (ParameterizedType) targetType;
+                final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(pt);
                 if (mapping == null) {
                     throw new UnsupportedOperationException("type " + targetType + " not supported");
                 }
 
-                return (T) mapCollection(mapping, jsonArray, null);
+                final Type arg = pt.getActualTypeArguments()[0];
+                return (T) mapCollection(mapping, jsonArray, Class.class.isInstance(arg) ? config.findAdapter(Class.class.cast(arg)) : null);
             }
             if (Object.class == targetType) {
                 return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null))));
