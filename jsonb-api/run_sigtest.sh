@@ -1,18 +1,39 @@
 #!/bin/sh
-# file to run the CDI signature tests
+
+#    Licensed to the Apache Software Foundation (ASF) under one
+#    or more contributor license agreements.  See the NOTICE file
+#    distributed with this work for additional information
+#    regarding copyright ownership.  The ASF licenses this file
+#    to you under the Apache License, Version 2.0 (the
+#    "License"); you may not use this file except in compliance
+#    with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing,
+#    software distributed under the License is distributed on an
+#    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#    KIND, either express or implied.  See the License for the
+#    specific language governing permissions and limitations
+#    under the License.
+
+# file to run the JPA signature tests
 
 
-# HOWTO
-# download sigtestdev.jar from http://download.java.net/sigtest/2.2/Rel/
-# copy to a local folder and set SIGTEST_HOME to it
+# HOWTO:
+#
+# Download sigtestdev.jar from https://wiki.openjdk.java.net/display/CodeTools/SigTest
+# Copy to a local folder and set SIGTEST_HOME to it.
 
 
+# needed, because we have deps to other specs in JSONB
+mvn dependency:copy-dependencies
 
-mvn dependency:copy-dependencies -DincludeScope=compile
+# generate the SIG for the RI
+# there is currently no official jar yet. If availablen, then: curl  http://repo1.maven.org/maven2/javax/json/... > ./target/javax.json-1.1.jar
+java -jar ${SIGTEST_HOME}/lib/sigtestdev.jar Setup -classpath ${JAVA_HOME}/jre/lib/rt.jar:./javax.json.bind-api.jar:./target/dependency/geronimo-json_1.1_spec-1.0-SNAPSHOT.jar -Package javax.json  -FileName target/javax.json.bind-api.sig -static
 
-java -jar ${SIGTEST_HOME}/lib/sigtestdev.jar Setup -classpath ${JAVA_HOME}/jre/lib/rt.jar:./target/jsonb-api-1.0-SNAPSHOT.jar:./target/dependency/geronimo-json_1.0_spec-1.0-alpha-1.jar -Package javax.json.bind -FileName jsonb-api.sig -static
+# this generates the signature for our own jpa api
+java -jar ${SIGTEST_HOME}/lib/sigtestdev.jar Setup -classpath ${JAVA_HOME}/jre/lib/rt.jar:./target/dependency/geronimo-json_1.1_spec-1.0-SNAPSHOT.jar:./target/jsonb-api-1.1.0-SNAPSHOT.jar -Package javax.json  -FileName target/jsonb-api-1.1.0-SNAPSHOT.sig -static
 
-# now run the real sig test
-#java -jar ${SIGTEST_HOME}/lib/sigtestdev.jar SignatureTest -classpath ${JAVA_HOME}/jre/lib/rt.jar:./target/dependency/geronimo-jcdi_1.1_spec-1.0-alpha-1.jar:./target/dependency/geronimo-atinject_1.0_spec-1.0.jar:./target/dependency/geronimo-el_2.2_spec-1.0.2.jar:./target/dependency/geronimo-interceptor_1.2_spec-1.0-alpha-1.jar -Package javax.decorator -Package javax.enterprise -FileName cdi-api.sig -static
-#java -jar ${SIGTEST_HOME}/lib/sigtestdev.jar SignatureTest -classpath ${JAVA_HOME}/jre/lib/rt.jar:./target/jsonb-api-1.0-SNAPSHOT.jar:./target/dependency/geronimo-json_1.0_spec-1.0-alpha-1.jar -Package javax.json.bind -FileName jsonb -FileName jsonb-api.sig -static
-
+# then open the 2 generated sig files in a diff browser and the only difference should be some internal variables.
