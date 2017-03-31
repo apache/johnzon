@@ -24,36 +24,36 @@ import javax.json.bind.JsonbException;
 import javax.json.bind.adapter.JsonbAdapter;
 import java.lang.reflect.Type;
 
-public class JohnzonJsonbAdapter<A, B> implements TypeAwareAdapter<A, B> {
-    private final JsonbAdapter<A, B> delegate;
+public class JohnzonJsonbAdapter<JsonType, OriginalType> implements TypeAwareAdapter<OriginalType, JsonType> {
+    private final JsonbAdapter<OriginalType, JsonType> delegate;
     private final Type from;
     private final Type to;
 
-    public JohnzonJsonbAdapter(final JsonbAdapter<A, B> delegate, final Type from, final Type to) {
+    public JohnzonJsonbAdapter(final JsonbAdapter<OriginalType, JsonType> delegate, final Type from, final Type to) {
         this.delegate = delegate;
         this.from = from;
         this.to = to;
     }
 
     @Override
-    public A to(final B obj) {
+    public OriginalType to(final JsonType obj) {
         if (obj == null) {
             return null;
         }
         try {
-            return delegate.adaptToJson(obj);
+            return delegate.adaptFromJson(obj);
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }
     }
 
     @Override
-    public B from(final A obj) {
+    public JsonType from(final OriginalType obj) {
         if (obj == null) {
             return null;
         }
         try {
-            return delegate.adaptFromJson(obj);
+            return delegate.adaptToJson(obj);
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }

@@ -93,7 +93,7 @@ public class ClassConverterTest {
         }
     }
 
-    public static class MyAdapter implements JsonbAdapter<Whole, Switch> {
+    public static class MyAdapter implements JsonbAdapter<Switch, Whole> {
         @Override
         public Whole adaptToJson(final Switch obj) throws Exception {
             final Whole whole = new Whole();
