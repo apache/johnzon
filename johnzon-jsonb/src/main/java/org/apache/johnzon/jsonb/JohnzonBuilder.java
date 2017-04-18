@@ -20,6 +20,7 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
+import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
@@ -114,7 +115,7 @@ public class JohnzonBuilder implements JsonbBuilder {
     public Jsonb build() {
         if (jsonp != null) {
             builder.setGeneratorFactory(jsonp.createGeneratorFactory(generatorConfig()));
-            builder.setReaderFactory(jsonp.createReaderFactory(emptyMap()));
+            builder.setReaderFactory(jsonp.createReaderFactory(readerConfig()));
         }
         final Supplier<JsonParserFactory> parserFactoryProvider = new Supplier<JsonParserFactory>() { // thread safety is not mandatory
             private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
@@ -677,6 +678,18 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty(JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH).ifPresent(b -> map.put(JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH, b));
         config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
         config.getProperty(JsonbConfig.FORMATTING).ifPresent(b -> map.put(JsonGenerator.PRETTY_PRINTING, b));
+        return map;
+    }
+
+    private Map<String, ?> readerConfig() {
+        final Map<String, Object> map = new HashMap<>();
+        if (config == null) {
+            return map;
+        }
+        config.getProperty(JsonParserFactoryImpl.BUFFER_LENGTH).ifPresent(b -> map.put(JsonParserFactoryImpl.BUFFER_LENGTH, b));
+        config.getProperty(JsonParserFactoryImpl.MAX_STRING_LENGTH).ifPresent(b -> map.put(JsonParserFactoryImpl.MAX_STRING_LENGTH, b));
+        config.getProperty(JsonParserFactoryImpl.SUPPORTS_COMMENTS).ifPresent(b -> map.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, b));
+        config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
         return map;
     }
 }
