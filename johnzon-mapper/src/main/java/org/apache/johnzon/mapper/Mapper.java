@@ -85,7 +85,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator);
+        writeObject(object, generator, null);
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
@@ -94,7 +94,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator);
+        writeObject(object, generator, null);
     }
 
     public void writeObject(final Object object, final Writer stream) {
@@ -125,21 +125,21 @@ public class Mapper implements Closeable {
         }
 
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator);
+        writeObject(object, generator, null);
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
-        writeObject(object, generator);
+        writeObject(object, generator, null);
     }
 
-    private void writeObject(final Object object, final JsonGenerator generator) {
+    private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored) {
         MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
 
-        RuntimeException originalException = null;
+        Throwable originalException = null;
         try {
-            mappingGenerator.doWriteObject(object, generator, true);
-        } catch (RuntimeException e) {
+            mappingGenerator.doWriteObject(object, generator, true, ignored);
+        } catch (final Error | RuntimeException e) {
             originalException = e;
         } finally {
 
@@ -148,7 +148,10 @@ public class Mapper implements Closeable {
             } catch (JsonException e) {
 
                 if (originalException != null) {
-                    throw originalException;
+                    if (RuntimeException.class.isInstance(originalException)) {
+                        throw RuntimeException.class.cast(originalException);
+                    }
+                    throw Error.class.cast(originalException); // stackoverflow falls here
                 } else {
                     throw e;
                 }

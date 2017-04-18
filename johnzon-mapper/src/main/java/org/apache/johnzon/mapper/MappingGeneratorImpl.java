@@ -54,12 +54,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
         } else if (object instanceof JsonValue) {
             generator.write((JsonValue) object);
         } else {
-            doWriteObject(object, generator, false);
+            doWriteObject(object, generator, false, null);
         }
         return this;
     }
 
-    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody) {
+    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody, final Collection<String> ignoredProperties) {
         try {
             if (object instanceof Map) {
                 if (writeBody) {
@@ -85,7 +85,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             if (object instanceof Iterable) {
-                doWriteIterable((Iterable) object);
+                doWriteIterable((Iterable) object, ignoredProperties);
                 return;
             }
 
@@ -97,7 +97,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             if (writeBody && objectConverter != null) {
                 objectConverter.writeJson(object, this);
             } else {
-                doWriteObjectBody(object);
+                doWriteObjectBody(object, ignoredProperties);
             }
 
             if (writeBody) {
@@ -132,7 +132,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
             writeValue(valueClass,
                     primitive, array, collection, map, itemConverter,
-                    key == null ? "null" : key.toString(), value, null);
+                    key == null ? "null" : key.toString(), value, null, null);
         }
         return generator;
     }
@@ -224,7 +224,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
 
-    private void doWriteObjectBody(final Object object) throws IllegalAccessException, InvocationTargetException {
+    private void doWriteObjectBody(final Object object, final Collection<String> ignored) throws IllegalAccessException, InvocationTargetException {
         final Class<?> objectClass = object.getClass();
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(objectClass);
         if (classMapping == null) {
@@ -236,12 +236,15 @@ public class MappingGeneratorImpl implements MappingGenerator {
             return;
         }
         if (classMapping.adapter != null) {
-            doWriteObjectBody(classMapping.adapter.to(object));
+            doWriteObjectBody(classMapping.adapter.to(object), ignored);
             return;
         }
 
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
+            if (ignored != null && ignored.contains(getterEntry.getKey())) {
+                continue;
+            }
             if (getter.version >= 0 && config.getVersion() >= getter.version) {
                 continue;
             }
@@ -268,7 +271,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     getter.collection, getter.map,
                     getter.itemConverter,
                     getterEntry.getKey(),
-                    val, getter.objectConverter);
+                    val, getter.objectConverter,
+                    getter.ignoreNested);
         }
 
         // @JohnzonAny doesn't respect comparator since it is a map and not purely in the model we append it after and
@@ -286,7 +290,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
                             final boolean collection, final boolean map,
                             final Adapter itemConverter,
                             final String key, final Object value,
-                            final ObjectConverter.Writer objectConverter) throws InvocationTargetException, IllegalAccessException {
+                            final ObjectConverter.Writer objectConverter,
+                            final Collection<String> ignoredProperties) throws InvocationTargetException, IllegalAccessException {
         if (array) {
             final int length = Array.getLength(value);
             if (length == 0 && config.isSkipEmptyArray()) {
@@ -306,14 +311,14 @@ public class MappingGeneratorImpl implements MappingGenerator {
             generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
                 final Object o = Array.get(value, i);
-                writeItem(itemConverter != null ? itemConverter.from(o) : o);
+                writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties);
             }
             generator.writeEnd();
             return;
         } else if (collection) {
             generator.writeStartArray(key);
             for (final Object o : Collection.class.cast(value)) {
-                writeItem(itemConverter != null ? itemConverter.from(o) : o);
+                writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties);
             }
             generator.writeEnd();
             return;
@@ -332,7 +337,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (writePrimitives(key, adapted.getClass(), adapted)) {
                     return;
                 }
-                writeValue(String.class, true, false, false, false, null, key, adapted, null);
+                writeValue(String.class, true, false, false, false, null, key, adapted, null, ignoredProperties);
                 return;
             } else {
 
@@ -352,15 +357,15 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
             generator.writeStartObject(key);
-            doWriteObjectBody(value);
+            doWriteObjectBody(value, ignoredProperties);
             generator.writeEnd();
         }
     }
 
-    private void writeItem(final Object o) {
+    private void writeItem(final Object o, final Collection<String> ignoredProperties) {
         if (!writePrimitives(o)) {
             if (Collection.class.isInstance(o)) {
-                doWriteIterable(Collection.class.cast(o));
+                doWriteIterable(Collection.class.cast(o), ignoredProperties);
             } else if (o != null && o.getClass().isArray()) {
                 final int length = Array.getLength(o);
                 if (length > 0 || !config.isSkipEmptyArray()) {
@@ -370,7 +375,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                         if (t == null) {
                             generator.writeNull();
                         } else {
-                            writeItem(t);
+                            writeItem(t, ignoredProperties);
                         }
                     }
                     generator.writeEnd();
@@ -378,12 +383,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
             } else if (o == null) {
                 generator.writeNull();
             } else {
-                doWriteObject(o, generator, true);
+                doWriteObject(o, generator, true, ignoredProperties);
             }
         }
     }
 
-    private <T> void doWriteIterable(final Iterable<T> object) {
+    private <T> void doWriteIterable(final Iterable<T> object, final Collection<String> ignoredProperties) {
         if (object == null) {
             generator.writeStartArray().writeEnd();
         } else {
@@ -395,7 +400,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     if (t == null) {
                         generator.writeNull();
                     } else {
-                        writeItem(t);
+                        writeItem(t, ignoredProperties);
                     }
                 }
             }

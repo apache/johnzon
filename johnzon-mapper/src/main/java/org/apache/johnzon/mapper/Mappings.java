@@ -104,18 +104,20 @@ public class Mappings {
         public final boolean array;
         public final boolean map;
         public final boolean collection;
+        public final Collection<String> ignoreNested;
 
         public Getter(final AccessMode.Reader reader,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
                       final MapperConverter converter,
                       final ObjectConverter.Writer providedObjectConverter,
-                      final int version) {
+                      final int version, final String[] ignoreNested) {
             this.reader = reader;
             this.version = version;
             this.array = array;
             this.collection = collection;
             this.primitive = primitive;
+            this.ignoreNested = ignoreNested == null || ignoreNested.length == 0 ? null : new HashSet<>(asList(ignoreNested));
 
             Adapter theConverter = null;
             Adapter theItemConverter = null;
@@ -387,7 +389,7 @@ public class Mappings {
                 accessMode.findWriter(clazz),
                 anyGetter != null ? new Getter(
                         new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false, false, false, true, null, null, -1) : null,
+                        false, false, false, true, null, null, -1, null) : null,
                 accessMode.findAnySetter(clazz));
 
         accessMode.afterParsed(clazz);
@@ -437,6 +439,7 @@ public class Mappings {
                                    final AccessMode.Reader value,
                                    final boolean copyDate) {
         final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
+        final JohnzonIgnoreNested ignoreNested = value.getAnnotation(JohnzonIgnoreNested.class);
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
@@ -447,7 +450,8 @@ public class Mappings {
                     (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Map.class.isAssignableFrom(returnType)),
                     findConverter(copyDate, value), value.findObjectConverterWriter(),
-                    readIgnore != null ? readIgnore.minVersion() : -1);
+                    readIgnore != null ? readIgnore.minVersion() : -1,
+                    ignoreNested != null ? ignoreNested.properties() : null);
             getters.put(key, getter);
         }
     }
@@ -494,7 +498,8 @@ public class Mappings {
 
         final Getter getter = getters.get(key);
         final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, config.getVersion());
-        getters.put(key, new Getter(getter == null ? newReader : new CompositeReader(getter.reader, newReader), false, false, false, true, null, null, -1));
+        getters.put(key, new Getter(getter == null ? newReader :
+                new CompositeReader(getter.reader, newReader), false, false, false, true, null, null, -1, null));
 
         final Setter newSetter = setters.get(key);
         final MapUnwrapperWriter newWriter = new MapUnwrapperWriter(objectSetters, path);
