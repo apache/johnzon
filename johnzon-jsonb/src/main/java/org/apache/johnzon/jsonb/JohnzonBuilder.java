@@ -51,6 +51,7 @@ import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParserFactory;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -289,7 +290,21 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         builder.setReadAttributeBeforeWrite(
                 config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
-        config.getProperty("johnzon.serialize-value-filter").ifPresent(s -> builder.setSerializeValueFilter(SerializeValueFilter.class.cast(s)));
+        config.getProperty("johnzon.serialize-value-filter")
+                .map(s -> {
+                    if (String.class.isInstance(s)) {
+                        try {
+                            return SerializeValueFilter.class.cast(
+                                    Thread.currentThread().getContextClassLoader().loadClass(s.toString()).getConstructor().newInstance());
+                        } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
+                            throw new IllegalArgumentException(e);
+                        } catch (InvocationTargetException e) {
+                            throw new IllegalArgumentException(e.getCause());
+                        }
+                    }
+                    return s;
+                })
+                .ifPresent(s -> builder.setSerializeValueFilter(SerializeValueFilter.class.cast(s)));
 
         config.getProperty(JsonbConfig.SERIALIZERS).map(JsonbSerializer[].class::cast).ifPresent(serializers -> {
             Stream.of(serializers).forEach(s -> {

@@ -19,6 +19,7 @@
 package org.apache.johnzon.jaxrs;
 
 import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 
 import javax.json.JsonReaderFactory;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.List;
@@ -210,5 +212,16 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
 
     public void setPrimitiveConverters(final boolean val) {
         builder.setPrimitiveConverters(val);
+    }
+
+    public void setSerializeValueFilter(final String val) {
+        try {
+            builder.setSerializeValueFilter(SerializeValueFilter.class.cast(
+                    Thread.currentThread().getContextClassLoader().loadClass(val).getConstructor().newInstance()));
+        } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
+            throw new IllegalArgumentException(e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalArgumentException(e.getCause());
+        }
     }
 }
