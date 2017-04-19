@@ -130,6 +130,7 @@ public class MapperBuilder {
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
     private boolean primitiveConverters;
     private boolean failOnUnknownProperties;
+    private SerializeValueFilter serializeValueFilter;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -216,7 +217,8 @@ public class MapperBuilder {
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
-                        accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties),
+                        accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
+                        serializeValueFilter),
                 closeables);
     }
 
@@ -393,6 +395,11 @@ public class MapperBuilder {
 
     public MapperBuilder setPrimitiveConverters(final boolean val) {
         this.primitiveConverters = val;
+        return this;
+    }
+
+    public MapperBuilder setSerializeValueFilter(final SerializeValueFilter serializeValueFilter) {
+        this.serializeValueFilter = serializeValueFilter;
         return this;
     }
 }

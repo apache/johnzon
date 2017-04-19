@@ -32,6 +32,7 @@ import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
@@ -288,6 +289,7 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         builder.setReadAttributeBeforeWrite(
                 config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
+        config.getProperty("johnzon.serialize-value-filter").ifPresent(s -> builder.setSerializeValueFilter(SerializeValueFilter.class.cast(s)));
 
         config.getProperty(JsonbConfig.SERIALIZERS).map(JsonbSerializer[].class::cast).ifPresent(serializers -> {
             Stream.of(serializers).forEach(s -> {

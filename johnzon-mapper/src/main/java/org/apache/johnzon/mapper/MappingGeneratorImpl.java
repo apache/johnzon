@@ -292,6 +292,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
                             final String key, final Object value,
                             final ObjectConverter.Writer objectConverter,
                             final Collection<String> ignoredProperties) throws InvocationTargetException, IllegalAccessException {
+        if (config.getSerializeValueFilter().shouldIgnore(key, value)) {
+            return;
+        }
         if (array) {
             final int length = Array.getLength(value);
             if (length == 0 && config.isSkipEmptyArray()) {

@@ -64,6 +64,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Comparator<String> attributeOrder;
     private final boolean enforceQuoteString;
     private final boolean failOnUnknown;
+    private final SerializeValueFilter serializeValueFilter;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -79,7 +80,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean readAttributeBeforeWrite,
                         final AccessMode accessMode, final Charset encoding,
                         final Comparator<String> attributeOrder,
-                        final boolean enforceQuoteString, final boolean failOnUnknown) {
+                        final boolean enforceQuoteString, final boolean failOnUnknown,
+                        final SerializeValueFilter serializeValueFilter) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -96,9 +98,14 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.attributeOrder = attributeOrder;
         this.enforceQuoteString = enforceQuoteString;
         this.failOnUnknown = failOnUnknown;
+        this.serializeValueFilter = serializeValueFilter == null ? (name, value) -> false : serializeValueFilter;
 
         this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
+    }
+
+    public SerializeValueFilter getSerializeValueFilter() {
+        return serializeValueFilter;
     }
 
     public Adapter findAdapter(final Type aClass) {
