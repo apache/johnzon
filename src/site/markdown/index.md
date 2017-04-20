@@ -24,10 +24,9 @@ for this specification like an Object mapper, some JAX-RS providers and a WebSoc
 ## Status
 
 Apache Johnzon is a Top Level Project at the Apache Software Foundation (ASF).
-It fully implements the JSON-P_1.0 specification (JSR-353).
-Johnzon also targets the upcoming JSON-P_1.1 and JSON-B_1.0 specifications.
+It fully implements the SON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
 
-The current version is Apache Johnzon 1.0.0.
+The current version is Apache Johnzon 1.1.0.
 
 ## Get started
 
@@ -292,9 +291,9 @@ TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want h
 Note: as you can see you mainly just need to define a service with the id johnzon (same as in openejb-jar.xml)
 and you can reference other instances using $id for services and @id for resources.
 
-### JSON-B (not yet fully compliant)
+### JSON-B (JSON-B 1.0 compliant)
 
-Johnzon provides a module johnzon-jsonb and jsonb-api implementing JSON-B standard based on Johnzon Mapper.
+Johnzon provides a module johnzon-jsonb implementing JSON-B standard based on Johnzon Mapper.
 
 It fully reuses the JSON-B as API.
 
