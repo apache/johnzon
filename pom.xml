@@ -40,7 +40,7 @@
   <url>http://johnzon.apache.org</url>
 
   <properties>
-    <geronimo-jsonp.version>1.0-SNAPSHOT</geronimo-jsonp.version>
+    <geronimo-jsonp.version>1.0</geronimo-jsonp.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
