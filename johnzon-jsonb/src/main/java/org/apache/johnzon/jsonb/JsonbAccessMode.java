@@ -612,10 +612,28 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final JsonbPropertyOrder orderAnnotation = Meta.getAnnotation(clazz, JsonbPropertyOrder.class);
         if (orderAnnotation != null) {
             final List<String> indexed = new ArrayList<>(asList(orderAnnotation.value()));
+            if (naming != null) { // JsonbPropertyOrder applies on java names
+                for (int i = 0; i < indexed.size(); i++) {
+                    indexed.set(i, naming.translateName(indexed.get(i)));
+                }
+            }
             keyComparator = (o1, o2) -> {
                 final int i1 = indexed.indexOf(o1);
                 final int i2 = indexed.indexOf(o2);
                 if (i1 < 0) {
+                    if (i2 < 0) {
+                        if (order != null) {
+                            switch (order) {
+                                case PropertyOrderStrategy.LEXICOGRAPHICAL:
+                                    return o1.compareTo(o2);
+                                case PropertyOrderStrategy.REVERSE:
+                                    return o2.compareTo(o1);
+                                case PropertyOrderStrategy.ANY:
+                                default:
+                                    return 1;
+                            }
+                        }
+                    }
                     return 1;
                 }
                 return i1 - i2;
@@ -629,7 +647,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                     keyComparator = String::compareTo;
                     break;
                 case PropertyOrderStrategy.REVERSE:
-                    keyComparator = (o1, o2) -> o2.compareTo(o1);
+                    keyComparator = Comparator.reverseOrder();
                     break;
                 default:
                     keyComparator = null;
