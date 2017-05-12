@@ -210,6 +210,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("johnzon.primitiveConverters")
                 .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
                 .ifPresent(builder::setPrimitiveConverters);
+        config.getProperty("johnzon.useBigDecimalForFloats")
+                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .ifPresent(builder::setUseBigDecimalForFloats);
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 

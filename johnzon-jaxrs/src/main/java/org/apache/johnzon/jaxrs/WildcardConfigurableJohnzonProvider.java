@@ -219,4 +219,8 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
     public void setPrimitiveConverters(final boolean val) {
         builder.setPrimitiveConverters(val);
     }
+
+    public void setUseBigDecimalForFloats(final boolean useBigDecimalForFloats) {
+        builder.setUseBigDecimalForFloats(useBigDecimalForFloats);
+    }
 }
