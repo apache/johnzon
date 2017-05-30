@@ -27,6 +27,7 @@
 
   <artifactId>johnzon-jsonb</artifactId>
   <name>Johnzon :: JSON-B Implementation</name>
+  <packaging>bundle</packaging>
 
   <properties>
     <java-compile.version>1.8</java-compile.version>
@@ -96,5 +97,19 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <packaging>bundle</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Require-Capability>osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
+            <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>
