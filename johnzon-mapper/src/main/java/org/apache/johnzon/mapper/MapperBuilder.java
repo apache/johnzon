@@ -131,6 +131,7 @@ public class MapperBuilder {
     private boolean primitiveConverters;
     private boolean failOnUnknownProperties;
     private SerializeValueFilter serializeValueFilter;
+    private boolean useBigDecimalForFloats;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -218,7 +219,7 @@ public class MapperBuilder {
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
-                        serializeValueFilter),
+                        serializeValueFilter, useBigDecimalForFloats),
                 closeables);
     }
 
@@ -400,6 +401,11 @@ public class MapperBuilder {
 
     public MapperBuilder setSerializeValueFilter(final SerializeValueFilter serializeValueFilter) {
         this.serializeValueFilter = serializeValueFilter;
+        return this;
+    }
+
+    public MapperBuilder setUseBigDecimalForFloats(final boolean useBigDecimalForFloats) {
+        this.useBigDecimalForFloats = useBigDecimalForFloats;
         return this;
     }
 }

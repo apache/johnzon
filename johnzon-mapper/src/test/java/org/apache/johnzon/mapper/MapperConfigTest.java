@@ -166,7 +166,7 @@ public class MapperConfigTest {
                                 new FieldAccessMode(true, true),
                                 Charset.forName("UTF-8"),
                                 null,
-                                false, false, null);
+                                false, false, null, false);
     }
 
 

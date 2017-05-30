@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.core.JsonLongImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
@@ -247,18 +246,7 @@ public class MappingParserImpl implements MappingParser {
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                             final JsonValue jsonValue = value.getValue();
                             if (JsonNumber.class.isInstance(jsonValue) && any) {
-                                final JsonNumber number = JsonNumber.class.cast(jsonValue);
-                                if (JsonLongImpl.class.isInstance(number)) {
-                                    final int integer = number.intValue();
-                                    final long asLong = number.longValue();
-                                    if (integer == asLong) {
-                                        map.put(value.getKey(), integer);
-                                    } else {
-                                        map.put(value.getKey(), asLong);
-                                    }
-                                } else {
-                                    map.put(value.getKey(), !number.isIntegral() ? number.bigDecimalValue() : number.intValue());
-                                }
+                                map.put(value.getKey(), toNumberValue(JsonNumber.class.cast(jsonValue)));
                             } else if (JsonString.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
                             } else {
@@ -351,6 +339,24 @@ public class MappingParserImpl implements MappingParser {
         }
 
         return t;
+    }
+
+    private Number toNumberValue(JsonNumber jsonNumber) {
+        if (jsonNumber.isIntegral()) {
+            final int intValue = jsonNumber.intValue();
+            final long longValue = jsonNumber.longValue();
+            if (intValue == longValue) {
+                return intValue;
+            } else {
+                return longValue;
+            }
+        } else {
+            if (config.isUseBigDecimalForFloats()) {
+                return jsonNumber.bigDecimalValue();
+            } else {
+                return jsonNumber.doubleValue();
+            }
+        }
     }
 
     private Object convertTo(final Adapter converter, final JsonValue jsonValue) {
@@ -462,11 +468,7 @@ public class MappingParserImpl implements MappingParser {
                 return false;
             }
             if (JsonNumber.class.isInstance(jsonValue)) {
-                final JsonNumber jsonNumber = JsonNumber.class.cast(jsonValue);
-                if (jsonNumber.isIntegral()) {
-                    return jsonNumber.intValue();
-                }
-                return jsonNumber.doubleValue();
+                return toNumberValue(JsonNumber.class.cast(jsonValue));
             }
         }
 

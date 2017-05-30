@@ -224,4 +224,8 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
             throw new IllegalArgumentException(e.getCause());
         }
     }
+
+    public void setUseBigDecimalForFloats(final boolean useBigDecimalForFloats) {
+        builder.setUseBigDecimalForFloats(useBigDecimalForFloats);
+    }
 }
