@@ -97,6 +97,9 @@ public final class JsonLongImpl implements JsonNumber, Serializable {
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonNumber.class.isInstance(obj) && JsonNumber.class.cast(obj).longValue() == value;
+        if (JsonLongImpl.class.isInstance(obj)) {
+            return JsonLongImpl.class.cast(obj).value == value;
+        }
+        return JsonNumber.class.isInstance(obj) && JsonNumber.class.cast(obj).bigDecimalValue().equals(bigDecimalValue());
     }
 }

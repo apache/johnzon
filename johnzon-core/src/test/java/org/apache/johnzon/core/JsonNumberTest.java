@@ -28,9 +28,17 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
 
+import static org.junit.Assert.assertFalse;
 
 
 public class JsonNumberTest {
+    @Test
+    public void equals() {
+        final JsonNumber a = Json.createObjectBuilder().add("a", 1).build().getJsonNumber("a");
+        final JsonNumber b = Json.createObjectBuilder().add("b", 1.1).build().getJsonNumber("b");
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+    }
     
     @Test(expected=ArithmeticException.class)
     public void testBigIntegerExact() {
