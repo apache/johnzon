@@ -29,9 +29,29 @@ import java.io.StringWriter;
 import java.math.BigInteger;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 
 public class JsonNumberTest {
+    @Test
+    public void nonZeroFractional() {
+        final JsonNumber number = Json.createArrayBuilder()
+                .add(12345.6489)
+                .build()
+                .getJsonNumber(0);
+        try {
+            number.intValueExact();
+            fail();
+        } catch (final ArithmeticException ae) {
+            // ok
+        }
+        try {
+            number.longValueExact();
+            fail();
+        } catch (final ArithmeticException ae) {
+            // ok
+        }
+    }
     @Test
     public void equals() {
         final JsonNumber a = Json.createObjectBuilder().add("a", 1).build().getJsonNumber("a");
