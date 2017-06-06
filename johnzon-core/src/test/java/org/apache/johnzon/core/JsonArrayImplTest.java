@@ -58,4 +58,12 @@ public class JsonArrayImplTest {
         assertTrue(array.isEmpty());
         assertEquals("[]", array.toString());
     }
+
+    @Test
+    public void equals() {
+        assertTrue(Json.createArrayBuilder().build().equals(Json.createArrayBuilder().build()));
+        assertTrue(Json.createArrayBuilder().add(1).build().equals(Json.createArrayBuilder().add(1).build()));
+        assertFalse(Json.createArrayBuilder().add(1).build().equals(Json.createArrayBuilder().add(2).build()));
+        assertFalse(Json.createArrayBuilder().add(1).build().equals(Json.createArrayBuilder().build()));
+    }
 }
