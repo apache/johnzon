@@ -293,6 +293,8 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         builder.setReadAttributeBeforeWrite(
                 config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
+        builder.setAutoAdjustStringBuffers(
+                config.getProperty("johnzon.autoAdjustBuffer").map(Boolean.class::cast).orElse(true));
         config.getProperty("johnzon.serialize-value-filter")
                 .map(s -> {
                     if (String.class.isInstance(s)) {

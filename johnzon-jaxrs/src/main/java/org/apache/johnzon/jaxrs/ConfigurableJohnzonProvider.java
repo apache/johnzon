@@ -228,4 +228,8 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
     public void setUseBigDecimalForFloats(final boolean useBigDecimalForFloats) {
         builder.setUseBigDecimalForFloats(useBigDecimalForFloats);
     }
+
+    public void setAutoAdjustStringBuffers(final boolean autoAdjustStringBuffers) {
+        builder.setAutoAdjustStringBuffers(autoAdjustStringBuffers);
+    }
 }
