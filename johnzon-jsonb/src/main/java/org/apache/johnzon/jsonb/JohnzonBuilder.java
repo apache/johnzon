@@ -348,7 +348,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && config.getProperty("johnzon.cdi.activated").map(Boolean.class::cast).orElse(Boolean.TRUE);
         final Mapper mapper = builder.addCloseable(accessMode).build();
 
-        return useCdi ? new JohnsonJsonb(mapper) {
+        return useCdi ? new JohnzonJsonb(mapper) {
             {
                 cdiIntegration.track(this);
             }
@@ -363,7 +363,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                     }
                 }
             }
-        } : new JohnsonJsonb(mapper);
+        } : new JohnzonJsonb(mapper);
     }
 
     private ParameterizedType findPT(final Object s, final Class<?> type) {
