@@ -100,7 +100,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     private final PropertyNamingStrategy naming;
     private final String order;
     private final PropertyVisibilityStrategy visibility;
-    private final FieldAndMethodAccessMode delegate;
+    private final AccessMode delegate;
     private final boolean caseSensitive;
     private final Map<AdapterKey, Adapter<?, ?>> defaultConverters;
     private final JohnzonAdapterFactory factory;
@@ -122,12 +122,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
                            final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory,
-                           final Supplier<JsonParserFactory> parserFactory) {
+                           final Supplier<JsonParserFactory> parserFactory, final AccessMode delegate) {
         this.naming = propertyNamingStrategy;
         this.order = orderValue;
         this.visibility = visibilityStrategy;
         this.caseSensitive = caseSensitive;
-        this.delegate = new FieldAndMethodAccessMode(true, true, false);
+        this.delegate = delegate;
         this.defaultConverters = defaultConverters;
         this.factory = factory;
         this.parserFactory = parserFactory;
@@ -661,6 +661,9 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     @Override
     public void close() throws IOException {
         toRelease.forEach(JohnzonAdapterFactory.Instance::release);
+        if (Closeable.class.isInstance(delegate)) {
+            Closeable.class.cast(delegate).close();
+        }
         toRelease.clear();
     }
 

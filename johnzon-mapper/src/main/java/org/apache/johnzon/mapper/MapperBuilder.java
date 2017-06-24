@@ -144,9 +144,6 @@ public class MapperBuilder {
             if (pretty) {
                 config.put(JsonGenerator.PRETTY_PRINTING, true);
             }
-            if (autoAdjustStringBuffers) {
-                config.put("org.apache.johnzon.auto-adjust-buffer", true);
-            }
 
             if (generatorFactory == null) {
                 generatorFactory = provider.createGeneratorFactory(config);
@@ -161,6 +158,9 @@ public class MapperBuilder {
             }
             if (bufferSize > 0) {
                 config.put(JsonParserFactoryImpl.BUFFER_LENGTH, bufferSize);
+            }
+            if (autoAdjustStringBuffers) {
+                config.put("org.apache.johnzon.auto-adjust-buffer", true);
             }
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);

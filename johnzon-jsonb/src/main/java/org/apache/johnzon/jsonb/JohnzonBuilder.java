@@ -33,6 +33,8 @@ import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
@@ -50,6 +52,7 @@ import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParserFactory;
+import java.io.Closeable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -218,11 +221,16 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
             throw new IllegalArgumentException("Unsupported factory: " + val);
         }).orElseGet(this::findFactory);
-        final JsonbAccessMode accessMode = new JsonbAccessMode(
-                propertyNamingStrategy, orderValue, visibilityStrategy,
-                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                defaultConverters,
-                factory, parserFactoryProvider);
+        final AccessMode accessMode = config.getProperty("johnzon.accessMode")
+                .map(this::toAccessMode)
+                .orElseGet(() -> new JsonbAccessMode(
+                        propertyNamingStrategy, orderValue, visibilityStrategy,
+                        !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                        defaultConverters,
+                        factory, parserFactoryProvider,
+                        config.getProperty("johnzon.accessModeDelegate")
+                                .map(this::toAccessMode)
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
         builder.setAccessMode(accessMode);
 
 
@@ -328,7 +336,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         });
 
         final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && config.getProperty("johnzon.cdi.activated").map(Boolean.class::cast).orElse(Boolean.TRUE);
-        final Mapper mapper = builder.addCloseable(accessMode).build();
+        if (Closeable.class.isInstance(accessMode)) {
+            builder.addCloseable(Closeable.class.cast(accessMode));
+        }
+        final Mapper mapper = builder.build();
 
         return useCdi ? new JohnzonJsonb(mapper) {
             {
@@ -348,26 +359,40 @@ public class JohnzonBuilder implements JsonbBuilder {
         } : new JohnzonJsonb(mapper);
     }
 
+    private AccessMode toAccessMode(final Object s) {
+        if (String.class.isInstance(s)) {
+            try {
+                return AccessMode.class.cast(
+                        Thread.currentThread().getContextClassLoader().loadClass(s.toString()).getConstructor().newInstance());
+            } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            } catch (InvocationTargetException e) {
+                throw new IllegalArgumentException(e.getCause());
+            }
+        }
+        return AccessMode.class.cast(s);
+    }
+
     private Supplier<JsonParserFactory> createJsonParserFactory() {
         return new Supplier<JsonParserFactory>() { // thread safety is not mandatory
-                private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
+            private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
 
-                @Override
-                public JsonParserFactory get() {
-                    JsonParserFactory factory = ref.get();
-                    if (factory == null) {
-                        factory = doCreate();
-                        if (!ref.compareAndSet(null, factory)) {
-                            factory = ref.get();
-                        }
+            @Override
+            public JsonParserFactory get() {
+                JsonParserFactory factory = ref.get();
+                if (factory == null) {
+                    factory = doCreate();
+                    if (!ref.compareAndSet(null, factory)) {
+                        factory = ref.get();
                     }
-                    return factory;
                 }
+                return factory;
+            }
 
-                private JsonParserFactory doCreate() {
-                    return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
-                }
-            };
+            private JsonParserFactory doCreate() {
+                return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
+            }
+        };
     }
 
     private ParameterizedType findPT(final Object s, final Class<?> type) {
