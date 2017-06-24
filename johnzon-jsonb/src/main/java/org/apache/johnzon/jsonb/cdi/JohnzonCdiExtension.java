@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb.cdi;
 
-import org.apache.johnzon.jsonb.JohnsonJsonb;
+import org.apache.johnzon.jsonb.JohnzonJsonb;
 
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
@@ -29,7 +29,7 @@ import java.util.Collection;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class JohnzonCdiExtension implements Extension {
-    private final Collection<JohnsonJsonb> jsonbs = new ArrayList<>();
+    private final Collection<JohnzonJsonb> jsonbs = new ArrayList<>();
     private final ReentrantLock lock = new ReentrantLock();
     private volatile boolean canWrite = false;
 
@@ -37,7 +37,7 @@ public class JohnzonCdiExtension implements Extension {
         return canWrite;
     }
 
-    public void track(final JohnsonJsonb jsonb) {
+    public void track(final JohnzonJsonb jsonb) {
         if (!canWrite) {
             throw new IllegalStateException("CDI context already shutdown");
         }
@@ -49,7 +49,7 @@ public class JohnzonCdiExtension implements Extension {
         }
     }
 
-    public void untrack(final JohnsonJsonb jsonb) {
+    public void untrack(final JohnzonJsonb jsonb) {
         synchronized (this) {
             lock.lock();
             try {

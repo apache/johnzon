@@ -39,10 +39,10 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 // TODO: Optional handling for lists (and arrays)?
-public class JohnsonJsonb implements Jsonb, AutoCloseable {
+public class JohnzonJsonb implements Jsonb, AutoCloseable {
     private final Mapper delegate;
 
-    public JohnsonJsonb(final Mapper build) {
+    public JohnzonJsonb(final Mapper build) {
         this.delegate = build;
     }
 
