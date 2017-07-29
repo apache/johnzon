@@ -80,17 +80,6 @@ public class MappingParserImpl implements MappingParser {
     private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
     private static final CharacterConverter CHARACTER_CONVERTER = new CharacterConverter(); // this one is particular, share the logic
-    private static final boolean HAS_READ_VALUE;
-    static {
-        boolean hasReadValue; // v1.0 vs v1.1
-        try {
-            JsonReader.class.getDeclaredMethod("readValue");
-            hasReadValue = true;
-        } catch (final Error | NoSuchMethodException e) {
-            hasReadValue = false;
-        }
-        HAS_READ_VALUE = hasReadValue;
-    }
 
     protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry;
     protected final ConcurrentMap<Class<?>, Method> valueOfs = new ConcurrentHashMap<Class<?>, Method>();
@@ -114,7 +103,7 @@ public class MappingParserImpl implements MappingParser {
     @Override
     public <T> T readObject(Type targetType) {
         try {
-            return readObject(HAS_READ_VALUE ? jsonReader.readValue() : jsonReader.read(), targetType);
+            return readObject(jsonReader.readValue(), targetType);
         } finally {
             if (config.isClose()) {
                 jsonReader.close();
@@ -197,7 +186,7 @@ public class MappingParserImpl implements MappingParser {
             type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
         }
 
-        if (applyObjectConverter && !(type instanceof JohnzonParameterizedType)) {
+        if (applyObjectConverter && !(type instanceof ParameterizedType)) {
 
             if (!(type instanceof Class)) {
                 throw new MapperException("ObjectConverters are only supported for Classes not Types");
