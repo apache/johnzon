@@ -104,6 +104,8 @@ public class MappingParserImpl implements MappingParser {
     public <T> T readObject(Type targetType) {
         try {
             return readObject(jsonReader.readValue(), targetType);
+        } catch (final NoSuchMethodError noSuchMethodError) { // jsonp 1.0 fallback - mainly for tests
+            return readObject(jsonReader.read(), targetType);
         } finally {
             if (config.isClose()) {
                 jsonReader.close();
