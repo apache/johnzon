@@ -26,8 +26,6 @@ for this specification like an Object mapper, some JAX-RS providers and a WebSoc
 Apache Johnzon is a Top Level Project at the Apache Software Foundation (ASF).
 It fully implements the SON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
 
-The current version is Apache Johnzon 1.1.0.
-
 ## Get started
 
 Johnzon comes with four main modules.
