@@ -18,6 +18,34 @@
  */
 package org.apache.johnzon.jaxrs;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.container.AsyncResponse;
+import javax.ws.rs.container.Suspended;
+import javax.ws.rs.core.GenericType;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.StreamingOutput;
+
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
@@ -27,31 +55,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public class JohnzonProviderTest {
+
     private final static String ENDPOINT_ADDRESS = "local://johnzon";
+
     private static Server server;
 
     @BeforeClass
@@ -72,7 +79,8 @@ public class JohnzonProviderTest {
 
     @Test
     public void asParam() {
-        final String result = client().path("johnzon").type(MediaType.APPLICATION_JSON_TYPE).post(new Johnzon("client")).readEntity(String.class);
+        final String result = client().path("johnzon").type(MediaType.APPLICATION_JSON_TYPE).post(new Johnzon("client"))
+                .readEntity(String.class);
         assertTrue(Boolean.parseBoolean(result));
     }
 
@@ -86,6 +94,19 @@ public class JohnzonProviderTest {
     public void streamOutput() {
         final String stream = client().path("johnzon/stream").get(String.class);
         assertEquals("ok", stream);
+    }
+
+    @Test
+    public void untypedStreamOutput() {
+        final StreamingOutput impl = new StreamingOutput() {
+
+            @Override
+            public void write(final OutputStream outputStream) throws IOException, WebApplicationException {
+                // no-op
+            }
+        };
+        assertFalse(new JohnzonMessageBodyWriter().isWriteable(impl.getClass(), impl.getClass(), new Annotation[0],
+                MediaType.APPLICATION_JSON_TYPE));
     }
 
     @Test
@@ -106,9 +127,10 @@ public class JohnzonProviderTest {
     @Test
     public void list() {
         final ParameterizedType list = new ParameterizedType() {
+
             @Override
             public Type[] getActualTypeArguments() {
-                return new Type[]{Johnzon.class};
+                return new Type[] { Johnzon.class };
             }
 
             @Override
@@ -146,12 +168,14 @@ public class JohnzonProviderTest {
     }
 
     private static WebClient client(final MediaType mediaType) {
-        final WebClient client = WebClient.create(ENDPOINT_ADDRESS, singletonList(new JohnzonProvider<Object>())).accept(mediaType);
+        final WebClient client = WebClient.create(ENDPOINT_ADDRESS, singletonList(new JohnzonProvider<Object>()))
+                .accept(mediaType);
         WebClient.getConfig(client).getRequestContext().put(LocalConduit.DIRECT_DISPATCH, Boolean.TRUE);
         return client;
     }
 
     public static class Johnzon {
+
         private String name;
 
         public Johnzon(final String name) {
@@ -173,6 +197,7 @@ public class JohnzonProviderTest {
 
     @Path("johnzon")
     public static class JohnzonResource {
+
         @GET
         public Johnzon johnzon() {
             return new Johnzon("johnzon");
@@ -207,11 +232,24 @@ public class JohnzonProviderTest {
         @Path("stream")
         public StreamingOutput out() {
             return new StreamingOutput() {
+
                 @Override
                 public void write(OutputStream outputStream) throws IOException, WebApplicationException {
                     outputStream.write("ok".getBytes());
                 }
             };
+        }
+
+        @GET
+        @Path("lazy_stream")
+        public void out(@Suspended final AsyncResponse response) {
+            response.resume(new StreamingOutput() {
+
+                @Override
+                public void write(OutputStream outputStream) throws IOException, WebApplicationException {
+                    outputStream.write("ok".getBytes());
+                }
+            });
         }
 
         @GET

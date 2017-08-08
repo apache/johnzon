@@ -118,20 +118,22 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     @Override
     public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
-                && InputStream.class != genericType && Reader.class != genericType && Response.class != genericType
-                && String.class != genericType
+                && !InputStream.class.isAssignableFrom(type)
+                && !Reader.class.isAssignableFrom(type)
+                && !Response.class.isAssignableFrom(type)
+                && !CharSequence.class.isAssignableFrom(type)
                 && !JsonStructure.class.isAssignableFrom(type);
     }
 
     @Override
     public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
-                && InputStream.class != genericType
-                && OutputStream.class != genericType
-                && Writer.class != genericType
-                && StreamingOutput.class != genericType
-                && String.class != genericType
-                && Response.class != genericType
+                && !InputStream.class.isAssignableFrom(type)
+                && !OutputStream.class.isAssignableFrom(type)
+                && !Writer.class.isAssignableFrom(type)
+                && !StreamingOutput.class.isAssignableFrom(type)
+                && !CharSequence.class.isAssignableFrom(type)
+                && !Response.class.isAssignableFrom(type)
                 && !JsonStructure.class.isAssignableFrom(type);
     }
 
