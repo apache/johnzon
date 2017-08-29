@@ -27,6 +27,8 @@ import java.util.Objects;
 final class JsonDoubleImpl implements JsonNumber, Serializable {
     private final double value;
 
+    private Integer hashCode = null;
+
     JsonDoubleImpl(final double value) {
         
         if(Double.isInfinite(value) || Double.isNaN(value)) {
@@ -100,7 +102,11 @@ final class JsonDoubleImpl implements JsonNumber, Serializable {
 
     @Override
     public int hashCode() {
-        return Double.valueOf(value).hashCode();
+        if (hashCode == null) {
+            hashCode = bigDecimalValue().hashCode();
+        }
+
+        return hashCode;
     }
 
     @Override

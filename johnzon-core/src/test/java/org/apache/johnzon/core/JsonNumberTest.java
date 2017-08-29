@@ -86,4 +86,13 @@ public class JsonNumberTest {
         final JsonNumber jsonNumber = Json.createReader(new StringReader(asJson)).readObject().getJsonNumber("value");
         Assert.assertEquals(new BigInteger("10002000000000000000"), jsonNumber.bigIntegerValue());
     }
+
+    @Test
+    public void testHashCode() {
+        JsonNumber a = Json.createObjectBuilder().add("a", 1).build().getJsonNumber("a");
+        JsonNumber b = Json.createObjectBuilder().add("b", 1.1).build().getJsonNumber("b");
+
+        Assert.assertEquals(a.hashCode(), a.bigDecimalValue().hashCode());
+        Assert.assertEquals(b.hashCode(), b.bigDecimalValue().hashCode());
+    }
 }

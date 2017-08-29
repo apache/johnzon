@@ -25,6 +25,7 @@ import java.math.BigInteger;
 
 public final class JsonLongImpl implements JsonNumber, Serializable {
     private final long value;
+    private Integer hashCode = null;
 
     JsonLongImpl(final long value) {
         this.value = value;
@@ -92,7 +93,10 @@ public final class JsonLongImpl implements JsonNumber, Serializable {
 
     @Override
     public int hashCode() {
-        return (int) value;
+        if (hashCode == null) {
+            hashCode = bigDecimalValue().hashCode();
+        }
+        return hashCode;
     }
 
     @Override
