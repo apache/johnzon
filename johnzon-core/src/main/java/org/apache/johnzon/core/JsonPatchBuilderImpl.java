@@ -154,11 +154,7 @@ class JsonPatchBuilderImpl implements JsonPatchBuilder {
 
     @Override
     public JsonPatch build() {
-
-        // add operations to another list
-        // so we can clear and reuse the builder
         JsonPatchImpl patch = new JsonPatchImpl(new ArrayList<>(operations));
-        operations.clear();
 
         return patch;
 
