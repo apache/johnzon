@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -31,5 +32,41 @@ public class CircularExceptionTest {
         final String serialized = new MapperBuilder().setAccessModeName("field").build().writeObjectAsString(oopsImVicous);
         assertTrue(serialized.contains("\"detailMessage\":\"circular\""));
         assertTrue(serialized.contains("\"stackTrace\":[{"));
+    }
+
+    @Test
+    public void testCyclicPerson() {
+        Person john = new Person("John");
+        Person marry = new Person("Marry");
+
+        john.setMarriedTo(marry);
+        marry.setMarriedTo(john);
+
+        String ser = new MapperBuilder().setAccessModeName("field").build().writeObjectAsString(john);
+        Assert.assertNotNull(ser);
+        assertTrue(ser.contains("\"name\":\"John\""));
+        assertTrue(ser.contains("\"marriedTo\":\"/\""));
+        assertTrue(ser.contains("\"name\":\"Marry\""));
+    }
+
+    public static class Person {
+        private final String name;
+        private Person marriedTo;
+
+        public Person(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Person getMarriedTo() {
+            return marriedTo;
+        }
+
+        public void setMarriedTo(Person marriedTo) {
+            this.marriedTo = marriedTo;
+        }
     }
 }

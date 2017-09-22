@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.core.JsonPointerUtil;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 
 import javax.json.JsonValue;
@@ -28,12 +29,14 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
     private final JsonGenerator generator;
     private final Mappings mappings;
+    private Map<Object, String> jsonPointers = new HashMap<>();
 
 
     MappingGeneratorImpl(MapperConfig config, JsonGenerator jsonGenerator, final Mappings mappings) {
@@ -60,6 +63,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
     public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody, final Collection<String> ignoredProperties) {
+
         try {
             if (object instanceof Map) {
                 if (writeBody) {
@@ -97,7 +101,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             if (writeBody && objectConverter != null) {
                 objectConverter.writeJson(object, this);
             } else {
-                doWriteObjectBody(object, ignoredProperties);
+                doWriteObjectBody(object, ignoredProperties, "/");
             }
 
             if (writeBody) {
@@ -132,7 +136,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
             writeValue(valueClass,
                     primitive, array, collection, map, itemConverter,
-                    key == null ? "null" : key.toString(), value, null, null);
+                    key == null ? "null" : key.toString(), value, null, null, null);
         }
         return generator;
     }
@@ -224,7 +228,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
 
-    private void doWriteObjectBody(final Object object, final Collection<String> ignored) throws IllegalAccessException, InvocationTargetException {
+    private void doWriteObjectBody(final Object object, final Collection<String> ignored, String jsonPointer)
+            throws IllegalAccessException, InvocationTargetException {
+
+        if (jsonPointer != null) {
+            jsonPointers.put(object, jsonPointer);
+        }
+
         final Class<?> objectClass = object.getClass();
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(objectClass);
         if (classMapping == null) {
@@ -236,7 +246,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             return;
         }
         if (classMapping.adapter != null) {
-            doWriteObjectBody(classMapping.adapter.to(object), ignored);
+            doWriteObjectBody(classMapping.adapter.to(object), ignored, null);
             return;
         }
 
@@ -266,13 +276,23 @@ public class MappingGeneratorImpl implements MappingGenerator {
 
             final Object val = getter.converter == null ? value : getter.converter.from(value);
 
-            writeValue(val.getClass(),
-                    getter.primitive, getter.array,
-                    getter.collection, getter.map,
-                    getter.itemConverter,
-                    getterEntry.getKey(),
-                    val, getter.objectConverter,
-                    getter.ignoreNested);
+            String valJsonPointer = jsonPointers.get(val);
+            if (valJsonPointer != null) {
+                // write the JsonPointer instead
+                generator.write(getterEntry.getKey(), valJsonPointer);
+            } else {
+                writeValue(val.getClass(),
+                        getter.primitive,
+                        getter.array,
+                        getter.collection,
+                        getter.map,
+                        getter.itemConverter,
+                        getterEntry.getKey(),
+                        val,
+                        getter.objectConverter,
+                        getter.ignoreNested,
+                        nestJsonPointer(jsonPointer, getterEntry.getKey()));
+            }
         }
 
         // @JohnzonAny doesn't respect comparator since it is a map and not purely in the model we append it after and
@@ -285,13 +305,27 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
     }
 
+    private String nestJsonPointer(String jsonPointer, String attribName) {
+        if (jsonPointer == null) {
+            return null;
+        }
+        if (jsonPointer.length() == 1) {
+            // the root element
+            return jsonPointer + attribName;
+        } else {
+            return jsonPointer + "/" + JsonPointerUtil.encode(attribName);
+        }
+    }
+
     private void writeValue(final Class<?> type,
                             final boolean primitive, final boolean array,
                             final boolean collection, final boolean map,
                             final Adapter itemConverter,
                             final String key, final Object value,
                             final ObjectConverter.Writer objectConverter,
-                            final Collection<String> ignoredProperties) throws InvocationTargetException, IllegalAccessException {
+                            final Collection<String> ignoredProperties,
+                            final String jsonPointer)
+            throws InvocationTargetException, IllegalAccessException {
         if (config.getSerializeValueFilter().shouldIgnore(key, value)) {
             return;
         }
@@ -340,7 +374,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (writePrimitives(key, adapted.getClass(), adapted)) {
                     return;
                 }
-                writeValue(String.class, true, false, false, false, null, key, adapted, null, ignoredProperties);
+                writeValue(String.class, true, false, false, false, null, key, adapted, null, ignoredProperties, null);
                 return;
             } else {
 
@@ -360,7 +394,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
             generator.writeStartObject(key);
-            doWriteObjectBody(value, ignoredProperties);
+            doWriteObjectBody(value, ignoredProperties, jsonPointer);
             generator.writeEnd();
         }
     }
