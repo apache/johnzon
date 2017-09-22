@@ -462,8 +462,9 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                 writer.close();
             } catch (final IOException e) {
                 throw new JsonException(e.getMessage(), e);
+            } finally {
+                bufferProvider.release(buffer);
             }
-            bufferProvider.release(buffer);
         }
     }
 

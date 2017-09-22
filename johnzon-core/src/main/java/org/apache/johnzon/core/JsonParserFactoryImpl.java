@@ -33,7 +33,7 @@ import static java.util.Arrays.asList;
 
 public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonParserFactory {
     public static final String MAX_STRING_LENGTH = "org.apache.johnzon.max-string-length";
-    public static final int DEFAULT_MAX_STRING_LENGTH = Integer.getInteger(MAX_STRING_LENGTH, 10 * 1024 * 1024); //10m
+    public static final int DEFAULT_MAX_STRING_LENGTH = Integer.getInteger(MAX_STRING_LENGTH, 256 * 1024); //256kB
     
     public static final String AUTO_ADJUST_STRING_BUFFER = "org.apache.johnzon.auto-adjust-buffer";
     public static final String BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer";

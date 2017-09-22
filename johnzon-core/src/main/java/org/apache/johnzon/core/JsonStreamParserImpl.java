@@ -68,7 +68,7 @@ public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
     //this buffer is used to store current String or Number value in case that
     //within the value a buffer boundary is crossed or the string contains escaped characters
     private char[] fallBackCopyBuffer;
-    private boolean releaseFallBackCopyBufferLength;
+    private boolean releaseFallBackCopyBufferLength = true;
     private int fallBackCopyBufferLength;
 
     // location (line, column, offset)
@@ -172,7 +172,7 @@ public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
                     throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
                 }
 
-                final char[] newArray = new char[fallBackCopyBuffer.length + 1024]; // small incr to not explode the mem
+                final char[] newArray = new char[fallBackCopyBuffer.length + getBufferExtends(fallBackCopyBuffer.length)];
                 // TODO: log to adjust size once?
                 System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
                 System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
@@ -189,6 +189,14 @@ public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
     }
+
+    /**
+     * @return the amount of bytes the current buffer should get extended with
+     */
+    protected int getBufferExtends(int currentLength) {
+        return currentLength/4;
+    }
+
 
     @Override
     public final boolean hasNext() {
