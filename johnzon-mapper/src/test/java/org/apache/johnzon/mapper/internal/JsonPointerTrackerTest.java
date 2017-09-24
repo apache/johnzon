@@ -16,21 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper;
+package org.apache.johnzon.mapper.internal;
 
+import org.junit.Assert;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+public class JsonPointerTrackerTest {
 
-public class CircularExceptionTest {
+
     @Test
-    public void dontStackOverFlow() {
-        final Throwable oopsImVicous = new Exception("circular");
-        oopsImVicous.getStackTrace(); // fill it
-        oopsImVicous.initCause(new IllegalArgumentException(oopsImVicous));
-        final String serialized = new MapperBuilder().setAccessModeName("field").build().writeObjectAsString(oopsImVicous);
-        assertTrue(serialized.contains("\"detailMessage\":\"circular\""));
-        assertTrue(serialized.contains("\"stackTrace\":[{"));
-    }
+    public void testJsonPointerTracker() {
+        JsonPointerTracker jptRoot = new JsonPointerTracker(null, "/");
 
+        Assert.assertEquals("/", jptRoot.toString());
+
+        JsonPointerTracker jptAttrL1 = new JsonPointerTracker(jptRoot, "attrL1");
+        JsonPointerTracker jptAttrL2 = new JsonPointerTracker(jptAttrL1, "attrL2");
+
+        Assert.assertEquals("/attrL1/attrL2", jptAttrL2.toString());
+        Assert.assertEquals("/attrL1", jptAttrL1.toString());
+    }
 }
