@@ -545,12 +545,13 @@ public class MappingParserImpl implements MappingParser {
             final String string = JsonString.class.cast(jsonValue).getString();
             if (itemConverter == null) {
                 // check whether we have a jsonPointer to a previously deserialised object
-                Object o = jsonPointers.get(string);
-                if (o != null) {
-                    return o;
-                } else {
-                    return convertTo(Class.class.cast(type), string);
+                if (!String.class.equals(type)) {
+                    Object o = jsonPointers.get(string);
+                    if (o != null) {
+                        return o;
+                    }
                 }
+                return convertTo(Class.class.cast(type), string);
             } else {
                 return itemConverter.to(string);
             }
@@ -613,8 +614,10 @@ public class MappingParserImpl implements MappingParser {
             throw new IllegalStateException("not supported collection type: " + mapping.raw.getName());
         }
 
+        int i = 0;
         for (final JsonValue value : jsonArray) {
-            collection.add(JsonValue.NULL.equals(value) ? null : toObject(null, value, mapping.arg, itemConverter, jsonPointer));
+            collection.add(JsonValue.NULL.equals(value) ? null : toObject(null, value, mapping.arg, itemConverter, new JsonPointerTracker(jsonPointer, i)));
+            i++;
         }
 
         if (EnumSet.class == mapping.raw) {

@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 
 import javax.json.JsonException;
@@ -85,7 +86,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null);
+        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
@@ -94,7 +95,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null);
+        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
     }
 
     public void writeObject(final Object object, final Writer stream) {
@@ -125,20 +126,20 @@ public class Mapper implements Closeable {
         }
 
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null);
+        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
-        writeObject(object, generator, null);
+        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
     }
 
-    private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored) {
+    private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
         MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
 
         Throwable originalException = null;
         try {
-            mappingGenerator.doWriteObject(object, generator, true, ignored);
+            mappingGenerator.doWriteObject(object, generator, true, ignored, jsonPointer);
         } catch (final Error | RuntimeException e) {
             originalException = e;
         } finally {

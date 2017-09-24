@@ -24,6 +24,7 @@ import java.util.List;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -82,17 +83,35 @@ public class CircularObjectsTest {
         sue.setMother(andrea);
 
         Mapper mapper = new MapperBuilder().setAccessModeName("field").build();
-        String karlJson = mapper.writeObjectAsString(karl);
-        Person karl2 = mapper.readObject(karlJson, Person.class);
-        assertEquals("Karl", karl2.getName());
-        assertEquals("Andrea", karl2.getMarriedTo().getName());
-        assertEquals(karl2, karl2.getMarriedTo().getMarriedTo());
-        assertEquals(2, karl2.getKids().size());
-        assertEquals("Lu", karl2.getKids().get(0).getName());
-        assertEquals("Sue", karl2.getKids().get(1).getName());
-        assertEquals(2, karl2.getMarriedTo().getKids().size());
-        assertEquals("Lu", karl2.getMarriedTo().getKids().get(0).getName());
-        assertEquals("Sue", karl2.getMarriedTo().getKids().get(1).getName());
+
+        {
+            // test karl
+            String karlJson = mapper.writeObjectAsString(karl);
+            Person karl2 = mapper.readObject(karlJson, Person.class);
+            assertEquals("Karl", karl2.getName());
+            assertEquals("Andrea", karl2.getMarriedTo().getName());
+            assertEquals(karl2, karl2.getMarriedTo().getMarriedTo());
+            assertEquals(2, karl2.getKids().size());
+            assertEquals("Lu", karl2.getKids().get(0).getName());
+            assertEquals("Sue", karl2.getKids().get(1).getName());
+            assertEquals(2, karl2.getMarriedTo().getKids().size());
+            assertEquals("Lu", karl2.getMarriedTo().getKids().get(0).getName());
+            assertEquals("Sue", karl2.getMarriedTo().getKids().get(1).getName());
+        }
+
+        {
+            // test Sue
+            String sueJson = mapper.writeObjectAsString(sue);
+            Person sue2 = mapper.readObject(sueJson, Person.class);
+
+            assertEquals("Sue", sue2.getName());
+            assertNull(sue2.getMarriedTo());
+            assertEquals("Andrea", sue2.getMother().getName());
+            assertEquals("Karl", sue2.getFather().getName());
+
+            assertEquals(sue2.getMother().getKids().get(0), sue2.getFather().getKids().get(0));
+            assertEquals(sue2.getMother().getKids().get(1), sue2.getFather().getKids().get(1));
+        }
     }
 
     public static class Person {

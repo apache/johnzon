@@ -34,36 +34,32 @@ public class JohnzonIgnoreNestedTest {
         final To to = new To();
         to.name = "to";
 
-        final From from = new From();
+        final Person from = new Person();
         from.name = "from";
+        from.street = "blastreet 1";
+        from.description = "gets ignored";
 
-        to.from = from;
-        to.froms = singletonList(from);
-        from.to = to;
-        from.tos = singletonList(to);
+        to.person = from;
+        to.persons = singletonList(from);
+
 
         final Jsonb jsonb =  JsonbProvider.provider().create().build();
-        assertEquals("{\"from\":{\"name\":\"from\"},\"froms\":[{\"name\":\"from\"}],\"name\":\"to\"}", jsonb.toJson(to));
-        assertEquals("{\"name\":\"from\",\"to\":{\"name\":\"to\"},\"tos\":[{\"name\":\"to\"}]}", jsonb.toJson(from));
+        assertEquals("{\"name\":\"to\",\"person\":{\"name\":\"from\"},\"persons\":[\"/person\"]}", jsonb.toJson(to));
     }
 
     public static class To {
         public String name;
 
-        @JohnzonIgnoreNested(properties = {"to", "tos"})
-        public From from;
+        @JohnzonIgnoreNested(properties = {"street", "description"})
+        public Person person;
 
-        @JohnzonIgnoreNested(properties = {"to", "tos"})
-        public Collection<From> froms;
+        @JohnzonIgnoreNested(properties = {"street", "description"})
+        public Collection<Person> persons;
     }
 
-    public static class From {
+    public static class Person {
         public String name;
-
-        @JohnzonIgnoreNested(properties = {"from", "froms"})
-        public To to;
-
-        @JohnzonIgnoreNested(properties = {"from", "froms"})
-        public Collection<To> tos;
+        public String street;
+        public String description;
     }
 }

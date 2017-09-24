@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.mapper.internal;
 
+import org.apache.johnzon.core.JsonPointerUtil;
+
 /**
  * Internal class to easily collect information about the 'depth' of a json object
  * without having to eagerly construct it.
@@ -40,14 +42,23 @@ public class JsonPointerTracker {
         this.currentNode = currentNode;
     }
 
+    /**
+     * For Arrays and Lists.
+     * @param jsonPointer
+     * @param i current counter number
+     */
+    public JsonPointerTracker(JsonPointerTracker jsonPointer, int i) {
+       this(jsonPointer, Integer.toString(i));
+    }
+
     @Override
     public String toString() {
         if (jsonPointer == null) {
             if (parent != null) {
                 if (parent.parent == null) {
-                    jsonPointer = "/" + currentNode;
+                    jsonPointer = "/" + JsonPointerUtil.encode(currentNode);
                 } else {
-                    jsonPointer = parent.toString() + "/" + currentNode;
+                    jsonPointer = parent.toString() + "/" + JsonPointerUtil.encode(currentNode);
                 }
             } else {
                 jsonPointer = "/";
