@@ -33,7 +33,7 @@ public class JohnzonIgnoreNestedTest {
         to.name = "to";
 
         final Person from = new Person();
-        from.name = "from";
+        from.name = "myname";
         from.street = "blastreet 1";
         from.description = "gets ignored";
 
@@ -41,7 +41,7 @@ public class JohnzonIgnoreNestedTest {
         to.persons = singletonList(from);
 
         final Mapper mapper = new MapperBuilder().setAttributeOrder(Comparator.naturalOrder()).build();
-        assertEquals("{\"name\":\"to\",\"person\":{\"name\":\"from\"},\"persons\":[\"/person\"]}", mapper.writeObjectAsString(to));
+        assertEquals("{\"name\":\"to\",\"person\":{\"name\":\"myname\"},\"persons\":[{\"name\":\"myname\"}]}", mapper.writeObjectAsString(to));
     }
 
     public static class To {

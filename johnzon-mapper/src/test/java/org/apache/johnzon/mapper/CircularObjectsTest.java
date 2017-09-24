@@ -41,7 +41,7 @@ public class CircularObjectsTest {
         john.setMarriedTo(marry);
         marry.setMarriedTo(john);
 
-        Mapper mapper = new MapperBuilder().setAccessModeName("field").build();
+        Mapper mapper = new MapperBuilder().setAccessModeName("field").setDeduplicateObjects(true).build();
         String ser = mapper.writeObjectAsString(john);
 
         assertNotNull(ser);
@@ -82,7 +82,7 @@ public class CircularObjectsTest {
         sue.setFather(karl);
         sue.setMother(andrea);
 
-        Mapper mapper = new MapperBuilder().setAccessModeName("field").build();
+        Mapper mapper = new MapperBuilder().setAccessModeName("field").setDeduplicateObjects(true).build();
 
         {
             // test karl

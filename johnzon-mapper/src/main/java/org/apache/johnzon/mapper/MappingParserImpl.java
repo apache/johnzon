@@ -45,6 +45,7 @@ import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -95,7 +96,7 @@ public class MappingParserImpl implements MappingParser {
      * key: JsonPointer
      * value: already deserialised Object
      */
-    private Map<String, Object> jsonPointers = new HashMap<>();
+    private Map<String, Object> jsonPointers;
 
 
     public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader) {
@@ -105,6 +106,12 @@ public class MappingParserImpl implements MappingParser {
         this.jsonReader = jsonReader;
 
         reverseAdaptersRegistry = new ConcurrentHashMap<>(config.getAdapters().size());
+
+        if (config.isDeduplicateObjects()) {
+            jsonPointers = new HashMap<>();
+        } else {
+            jsonPointers = Collections.emptyMap();
+        }
     }
 
 
@@ -131,7 +138,7 @@ public class MappingParserImpl implements MappingParser {
             return (T) jsonValue;
         }
         if (JsonObject.class.isInstance(jsonValue)) {
-            return (T) buildObject(targetType, JsonObject.class.cast(jsonValue), applyObjectConverter, new JsonPointerTracker(null, "/"));
+            return (T) buildObject(targetType, JsonObject.class.cast(jsonValue), applyObjectConverter, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
         }
         if (JsonString.class.isInstance(jsonValue) && (targetType == String.class || targetType == Object.class)) {
             return (T) JsonString.class.cast(jsonValue).getString();
@@ -160,7 +167,8 @@ public class MappingParserImpl implements MappingParser {
 
             if (Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
                 final Class componentType = ((Class) targetType).getComponentType();
-                return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType), new JsonPointerTracker(null, "/"));
+                return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType),
+                        config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
             }
             if (ParameterizedType.class.isInstance(targetType)) {
 
@@ -171,10 +179,12 @@ public class MappingParserImpl implements MappingParser {
                 }
 
                 final Type arg = pt.getActualTypeArguments()[0];
-                return (T) mapCollection(mapping, jsonArray, Class.class.isInstance(arg) ? config.findAdapter(Class.class.cast(arg)) : null, new JsonPointerTracker(null, "/"));
+                return (T) mapCollection(mapping, jsonArray, Class.class.isInstance(arg) ? config.findAdapter(Class.class.cast(arg)) : null,
+                        config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
             }
             if (Object.class == targetType) {
-                return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null, new JsonPointerTracker(null, "/")))));
+                return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null,
+                        config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null))));
             }
         }
         if (JsonValue.NULL.equals(jsonValue)) {
@@ -295,7 +305,9 @@ public class MappingParserImpl implements MappingParser {
             t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
         }
         // store the new object under it's jsonPointer in case it gets referenced later
-        jsonPointers.put(jsonPointer.toString(), t);
+        if (config.isDeduplicateObjects()) {
+            jsonPointers.put(jsonPointer.toString(), t);
+        }
 
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
@@ -335,7 +347,8 @@ public class MappingParserImpl implements MappingParser {
                 final String key = entry.getKey();
                 if (!classMapping.setters.containsKey(key)) {
                     try {
-                        classMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null, new JsonPointerTracker(jsonPointer, entry.getKey())));
+                        classMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null,
+                                config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null));
                     } catch (final IllegalAccessException e) {
                         throw new IllegalStateException(e);
                     } catch (final InvocationTargetException e) {
@@ -616,7 +629,8 @@ public class MappingParserImpl implements MappingParser {
 
         int i = 0;
         for (final JsonValue value : jsonArray) {
-            collection.add(JsonValue.NULL.equals(value) ? null : toObject(null, value, mapping.arg, itemConverter, new JsonPointerTracker(jsonPointer, i)));
+            collection.add(JsonValue.NULL.equals(value) ? null : toObject(null, value, mapping.arg, itemConverter,
+                    config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null));
             i++;
         }
 
@@ -647,7 +661,8 @@ public class MappingParserImpl implements MappingParser {
                     mapping.factory.getParameterConverter()[i],
                     mapping.factory.getParameterItemConverter()[i],
                     mapping.factory.getParameterTypes()[i],
-                    null, new JsonPointerTracker(jsonPointer, paramName)); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
+                    null,
+                    config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, paramName) : null); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
         }
 
         return objects;

@@ -126,12 +126,12 @@ public class Mapper implements Closeable {
         }
 
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
+        writeObject(object, generator, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
-        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
+        writeObject(object, generator, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
     }
 
     private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {

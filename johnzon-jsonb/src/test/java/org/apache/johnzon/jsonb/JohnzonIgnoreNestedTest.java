@@ -35,7 +35,7 @@ public class JohnzonIgnoreNestedTest {
         to.name = "to";
 
         final Person from = new Person();
-        from.name = "from";
+        from.name = "myname";
         from.street = "blastreet 1";
         from.description = "gets ignored";
 
@@ -44,7 +44,7 @@ public class JohnzonIgnoreNestedTest {
 
 
         final Jsonb jsonb =  JsonbProvider.provider().create().build();
-        assertEquals("{\"name\":\"to\",\"person\":{\"name\":\"from\"},\"persons\":[\"/person\"]}", jsonb.toJson(to));
+        assertEquals("{\"name\":\"to\",\"person\":{\"name\":\"myname\"},\"persons\":[{\"name\":\"myname\"}]}", jsonb.toJson(to));
     }
 
     public static class To {

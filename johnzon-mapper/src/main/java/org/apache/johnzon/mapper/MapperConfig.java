@@ -66,6 +66,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final boolean failOnUnknown;
     private final SerializeValueFilter serializeValueFilter;
     private final boolean useBigDecimalForFloats;
+    private final boolean deduplicateObjects;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -82,7 +83,9 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final AccessMode accessMode, final Charset encoding,
                         final Comparator<String> attributeOrder,
                         final boolean enforceQuoteString, final boolean failOnUnknown,
-                        final SerializeValueFilter serializeValueFilter, boolean useBigDecimalForFloats) {
+                        final SerializeValueFilter serializeValueFilter,
+                        final boolean useBigDecimalForFloats,
+                        final boolean deduplicateObjects) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -104,7 +107,9 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
         this.useBigDecimalForFloats = useBigDecimalForFloats;
+        this.deduplicateObjects = deduplicateObjects;
     }
+
 
     public SerializeValueFilter getSerializeValueFilter() {
         return serializeValueFilter;
@@ -299,5 +304,9 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     public boolean isUseBigDecimalForFloats() {
         return useBigDecimalForFloats;
+    }
+
+    public boolean isDeduplicateObjects() {
+        return deduplicateObjects;
     }
 }

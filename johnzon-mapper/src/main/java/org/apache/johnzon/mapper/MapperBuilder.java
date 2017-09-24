@@ -133,6 +133,7 @@ public class MapperBuilder {
     private boolean failOnUnknownProperties;
     private SerializeValueFilter serializeValueFilter;
     private boolean useBigDecimalForFloats;
+    private boolean deduplicateObjects;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -223,7 +224,7 @@ public class MapperBuilder {
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
-                        serializeValueFilter, useBigDecimalForFloats),
+                        serializeValueFilter, useBigDecimalForFloats, deduplicateObjects),
                 closeables);
     }
 
@@ -415,6 +416,16 @@ public class MapperBuilder {
 
     public MapperBuilder setAutoAdjustStringBuffers(final boolean autoAdjustStringBuffers) {
         this.autoAdjustStringBuffers = autoAdjustStringBuffers;
+        return this;
+    }
+
+    /**
+     * If any non-primitive Java Object gets serialised more than just one time,
+     * then we write a JsonPointer to the first occurrence instead.
+     * This will effectively also avoid endless loops in data with cycles!
+     */
+    public MapperBuilder setDeduplicateObjects(boolean deduplicateObjects) {
+        this.deduplicateObjects = deduplicateObjects;
         return this;
     }
 }
