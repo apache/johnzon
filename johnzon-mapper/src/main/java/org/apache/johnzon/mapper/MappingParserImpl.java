@@ -600,7 +600,9 @@ public class MappingParserImpl implements MappingParser {
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {
-            Array.set(array, i++, toObject(null, value, componentType, itemConverter, jsonPointer));
+            Array.set(array, i, toObject(null, value, componentType, itemConverter,
+                    config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null));
+            i++;
         }
         return array;
     }

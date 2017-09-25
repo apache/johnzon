@@ -92,7 +92,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             if (object instanceof Iterable) {
-                doWriteIterable((Iterable) object, ignoredProperties, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
+                doWriteIterable((Iterable) object, ignoredProperties, jsonPointer);
                 return;
             }
 
@@ -424,7 +424,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
             } else if (o == null) {
                 generator.writeNull();
             } else {
-                doWriteObject(o, generator, true, ignoredProperties, jsonPointer);
+                String valJsonPointer = jsonPointers.get(o);
+                if (valJsonPointer != null) {
+                    // write the JsonPointer instead
+                    generator.write(valJsonPointer);
+                } else {
+                    doWriteObject(o, generator, true, ignoredProperties, jsonPointer);
+                }
             }
         }
     }

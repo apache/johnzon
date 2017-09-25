@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -112,6 +113,47 @@ public class CircularObjectsTest {
             assertEquals(sue2.getMother().getKids().get(0), sue2.getFather().getKids().get(0));
             assertEquals(sue2.getMother().getKids().get(1), sue2.getFather().getKids().get(1));
         }
+    }
+
+    @Test
+    public void testCyclesInArrays() {
+        Person karl = new Person("Karl");
+        Person andrea = new Person("Andrea");
+        Person lu = new Person("Lu");
+        Person sue = new Person("Sue");
+
+        karl.setMarriedTo(andrea);
+        karl.getKids().add(lu);
+        karl.getKids().add(sue);
+
+        andrea.setMarriedTo(karl);
+        andrea.getKids().add(lu);
+        andrea.getKids().add(sue);
+
+        lu.setFather(karl);
+        lu.setMother(andrea);
+
+        sue.setFather(karl);
+        sue.setMother(andrea);
+
+        Mapper mapper = new MapperBuilder().setAccessModeName("field").setDeduplicateObjects(true).build();
+
+        // test deep array
+        Person[] people = new Person[4];
+        people[0] = karl;
+        people[1] = andrea;
+        people[2] = lu;
+        people[3] = sue;
+
+        String peopleJson = mapper.writeArrayAsString(people);
+        Person[] people2 = mapper.readArray(new StringReader(peopleJson), Person.class);
+        assertNotNull(people2);
+        assertEquals(4, people2.length);
+        assertEquals("Karl",   people2[0].getName());
+        assertEquals("Andrea", people2[1].getName());
+        assertEquals("Lu",     people2[2].getName());
+        assertEquals("Sue",    people2[3].getName());
+
     }
 
     public static class Person {
