@@ -18,11 +18,21 @@
  */
 package org.apache.johnzon.core;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonWriter;
+import javax.json.JsonWriterFactory;
+import javax.json.spi.JsonProvider;
+
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
@@ -51,5 +61,31 @@ public class OverflowTest {
             put(JsonParserFactoryImpl.BUFFER_LENGTH, "2");
             put(JsonParserFactoryImpl.AUTO_ADJUST_STRING_BUFFER, "false");
         }}).createReader(new StringReader("{\"another\":\"value too long\"}")).readObject();
+    }
+
+    @Test
+    public void testVeryLargeJson() {
+        JsonWriterFactory writerFactory = Json.createWriterFactory(new HashMap<String, Object>() {{
+            put(JsonParserFactoryImpl.BUFFER_LENGTH, "256");
+        }});
+
+        int itemSize = 50_000;
+
+        StringWriter sw = new StringWriter();
+        JsonWriter writer = writerFactory.createWriter(sw);
+
+        JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        for (int i = 0; i < itemSize; i++) {
+            arrayBuilder.add("0123456789012345-" + i);
+        }
+        writer.writeArray(arrayBuilder.build());
+
+        String json = sw.toString();
+        System.out.println("Created a JSON of size " + json.length() + " bytes");
+
+        // read it back in
+        JsonArray jsonArray = Json.createReader(new StringReader(json)).readArray();
+        Assert.assertEquals(itemSize, jsonArray.size());
+
     }
 }
