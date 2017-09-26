@@ -422,7 +422,27 @@ public class MapperBuilder {
     /**
      * If any non-primitive Java Object gets serialised more than just one time,
      * then we write a JsonPointer to the first occurrence instead.
+     *
      * This will effectively also avoid endless loops in data with cycles!
+     *
+     * An example: Assume you have a Person with a name 'Sarah' and her daughter,
+     * a Person with the name 'Clemens' both stored in a JSON array.
+     * Given the Java Code:
+     * <pre>
+     * Person sarah = new Person("Sarah");
+     * Person clemens = new Person("Clemens");
+     * clemens.setMother(sarah);
+     * Person[] family = new Person[]{sarah, clemens};
+     * </pre>
+     * Transformed to JSON this will now look like the following:
+     * <pre>
+     * [{"name":"Sarah"},{"name":"Clemens","mother":"/0"}]
+     * </pre>
+     * That means instead of serialising 'mother' as full object we will
+     * now only store a JsonPointer to the Person 'Sarah'.
+     *
+     * When deserialised back Johnzon will automatically de-reference the JsonPointer
+     * back to the correct instance.
      */
     public MapperBuilder setDeduplicateObjects(boolean deduplicateObjects) {
         this.deduplicateObjects = deduplicateObjects;
