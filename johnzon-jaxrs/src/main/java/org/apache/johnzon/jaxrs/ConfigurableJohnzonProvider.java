@@ -31,6 +31,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
+
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -212,6 +214,18 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
 
     public void setPrimitiveConverters(final boolean val) {
         builder.setPrimitiveConverters(val);
+    }
+
+    public MapperBuilder addCloseable(Closeable closeable) {
+        return builder.addCloseable(closeable);
+    }
+
+    public MapperBuilder setIgnoreFieldsForType(Class<?> type, String... fields) {
+        return builder.setIgnoreFieldsForType(type, fields);
+    }
+
+    public MapperBuilder setDeduplicateObjects(boolean deduplicateObjects) {
+        return builder.setDeduplicateObjects(deduplicateObjects);
     }
 
     public void setSerializeValueFilter(final String val) {
