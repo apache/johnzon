@@ -231,7 +231,7 @@ public class MappingParserImpl implements MappingParser {
                     if (LinkedHashMap.class == raw) {
                         map = new LinkedHashMap();
                     } else if (SortedMap.class.isAssignableFrom(raw) || NavigableMap.class == raw || TreeMap.class == raw) {
-                        map = new TreeMap();
+                        map = config.getAttributeOrder() == null ? new TreeMap() : new TreeMap(config.getAttributeOrder());
                     } else if (ConcurrentMap.class.isAssignableFrom(raw)) {
                         map = new ConcurrentHashMap(object.size());
                     } else if (EnumMap.class.isAssignableFrom(raw)) {

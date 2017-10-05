@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static java.util.Arrays.asList;
@@ -157,6 +158,29 @@ public class MapperTest {
         final Map<String, Object> k = (Map<String, Object>) data.get("k");
         assertNotNull(k);
         assertOneDimension(k, 5);
+    }
+
+    @Test
+    public void sortedMap() {
+        final Mapper sortedMapper = new MapperBuilder().setAttributeOrder(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return o2.compareTo(o1);
+            }
+        }).build();
+        final Map<String, String> sorted = new TreeMap<>(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return o1.compareTo(o2);
+            }
+        });
+        sorted.put("a", "1");
+        sorted.put("b", "2");
+        sorted.put("c", "3");
+        assertEquals("{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}", sortedMapper.writeObjectAsString(sorted));
+        assertEquals(asList("c", "b", "a"), new ArrayList<>(Map.class.cast(
+                sortedMapper.readObject("{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}",
+                        new JohnzonParameterizedType(SortedMap.class, String.class, String.class))).keySet()));
     }
 
     @Test
