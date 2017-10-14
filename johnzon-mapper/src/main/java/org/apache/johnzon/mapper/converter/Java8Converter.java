@@ -18,26 +18,21 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
-import java.util.Date;
+import java.time.ZoneId;
+import java.util.TimeZone;
+import org.apache.johnzon.mapper.Converter;
 
-// needed for openjpa for instance which proxies dates
-public class DateWithCopyConverter implements Adapter<Date, String> {
-    private final Adapter<Date, String> delegate;
+public abstract class Java8Converter<T> implements Converter<T> {
 
-    public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<>(new DateConverter()) : delegate;
-    }
+    final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
+    final ZoneId zoneIDUTC = ZoneId.of("UTC");
 
-    @Override
-    public Date to(final String s) {
-        return delegate.to(s);
-    }
-
-    @Override
-    public String from(final Date date) {
-        return delegate.from(new Date(date.getTime()));
+    static void logIfDeprecatedTimeZone(final String text) {
+        /* TODO: get the list, UTC is clearly not deprecated but uses 3 letters
+        if (text.length() == 3) { // don't fail but log it
+            Logger.getLogger(JohnzonBuilder.class.getName()).severe("Deprecated timezone: " + text);
+        }
+        */
     }
 }

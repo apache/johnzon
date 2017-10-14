@@ -56,17 +56,43 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.SimpleTimeZone;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.apache.johnzon.mapper.converter.CalendarConverter;
+import org.apache.johnzon.mapper.converter.DurationConverter;
+import org.apache.johnzon.mapper.converter.GregorianCalendarConverter;
 import org.apache.johnzon.mapper.converter.InstantConverter;
+import org.apache.johnzon.mapper.converter.LocalDateConverter;
+import org.apache.johnzon.mapper.converter.LocalDateTimeConverter;
+import org.apache.johnzon.mapper.converter.OffsetDateTimeConverter;
+import org.apache.johnzon.mapper.converter.OffsetTimeConverter;
+import org.apache.johnzon.mapper.converter.PeriodConverter;
+import org.apache.johnzon.mapper.converter.SimpleTimeZoneConverter;
+import org.apache.johnzon.mapper.converter.TimeZoneConverter;
+import org.apache.johnzon.mapper.converter.ZoneIdConverter;
+import org.apache.johnzon.mapper.converter.ZoneOffsetConverter;
+import org.apache.johnzon.mapper.converter.ZonedDateTimeConverter;
 
 // this class is responsible to hold any needed config
 // to build the runtime
@@ -74,16 +100,28 @@ public class MapperBuilder {
     private static final Map<AdapterKey, Adapter<?, ?>> DEFAULT_CONVERTERS = new HashMap<AdapterKey, Adapter<?, ?>>(24);
 
     static {
-        //DEFAULT_CONVERTERS.put(Date.class, new DateConverter("yyyy-MM-dd'T'HH:mm:ssZ")); // ISO8601 long RFC822 zone
-        DEFAULT_CONVERTERS.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<Date>(new DateConverter("yyyyMMddHHmmssZ"))); // ISO8601 short
-        // ISO_OFFSET_DATE_TIME e.g. 2011-12-03T10:15:30+01:00
-        DEFAULT_CONVERTERS.put(new AdapterKey(Instant.class, String.class), new ConverterAdapter<Instant>(new InstantConverter())); 
-        DEFAULT_CONVERTERS.put(new AdapterKey(URL.class, String.class), new ConverterAdapter<URL>(new URLConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(URI.class, String.class), new ConverterAdapter<URI>(new URIConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Class.class, String.class), new ConverterAdapter<Class<?>>(new ClassConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(String.class, String.class), new ConverterAdapter<String>(new StringConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(BigDecimal.class, String.class), new ConverterAdapter<BigDecimal>(new BigDecimalConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(BigInteger.class, String.class), new ConverterAdapter<BigInteger>(new BigIntegerConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new DateConverter())); 
+        DEFAULT_CONVERTERS.put(new AdapterKey(URL.class, String.class), new ConverterAdapter<>(new URLConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(URI.class, String.class), new ConverterAdapter<>(new URIConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Class.class, String.class), new ConverterAdapter<>(new ClassConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(String.class, String.class), new ConverterAdapter<>(new StringConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(BigDecimal.class, String.class), new ConverterAdapter<>(new BigDecimalConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(BigInteger.class, String.class), new ConverterAdapter<>(new BigIntegerConverter()));
+        // Java 8 Date/Time Types
+        DEFAULT_CONVERTERS.put(new AdapterKey(Period.class, String.class), new ConverterAdapter<>(new PeriodConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Duration.class, String.class), new ConverterAdapter<>(new DurationConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Calendar.class, String.class), new ConverterAdapter<>(new CalendarConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(GregorianCalendar.class, String.class), new ConverterAdapter<>(new GregorianCalendarConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(Instant.class, String.class), new ConverterAdapter<>(new InstantConverter())); 
+        DEFAULT_CONVERTERS.put(new AdapterKey(TimeZone.class, String.class), new ConverterAdapter<>(new TimeZoneConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(ZoneId.class, String.class), new ConverterAdapter<>(new ZoneIdConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(ZoneOffset.class, String.class), new ConverterAdapter<>(new ZoneOffsetConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(SimpleTimeZone.class, String.class), new ConverterAdapter<>(new SimpleTimeZoneConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(LocalDate.class, String.class), new ConverterAdapter<>(new LocalDateConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new LocalDateTimeConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(ZonedDateTime.class, String.class), new ConverterAdapter<>(new ZonedDateTimeConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(OffsetDateTime.class, String.class), new ConverterAdapter<>(new OffsetDateTimeConverter()));
+        DEFAULT_CONVERTERS.put(new AdapterKey(OffsetTime.class, String.class), new ConverterAdapter<>(new OffsetTimeConverter()));
         /* primitives should be hanlded low level and adapters will wrap them in string which is unlikely
         DEFAULT_CONVERTERS.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<Byte>(new CachedDelegateConverter<Byte>(new ByteConverter())));
         DEFAULT_CONVERTERS.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<Character>(new CharacterConverter()));

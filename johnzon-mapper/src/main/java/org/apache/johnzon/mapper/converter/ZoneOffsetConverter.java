@@ -18,26 +18,17 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import java.time.ZoneOffset;
 
-import java.util.Date;
+public class ZoneOffsetConverter extends Java8Converter<ZoneOffset> {
 
-// needed for openjpa for instance which proxies dates
-public class DateWithCopyConverter implements Adapter<Date, String> {
-    private final Adapter<Date, String> delegate;
-
-    public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<>(new DateConverter()) : delegate;
+    @Override
+    public String toString(final ZoneOffset instance) {
+        return instance.getId();
     }
 
     @Override
-    public Date to(final String s) {
-        return delegate.to(s);
-    }
-
-    @Override
-    public String from(final Date date) {
-        return delegate.from(new Date(date.getTime()));
+    public ZoneOffset fromString(final String text) {
+        return ZoneOffset.of(text);
     }
 }

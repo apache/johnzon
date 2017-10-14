@@ -61,7 +61,7 @@ public class JsonbTypesTest {
         final ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
         final String expected = "{" +
             "\"calendar\":\"" + zonedDateTime.toString() + "\"," +
-            "\"date\":\"" + localDateTime.toString() + "\"," +
+            "\"date\":\"" + "20150101010100Z" + "\"," + // PaulCB - Changed test to use Date format of Mapper yyyyMMddHHmmssZ to stay consistent
             "\"duration\":\"PT30S\"," +
             "\"gregorianCalendar\":\"" + zonedDateTime.toString() + "\"," +
             "\"instant\":\"" + Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())).toString() + "\"," +
@@ -82,6 +82,7 @@ public class JsonbTypesTest {
             "\"zoneOffset\":\"Z\"" +
             "}";
 
+        System.out.println(expected);
         final Jsonb jsonb = newJsonb();
 
         final Types types = jsonb.fromJson(new StringReader(expected), Types.class);

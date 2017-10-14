@@ -18,26 +18,19 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import java.util.TimeZone;
 
-import java.util.Date;
+public class TimeZoneConverter extends Java8Converter<TimeZone> {
 
-// needed for openjpa for instance which proxies dates
-public class DateWithCopyConverter implements Adapter<Date, String> {
-    private final Adapter<Date, String> delegate;
-
-    public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<>(new DateConverter()) : delegate;
+    @Override
+    public String toString(final TimeZone instance) {
+        return instance.getID();
     }
 
     @Override
-    public Date to(final String s) {
-        return delegate.to(s);
+    public TimeZone fromString(final String text) {
+        logIfDeprecatedTimeZone(text);
+        return TimeZone.getTimeZone(text);
     }
 
-    @Override
-    public String from(final Date date) {
-        return delegate.from(new Date(date.getTime()));
-    }
 }
