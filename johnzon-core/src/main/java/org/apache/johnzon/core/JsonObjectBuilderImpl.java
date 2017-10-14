@@ -169,7 +169,6 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
             return new JsonObjectImpl(Collections.EMPTY_MAP);
         } else {
             Map<String, JsonValue> dump = (Collections.unmodifiableMap(attributeMap));
-            attributeMap =null;
             return new JsonObjectImpl(dump);
         }
         
