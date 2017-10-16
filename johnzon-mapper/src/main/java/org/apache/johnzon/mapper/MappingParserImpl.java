@@ -180,7 +180,7 @@ public class MappingParserImpl implements MappingParser {
 
                 final Type arg = pt.getActualTypeArguments()[0];
                 return (T) mapCollection(mapping, jsonArray, Class.class.isInstance(arg) ? config.findAdapter(Class.class.cast(arg)) : null,
-                        config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
+                        null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
             }
             if (Object.class == targetType) {
                 return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null,
@@ -511,7 +511,7 @@ public class MappingParserImpl implements MappingParser {
             if (JsonArray.class == type || JsonStructure.class == type) {
                 return jsonValue;
             }
-            return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter, jsonPointer);
+            return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter, null, jsonPointer);
         } else if (JsonNumber.class.isInstance(jsonValue)) {
             if (JsonNumber.class == type) {
                 return jsonValue;
@@ -573,7 +573,8 @@ public class MappingParserImpl implements MappingParser {
         throw new MapperException("Unable to parse " + jsonValue + " to " + type);
     }
 
-    private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter, final JsonPointerTracker jsonPointer) {
+    private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter, ObjectConverter.Reader objectConverter,
+                              final JsonPointerTracker jsonPointer) {
         if (Class.class.isInstance(type)) {
             final Class clazz = Class.class.cast(type);
             if (clazz.isArray()) {
@@ -585,12 +586,12 @@ public class MappingParserImpl implements MappingParser {
         if (ParameterizedType.class.isInstance(type)) {
             final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type));
             if (mapping != null) {
-                return mapCollection(mapping, jsonArray, itemConverter, jsonPointer);
+                return mapCollection(mapping, jsonArray, itemConverter, objectConverter, jsonPointer);
             }
         }
 
         if (Object.class == type) {
-            return buildArray(ANY_LIST, jsonArray, null, jsonPointer);
+            return buildArray(ANY_LIST, jsonArray, null, null, jsonPointer);
         }
 
         throw new UnsupportedOperationException("type " + type + " not supported");
@@ -608,7 +609,7 @@ public class MappingParserImpl implements MappingParser {
     }
 
     private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray,
-                                            final Adapter itemConverter, JsonPointerTracker jsonPointer) {
+                                            final Adapter itemConverter, ObjectConverter.Reader objectConverter, JsonPointerTracker jsonPointer) {
         final Collection collection;
 
         if (SortedSet.class == mapping.raw || NavigableSet.class == mapping.raw || TreeSet.class == mapping.raw) {
@@ -631,7 +632,9 @@ public class MappingParserImpl implements MappingParser {
 
         int i = 0;
         for (final JsonValue value : jsonArray) {
-            collection.add(JsonValue.NULL.equals(value) ? null : toObject(null, value, mapping.arg, itemConverter,
+            collection.add(JsonValue.NULL.equals(value)
+                    ? null
+                    : toValue(null, value, null, itemConverter, mapping.arg, objectConverter,
                     config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null));
             i++;
         }
@@ -677,6 +680,8 @@ public class MappingParserImpl implements MappingParser {
 
             if (jsonValue instanceof JsonObject) {
                 return objectConverter.fromJson((JsonObject) jsonValue, type, this);
+            } else if (jsonValue instanceof JsonArray) {
+                return buildArray(type, jsonValue.asJsonArray(), itemConverter, objectConverter, jsonPointer);
             } else {
                 throw new UnsupportedOperationException("Array handling with ObjectConverter currently not implemented");
             }

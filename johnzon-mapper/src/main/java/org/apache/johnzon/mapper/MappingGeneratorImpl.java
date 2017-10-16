@@ -355,9 +355,22 @@ public class MappingGeneratorImpl implements MappingGenerator {
             for (final Object o : Collection.class.cast(value)) {
                 String valJsonPointer = jsonPointers.get(o);
                 if (valJsonPointer != null) {
+                    // write JsonPointer instead of the original object
                     writePrimitives(valJsonPointer);
                 } else {
-                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null);
+                    ObjectConverter.Writer objectConverterToUse = objectConverter;
+                    if (objectConverterToUse == null) {
+                        objectConverterToUse = config.findObjectConverterWriter(o.getClass());
+                    }
+
+                    if (objectConverterToUse != null) {
+                        generator.writeStartObject();
+                        objectConverterToUse.writeJson(o, this);
+                        generator.writeEnd();
+                    } else {
+                        writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties,
+                                config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null);
+                    }
                 }
                 i++;
             }
@@ -381,7 +394,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 writeValue(String.class, true, false, false, false, null, key, adapted, null, ignoredProperties, jsonPointer);
                 return;
             } else {
-
                 ObjectConverter.Writer objectConverterToUse = objectConverter;
                 if (objectConverterToUse == null) {
                     objectConverterToUse = config.findObjectConverterWriter(type);
