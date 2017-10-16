@@ -39,6 +39,7 @@ import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
@@ -136,8 +137,24 @@ public class JsonParserTest {
             assertTrue(parser.hasNext());
             final JsonParser.Event event = parser.next();
             assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("e", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(Event.START_OBJECT, event);
+            JsonObject jsonObject = parser.getObject();
+            assertEquals("{\"x\":1,\"y\":2}", jsonObject.toString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
             assertEquals(JsonParser.Event.END_OBJECT, event);
         }
+
         {
             assertFalse(parser.hasNext());
         }
@@ -228,8 +245,12 @@ public class JsonParserTest {
         ab.add(new JsonNumberImpl(new BigDecimal(-2)));
         
         ob.add("d", ab);
+        ob.add ("e", Json.createObjectBuilder()
+                .add("x", 1)
+                .add("y", 2)
+                .build());
 
-        final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(ob.build());
+        final JsonParser parser = Json.createParserFactory(Collections.emptyMap()).createParser(ob.build());
         assertNotNull(parser);
         assertSimple(parser);
     }
@@ -243,7 +264,7 @@ public class JsonParserTest {
     
     @Test
     public void simpleAttempting() {
-        final JsonParser parser = Json.createParser(new AttemptingInputStream("{\"a\":      \"b\",\"c\": 4,\"d\": [1,-2]}".getBytes(UTF_8)));
+        final JsonParser parser = Json.createParser(new AttemptingInputStream("{\"a\":      \"b\",\"c\": 4,\"d\": [1,-2], \"e\":{\"x\":1,\"y\":2}}".getBytes(UTF_8)));
         assertNotNull(parser);
         assertSimple(parser);
     }
@@ -251,14 +272,15 @@ public class JsonParserTest {
     @Test
     public void simpleUTF16LE() {
         final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread()
-                .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"),UTF_16LE);
+                .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"), UTF_16LE);
         assertNotNull(parser);
         assertSimple(parser);
     }
     
     @Test
     public void simpleUTF16LEAutoDetect() {
-        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"));
+        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().
+                getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"));
         assertNotNull(parser);
         assertSimple(parser);
     }

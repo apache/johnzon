@@ -33,6 +33,14 @@ public interface JohnzonJsonParser extends JsonParser {
 
     boolean isNotTooLong();
 
+    /**
+     * @return the _current_ Event. That's the one returned by the previous call to {@link #next()}
+     *          but without propagating the Event pointer to the next entry.
+     */
+    default Event current() {
+        throw new UnsupportedOperationException("getting the current JsonParser Event is not supported");
+    }
+
 
     public static class JohnzonJsonParserWrapper implements JohnzonJsonParser {
         private final JsonParser jsonParser;

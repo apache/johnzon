@@ -81,7 +81,7 @@ public class JsonReaderImplTest {
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
-        assertEquals(3, object.size());
+        assertEquals(4, object.size());
         assertEquals("b", object.getString("a"));
         assertEquals(4, object.getInt("c"));
         assertThat(object.get("d"), instanceOf(JsonArray.class));
@@ -348,7 +348,7 @@ public class JsonReaderImplTest {
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
-        assertEquals(3, object.size());
+        assertEquals(4, object.size());
         assertEquals("b", object.getString("a"));
         assertEquals(4, object.getInt("c"));
         assertThat(object.get("d"), instanceOf(JsonArray.class));
@@ -392,7 +392,7 @@ public class JsonReaderImplTest {
         assertNotNull(reader);
         final JsonObject object = reader.readObject();
         assertNotNull(object);
-        assertEquals(3, object.size());
+        assertEquals(4, object.size());
         assertEquals("b", object.getString("a"));
         assertEquals(4, object.getInt("c"));
         assertThat(object.get("d"), instanceOf(JsonArray.class));

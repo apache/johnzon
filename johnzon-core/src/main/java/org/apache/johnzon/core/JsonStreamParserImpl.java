@@ -30,7 +30,7 @@ import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
 
 //This class represents either the Json tokenizer and the Json parser.
-public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
+public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonChars {
     private final boolean autoAdjust;
 
     //the main buffer where the stream will be buffered
@@ -345,6 +345,13 @@ public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
     }
 
     @Override
+    public Event current() {
+        return previousEvent >= 0 && previousEvent < Event.values().length
+                ? Event.values()[previousEvent]
+                : null;
+    }
+
+    @Override
     public final Event next() {
         //main entry, make decision how to handle the current character in the stream
 
@@ -442,6 +449,7 @@ public class JsonStreamParserImpl implements JsonChars, JohnzonJsonParser {
                 return defaultHandling(c);
         }
     }
+
 
     protected Event defaultHandling(char c) {
         if (c == EOF) {

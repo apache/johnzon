@@ -31,7 +31,7 @@ import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonLocation;
 
-class JsonInMemoryParser implements JohnzonJsonParser {
+class JsonInMemoryParser extends JohnzonJsonParserImpl {
 
     private final SimpleStack<Iterator<Event>> stack = new SimpleStack<Iterator<Event>>();
 
@@ -168,6 +168,11 @@ class JsonInMemoryParser implements JohnzonJsonParser {
 
         }
 
+    }
+
+    @Override
+    public Event current() {
+        return currentEvent;
     }
 
     private static Event getEvent(final ValueType value) {

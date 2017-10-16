@@ -34,12 +34,26 @@ public class JsonReaderImpl implements JsonReader {
     private final JohnzonJsonParser parser;
     private boolean closed = false;
 
+    private boolean subStreamReader;
+
     public JsonReaderImpl(final JsonParser parser) {
+        this(parser, false);
+    }
+
+    /**
+     *
+     * @param parser
+     * @param subStreamReader {@code true} if the Stream already got started and the first
+     *           operation should not be next() but {@link JohnzonJsonParser#current()} instead.
+     */
+    public JsonReaderImpl(final JsonParser parser, boolean subStreamReader) {
         if (parser instanceof JohnzonJsonParser) {
             this.parser = (JohnzonJsonParser) parser;
         } else {
             this.parser = new JohnzonJsonParser.JohnzonJsonParserWrapper(parser);
         }
+
+        this.subStreamReader = subStreamReader;
     }
 
     @Override
@@ -54,55 +68,77 @@ public class JsonReaderImpl implements JsonReader {
         if (!parser.hasNext()) {
             throw new IllegalStateException("Nothing to read");
         }
-        final JsonParser.Event next = parser.next();
+
+
+        JsonParser.Event next;
+        if (subStreamReader) {
+            next = parser.current();
+        } else {
+            next = parser.next();
+        }
+
         switch (next) {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl();
                 parseObject(objectBuilder);
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
                 }
-                close();
                 return objectBuilder.build();
             case START_ARRAY:
                 final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl();
                 parseArray(arrayBuilder);
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
                 }
-                close();
                 return arrayBuilder.build();
             case VALUE_STRING:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 final JsonStringImpl string = new JsonStringImpl(parser.getString());
-                close();
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
+                }
                 return string;
             case VALUE_FALSE:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
                 }
-                close();
                 return JsonValue.FALSE;
             case VALUE_TRUE:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
                 }
-                close();
                 return JsonValue.TRUE;
             case VALUE_NULL:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
                 }
-                close();
                 return JsonValue.NULL;
             case VALUE_NUMBER:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 final JsonNumber number = new JsonNumberImpl(parser.getBigDecimal());
-                close();
+                if (!subStreamReader) {
+                    if (parser.hasNext()) {
+                        throw new JsonParsingException("Expected end of file", parser.getLocation());
+                    }
+                    close();
+                }
                 return number;
             default:
                 close();
