@@ -94,6 +94,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //Stack can cause out of memory issues when the nesting depth of a Json stream is too deep.
     private StructureElement currentStructureElement = null;
 
+    private int arrayDepth = 0;
+
     //minimal stack implementation
     private static final class StructureElement {
         private final StructureElement previous;
@@ -516,6 +518,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             currentStructureElement = localStructureElement;
         }
 
+        arrayDepth++;
+
         return EVT_MAP[previousEvent = START_ARRAY];
     }
 
@@ -534,7 +538,14 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         //pop from stack
         currentStructureElement = currentStructureElement.previous;
 
+        arrayDepth--;
+
         return EVT_MAP[previousEvent = END_ARRAY];
+    }
+
+    @Override
+    protected boolean isInArray() {
+        return arrayDepth > 0;
     }
 
     //read a string, gets called recursively

@@ -16,6 +16,9 @@
  */
 package org.apache.johnzon.core;
 
+import java.util.Map;
+import java.util.stream.Stream;
+
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -25,6 +28,11 @@ import javax.json.JsonValue;
  * mixtures of Reader and Parsers like {@code getObject(), getValue(), getArray()}
  */
 public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
+
+    /**
+     * @return {@code true} if we are currently inside an array
+     */
+    protected abstract boolean isInArray();
 
     @Override
     public JsonObject getObject() {
@@ -36,6 +44,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
         return jsonReader.readObject();
     }
+
 
     @Override
     public JsonArray getArray() {
@@ -61,15 +70,35 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
     @Override
     public void skipObject() {
-        // could surely get improved.
-        // But no need for now as this method is not used that often.
-        getObject();
+        int level = 1;
+        do {
+            Event event = next();
+            if (event == Event.START_OBJECT) {
+                level++;
+            } else if (event == Event.END_OBJECT) {
+                level --;
+            }
+        } while (level > 0 && hasNext());
     }
 
     @Override
     public void skipArray() {
-        // could surely get improved.
-        // But no need for now as this method is not used that often.
-        getArray();
+        if (isInArray()) {
+            int level = 1;
+            do {
+                Event event = next();
+                if (event == Event.START_ARRAY) {
+                    level++;
+                } else if (event == Event.END_ARRAY) {
+                    level--;
+                }
+            } while (level > 0 && hasNext());
+        }
+    }
+
+
+    @Override
+    public Stream<Map.Entry<String, JsonValue>> getObjectStream() {
+        return null;
     }
 }
