@@ -270,6 +270,92 @@ public class JsonParserTest {
     }
     
     @Test
+    public void testSkipObject() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":{\"x\":1,\"y\":{\"y1\":2}}, \"b\":3}"));
+        assertNotNull(parser);
+
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.START_OBJECT, event);
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("a", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.START_OBJECT, event);
+        }
+
+        parser.skipObject();
+
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("b", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(Event.VALUE_NUMBER, event);
+            assertEquals(3, parser.getInt());
+        }
+    }
+
+    @Test
+    public void testSkipArray() {
+        final JsonParser parser = Json.createParser(new StringReader("{\"a\":[\"x\",\"y\"], \"b\":3}"));
+        assertNotNull(parser);
+
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.START_OBJECT, event);
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("a", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(Event.START_ARRAY, event);
+        }
+
+        parser.skipArray();
+
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(JsonParser.Event.KEY_NAME, event);
+            assertEquals("b", parser.getString());
+        }
+        {
+            assertTrue(parser.hasNext());
+            final JsonParser.Event event = parser.next();
+            assertNotNull(event);
+            assertEquals(Event.VALUE_NUMBER, event);
+            assertEquals(3, parser.getInt());
+        }
+    }
+
+    @Test
     public void simpleUTF16LE() {
         final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread()
                 .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"), UTF_16LE);

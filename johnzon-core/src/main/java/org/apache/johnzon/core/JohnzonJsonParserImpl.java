@@ -58,4 +58,18 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
         return jsonReader.readValue();
     }
+
+    @Override
+    public void skipObject() {
+        // could surely get improved.
+        // But no need for now as this method is not used that often.
+        getObject();
+    }
+
+    @Override
+    public void skipArray() {
+        // could surely get improved.
+        // But no need for now as this method is not used that often.
+        getArray();
+    }
 }
