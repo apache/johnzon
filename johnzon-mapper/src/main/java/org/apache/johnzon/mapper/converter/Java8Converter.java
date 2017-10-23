@@ -25,8 +25,8 @@ import org.apache.johnzon.mapper.Converter;
 
 public abstract class Java8Converter<T> implements Converter<T> {
 
-    final TimeZone timeZoneUTC = TimeZone.getTimeZone("UTC");
-    final ZoneId zoneIDUTC = ZoneId.of("UTC");
+    final static TimeZone TIME_ZONE_UTC = TimeZone.getTimeZone("UTC");
+    final static ZoneId ZONE_ID_UTC = ZoneId.of("UTC");
 
     static void logIfDeprecatedTimeZone(final String text) {
         /* TODO: get the list, UTC is clearly not deprecated but uses 3 letters

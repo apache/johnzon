@@ -25,13 +25,13 @@ public class CalendarConverter extends Java8Converter<Calendar> {
 
     @Override
     public String toString(final Calendar instance) {
-        return ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
+        return ZonedDateTime.ofInstant(instance.toInstant(), ZONE_ID_UTC).toString();
     }
 
     @Override
     public Calendar fromString(final String text) {
         final Calendar calendar = Calendar.getInstance();
-        calendar.setTimeZone(timeZoneUTC);
+        calendar.setTimeZone(TIME_ZONE_UTC);
         calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
         return calendar;
     }

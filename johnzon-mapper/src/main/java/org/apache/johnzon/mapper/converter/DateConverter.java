@@ -24,18 +24,18 @@ import java.util.Date;
 
 public class DateConverter implements Converter<Date> {
 
-    private final InstantConverter instantConverter = new InstantConverter();
+    private static final InstantConverter INSTANT_CONVERTER = new InstantConverter();
     
-    @Override
+    @Override   
     public String toString(final Date instance) {
         // Johnzon has chosen to return Date in format yyyyMMddHHmmssZ
         // Use the ability of the Instant parser to recognise different date formats but return in the standard format ISO8601 short
-        String dt = instantConverter.toString(instance.toInstant());
+        String dt = INSTANT_CONVERTER.toString(instance.toInstant());
         return dt.replace(":", "").replace("-", "").replace("T", "");
     }
 
     @Override
     public Date fromString(final String text) {
-        return Date.from(instantConverter.fromString(text));
+        return Date.from(INSTANT_CONVERTER.fromString(text));
     }
 }

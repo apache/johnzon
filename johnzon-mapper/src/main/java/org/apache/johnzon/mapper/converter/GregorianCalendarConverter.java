@@ -33,7 +33,7 @@ public class GregorianCalendarConverter extends Java8Converter<GregorianCalendar
     @Override
     public GregorianCalendar fromString(final String text) {
         final GregorianCalendar calendar = new GregorianCalendar();
-        calendar.setTimeZone(timeZoneUTC);
+        calendar.setTimeZone(TIME_ZONE_UTC);
         calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
         return calendar;
     }
