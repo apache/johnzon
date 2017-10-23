@@ -18,24 +18,21 @@
  */
 package org.apache.johnzon.mapper.converter;
 
+
+import java.time.ZoneId;
+import java.util.TimeZone;
 import org.apache.johnzon.mapper.Converter;
 
-import java.util.Date;
+public abstract class Java8Converter<T> implements Converter<T> {
 
-public class DateConverter implements Converter<Date> {
+    final static TimeZone TIME_ZONE_UTC = TimeZone.getTimeZone("UTC");
+    final static ZoneId ZONE_ID_UTC = ZoneId.of("UTC");
 
-    private static final InstantConverter INSTANT_CONVERTER = new InstantConverter();
-    
-    @Override   
-    public String toString(final Date instance) {
-        // Johnzon has chosen to return Date in format yyyyMMddHHmmssZ
-        // Use the ability of the Instant parser to recognise different date formats but return in the standard format ISO8601 short
-        String dt = INSTANT_CONVERTER.toString(instance.toInstant());
-        return dt.replace(":", "").replace("-", "").replace("T", "");
-    }
-
-    @Override
-    public Date fromString(final String text) {
-        return Date.from(INSTANT_CONVERTER.fromString(text));
+    static void logIfDeprecatedTimeZone(final String text) {
+        /* TODO: get the list, UTC is clearly not deprecated but uses 3 letters
+        if (text.length() == 3) { // don't fail but log it
+            Logger.getLogger(JohnzonBuilder.class.getName()).severe("Deprecated timezone: " + text);
+        }
+        */
     }
 }

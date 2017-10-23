@@ -28,7 +28,7 @@ public class DateWithCopyConverter implements Adapter<Date, String> {
     private final Adapter<Date, String> delegate;
 
     public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<Date>(new DateConverter("yyyyMMddHHmmssZ")) : delegate;
+        this.delegate = delegate == null ? new ConverterAdapter<>(new DateConverter()) : delegate;
     }
 
     @Override

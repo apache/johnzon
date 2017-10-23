@@ -18,24 +18,17 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Converter;
+import java.time.Period;
 
-import java.util.Date;
+public class PeriodConverter extends Java8Converter<Period> {
 
-public class DateConverter implements Converter<Date> {
-
-    private static final InstantConverter INSTANT_CONVERTER = new InstantConverter();
-    
-    @Override   
-    public String toString(final Date instance) {
-        // Johnzon has chosen to return Date in format yyyyMMddHHmmssZ
-        // Use the ability of the Instant parser to recognise different date formats but return in the standard format ISO8601 short
-        String dt = INSTANT_CONVERTER.toString(instance.toInstant());
-        return dt.replace(":", "").replace("-", "").replace("T", "");
+    @Override
+    public String toString(final Period instance) {
+        return instance.toString();
     }
 
     @Override
-    public Date fromString(final String text) {
-        return Date.from(INSTANT_CONVERTER.fromString(text));
+    public Period fromString(final String text) {
+        return Period.parse(text);
     }
 }
