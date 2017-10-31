@@ -39,7 +39,7 @@ public class FieldAccessMode extends BaseAccessMode {
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
-        for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
+        for (final Map.Entry<String, Field> f : fields(clazz, true).entrySet()) {
             final String key = f.getKey();
             if (isIgnored(key) || Meta.getAnnotation(f.getValue(), JohnzonAny.class) != null) {
                 continue;
@@ -54,7 +54,7 @@ public class FieldAccessMode extends BaseAccessMode {
     @Override
     public Map<String, Writer> doFindWriters(final Class<?> clazz) {
         final Map<String, Writer> writers = new HashMap<String, Writer>();
-        for (final Map.Entry<String, Field> f : fields(clazz).entrySet()) {
+        for (final Map.Entry<String, Field> f : fields(clazz, false).entrySet()) {
             final String key = f.getKey();
             if (isIgnored(key)) {
                 continue;
@@ -75,7 +75,7 @@ public class FieldAccessMode extends BaseAccessMode {
         return key.contains("$");
     }
 
-    protected Map<String, Field> fields(final Class<?> clazz) {
+    protected Map<String, Field> fields(final Class<?> clazz, boolean includeFinalFields) {
         final Map<String, Field> fields = new HashMap<String, Field>();
         Class<?> current = clazz;
         while (current != null && current != Object.class) {
@@ -84,7 +84,8 @@ public class FieldAccessMode extends BaseAccessMode {
                 final int modifiers = f.getModifiers();
                 if (fields.containsKey(name)
                         || Modifier.isStatic(modifiers)
-                        || Modifier.isTransient(modifiers)) {
+                        || Modifier.isTransient(modifiers)
+                        || (!includeFinalFields && Modifier.isFinal(modifiers))) {
                     continue;
                 }
                 fields.put(name, f);

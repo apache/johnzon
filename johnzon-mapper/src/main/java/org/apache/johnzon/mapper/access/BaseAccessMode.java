@@ -134,6 +134,7 @@ public abstract class BaseAccessMode implements AccessMode {
         final String[] constructorParameters;
         final Adapter<?, ?>[] constructorParameterConverters;
         final Adapter<?, ?>[] constructorItemParameterConverters;
+        final ObjectConverter.Codec<?>[] objectConverters;
         if (constructorHasArguments) {
             factoryParameterTypes = constructor.getGenericParameterTypes();
 
@@ -143,6 +144,7 @@ public abstract class BaseAccessMode implements AccessMode {
 
             constructorParameterConverters = new Adapter<?, ?>[constructor.getGenericParameterTypes().length];
             constructorItemParameterConverters = new Adapter<?, ?>[constructorParameterConverters.length];
+            objectConverters = new ObjectConverter.Codec[constructorParameterConverters.length];
             for (int i = 0; i < constructorParameters.length; i++) {
                 for (final Annotation a : constructor.getParameterAnnotations()[i]) {
                     if (a.annotationType() == JohnzonConverter.class) {
@@ -158,7 +160,7 @@ public abstract class BaseAccessMode implements AccessMode {
                                     constructorItemParameterConverters[i] = converter;
                                 }
                             } else {
-                                throw new UnsupportedOperationException("TODO implement");
+                                objectConverters[i] = (ObjectConverter.Codec<?>) mapperConverter;
                             }
                         } catch (final Exception e) {
                             throw new IllegalArgumentException(e);
@@ -171,6 +173,7 @@ public abstract class BaseAccessMode implements AccessMode {
             constructorParameters = null;
             constructorParameterConverters = null;
             constructorItemParameterConverters = null;
+            objectConverters = null;
         }
 
         final Constructor<?> cons = constructor;
@@ -212,6 +215,11 @@ public abstract class BaseAccessMode implements AccessMode {
             @Override
             public Adapter<?, ?>[] getParameterItemConverter() {
                 return constructorItemParameterConverters;
+            }
+
+            @Override
+            public ObjectConverter.Codec<?>[] getObjectConverter() {
+                return objectConverters;
             }
         };
     }

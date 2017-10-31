@@ -666,7 +666,7 @@ public class MappingParserImpl implements MappingParser {
                     mapping.factory.getParameterConverter()[i],
                     mapping.factory.getParameterItemConverter()[i],
                     mapping.factory.getParameterTypes()[i],
-                    null,
+                    mapping.factory.getObjectConverter()[i],
                     config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, paramName) : null); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
         }
 
