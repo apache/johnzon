@@ -63,6 +63,34 @@ public class CircularObjectsTest {
     }
 
     @Test
+    public void testSimpleCyclicPersonAnnotatedDedup() {
+        DeduplicatedPerson john = new DeduplicatedPerson("John");
+        DeduplicatedPerson marry = new DeduplicatedPerson("Marry");
+
+        john.setMarriedTo(marry);
+        marry.setMarriedTo(john);
+
+        Mapper mapper = new MapperBuilder().setAccessModeName("field").build();
+        String ser = mapper.writeObjectAsString(john);
+
+        assertNotNull(ser);
+        assertTrue(ser.contains("\"name\":\"John\""));
+        assertTrue(ser.contains("\"marriedTo\":\"/\""));
+        assertTrue(ser.contains("\"name\":\"Marry\""));
+
+        // and now de-serialise it back
+        DeduplicatedPerson john2 = mapper.readObject(ser, DeduplicatedPerson.class);
+        assertNotNull(john2);
+        assertEquals("John", john2.getName());
+
+        DeduplicatedPerson marry2 = john2.getMarriedTo();
+        assertNotNull(marry2);
+        assertEquals("Marry", marry2.getName());
+
+        assertEquals(john2, marry2.getMarriedTo());
+    }
+
+    @Test
     public void testComplexCyclicPerson() {
         Person karl = new Person("Karl");
         Person andrea = new Person("Andrea");
@@ -207,6 +235,62 @@ public class CircularObjectsTest {
         }
 
         public void setKids(List<Person> kids) {
+            this.kids = kids;
+        }
+    }
+
+    @JohnzonDeduplicateObjects
+    public static class DeduplicatedPerson {
+        private String name;
+        private DeduplicatedPerson marriedTo;
+        private DeduplicatedPerson mother;
+        private DeduplicatedPerson father;
+        private List<DeduplicatedPerson> kids = new ArrayList<>();
+
+        public DeduplicatedPerson() {
+        }
+
+        public DeduplicatedPerson(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public DeduplicatedPerson getMarriedTo() {
+            return marriedTo;
+        }
+
+        public void setMarriedTo(DeduplicatedPerson marriedTo) {
+            this.marriedTo = marriedTo;
+        }
+
+        public DeduplicatedPerson getMother() {
+            return mother;
+        }
+
+        public void setMother(DeduplicatedPerson mother) {
+            this.mother = mother;
+        }
+
+        public DeduplicatedPerson getFather() {
+            return father;
+        }
+
+        public void setFather(DeduplicatedPerson father) {
+            this.father = father;
+        }
+
+        public List<DeduplicatedPerson> getKids() {
+            return kids;
+        }
+
+        public void setKids(List<DeduplicatedPerson> kids) {
             this.kids = kids;
         }
     }

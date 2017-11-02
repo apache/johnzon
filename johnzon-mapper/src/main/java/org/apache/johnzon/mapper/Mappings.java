@@ -65,6 +65,9 @@ public class Mappings {
         public final Getter anyGetter;
         public final Method anySetter;
 
+        private Boolean deduplicateObjects;
+        private boolean deduplicationEvaluated = false;
+
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
                                final Adapter<?, ?> adapter,
@@ -80,6 +83,18 @@ public class Mappings {
             this.anyGetter = anyGetter;
             this.anySetter = anySetter;
         }
+
+        public Boolean isDeduplicateObjects() {
+            if (!deduplicationEvaluated) {
+                JohnzonDeduplicateObjects jdo = ((Class<JohnzonDeduplicateObjects>) clazz).getAnnotation(JohnzonDeduplicateObjects.class);
+                if (jdo != null){
+                    deduplicateObjects = jdo.value();
+                }
+                deduplicationEvaluated = true;
+            }
+            return deduplicateObjects;
+        }
+
     }
 
     public static class CollectionMapping {

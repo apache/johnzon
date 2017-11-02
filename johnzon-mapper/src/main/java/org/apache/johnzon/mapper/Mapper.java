@@ -86,7 +86,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
+        writeObject(object, generator, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
@@ -126,16 +126,30 @@ public class Mapper implements Closeable {
         }
 
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
+
+        writeObject(object, generator, null, isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+    }
+
+    private boolean isDeduplicateObjects(Class<?> rootType) {
+        Boolean dedup = null;
+        Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
+        if (classMapping != null) {
+            dedup = classMapping.isDeduplicateObjects();
+        }
+        if (dedup == null) {
+            dedup = config.isDeduplicateObjects();
+        }
+
+        return dedup;
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
-        writeObject(object, generator, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
+        writeObject(object, generator, null, isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
     }
 
     private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
-        MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
+        MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings, jsonPointer != null);
 
         Throwable originalException = null;
         try {
@@ -234,7 +248,7 @@ public class Mapper implements Closeable {
 
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
-        return new MappingParserImpl(config, mappings, reader).readObject(clazz);
+        return new MappingParserImpl(config, mappings, reader, clazz).readObject(clazz);
     }
 
 

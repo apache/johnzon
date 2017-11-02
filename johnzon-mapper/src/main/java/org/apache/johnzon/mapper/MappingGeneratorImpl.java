@@ -37,15 +37,19 @@ public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
     private final JsonGenerator generator;
     private final Mappings mappings;
+    
+    private final Boolean isDeduplicateObjects;
     private Map<Object, String> jsonPointers;
 
 
-    MappingGeneratorImpl(MapperConfig config, JsonGenerator jsonGenerator, final Mappings mappings) {
+    MappingGeneratorImpl(MapperConfig config, JsonGenerator jsonGenerator, final Mappings mappings, Boolean isDeduplicateObjects) {
         this.config = config;
         this.generator = jsonGenerator;
         this.mappings = mappings;
 
-        this.jsonPointers = config.isDeduplicateObjects() ?  new HashMap<>() : Collections.emptyMap();
+        this.isDeduplicateObjects = isDeduplicateObjects;
+
+        this.jsonPointers = isDeduplicateObjects ?  new HashMap<>() : Collections.emptyMap();
     }
 
     @Override
@@ -60,7 +64,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
         } else if (object instanceof JsonValue) {
             generator.write((JsonValue) object);
         } else {
-            doWriteObject(object, generator, false, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
+            doWriteObject(object, generator, false, null, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null);
         }
         return this;
     }
@@ -294,7 +298,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                         val,
                         getter.objectConverter,
                         getter.ignoreNested,
-                        config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, getterEntry.getKey()) : null);
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, getterEntry.getKey()) : null);
             }
         }
 
@@ -344,7 +348,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (valJsonPointer != null) {
                     writePrimitives(valJsonPointer);
                 } else {
-                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null);
+                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                 }
             }
             generator.writeEnd();
@@ -369,7 +373,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                         generator.writeEnd();
                     } else {
                         writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties,
-                                config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null);
+                                isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                     }
                 }
                 i++;
@@ -428,7 +432,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                         if (t == null) {
                             generator.writeNull();
                         } else {
-                            writeItem(t, ignoredProperties, config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null);
+                            writeItem(t, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                         }
                     }
                     generator.writeEnd();
@@ -460,7 +464,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     if (t == null) {
                         generator.writeNull();
                     } else {
-                        writeItem(t, ignoredProperties, config.isDeduplicateObjects() ? new JsonPointerTracker(jsonPointer, i) : null);
+                        writeItem(t, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                     }
                 }
                 i++;
