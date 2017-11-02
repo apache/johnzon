@@ -133,7 +133,7 @@ public class MapperBuilder {
     private boolean failOnUnknownProperties;
     private SerializeValueFilter serializeValueFilter;
     private boolean useBigDecimalForFloats;
-    private boolean deduplicateObjects;
+    private Boolean deduplicateObjects = null;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -443,8 +443,15 @@ public class MapperBuilder {
      *
      * When deserialised back Johnzon will automatically de-reference the JsonPointer
      * back to the correct instance.
+     *
+     * Possible values:
+     * <ul>
+     *     <li>{@code true}: deduplicate objects</li>
+     *     <li>{@code false}: do <b>not</b> deduplicate objects</li>
+     *     <li>{@code null}: dedupliate based on the {@link JohnzonDeduplicateObjects} annotation. This is the default</li>
+     * </ul>
      */
-    public MapperBuilder setDeduplicateObjects(boolean deduplicateObjects) {
+    public MapperBuilder setDeduplicateObjects(Boolean deduplicateObjects) {
         this.deduplicateObjects = deduplicateObjects;
         return this;
     }

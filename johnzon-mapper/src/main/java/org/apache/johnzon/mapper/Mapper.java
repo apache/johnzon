@@ -86,7 +86,8 @@ public class Mapper implements Closeable {
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null, config.isDeduplicateObjects() ? new JsonPointerTracker(null, "/") : null);
+        boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
+        writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
@@ -95,7 +96,8 @@ public class Mapper implements Closeable {
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
         JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator, null, new JsonPointerTracker(null, "/"));
+        boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
+        writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
     }
 
     public void writeObject(final Object object, final Writer stream) {
@@ -131,16 +133,15 @@ public class Mapper implements Closeable {
     }
 
     private boolean isDeduplicateObjects(Class<?> rootType) {
-        Boolean dedup = null;
-        Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
-        if (classMapping != null) {
-            dedup = classMapping.isDeduplicateObjects();
-        }
+        Boolean dedup = config.isDeduplicateObjects();
         if (dedup == null) {
-            dedup = config.isDeduplicateObjects();
+            Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
+            if (classMapping != null) {
+                dedup = classMapping.isDeduplicateObjects();
+            }
         }
 
-        return dedup;
+        return dedup != null ? dedup : false;
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
@@ -248,7 +249,11 @@ public class Mapper implements Closeable {
 
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
-        return new MappingParserImpl(config, mappings, reader, clazz).readObject(clazz);
+        boolean dedup = false;
+        if (clazz instanceof Class) {
+            dedup = isDeduplicateObjects((Class) clazz);
+        }
+        return new MappingParserImpl(config, mappings, reader, dedup).readObject(clazz);
     }
 
 

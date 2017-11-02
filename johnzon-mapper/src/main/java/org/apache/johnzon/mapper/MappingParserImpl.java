@@ -101,7 +101,7 @@ public class MappingParserImpl implements MappingParser {
     private Map<String, Object> jsonPointers;
 
 
-    public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader, Type rootType) {
+    public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader, boolean isDeduplicateObjects) {
         this.config = config;
         this.mappings = mappings;
 
@@ -110,15 +110,7 @@ public class MappingParserImpl implements MappingParser {
         reverseAdaptersRegistry = new ConcurrentHashMap<>(config.getAdapters().size());
 
 
-        Boolean dedup = null;
-        Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
-        if (classMapping != null) {
-            dedup = classMapping.isDeduplicateObjects();
-        }
-        if (dedup == null) {
-            dedup = config.isDeduplicateObjects();
-        }
-        this.isDeduplicateObjects = dedup;
+        this.isDeduplicateObjects = isDeduplicateObjects;
 
         if (isDeduplicateObjects) {
             jsonPointers = new HashMap<>();
