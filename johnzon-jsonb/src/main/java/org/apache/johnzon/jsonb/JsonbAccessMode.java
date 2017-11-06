@@ -29,8 +29,10 @@ import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.MapperConverter;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.TypeAwareAdapter;
 import org.apache.johnzon.mapper.access.AccessMode;
@@ -711,7 +713,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             validateAnnotations(annotationHolder, adapter, dateFormat, numberFormat, johnzonConverter);
 
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null ?
+                converter = adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
                         defaultConverters.get(new AdapterKey(annotationHolder.getType(), String.class)) :
                         toConverter(annotationHolder.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
@@ -730,7 +732,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         instance.getValue().deserialize(parserFactory.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType);
             } else if (johnzonConverter != null) {
                 try {
-                    reader = (ObjectConverter.Reader) johnzonConverter.value().newInstance();
+                    MapperConverter mapperConverter = johnzonConverter.value().newInstance();
+                    if (mapperConverter instanceof Converter) {
+                        converter = new ConverterAdapter<>((Converter) mapperConverter);
+                    } else if (mapperConverter instanceof ObjectConverter.Reader) {
+                        reader = (ObjectConverter.Reader) mapperConverter;
+                    }
                 } catch (final InstantiationException | IllegalAccessException e) {
                     throw new IllegalArgumentException(e);
                 }
@@ -751,7 +758,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             validateAnnotations(initialReader, adapter, dateFormat, numberFormat, johnzonConverter);
 
             try {
-                converter = adapter == null && dateFormat == null && numberFormat == null ?
+                converter = adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
                         defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
                         toConverter(initialReader.getType(), adapter, dateFormat, numberFormat);
             } catch (final InstantiationException | IllegalAccessException e) {
@@ -770,7 +777,12 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         instance.getValue().serialize(instance1, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator));
             } else if (johnzonConverter != null) {
                 try {
-                    writer = (ObjectConverter.Writer) johnzonConverter.value().newInstance();
+                    MapperConverter mapperConverter = johnzonConverter.value().newInstance();
+                    if (mapperConverter instanceof Converter) {
+                        converter = new ConverterAdapter<>((Converter) mapperConverter) ;
+                    } else if (mapperConverter instanceof ObjectConverter.Writer) {
+                        writer = (ObjectConverter.Writer) mapperConverter;
+                    }
                 } catch (final InstantiationException | IllegalAccessException e) {
                     throw new IllegalArgumentException(e);
                 }
