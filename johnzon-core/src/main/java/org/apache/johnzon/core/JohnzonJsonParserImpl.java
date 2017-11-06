@@ -16,8 +16,6 @@
  */
 package org.apache.johnzon.core;
 
-import java.util.Map;
-import java.util.stream.Stream;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -96,9 +94,4 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         }
     }
 
-
-    @Override
-    public Stream<Map.Entry<String, JsonValue>> getObjectStream() {
-        return null;
-    }
 }
