@@ -80,7 +80,6 @@ import static javax.json.JsonValue.ValueType.TRUE;
  */
 public class MappingParserImpl implements MappingParser {
 
-    private static final Adapter<Object, String> FALLBACK_CONVERTER = new ConverterAdapter<Object>(new FallbackConverter());
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
     private static final CharacterConverter CHARACTER_CONVERTER = new CharacterConverter(); // this one is particular, share the logic
 
@@ -739,8 +738,8 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (converter == null) {
-            config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), FALLBACK_CONVERTER);
-            return FALLBACK_CONVERTER.to(text);
+            throw new MapperException("Missing a Converter for type " + aClass + " to convert the JSON String '" +
+                    text + "' . Please register a custom converter for it.");
         }
         return converter.to(text);
     }
@@ -763,21 +762,6 @@ public class MappingParserImpl implements MappingParser {
         }
         return null;
     }
-
-
-    private static class FallbackConverter implements Converter<Object> {
-        @Override
-        public String toString(final Object instance) {
-            return instance.toString();
-        }
-
-        @Override
-        public Object fromString(final String text) {
-            throw new MapperException("Using fallback converter, " +
-                    "this only works in write mode but not in read. Please register a custom converter to do so.");
-        }
-    }
-
 
     /**
      * Internal class to suppress {@link ObjectConverter} lookup if and only if
