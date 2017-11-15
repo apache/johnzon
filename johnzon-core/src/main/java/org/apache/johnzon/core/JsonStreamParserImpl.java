@@ -23,7 +23,6 @@ import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -63,7 +62,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //we use a byte here, because comparing bytes
     //is more efficient than comparing enums
     //Additionally we handle internally two more event: COMMA_EVENT and KEY_SEPARATOR_EVENT
-    private byte previousEvent;
+    private byte previousEvent = 0;
 
     //this buffer is used to store current String or Number value in case that
     //within the value a buffer boundary is crossed or the string contains escaped characters
@@ -147,11 +146,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         if (reader != null) {
             this.in = reader;
-        } else if (encoding == null) {
-            this.in = new RFC4627AwareInputStreamReader(inputStream);
-
         } else {
-            this.in = new InputStreamReader(inputStream, encoding.newDecoder());
+            this.in = new RFC4627AwareInputStreamReader(inputStream, encoding);
         }
     }
 
