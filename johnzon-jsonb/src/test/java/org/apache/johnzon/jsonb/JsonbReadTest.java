@@ -23,13 +23,31 @@ import org.junit.Test;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
+import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JsonbReadTest {
+
+    @Test
+    public void boolFromString() {
+        assertTrue(JsonbProvider.provider().create().build().fromJson("true", Boolean.class));
+    }
+
+    @Test
+    public void boolFromReader() {
+        assertTrue(JsonbProvider.provider().create().build().fromJson(new StringReader("true"), Boolean.class));
+    }
+
+    @Test
+    public void boolFromStream() {
+        assertTrue(JsonbProvider.provider().create().build().fromJson(new ByteArrayInputStream("true".getBytes()), Boolean.class));
+    }
+
     @Test
     public void simple() {
         assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader("{\"value\":\"test\"}"), Simple.class).value);

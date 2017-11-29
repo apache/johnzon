@@ -40,6 +40,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -145,8 +146,12 @@ public class Mapper implements Closeable {
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
-        final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
-        writeObject(object, generator, null, isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+        Charset charset = config.getEncoding();
+        if (charset == null) {
+            charset = StandardCharsets.UTF_8;
+        }
+
+        writeObject(object, new OutputStreamWriter(stream, charset));
     }
 
     private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
@@ -262,10 +267,6 @@ public class Mapper implements Closeable {
     }
 
     private Writer stream(final Writer stream) {
-        return !config.isClose() ? noClose(stream) : stream;
-    }
-
-    private OutputStream stream(final OutputStream stream) {
         return !config.isClose() ? noClose(stream) : stream;
     }
 
