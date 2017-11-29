@@ -26,7 +26,6 @@ import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
 
 import java.io.ByteArrayOutputStream;
-import java.io.OutputStream;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -54,6 +53,16 @@ public class JsonbWriteTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         JsonbProvider.provider().create().build().toJson(Boolean.TRUE, baos);
         assertEquals("true", baos.toString());
+    }
+
+    @Test
+    public void boolAsStreamInObject() {
+        SimpleBool simple = new SimpleBool();
+        simple.setBool(Boolean.TRUE);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonbProvider.provider().create().build().toJson(simple, baos);
+        assertEquals("{\"bool\":true}", baos.toString());
     }
 
     @Test
@@ -113,6 +122,19 @@ public class JsonbWriteTest {
 
         public void setValue(final String value) {
             this.value = value;
+        }
+    }
+
+    public static class SimpleBool {
+        private Boolean bool;
+
+        public Boolean getBool() {
+            return bool;
+        }
+
+        public SimpleBool setBool(Boolean bool) {
+            this.bool = bool;
+            return this;
         }
     }
 
