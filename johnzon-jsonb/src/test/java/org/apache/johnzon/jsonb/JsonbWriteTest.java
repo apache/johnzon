@@ -24,6 +24,10 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
+
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
@@ -33,6 +37,25 @@ import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public class JsonbWriteTest {
+    @Test
+    public void boolAsString() {
+        assertEquals("true", JsonbProvider.provider().create().build().toJson(Boolean.TRUE));
+    }
+
+    @Test
+    public void boolAsStringWriter() {
+        StringWriter sw = new StringWriter();
+        JsonbProvider.provider().create().build().toJson(Boolean.TRUE,sw);
+        assertEquals("true", sw.toString());
+    }
+
+    @Test
+    public void boolAsStream() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        JsonbProvider.provider().create().build().toJson(Boolean.TRUE, baos);
+        assertEquals("true", baos.toString());
+    }
+
     @Test
     public void simple() {
         final Simple simple = new Simple();
