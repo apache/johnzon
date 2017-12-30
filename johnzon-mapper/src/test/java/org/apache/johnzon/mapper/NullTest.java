@@ -21,8 +21,11 @@ package org.apache.johnzon.mapper;
 import static org.junit.Assert.assertEquals;
 
 import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.junit.Test;
@@ -34,6 +37,54 @@ public class NullTest {
         final StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(new NullObject(), writer);
         assertEquals("{\"emptyArray\":[]}", writer.toString());
+    }
+
+    @Test
+    public void writeListWithNull() {
+        StringWriter writer = new StringWriter();
+        new MapperBuilder().build().writeIterable(Arrays.asList("one", "two", null, "four"), writer);
+        assertEquals("[\"one\",\"two\",null,\"four\"]", writer.toString());
+    }
+
+    @Test
+    public void writeListWithNullWithinMap() {
+        StringWriter writer = new StringWriter();
+        new MapperBuilder().build().writeObject(Collections.singletonMap("list",
+                Arrays.asList(5l, null, 300l, 90000000000l)), writer);
+        assertEquals("{\"list\":[5,null,300,90000000000]}", writer.toString());
+    }
+
+    @Test
+    public void writeListWithNullWithinType() {
+        StringWriter writer = new StringWriter();
+        NullContainer container = new NullContainer();
+        container.setList(Arrays.asList(1.4142, 1.7320508757, null, 3.14159));
+        new MapperBuilder().build().writeObject(container, writer);
+        assertEquals("{\"list\":[1.4142,1.7320508757,null,3.14159]}", writer.toString());
+    }
+
+    @Test
+    public void writeArrayWithNull() {
+        StringWriter writer = new StringWriter();
+        new MapperBuilder().build().writeArray(new String[]{ "one", "two", "three", null }, writer);
+        assertEquals("[\"one\",\"two\",\"three\",null]", writer.toString());
+    }
+
+    @Test
+    public void writeArrayWithNullWithinMap() {
+        StringWriter writer = new StringWriter();
+        new MapperBuilder().build().writeObject(Collections.singletonMap("array",
+                new Long[]{ null, 100l, 300l, 90000000000l }), writer);
+        assertEquals("{\"array\":[null,100,300,90000000000]}", writer.toString());
+    }
+
+    @Test
+    public void writeArrayWithNullWithinType() {
+        StringWriter writer = new StringWriter();
+        NullContainer container = new NullContainer();
+        container.setArray(new Double[]{ 1.4142, 1.7320508757, 2.2360679775, null });
+        new MapperBuilder().build().writeObject(container, writer);
+        assertEquals("{\"array\":[1.4142,1.7320508757,2.2360679775,null]}", writer.toString());
     }
 
     @Test
@@ -192,4 +243,24 @@ public class NullTest {
 
     }
 
+    public static class NullContainer {
+        private List<Double> list;
+        private Double[] array;
+
+        public Double[] getArray() {
+            return array;
+        }
+
+        public void setArray(Double[] array) {
+            this.array = array;
+        }
+
+        public List<Double> getList() {
+            return list;
+        }
+
+        public void setList(final List<Double> list) {
+            this.list = list;
+        }
+    }
 }

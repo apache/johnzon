@@ -363,7 +363,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     writePrimitives(valJsonPointer);
                 } else {
                     ObjectConverter.Writer objectConverterToUse = objectConverter;
-                    if (objectConverterToUse == null) {
+                    if (o != null && objectConverterToUse == null) {
                         objectConverterToUse = config.findObjectConverterWriter(o.getClass());
                     }
 
@@ -420,10 +420,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
     private void writeItem(final Object o, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
-        if (!writePrimitives(o)) {
+        if (o == null) {
+            generator.writeNull();
+        } else if (!writePrimitives(o)) {
             if (Collection.class.isInstance(o)) {
                 doWriteIterable(Collection.class.cast(o), ignoredProperties, jsonPointer);
-            } else if (o != null && o.getClass().isArray()) {
+            } else if (o.getClass().isArray()) {
                 final int length = Array.getLength(o);
                 if (length > 0 || !config.isSkipEmptyArray()) {
                     generator.writeStartArray();
@@ -437,8 +439,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     }
                     generator.writeEnd();
                 }
-            } else if (o == null) {
-                generator.writeNull();
             } else {
                 String valJsonPointer = jsonPointers.get(o);
                 if (valJsonPointer != null) {
