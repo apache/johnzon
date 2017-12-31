@@ -50,7 +50,7 @@ public class NullTest {
     public void writeListWithNullWithinMap() {
         StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(Collections.singletonMap("list",
-                Arrays.asList(5l, null, 300l, 90000000000l)), writer);
+                Arrays.asList(5L, null, 300L, 90000000000L)), writer);
         assertEquals("{\"list\":[5,null,300,90000000000]}", writer.toString());
     }
 
@@ -74,7 +74,7 @@ public class NullTest {
     public void writeArrayWithNullWithinMap() {
         StringWriter writer = new StringWriter();
         new MapperBuilder().build().writeObject(Collections.singletonMap("array",
-                new Long[]{ null, 100l, 300l, 90000000000l }), writer);
+                new Long[]{ null, 100L, 300L, 90000000000L }), writer);
         assertEquals("{\"array\":[null,100,300,90000000000]}", writer.toString());
     }
 
