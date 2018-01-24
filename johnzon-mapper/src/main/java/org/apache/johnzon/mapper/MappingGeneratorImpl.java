@@ -136,13 +136,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             final Class<?> valueClass = value.getClass();
-            final boolean primitive = Mappings.isPrimitive(valueClass);
-            final boolean clazz = mappings.getClassMapping(valueClass) != null;
-            final boolean array = clazz || primitive ? false : valueClass.isArray();
-            final boolean collection = clazz || primitive || array ? false : Collection.class.isAssignableFrom(valueClass);
-            final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
-            writeValue(valueClass,
-                    primitive, array, collection, map, itemConverter,
+            writeValue(valueClass, true,
+                    false, false, false, false, itemConverter,
                     key == null ? "null" : key.toString(), value, null, null, null);
         }
         return generator;
@@ -289,6 +284,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 generator.write(getterEntry.getKey(), valJsonPointer);
             } else {
                 writeValue(val.getClass(),
+                        getter.dynamic,
                         getter.primitive,
                         getter.array,
                         getter.collection,
@@ -312,8 +308,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
     }
 
-
-    private void writeValue(final Class<?> type,
+    //CHECKSTYLE:OFF
+    private void writeValue(final Class<?> type, final boolean dynamic,
                             final boolean primitive, final boolean array,
                             final boolean collection, final boolean map,
                             final Adapter itemConverter,
@@ -322,10 +318,11 @@ public class MappingGeneratorImpl implements MappingGenerator {
                             final Collection<String> ignoredProperties,
                             final JsonPointerTracker jsonPointer)
             throws InvocationTargetException, IllegalAccessException {
+        //CHECKSTYLE:ON
         if (config.getSerializeValueFilter().shouldIgnore(key, value)) {
             return;
         }
-        if (array) {
+        if (array || (dynamic && type.isArray())) {
             final int length = Array.getLength(value);
             if (length == 0 && config.isSkipEmptyArray()) {
                 return;
@@ -352,8 +349,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 }
             }
             generator.writeEnd();
-            return;
-        } else if (collection) {
+        } else if (collection || (dynamic && Collection.class.isAssignableFrom(type))) {
             generator.writeStartArray(key);
             int i = 0;
             for (final Object o : Collection.class.cast(value)) {
@@ -379,15 +375,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 i++;
             }
             generator.writeEnd();
-            return;
-        } else if (map) {
+        } else if (map || (dynamic && Map.class.isAssignableFrom(type))) {
             generator.writeStartObject(key);
             writeMapBody((Map<?, ?>) value, itemConverter);
             generator.writeEnd();
-            return;
-        } else if (primitive) {
+        } else if (primitive || (dynamic && Mappings.isPrimitive(type))) {
             writePrimitives(key, type, value);
-            return;
         } else {
             final Adapter converter = config.findAdapter(type);
             if (converter != null) {
@@ -395,7 +388,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (writePrimitives(key, adapted.getClass(), adapted)) {
                     return;
                 }
-                writeValue(String.class, true, false, false, false, null, key, adapted, null, ignoredProperties, jsonPointer);
+                writeValue(String.class, true, true, false, false, false, null, key, adapted, null, ignoredProperties, jsonPointer);
                 return;
             } else {
                 ObjectConverter.Writer objectConverterToUse = objectConverter;

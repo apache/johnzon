@@ -115,13 +115,14 @@ public class Mappings {
         public final Adapter converter;
         public final Adapter itemConverter;
         public final ObjectConverter.Writer objectConverter;
+        public final boolean dynamic;
         public final boolean primitive;
         public final boolean array;
         public final boolean map;
         public final boolean collection;
         public final Collection<String> ignoreNested;
 
-        public Getter(final AccessMode.Reader reader,
+        public Getter(final AccessMode.Reader reader, final boolean dynamic,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
                       final MapperConverter converter,
@@ -129,6 +130,7 @@ public class Mappings {
                       final int version, final String[] ignoreNested) {
             this.reader = reader;
             this.version = version;
+            this.dynamic = dynamic;
             this.array = array;
             this.collection = collection;
             this.primitive = primitive;
@@ -404,7 +406,7 @@ public class Mappings {
                 accessMode.findWriter(clazz),
                 anyGetter != null ? new Getter(
                         new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false, false, false, true, null, null, -1, null) : null,
+                        false,false, false, false, true, null, null, -1, null) : null,
                 accessMode.findAnySetter(clazz));
 
         accessMode.afterParsed(clazz);
@@ -458,7 +460,7 @@ public class Mappings {
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
-            final Getter getter = new Getter(value, isPrimitive(returnType),
+            final Getter getter = new Getter(value, returnType == Object.class, isPrimitive(returnType),
                     returnType != null && returnType.isArray(),
                     (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Collection.class.isAssignableFrom(returnType)),
@@ -514,7 +516,7 @@ public class Mappings {
         final Getter getter = getters.get(key);
         final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, config.getVersion());
         getters.put(key, new Getter(getter == null ? newReader :
-                new CompositeReader(getter.reader, newReader), false, false, false, true, null, null, -1, null));
+                new CompositeReader(getter.reader, newReader), false, false, false, false, true, null, null, -1, null));
 
         final Setter newSetter = setters.get(key);
         final MapUnwrapperWriter newWriter = new MapUnwrapperWriter(objectSetters, path);
