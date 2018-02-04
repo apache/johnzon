@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 public class Mappings {
     public static class ClassMapping {
@@ -361,8 +362,8 @@ public class Mappings {
         Comparator<String> fieldComparator = accessMode.fieldComparator(inClazz);
         fieldComparator = fieldComparator == null ? config.getAttributeOrder() : fieldComparator;
 
-        final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<String, Getter>(fieldComparator);
-        final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<String, Setter>(fieldComparator);
+        final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<>(fieldComparator);
+        final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<>(fieldComparator);
 
         final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
         final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
@@ -372,13 +373,13 @@ public class Mappings {
             final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
             if (virtualObjects != null) {
                 for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
-                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate);
+                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
                 }
             }
 
             final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
             if (virtualObject != null) {
-                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate);
+                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
             }
         }
 
@@ -387,7 +388,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addGetterIfNeeded(getters, key, reader.getValue(), copyDate);
+            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, clazz);
         }
 
         for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
@@ -395,7 +396,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addSetterIfNeeded(setters, key, writer.getValue(), copyDate);
+            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz);
         }
 
         final Method anyGetter = accessMode.findAnyGetter(clazz);
@@ -435,7 +436,8 @@ public class Mappings {
     private void addSetterIfNeeded(final Map<String, Setter> setters,
                                    final String key,
                                    final AccessMode.Writer value,
-                                   final boolean copyDate) {
+                                   final boolean copyDate,
+                                   final Class<?> rootClass) {
         final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
         if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
             if (key.equals("metaClass")) {
@@ -444,7 +446,7 @@ public class Mappings {
             final Type param = value.getType();
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
-                    value, isPrimitive(param), returnType != null && returnType.isArray(), param,
+                    value, isPrimitive(param), returnType != null && returnType.isArray(), resolve(param, rootClass),
                     findConverter(copyDate, value), value.findObjectConverterReader(),
                     writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
@@ -454,7 +456,8 @@ public class Mappings {
     private void addGetterIfNeeded(final Map<String, Getter> getters,
                                    final String key,
                                    final AccessMode.Reader value,
-                                   final boolean copyDate) {
+                                   final boolean copyDate,
+                                   final Class<?> rootClass) {
         final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
         final JohnzonIgnoreNested ignoreNested = value.getAnnotation(JohnzonIgnoreNested.class);
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
@@ -480,7 +483,8 @@ public class Mappings {
                                      final Map<String, Setter> setters,
                                      final Map<String, AccessMode.Reader> readers,
                                      final Map<String, AccessMode.Writer> writers,
-                                     final boolean copyDate) {
+                                     final boolean copyDate,
+                                     final Class<?> rootClazz) {
         final String[] path = o.path();
         if (path.length < 1) {
             throw new IllegalArgumentException("@JohnzonVirtualObject need a path");
@@ -500,13 +504,13 @@ public class Mappings {
             if (f.read()) {
                 final AccessMode.Reader reader = readers.get(name);
                 if (reader != null) {
-                    addGetterIfNeeded(objectGetters, name, reader, copyDate);
+                    addGetterIfNeeded(objectGetters, name, reader, copyDate, rootClazz);
                 }
             }
             if (f.write()) {
                 final AccessMode.Writer writer = writers.get(name);
                 if (writer != null) {
-                    addSetterIfNeeded(objectSetters, name, writer, copyDate);
+                    addSetterIfNeeded(objectSetters, name, writer, copyDate, rootClazz);
                 }
             }
         }
