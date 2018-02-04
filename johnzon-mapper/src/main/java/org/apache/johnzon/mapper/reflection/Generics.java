@@ -56,12 +56,12 @@ public final class Generics {
                 if (args == null) {
                     args = new ArrayList<>();
                     if (index > 0) {
-                        args.addAll(asList(parameterizedType.getActualTypeArguments()).subList(0, index + 1));
+                        args.addAll(asList(parameterizedType.getActualTypeArguments()).subList(0, index));
                     }
                 }
             }
             if (args != null) {
-                args.add(arg);
+                args.add(type);
             }
             index++;
         }
@@ -74,23 +74,22 @@ public final class Generics {
     // for now the level is hardcoded to 2 with generic > concrete
     private static Type resolveTypeVariable(final Type value, final Class<?> rootClass) {
         final TypeVariable<?> tv = TypeVariable.class.cast(value);
-        final Type parent = rootClass.getGenericSuperclass();
+        Type parent = rootClass == null ? null : rootClass.getGenericSuperclass();
+        while (Class.class.isInstance(parent)) {
+            parent = Class.class.cast(parent).getGenericSuperclass();
+        }
+        while (ParameterizedType.class.isInstance(parent) && ParameterizedType.class.cast(parent).getRawType() != tv.getGenericDeclaration()) {
+            parent = Class.class.cast(ParameterizedType.class.cast(parent).getRawType()).getGenericSuperclass();
+        }
         if (ParameterizedType.class.isInstance(parent)) {
             final ParameterizedType parentPt = ParameterizedType.class.cast(parent);
-            if (Class.class.isInstance(parentPt.getRawType())) {
-                final Type grandParent = Class.class.cast(parentPt.getRawType()).getGenericSuperclass();
-                if (ParameterizedType.class.isInstance(grandParent)) {
-                    final ParameterizedType grandParentPt = ParameterizedType.class.cast(grandParent);
-                    final Type[] grandParentArgs = grandParentPt.getActualTypeArguments();
-                    int index = 0;
-                    final String name = tv.getName();
-                    for (final Type t : grandParentArgs) {
-                        if (TypeVariable.class.isInstance(t) && TypeVariable.class.cast(t).getName().equals(name)) {
-                            return parentPt.getActualTypeArguments()[index];
-                        }
-                        index++;
-                    }
+            final int argIndex = asList(Class.class.cast(parentPt.getRawType()).getTypeParameters()).indexOf(tv);
+            if (argIndex >= 0) {
+                final Type type = parentPt.getActualTypeArguments()[argIndex];
+                if (TypeVariable.class.isInstance(type)) {
+                    return resolveTypeVariable(type, rootClass);
                 }
+                return type;
             }
         }
         return value;

@@ -172,23 +172,23 @@ public class MappingParserImpl implements MappingParser {
             if (Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
                 final Class componentType = ((Class) targetType).getComponentType();
                 return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType),
-                        isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null);
+                        isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
             }
             if (ParameterizedType.class.isInstance(targetType)) {
 
                 final ParameterizedType pt = (ParameterizedType) targetType;
-                final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(pt);
+                final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(pt, Object.class);
                 if (mapping == null) {
                     throw new UnsupportedOperationException("type " + targetType + " not supported");
                 }
 
                 final Type arg = pt.getActualTypeArguments()[0];
                 return (T) mapCollection(mapping, jsonArray, Class.class.isInstance(arg) ? config.findAdapter(Class.class.cast(arg)) : null,
-                        null, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null);
+                        null, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
             }
             if (Object.class == targetType) {
                 return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null,
-                        isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null))));
+                        isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class))));
             }
         }
         if (JsonValue.NULL.equals(jsonValue)) {
@@ -263,7 +263,7 @@ public class MappingParserImpl implements MappingParser {
                             } else if (JsonString.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
                             } else {
-                                map.put(convertTo(keyType, value.getKey()), toObject(null, jsonValue, fieldArgTypes[1], null, jsonPointer));
+                                map.put(convertTo(keyType, value.getKey()), toObject(null, jsonValue, fieldArgTypes[1], null, jsonPointer, Object.class));
                             }
                         }
                         return map;
@@ -272,7 +272,7 @@ public class MappingParserImpl implements MappingParser {
             } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
                 final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
                 for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
-                    map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null, jsonPointer));
+                    map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null, jsonPointer, Object.class));
                 }
                 return map;
             }
@@ -340,7 +340,7 @@ public class MappingParserImpl implements MappingParser {
                     }
                 }
                 final Object convertedValue = toValue(existingInstance, jsonValue, value.converter, value.itemConverter, value.paramType, value.objectConverter,
-                        new JsonPointerTracker(jsonPointer, setter.getKey()));
+                        new JsonPointerTracker(jsonPointer, setter.getKey()), inType);
                 if (convertedValue != null) {
                     setterMethod.write(t, convertedValue);
                 }
@@ -352,7 +352,7 @@ public class MappingParserImpl implements MappingParser {
                 if (!classMapping.setters.containsKey(key)) {
                     try {
                         classMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null,
-                                isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null));
+                                isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type));
                     } catch (final IllegalAccessException e) {
                         throw new IllegalStateException(e);
                     } catch (final InvocationTargetException e) {
@@ -465,7 +465,8 @@ public class MappingParserImpl implements MappingParser {
 
 
     private Object toObject(final Object baseInstance, final JsonValue jsonValue,
-                            final Type type, final Adapter itemConverter, JsonPointerTracker jsonPointer) {
+                            final Type type, final Adapter itemConverter, final JsonPointerTracker jsonPointer,
+                            final Type rootType) {
         if (jsonValue == null || JsonValue.NULL.equals(jsonValue)) {
             return null;
         }
@@ -515,7 +516,7 @@ public class MappingParserImpl implements MappingParser {
             if (JsonArray.class == type || JsonStructure.class == type) {
                 return jsonValue;
             }
-            return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter, null, jsonPointer);
+            return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter, null, jsonPointer, rootType);
         } else if (JsonNumber.class.isInstance(jsonValue)) {
             if (JsonNumber.class == type) {
                 return jsonValue;
@@ -577,43 +578,46 @@ public class MappingParserImpl implements MappingParser {
         throw new MapperException("Unable to parse " + jsonValue + " to " + type);
     }
 
-    private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter, ObjectConverter.Reader objectConverter,
-                              final JsonPointerTracker jsonPointer) {
+    private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter,
+                              final ObjectConverter.Reader objectConverter,
+                              final JsonPointerTracker jsonPointer, final Type rootType) {
         if (Class.class.isInstance(type)) {
             final Class clazz = Class.class.cast(type);
             if (clazz.isArray()) {
                 final Class<?> componentType = clazz.getComponentType();
-                return buildArrayWithComponentType(jsonArray, componentType, itemConverter, jsonPointer);
+                return buildArrayWithComponentType(jsonArray, componentType, itemConverter, jsonPointer, rootType);
             }
         }
 
         if (ParameterizedType.class.isInstance(type)) {
-            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type));
+            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type), rootType);
             if (mapping != null) {
-                return mapCollection(mapping, jsonArray, itemConverter, objectConverter, jsonPointer);
+                return mapCollection(mapping, jsonArray, itemConverter, objectConverter, jsonPointer, rootType);
             }
         }
 
         if (Object.class == type) {
-            return buildArray(ANY_LIST, jsonArray, null, null, jsonPointer);
+            return buildArray(ANY_LIST, jsonArray, null, null, jsonPointer, rootType);
         }
 
         throw new UnsupportedOperationException("type " + type + " not supported");
     }
 
-    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType, final Adapter itemConverter, JsonPointerTracker jsonPointer) {
+    private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType, final Adapter itemConverter,
+                                               final JsonPointerTracker jsonPointer, final Type rootType) {
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {
             Array.set(array, i, toObject(null, value, componentType, itemConverter,
-                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null));
+                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
             i++;
         }
         return array;
     }
 
     private <T> Collection<T> mapCollection(final Mappings.CollectionMapping mapping, final JsonArray jsonArray,
-                                            final Adapter itemConverter, ObjectConverter.Reader objectConverter, JsonPointerTracker jsonPointer) {
+                                            final Adapter itemConverter, ObjectConverter.Reader objectConverter,
+                                            final JsonPointerTracker jsonPointer, final Type rootType) {
         final Collection collection;
 
         if (SortedSet.class == mapping.raw || NavigableSet.class == mapping.raw || TreeSet.class == mapping.raw) {
@@ -639,7 +643,7 @@ public class MappingParserImpl implements MappingParser {
             collection.add(JsonValue.NULL.equals(value)
                     ? null
                     : toValue(null, value, null, itemConverter, mapping.arg, objectConverter,
-                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null));
+                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
             i++;
         }
 
@@ -671,27 +675,29 @@ public class MappingParserImpl implements MappingParser {
                     mapping.factory.getParameterItemConverter()[i],
                     mapping.factory.getParameterTypes()[i],
                     mapping.factory.getObjectConverter()[i],
-                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, paramName) : null); //X TODO ObjectConverter in @JOhnzonConverter with Constructors!
+                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, paramName) : null,
+                    mapping.clazz); //X TODO ObjectConverter in @JohnzonConverter with Constructors!
         }
 
         return objects;
     }
 
     private Object toValue(final Object baseInstance, final JsonValue jsonValue, final Adapter converter,
-                           final Adapter itemConverter, final Type type, final ObjectConverter.Reader objectConverter, JsonPointerTracker jsonPointer) {
+                           final Adapter itemConverter, final Type type, final ObjectConverter.Reader objectConverter,
+                           final JsonPointerTracker jsonPointer, final Type rootType) {
 
         if (objectConverter != null) {
 
             if (jsonValue instanceof JsonObject) {
                 return objectConverter.fromJson((JsonObject) jsonValue, type, this);
             } else if (jsonValue instanceof JsonArray) {
-                return buildArray(type, jsonValue.asJsonArray(), itemConverter, objectConverter, jsonPointer);
+                return buildArray(type, jsonValue.asJsonArray(), itemConverter, objectConverter, jsonPointer, rootType);
             } else {
                 throw new UnsupportedOperationException("Array handling with ObjectConverter currently not implemented");
             }
         }
 
-        return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer)
+        return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType)
                 : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
                 : convertTo(converter, jsonValue, jsonPointer);
     }

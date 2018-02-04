@@ -18,32 +18,26 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.JohnzonAny;
-import org.apache.johnzon.mapper.Converter;
-import org.apache.johnzon.mapper.JohnzonConverter;
-import org.apache.johnzon.mapper.MapperConverter;
-import org.apache.johnzon.mapper.ObjectConverter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.JohnzonAny;
+import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.MapperConverter;
+import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 // handle some specific types
 public abstract class BaseAccessMode implements AccessMode {
@@ -270,79 +264,5 @@ public abstract class BaseAccessMode implements AccessMode {
             }
         }
         return delegate;
-    }
-
-    protected Type fixType(final Class<?> clazz, final Type type) { // to enhance
-        if (TypeVariable.class.isInstance(type)) { // we need to handle it on deserialization side, not needed on serialization side
-            return fixTypeVariable(clazz, type);
-        }
-        if (ParameterizedType.class.isInstance(type)) {
-            final ParameterizedType pt = ParameterizedType.class.cast(type);
-            final Type[] actualTypeArguments = pt.getActualTypeArguments();
-            if (actualTypeArguments.length == 1 && Class.class.isInstance(pt.getRawType())
-                && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType()))
-                && Class.class.cast(pt.getRawType()).getName().startsWith("java.util.")
-                && TypeVariable.class.isInstance(actualTypeArguments[0])) {
-                return new JohnzonParameterizedType(pt.getRawType(), fixTypeVariable(clazz, actualTypeArguments[0]));
-            } else if (actualTypeArguments.length == 2 && Class.class.isInstance(pt.getRawType())
-                && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType()))
-                && Class.class.cast(pt.getRawType()).getName().startsWith("java.util.")
-                && TypeVariable.class.isInstance(actualTypeArguments[1])) {
-                return new JohnzonParameterizedType(pt.getRawType(), actualTypeArguments[0], fixTypeVariable(clazz, actualTypeArguments[1]));
-            }
-        }
-        return type;
-    }
-
-    private Type fixTypeVariable(final Class<?> clazz, final Type type) {
-        final TypeVariable typeVariable = TypeVariable.class.cast(type);
-        final Class<?> classWithDeclaration = findClass(clazz.getSuperclass(), typeVariable.getGenericDeclaration());
-
-        if (classWithDeclaration != null) {
-            // try to match generic
-            final TypeVariable<? extends Class<?>>[] typeParameters = classWithDeclaration.getTypeParameters();
-            final int idx = asList(typeParameters).indexOf(typeVariable);
-            if (idx >= 0) {
-
-                ParameterizedType pt = findParameterizedType(clazz, classWithDeclaration);
-                if (pt != null) {
-                    if (pt.getActualTypeArguments().length == typeParameters.length) {
-                        return pt.getActualTypeArguments()[idx];
-                    }
-                }
-            }
-        }
-        return type;
-    }
-
-    private Class<?> findClass(final Class<?> clazz, final GenericDeclaration genericDeclaration) {
-
-        if (clazz == null || clazz == genericDeclaration) {
-            return clazz;
-        }
-
-        final Class<?> superclass = clazz.getSuperclass();
-        if (superclass != null && superclass != Object.class) {
-            return findClass(superclass, genericDeclaration);
-        }
-
-        return null;
-    }
-
-    private ParameterizedType findParameterizedType(Class<?> clazz, Class<?> classWithDeclaration) {
-
-        if (clazz == Object.class) {
-            return null;
-        }
-
-        Type genericSuperclass = clazz.getGenericSuperclass();
-
-        if (genericSuperclass instanceof ParameterizedType &&
-            ((ParameterizedType) genericSuperclass).getRawType() == classWithDeclaration) {
-
-                return (ParameterizedType) genericSuperclass;
-        }
-
-        return findParameterizedType(clazz.getSuperclass(), classWithDeclaration);
     }
 }

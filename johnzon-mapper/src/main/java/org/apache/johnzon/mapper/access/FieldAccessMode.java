@@ -18,18 +18,18 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.JohnzonAny;
-import org.apache.johnzon.mapper.JohnzonProperty;
-import org.apache.johnzon.mapper.MapperException;
-import org.apache.johnzon.mapper.ObjectConverter;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonAny;
+import org.apache.johnzon.mapper.JohnzonProperty;
+import org.apache.johnzon.mapper.MapperException;
+import org.apache.johnzon.mapper.ObjectConverter;
 
 public class FieldAccessMode extends BaseAccessMode {
     public FieldAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor) {
@@ -46,7 +46,7 @@ public class FieldAccessMode extends BaseAccessMode {
             }
 
             final Field field = f.getValue();
-            readers.put(extractKey(field, key), new FieldReader(field, fixType(clazz, field.getGenericType())));
+            readers.put(extractKey(field, key), new FieldReader(field, field.getGenericType()));
         }
         return readers;
     }
@@ -61,7 +61,7 @@ public class FieldAccessMode extends BaseAccessMode {
             }
 
             final Field field = f.getValue();
-            writers.put(extractKey(field, key), new FieldWriter(field, fixType(clazz, field.getGenericType())));
+            writers.put(extractKey(field, key), new FieldWriter(field, field.getGenericType()));
         }
         return writers;
     }

@@ -24,6 +24,7 @@ import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.reflection.Generics;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.lang.annotation.Annotation;
@@ -258,10 +259,10 @@ public class Mappings {
         this.config = config;
     }
 
-    public CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
+    public CollectionMapping findCollectionMapping(final ParameterizedType genericType, final Type enclosingType) {
         CollectionMapping collectionMapping = collections.get(genericType);
         if (collectionMapping == null) {
-            collectionMapping = createCollectionMapping(genericType);
+            collectionMapping = createCollectionMapping(genericType, enclosingType);
             if (collectionMapping == null) {
                 return null;
             }
@@ -273,7 +274,7 @@ public class Mappings {
         return collectionMapping;
     }
 
-    private <T> CollectionMapping createCollectionMapping(final ParameterizedType aType) {
+    private <T> CollectionMapping createCollectionMapping(final ParameterizedType aType, final Type root) {
         final Type[] fieldArgTypes = aType.getActualTypeArguments();
         final Type raw = aType.getRawType();
         if (fieldArgTypes.length == 1 && Class.class.isInstance(raw)) {
@@ -295,7 +296,8 @@ public class Mappings {
                 return null;
             }
 
-            final CollectionMapping mapping = new CollectionMapping(isPrimitive(fieldArgTypes[0]), collectionType, fieldArgTypes[0]);
+            final CollectionMapping mapping = new CollectionMapping(isPrimitive(fieldArgTypes[0]), collectionType,
+                    Generics.resolve(fieldArgTypes[0], Class.class.isInstance(root) ? Class.class.cast(root) : null));
             collections.putIfAbsent(aType, mapping);
             return mapping;
         }
