@@ -49,9 +49,9 @@ import java.util.concurrent.atomic.AtomicReference;
 @Produces("application/json")
 @Consumes("application/json")
 public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
-    private final Collection<String> ignores;
-    private final AtomicReference<Jsonb> delegate = new AtomicReference<>();
-    private final JsonbConfig config = new JsonbConfig();
+    protected final Collection<String> ignores;
+    protected final AtomicReference<Jsonb> delegate = new AtomicReference<>();
+    protected final JsonbConfig config = new JsonbConfig();
 
     public JsonbJaxrsProvider() {
         this(null);
