@@ -26,12 +26,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public abstract class AbstractJsonFactory implements Serializable{
+public abstract class AbstractJsonFactory implements Serializable {
 
     protected final Logger logger = Logger.getLogger(this.getClass().getName());
     
     public static final String BUFFER_STRATEGY = "org.apache.johnzon.buffer-strategy";
-    public static final BufferStrategy DEFAULT_BUFFER_STRATEGY = BufferStrategy.QUEUE;
+    public static final BufferStrategy DEFAULT_BUFFER_STRATEGY = BufferStrategy.valueOf(System.getProperty(BUFFER_STRATEGY, "QUEUE"));
     
     protected final Map<String, Object> internalConfig = new HashMap<String, Object>();
     
