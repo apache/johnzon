@@ -18,15 +18,11 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.junit.Assert;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonObject;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
-import javax.json.stream.JsonParser;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
@@ -79,6 +75,25 @@ public class JsonbReadTest {
 
         assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
     }
+
+    @Test
+    public void propertyMappingNewLineCr() {
+        String json = "{\r\n" +
+                "  \"simple\":\"test\"\r\n" +
+                "}\r\n";
+
+        assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
+    }
+
+    @Test
+    public void propertyMappingNewLineTabs() {
+        String json = "{\n" +
+                "\t\"simple\":\"test\"\n" +
+                "}\n";
+
+        assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
+    }
+
 
 
     public static class Simple {
