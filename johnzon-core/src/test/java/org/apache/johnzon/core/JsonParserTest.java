@@ -26,6 +26,8 @@ import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.CharArrayReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
@@ -46,6 +48,7 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonParserTest {
@@ -62,6 +65,14 @@ public class JsonParserTest {
         if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
             System.err.println("Default charset is " + Charset.defaultCharset() + ", must must be UTF-8");
         }
+    }
+
+    @Test
+    public void testParseGetObject() throws Exception {
+        String json = "{\"a\":1,\"b\":2 }";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonObject jsonObject = parser.getObject();
+        Assert.assertNotNull(jsonObject);
     }
 
     private void assertSimple(final JsonParser parser) {
