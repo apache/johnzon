@@ -62,7 +62,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //we use a byte here, because comparing bytes
     //is more efficient than comparing enums
     //Additionally we handle internally two more event: COMMA_EVENT and KEY_SEPARATOR_EVENT
-    private byte previousEvent = 0;
+    private byte previousEvent = -1;
 
     //this buffer is used to store current String or Number value in case that
     //within the value a buffer boundary is crossed or the string contains escaped characters
@@ -344,6 +344,9 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     @Override
     public Event current() {
+        if (previousEvent < 0 && hasNext()) {
+            next();
+        }
         return previousEvent >= 0 && previousEvent < Event.values().length
                 ? Event.values()[previousEvent]
                 : null;
@@ -357,7 +360,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             throw new NoSuchElementException();
         }
 
-        if (previousEvent != 0 && currentStructureElement == null) {
+        if (previousEvent > 0 && currentStructureElement == null) {
             throw uexc("Unexpected end of structure");
         }
 
@@ -459,7 +462,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     private Event handleStartObject() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent > 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -499,7 +502,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     private Event handleStartArray() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent > 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -673,8 +676,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         //always the beginning quote of a key or value  
 
         //last event must one of the following-> : { [ ,
-        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
-                && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
+                && previousEvent != COMMA_EVENT)) {
             throw uexc("Expected : { [ ,");
         }
         //starting quote already consumed
@@ -818,7 +821,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     private Event handleLiteral() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
