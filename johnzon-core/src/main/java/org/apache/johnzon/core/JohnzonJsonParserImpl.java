@@ -38,7 +38,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
     @Override
     public JsonObject getObject() {
         Event current = current();
-        if (current != Event.START_OBJECT) {
+        if (current != null && current != Event.START_OBJECT) {
             throw new IllegalStateException(current + " doesn't support getObject()");
         }
 
@@ -50,7 +50,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
     @Override
     public JsonArray getArray() {
         Event current = current();
-        if (current != Event.START_ARRAY) {
+        if (current != null && current != Event.START_ARRAY) {
             throw new IllegalStateException(current + " doesn't support getArray()");
         }
 

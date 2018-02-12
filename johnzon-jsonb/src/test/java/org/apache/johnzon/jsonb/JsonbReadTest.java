@@ -18,11 +18,16 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.junit.Assert;
 import org.junit.Test;
 
+import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
+import javax.json.stream.JsonParser;
+
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
 import java.time.LocalDate;
@@ -65,6 +70,16 @@ public class JsonbReadTest {
             LocalDate.now().getYear(),
             JsonbProvider.provider().create().build().fromJson(new StringReader("{\"date\":\"" + date + "\"}"), DateFormatting.class).date.getYear());
     }
+
+    @Test
+    public void propertyMappingNewLine() {
+        String json = "{\n" +
+                "  \"simple\":\"test\"\n" +
+                "}\n";
+
+        assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
+    }
+
 
     public static class Simple {
         private String value;
