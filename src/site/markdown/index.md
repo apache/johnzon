@@ -389,6 +389,3 @@ in `MessageDecoder`.
         }
     }
 
-## Thanks
-
-We would like to thank ej-technologies for their [Java profiler JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html) which helped us a lot optimizing memory footprint and speed. ![JProfiler](http://www.ej-technologies.com/images/banners/jprofiler_small.png)
