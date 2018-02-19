@@ -74,11 +74,13 @@ public class InstantConverter extends Java8Converter<Instant> {
 
     // 200712031115-03:00
     private static final DateTimeFormatter FORMATTER_IN_PATTERN_14 = DateTimeFormatter.ofPattern("yyyyMMddHHmmXXX");
-    
+
     // 2007-12-03T14:15:00
     private static final DateTimeFormatter FORMATTER_IN_PATTERN_15 = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss").withZone(ZONE_ID_UTC);
-    
-    
+
+    //2007-12-03T14:15:00.0Z
+    private static final DateTimeFormatter FORMATTER_IN_PATTERN_16 = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SX");
+
     /**
      * Returns the Instant in format yyyy-MM-dd'T'HH:mm:ssZ
      * @param instant
@@ -127,8 +129,12 @@ public class InstantConverter extends Java8Converter<Instant> {
                         // 2007-12-03T17:15+0300
                         return Instant.from(FORMATTER_IN_PATTERN_12.parse(text));
                     case 22:
-                        // 2007-12-03T17:15+03:00
-                        return Instant.from(FORMATTER_IN_PATTERN_2.parse(text));
+                        // 2007-12-03T17:15+03:00 or 2018-02-09T10:32:01.1Z
+                        if (text.endsWith("Z")) {
+                            return Instant.from(FORMATTER_IN_PATTERN_16.parse(text));
+                        } else {
+                            return Instant.from(FORMATTER_IN_PATTERN_2.parse(text));
+                        }
                     case 24:
                         if (text.endsWith("Z")) {
                             // 2007-12-03T14:15:00.000Z
