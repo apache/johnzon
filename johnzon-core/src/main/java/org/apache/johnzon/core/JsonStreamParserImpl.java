@@ -170,7 +170,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
                     throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
                 }
 
-                final char[] newArray = new char[fallBackCopyBuffer.length + getBufferExtends(fallBackCopyBuffer.length)];
+                final char[] newArray = new char[fallBackCopyBuffer.length + Math.max(getBufferExtends(fallBackCopyBuffer.length), length)];
                 // TODO: log to adjust size once?
                 System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
                 System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
@@ -192,7 +192,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
      * @return the amount of bytes the current buffer should get extended with
      */
     protected int getBufferExtends(int currentLength) {
-        return currentLength/4;
+        return currentLength / 4;
     }
 
 

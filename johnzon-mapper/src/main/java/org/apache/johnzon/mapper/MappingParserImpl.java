@@ -33,7 +33,6 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
-import javax.xml.bind.DatatypeConverter;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -45,6 +44,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -125,10 +125,6 @@ public class MappingParserImpl implements MappingParser {
             return readObject(jsonReader.readValue(), targetType);
         } catch (final NoSuchMethodError noSuchMethodError) { // jsonp 1.0 fallback - mainly for tests
             return readObject(jsonReader.read(), targetType);
-        } finally {
-            if (config.isClose()) {
-                jsonReader.close();
-            }
         }
     }
 
@@ -482,7 +478,10 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (config.isTreatByteArrayAsBase64() && jsonValue.getValueType() == JsonValue.ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
-            return DatatypeConverter.parseBase64Binary(((JsonString) jsonValue).getString());
+            return Base64.getDecoder().decode(((JsonString) jsonValue).getString());
+        }
+        if (config.isTreatByteArrayAsBase64URL() && jsonValue.getValueType() == JsonValue.ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
+            return Base64.getUrlDecoder().decode(((JsonString) jsonValue).getString());
         }
 
         if (Object.class == type) { // handling specific types here to keep exception in standard handling

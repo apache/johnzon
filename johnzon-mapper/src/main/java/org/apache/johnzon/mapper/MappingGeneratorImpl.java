@@ -18,16 +18,15 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
-import javax.xml.bind.DatatypeConverter;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -329,12 +328,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             if(config.isTreatByteArrayAsBase64() && (type == byte[].class /*|| type == Byte[].class*/)) {
-                String base64EncodedByteArray = DatatypeConverter.printBase64Binary((byte[]) value);
+                String base64EncodedByteArray = Base64.getEncoder().encodeToString((byte[]) value);
                 generator.write(key, base64EncodedByteArray);
                 return;
             }
             if(config.isTreatByteArrayAsBase64URL() && (type == byte[].class /*|| type == Byte[].class*/)) {
-                generator.write(key, String.valueOf(Adapter.class.cast(config.getAdapters().get(new AdapterKey(byte[].class, String.class))).to(value)));
+                generator.write(key, Base64.getUrlEncoder().encodeToString((byte[]) value));
                 return;
             }
 
