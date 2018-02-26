@@ -38,6 +38,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -284,6 +285,8 @@ public class Mappings {
                 collectionType = List.class;
             } else if (SortedSet.class.isAssignableFrom(r)) {
                 collectionType = SortedSet.class;
+            } else if (EnumSet.class.isAssignableFrom(r)) {
+                collectionType = EnumSet.class;
             } else if (Set.class.isAssignableFrom(r)) {
                 collectionType = Set.class;
             } else if (Deque.class.isAssignableFrom(r)) {
