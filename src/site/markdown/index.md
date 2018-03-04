@@ -18,13 +18,13 @@ under the License.
 -->
 # Apache Johnzon
 
-Apache Johnzon is a project providing an implementation of JsonProcessing (aka jsr-353) and a set of useful extension
-for this specification like an Object mapper, some JAX-RS providers and a WebSocket module provides a basic integration with Java WebSocket API (JSR 356).
+Apache Johnzon is a project providing an implementation of JsonProcessing (aka JSR-353) and a set of useful extension
+for this specification like an Object mapper, some JAX-RS providers and a WebSocket module provides a basic integration with Java WebSocket API (JSR-356).
 
 ## Status
 
 Apache Johnzon is a Top Level Project at the Apache Software Foundation (ASF).
-It fully implements the SON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
+It fully implements the JSON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
 
 ## Get started
 
@@ -40,12 +40,13 @@ Johnzon comes with four main modules.
 </dependency>
 ]]></pre>
 
-This is the implementation of the specification. You'll surely want to add the API as dependency too:
+This is the implementation of the JSON-P 1.1 specification. 
+You'll surely want to add the API as dependency too:
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
   <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-json_1.0_spec</artifactId>
+  <artifactId>geronimo-json_1.1_spec</artifactId>
   <version>${jsonspecversion}</version>
   <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
 </dependency>
