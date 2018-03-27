@@ -43,15 +43,24 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Priority;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Providers;
 
 // here while we dont compile in java 8 jaxrs module, when migrated we'll merge it with IgnorableTypes hierarchy at least
 @Provider
-@Produces("application/json")
-@Consumes("application/json")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@Priority(value = 4900)
 public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
+
     protected final Collection<String> ignores;
     protected final AtomicReference<Jsonb> delegate = new AtomicReference<>();
     protected final JsonbConfig config = new JsonbConfig();
+
+    @Context
+    private Providers providers;
 
     public JsonbJaxrsProvider() {
         this(null);
@@ -144,26 +153,26 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     @Override
     public T readFrom(final Class<T> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-                      final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
-        return delegate().fromJson(entityStream, genericType);
+            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
+        return getJsonb(type).fromJson(entityStream, genericType);
     }
 
     @Override
     public void writeTo(final T t, final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-                        final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
-        delegate().toJson(t, entityStream);
+            final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
+        getJsonb(type).toJson(t, entityStream);
     }
 
-    private Jsonb delegate() {
-        Jsonb jsonb = delegate.get();
-        if (jsonb == null) {
-            final Jsonb newJsonb = createJsonb();
-            if (delegate.compareAndSet(null, newJsonb)) {
-                jsonb = newJsonb;
-            } else {
-                jsonb = delegate.get();
+    protected Jsonb getJsonb(Class<?> type) {
+        ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
+        if (contextResolver != null) {
+            return contextResolver.getContext(type);
+        } else {
+            if (delegate.get() == null) {
+                delegate.compareAndSet(null, createJsonb());
             }
+            return delegate.get();
         }
-        return jsonb;
     }
+
 }

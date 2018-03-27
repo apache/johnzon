@@ -41,22 +41,40 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
+import javax.ws.rs.ext.ContextResolver;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class JsonbJaxRsTest {
+
     private final static String ENDPOINT_ADDRESS = "local://johnzon";
     private static Server server;
 
+    public static class JsonBindingProvider implements ContextResolver<Jsonb> {
+
+        private final Jsonb jsonb = JsonbBuilder.create();
+        public static Boolean called = Boolean.FALSE;
+
+        @Override
+        public Jsonb getContext(Class<?> type) {
+            called = Boolean.TRUE;
+            return jsonb;
+        }
+
+    }
+    
     @BeforeClass
     public static void bindEndpoint() throws Exception {
         final JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         sf.setResourceClasses(JohnzonResource.class);
-        sf.setProviders(singletonList(new JsonbJaxrsProvider<>()));
+        sf.setProviders(Arrays.asList(new JsonbJaxrsProvider<>(), new JsonBindingProvider()));
         sf.setResourceProvider(JohnzonResource.class, new SingletonResourceProvider(new JohnzonResource(), false));
         sf.setAddress(ENDPOINT_ADDRESS);
         server = sf.create();
@@ -74,6 +92,12 @@ public class JsonbJaxRsTest {
         assertTrue(Boolean.parseBoolean(result));
     }
 
+    @Test
+    public void jsonbconfigProvider() {
+        client().path("johnzon").get(String.class);
+        assertEquals(JsonBindingProvider.called, Boolean.TRUE);
+    }
+    
     @Test
     public void object() {
         final String output = client().path("johnzon").get(String.class);
@@ -112,7 +136,7 @@ public class JsonbJaxRsTest {
                 .get(byte[].class);
 
         Assert.assertEquals(100, content.length);
-        for (int i=0; i < 100; i++) {
+        for (int i = 0; i < 100; i++) {
             Assert.assertEquals((byte) i, content[i]);
         }
     }
@@ -155,6 +179,7 @@ public class JsonbJaxRsTest {
     }
 
     public static class Johnzon {
+
         private String name;
 
         public Johnzon(final String name) {
@@ -176,6 +201,7 @@ public class JsonbJaxRsTest {
 
     @Path("johnzon")
     public static class JohnzonResource {
+
         @GET
         public Johnzon johnzon() {
             return new Johnzon("johnzon");
@@ -184,7 +210,7 @@ public class JsonbJaxRsTest {
         @GET
         @Path("all1")
         public Johnzon[] johnzons1() {
-            return new Johnzon[] { new Johnzon("johnzon1"), new Johnzon("johnzon2") };
+            return new Johnzon[]{new Johnzon("johnzon1"), new Johnzon("johnzon2")};
         }
 
         @GET
@@ -221,11 +247,12 @@ public class JsonbJaxRsTest {
         @Path("mybinary")
         public byte[] binary() {
             byte[] content = new byte[100];
-            for (int i=0; i < 100; i++) {
+            for (int i = 0; i < 100; i++) {
                 content[i] = (byte) i;
             }
 
             return content;
         }
     }
+
 }
