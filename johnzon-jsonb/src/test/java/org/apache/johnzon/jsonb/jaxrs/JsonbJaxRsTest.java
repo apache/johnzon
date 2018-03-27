@@ -179,7 +179,6 @@ public class JsonbJaxRsTest {
     }
 
     public static class Johnzon {
-
         private String name;
 
         public Johnzon(final String name) {
@@ -201,7 +200,6 @@ public class JsonbJaxRsTest {
 
     @Path("johnzon")
     public static class JohnzonResource {
-
         @GET
         public Johnzon johnzon() {
             return new Johnzon("johnzon");
@@ -254,5 +252,4 @@ public class JsonbJaxRsTest {
             return content;
         }
     }
-
 }
