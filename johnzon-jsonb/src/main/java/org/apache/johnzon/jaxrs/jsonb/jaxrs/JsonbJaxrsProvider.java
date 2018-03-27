@@ -42,8 +42,9 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Properties;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
+import java.util.function.Function;
+import java.util.logging.Logger;
+
 import javax.annotation.Priority;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.ContextResolver;
@@ -54,11 +55,12 @@ import javax.ws.rs.ext.Providers;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 @Priority(value = 4900)
-public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
+public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T>, AutoCloseable {
 
     protected final Collection<String> ignores;
-    protected final AtomicReference<Supplier<Jsonb>> delegate = new AtomicReference<>();
     protected final JsonbConfig config = new JsonbConfig();
+    protected volatile Function<Class<?>, Jsonb> delegate = null;
+    private boolean customized;
 
     @Context
     private Providers providers;
@@ -70,10 +72,6 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     protected JsonbJaxrsProvider(final Collection<String> ignores) {
         this.ignores = ignores;
     }
-    
-    protected Jsonb createJsonb() {
-        return JsonbBuilder.create(config);
-    }
 
     private boolean isIgnored(final Class<?> type) {
         return ignores != null && ignores.contains(type.getName());
@@ -82,6 +80,7 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     // config - main containers support the configuration of providers this way
     public void setFailOnUnknownProperties(final boolean active) {
         config.setProperty("johnzon.fail-on-unknown-properties", active);
+        customized = true;
     }
 
     public void setOtherProperties(final String others) {
@@ -93,34 +92,42 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
             }
         }};
         properties.stringPropertyNames().forEach(k -> config.setProperty(k, properties.getProperty(k)));
+        customized = true;
     }
 
     public void setIJson(final boolean active) {
         config.withStrictIJSON(active);
+        customized = true;
     }
 
     public void setEncoding(final String encoding) {
         config.withEncoding(encoding);
+        customized = true;
     }
 
     public void setBinaryDataStrategy(final String binaryDataStrategy) {
         config.withBinaryDataStrategy(binaryDataStrategy);
+        customized = true;
     }
 
     public void setPropertyNamingStrategy(final String propertyNamingStrategy) {
         config.withPropertyNamingStrategy(propertyNamingStrategy);
+        customized = true;
     }
 
     public void setPropertyOrderStrategy(final String propertyOrderStrategy) {
         config.withPropertyOrderStrategy(propertyOrderStrategy);
+        customized = true;
     }
 
     public void setNullValues(final boolean nulls) {
         config.withNullValues(nulls);
+        customized = true;
     }
 
     public void setPretty(final boolean pretty) {
         config.withFormatting(pretty);
+        customized = true;
     }
 
     // actual impl
@@ -164,15 +171,65 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         getJsonb(type).toJson(t, entityStream);
     }
 
-    protected Jsonb getJsonb(Class<?> type) {
-        if (delegate.get() == null){
-            ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
-            if (contextResolver != null) {
-                delegate.compareAndSet(null, ()-> contextResolver.getContext(type));
-            } else {
-                delegate.compareAndSet(null, ()-> createJsonb());
+    protected Jsonb createJsonb() {
+        return JsonbBuilder.create(config);
+    }
+
+    protected Jsonb getJsonb(final Class<?> type) {
+        if (delegate == null){
+            synchronized (this) {
+                if (delegate == null) {
+                    final ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
+                    if (contextResolver != null) {
+                        if (customized) {
+                            Logger.getLogger(JsonbJaxrsProvider.class.getName())
+                                  .warning("Customizations done on the Jsonb instance will be ignored because a ContextResolver<Jsonb> was found");
+                        }
+                        delegate = new DynamicInstance(contextResolver); // faster than contextResolver::getContext
+                    } else {
+                        delegate = new ProvidedInstance(createJsonb()); // don't recreate it
+                    }
+                }
             }
         }
-        return delegate.get().get();
+        return delegate.apply(type);
+    }
+
+    @Override
+    public synchronized void close() throws Exception {
+        if (AutoCloseable.class.isInstance(delegate)) {
+            AutoCloseable.class.cast(delegate).close();
+        }
+    }
+
+    private static final class DynamicInstance implements Function<Class<?>, Jsonb> {
+        private final ContextResolver<Jsonb> contextResolver;
+
+        private DynamicInstance(final ContextResolver<Jsonb> resolver) {
+            this.contextResolver = resolver;
+        }
+
+        @Override
+        public Jsonb apply(final Class<?> type) {
+            return contextResolver.getContext(type);
+        }
+    }
+
+    private static final class ProvidedInstance implements Function<Class<?>, Jsonb>, AutoCloseable {
+        private final Jsonb instance;
+
+        private ProvidedInstance(final Jsonb instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public Jsonb apply(final Class<?> aClass) {
+            return instance;
+        }
+
+        @Override
+        public void close() throws Exception {
+            instance.close();
+        }
     }
 }
