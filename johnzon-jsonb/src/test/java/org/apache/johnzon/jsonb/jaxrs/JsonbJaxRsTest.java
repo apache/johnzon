@@ -54,7 +54,9 @@ import static org.junit.Assert.assertTrue;
 
 public class JsonbJaxRsTest {
     private final static String ENDPOINT_ADDRESS = "local://johnzon";
+    private final static String ENDPOINT_ADDRESS_JSONB_CONFIG = "local://johnzonjsonbconfig";
     private static Server server;
+    private static Server serverJsonbConfig;
 
     public static class JsonBindingProvider implements ContextResolver<Jsonb> {
 
@@ -71,18 +73,26 @@ public class JsonbJaxRsTest {
     
     @BeforeClass
     public static void bindEndpoint() throws Exception {
-        final JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
+        JAXRSServerFactoryBean sf = new JAXRSServerFactoryBean();
         sf.setResourceClasses(JohnzonResource.class);
-        sf.setProviders(Arrays.asList(new JsonbJaxrsProvider<>(), new JsonBindingProvider()));
+        sf.setProviders(singletonList(new JsonbJaxrsProvider<>()));
         sf.setResourceProvider(JohnzonResource.class, new SingletonResourceProvider(new JohnzonResource(), false));
         sf.setAddress(ENDPOINT_ADDRESS);
         server = sf.create();
+        sf = new JAXRSServerFactoryBean();
+        sf.setResourceClasses(JohnzonResource.class);
+        sf.setProviders(Arrays.asList(new JsonbJaxrsProvider<>(), new JsonBindingProvider()));
+        sf.setResourceProvider(JohnzonResource.class, new SingletonResourceProvider(new JohnzonResource(), false));
+        sf.setAddress(ENDPOINT_ADDRESS_JSONB_CONFIG);
+        serverJsonbConfig = sf.create();
     }
 
     @AfterClass
     public static void unbind() throws Exception {
         server.stop();
         server.destroy();
+        serverJsonbConfig.stop();
+        serverJsonbConfig.destroy();
     }
 
     @Test
@@ -93,7 +103,7 @@ public class JsonbJaxRsTest {
 
     @Test
     public void jsonbconfigProvider() {
-        client().path("johnzon").get(String.class);
+        client(ENDPOINT_ADDRESS_JSONB_CONFIG, MediaType.APPLICATION_JSON_TYPE).path("johnzon").get(String.class);
         assertEquals(JsonBindingProvider.called, Boolean.TRUE);
     }
     
@@ -113,7 +123,7 @@ public class JsonbJaxRsTest {
 
     @Test
     public void primitive() {
-        final String val = client(MediaType.TEXT_PLAIN_TYPE).path("johnzon/primitive").get(String.class);
+        final String val = client(ENDPOINT_ADDRESS, MediaType.TEXT_PLAIN_TYPE).path("johnzon/primitive").get(String.class);
         assertEquals("1986", val);
     }
 
@@ -130,7 +140,7 @@ public class JsonbJaxRsTest {
 
     @Test
     public void testBinaryDownload() {
-        byte[] content = client(MediaType.TEXT_PLAIN_TYPE)
+        byte[] content = client(ENDPOINT_ADDRESS, MediaType.TEXT_PLAIN_TYPE)
                 .path("johnzon/mybinary")
                 .get(byte[].class);
 
@@ -168,11 +178,11 @@ public class JsonbJaxRsTest {
     }
 
     private static WebClient client() {
-        return client(MediaType.APPLICATION_JSON_TYPE);
+        return client(ENDPOINT_ADDRESS, MediaType.APPLICATION_JSON_TYPE);
     }
 
-    private static WebClient client(final MediaType mediaType) {
-        final WebClient client = WebClient.create(ENDPOINT_ADDRESS, singletonList(new JsonbJaxrsProvider<>())).accept(mediaType);
+    private static WebClient client(final String endpoint, final MediaType mediaType) {
+        final WebClient client = WebClient.create(endpoint, singletonList(new JsonbJaxrsProvider<>())).accept(mediaType);
         WebClient.getConfig(client).getRequestContext().put(LocalConduit.DIRECT_DISPATCH, Boolean.TRUE);
         return client;
     }
