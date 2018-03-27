@@ -136,7 +136,7 @@ public class JsonbJaxRsTest {
                 .get(byte[].class);
 
         Assert.assertEquals(100, content.length);
-        for (int i = 0; i < 100; i++) {
+        for (int i=0; i < 100; i++) {
             Assert.assertEquals((byte) i, content[i]);
         }
     }
@@ -247,7 +247,7 @@ public class JsonbJaxRsTest {
         @Path("mybinary")
         public byte[] binary() {
             byte[] content = new byte[100];
-            for (int i = 0; i < 100; i++) {
+            for (int i=0; i < 100; i++) {
                 content[i] = (byte) i;
             }
 
