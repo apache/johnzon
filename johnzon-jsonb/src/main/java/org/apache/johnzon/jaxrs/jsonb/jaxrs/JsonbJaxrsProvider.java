@@ -21,6 +21,7 @@ package org.apache.johnzon.jaxrs.jsonb.jaxrs;
 import javax.json.JsonStructure;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
@@ -35,29 +36,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Providers;
-import javax.annotation.Priority;
-import javax.ws.rs.Priorities;
 
 // here while we dont compile in java 8 jaxrs module, when migrated we'll merge it with IgnorableTypes hierarchy at least
 @Provider
-@Priority(value = Priorities.USER-100)
-@Produces(MediaType.APPLICATION_JSON)
-@Consumes(MediaType.APPLICATION_JSON)
+@Produces("application/json")
+@Consumes("application/json")
 public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
-
     protected final Collection<String> ignores;
     protected final AtomicReference<Jsonb> delegate = new AtomicReference<>();
-
-    @Context
-    private Providers providers;
+    protected final JsonbConfig config = new JsonbConfig();
 
     public JsonbJaxrsProvider() {
         this(null);
@@ -67,11 +61,60 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         this.ignores = ignores;
     }
 
+    protected Jsonb createJsonb() {
+        return JsonbBuilder.create(config);
+    }
+
     private boolean isIgnored(final Class<?> type) {
         return ignores != null && ignores.contains(type.getName());
     }
 
+    // config - main containers support the configuration of providers this way
+    public void setFailOnUnknownProperties(final boolean active) {
+        config.setProperty("johnzon.fail-on-unknown-properties", active);
+    }
+
+    public void setOtherProperties(final String others) {
+        final Properties properties = new Properties() {{
+            try {
+                load(new StringReader(others));
+            } catch (final IOException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }};
+        properties.stringPropertyNames().forEach(k -> config.setProperty(k, properties.getProperty(k)));
+    }
+
+    public void setIJson(final boolean active) {
+        config.withStrictIJSON(active);
+    }
+
+    public void setEncoding(final String encoding) {
+        config.withEncoding(encoding);
+    }
+
+    public void setBinaryDataStrategy(final String binaryDataStrategy) {
+        config.withBinaryDataStrategy(binaryDataStrategy);
+    }
+
+    public void setPropertyNamingStrategy(final String propertyNamingStrategy) {
+        config.withPropertyNamingStrategy(propertyNamingStrategy);
+    }
+
+    public void setPropertyOrderStrategy(final String propertyOrderStrategy) {
+        config.withPropertyOrderStrategy(propertyOrderStrategy);
+    }
+
+    public void setNullValues(final boolean nulls) {
+        config.withNullValues(nulls);
+    }
+
+    public void setPretty(final boolean pretty) {
+        config.withFormatting(pretty);
+    }
+
     // actual impl
+
     @Override
     public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
@@ -101,30 +144,26 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     @Override
     public T readFrom(final Class<T> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
-        return delegate(type).fromJson(entityStream, genericType);
+                      final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
+        return delegate().fromJson(entityStream, genericType);
     }
 
     @Override
     public void writeTo(final T t, final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-            final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
-        delegate(type).toJson(t, entityStream);
+                        final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
+        delegate().toJson(t, entityStream);
     }
 
-    protected Jsonb getJsonb(Class<?> type) {
-        ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
-        if (contextResolver != null) {
-            return contextResolver.getContext(type);
-        } else {
-            return JsonbBuilder.create();
+    private Jsonb delegate() {
+        Jsonb jsonb = delegate.get();
+        if (jsonb == null) {
+            final Jsonb newJsonb = createJsonb();
+            if (delegate.compareAndSet(null, newJsonb)) {
+                jsonb = newJsonb;
+            } else {
+                jsonb = delegate.get();
+            }
         }
+        return jsonb;
     }
-    
-    private Jsonb delegate(Class<?> type) {
-        if (delegate.get() == null) {
-            delegate.compareAndSet(null, getJsonb(type));
-        }
-        return delegate.get();
-    }
-
 }

@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import com.googlecode.gentyref.GenericTypeReflector;
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.core.JsonParserFactoryImpl;
@@ -97,7 +96,6 @@ import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
 import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
 
 public class JohnzonBuilder implements JsonbBuilder {
-
     private static final Object NO_BM = new Object();
 
     private final MapperBuilder builder = new MapperBuilder();
@@ -143,52 +141,52 @@ public class JohnzonBuilder implements JsonbBuilder {
         final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(LEXICOGRAPHICAL);
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
                 .map(PropertyVisibilityStrategy.class::cast).orElse(new PropertyVisibilityStrategy() {
-            private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
+                    private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
 
-            @Override
-            public boolean isVisible(final Field field) {
-                if (field.getAnnotation(JsonbProperty.class) != null) {
-                    return true;
-                }
-                final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
-                return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
-            }
-
-            @Override
-            public boolean isVisible(final Method method) {
-                final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
-                return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
-            }
-
-            private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
-                JsonbVisibility visibility = type.getAnnotation(JsonbVisibility.class);
-                if (visibility != null) {
-                    try {
-                        return visibility.value().newInstance();
-                    } catch (final InstantiationException | IllegalAccessException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-                }
-                Package p = type.getPackage();
-                while (p != null) {
-                    visibility = p.getAnnotation(JsonbVisibility.class);
-                    if (visibility != null) {
-                        try {
-                            return visibility.value().newInstance();
-                        } catch (final InstantiationException | IllegalAccessException e) {
-                            throw new IllegalArgumentException(e);
+                    @Override
+                    public boolean isVisible(final Field field) {
+                        if (field.getAnnotation(JsonbProperty.class) != null) {
+                            return true;
                         }
+                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
+                        return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
                     }
-                    final String name = p.getName();
-                    final int end = name.lastIndexOf('.');
-                    if (end < 0) {
-                        break;
+
+                    @Override
+                    public boolean isVisible(final Method method) {
+                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
+                        return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
                     }
-                    p = Package.getPackage(name.substring(0, end));
-                }
-                return this;
-            }
-        });
+
+                    private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
+                        JsonbVisibility visibility = type.getAnnotation(JsonbVisibility.class);
+                        if (visibility != null) {
+                            try {
+                                return visibility.value().newInstance();
+                            } catch (final InstantiationException | IllegalAccessException e) {
+                                throw new IllegalArgumentException(e);
+                            }
+                        }
+                        Package p = type.getPackage();
+                        while (p != null) {
+                            visibility = p.getAnnotation(JsonbVisibility.class);
+                            if (visibility != null) {
+                                try {
+                                    return visibility.value().newInstance();
+                                } catch (final InstantiationException | IllegalAccessException e) {
+                                    throw new IllegalArgumentException(e);
+                                }
+                            }
+                            final String name = p.getName();
+                            final int end = name.lastIndexOf('.');
+                            if (end < 0) {
+                                break;
+                            }
+                            p = Package.getPackage(name.substring(0, end));
+                        }
+                        return this;
+                    }
+                });
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
         config.getProperty("johnzon.enforceQuoteString")
@@ -229,14 +227,15 @@ public class JohnzonBuilder implements JsonbBuilder {
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
                 .orElseGet(() -> new JsonbAccessMode(
-                propertyNamingStrategy, orderValue, visibilityStrategy,
-                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                defaultConverters,
-                factory, parserFactoryProvider,
-                config.getProperty("johnzon.accessModeDelegate")
-                        .map(this::toAccessMode)
-                        .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
+                        propertyNamingStrategy, orderValue, visibilityStrategy,
+                        !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                        defaultConverters,
+                        factory, parserFactoryProvider,
+                        config.getProperty("johnzon.accessModeDelegate")
+                                .map(this::toAccessMode)
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
         builder.setAccessMode(accessMode);
+
 
         // user adapters
         config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter -> {
@@ -307,34 +306,35 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         config.getProperty(JsonbConfig.SERIALIZERS).map(JsonbSerializer[].class::cast).ifPresent(serializers -> {
             Stream.of(serializers).forEach(s -> {
-                Type typeParameter = GenericTypeReflector.getTypeParameter(s.getClass(), JsonbDeserializer.class.getTypeParameters()[0]);
-                if (typeParameter instanceof Class) {
-                    builder.addObjectConverter(
-                            Class.class.cast(typeParameter),
-                            (ObjectConverter.Writer) (instance, jsonbGenerator)
-                            -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
-                } else if (typeParameter instanceof ParameterizedType) {
-                    builder.addObjectConverter(
-                            Class.class.cast(ParameterizedType.class.cast(typeParameter).getRawType()),
-                            (ObjectConverter.Writer) (instance, jsonbGenerator)
-                            -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
+                final ParameterizedType pt = findPT(s, JsonbSerializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(s + " doesn't implement JsonbSerializer");
                 }
-
+                final Type[] args = pt.getActualTypeArguments();
+                // TODO: support PT in ObjectConverter (list)
+                if (args.length != 1 || !Class.class.isInstance(args[0])) {
+                    throw new IllegalArgumentException("We only support serializer on Class for now");
+                }
+                builder.addObjectConverter(
+                        Class.class.cast(args[0]), (ObjectConverter.Writer)
+                                (instance, jsonbGenerator) -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
             });
         });
         config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
             Stream.of(deserializers).forEach(d -> {
-                Type typeParameter = GenericTypeReflector.getTypeParameter(d.getClass(), JsonbDeserializer.class.getTypeParameters()[0]);
-                // TODO: support PT in ObjectConverter (list)
-                if (typeParameter instanceof Class) {
-                    builder.addObjectConverter(
-                            Class.class.cast(typeParameter), (ObjectConverter.Reader) (jsonObject, targetType, parser) -> d.deserialize(
-                            parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
-                } else if (typeParameter instanceof ParameterizedType) {
-                    builder.addObjectConverter(
-                            Class.class.cast(ParameterizedType.class.cast(typeParameter).getRawType()), (ObjectConverter.Reader) (jsonObject, targetType, parser) -> d.deserialize(
-                            parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
+                final ParameterizedType pt = findPT(d, JsonbDeserializer.class);
+                if (pt == null) {
+                    throw new IllegalArgumentException(d + " doesn't implement JsonbDeserializer");
                 }
+                final Type[] args = pt.getActualTypeArguments();
+                if (args.length != 1 || !Class.class.isInstance(args[0])) {
+                    throw new IllegalArgumentException("We only support deserializer on Class for now");
+                }
+                // TODO: support PT in ObjectConverter (list)
+                builder.addObjectConverter(
+                        Class.class.cast(args[0]), (ObjectConverter.Reader)
+                                (jsonObject, targetType, parser) -> d.deserialize(
+                                        parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
             });
         });
 
@@ -396,6 +396,13 @@ public class JohnzonBuilder implements JsonbBuilder {
                 return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
             }
         };
+    }
+
+    private ParameterizedType findPT(final Object s, final Class<?> type) {
+        return ParameterizedType.class.cast(
+                Stream.of(s.getClass().getGenericInterfaces())
+                        .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type)
+                        .findFirst().orElse(null));
     }
 
     private Object getBeanManager() {
@@ -612,6 +619,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         }));
         addDateFormatConfigConverters(converters, zoneIDUTC);
 
+
         converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
         return converters;
     }
@@ -624,16 +632,25 @@ public class JohnzonBuilder implements JsonbBuilder {
 
             // Note: we try and fallback in the parsing cause we don't know if the date format provided is
             // for date, datetime, time
+
             converters.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new Converter<Date>() {
+                private volatile boolean useFormatter = true;
 
                 @Override
                 public String toString(final Date instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
+                    return LocalDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
                 }
 
                 @Override
                 public Date fromString(final String text) {
-                    return Date.from(Instant.from(formatter.parse(text)));
+                    if (useFormatter) {
+                        try {
+                            return Date.from(LocalDateTime.parse(text, formatter).toInstant(ZoneOffset.UTC));
+                        } catch (final DateTimeParseException dpe) {
+                            useFormatter = false;
+                        }
+                    }
+                    return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
                 }
             }));
             converters.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new Converter<LocalDateTime>() {
@@ -704,7 +721,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (text.length() == 3) { // don't fail but log it
             Logger.getLogger(JohnzonBuilder.class.getName()).severe("Deprecated timezone: " + text);
         }
-         */
+        */
     }
 
     private Map<String, ?> generatorConfig() {
