@@ -210,7 +210,7 @@ public class JsonbJaxRsTest {
         @GET
         @Path("all1")
         public Johnzon[] johnzons1() {
-            return new Johnzon[]{new Johnzon("johnzon1"), new Johnzon("johnzon2")};
+            return new Johnzon[] { new Johnzon("johnzon1"), new Johnzon("johnzon2") };
         }
 
         @GET
