@@ -43,6 +43,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import javax.annotation.Priority;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.ContextResolver;
@@ -56,7 +57,7 @@ import javax.ws.rs.ext.Providers;
 public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
 
     protected final Collection<String> ignores;
-    protected final AtomicReference<Jsonb> delegate = new AtomicReference<>();
+    protected final AtomicReference<Supplier<Jsonb>> delegate = new AtomicReference<>();
     protected final JsonbConfig config = new JsonbConfig();
 
     @Context
@@ -69,7 +70,7 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     protected JsonbJaxrsProvider(final Collection<String> ignores) {
         this.ignores = ignores;
     }
-
+    
     protected Jsonb createJsonb() {
         return JsonbBuilder.create(config);
     }
@@ -164,14 +165,14 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     }
 
     protected Jsonb getJsonb(Class<?> type) {
-        ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
-        if (contextResolver != null) {
-            return contextResolver.getContext(type);
-        } else {
-            if (delegate.get() == null) {
-                delegate.compareAndSet(null, createJsonb());
+        if (delegate.get() == null){
+            ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
+            if (contextResolver != null) {
+                delegate.compareAndSet(null, ()-> contextResolver.getContext(type));
+            } else {
+                delegate.compareAndSet(null, ()-> createJsonb());
             }
-            return delegate.get();
         }
+        return delegate.get().get();
     }
 }
