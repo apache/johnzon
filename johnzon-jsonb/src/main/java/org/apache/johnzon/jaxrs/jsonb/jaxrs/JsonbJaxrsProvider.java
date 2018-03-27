@@ -174,5 +174,4 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
             return delegate.get();
         }
     }
-
 }
