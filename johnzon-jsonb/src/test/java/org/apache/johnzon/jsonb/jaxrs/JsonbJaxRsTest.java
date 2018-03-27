@@ -123,7 +123,7 @@ public class JsonbJaxRsTest {
 
     @Test
     public void primitive() {
-        final String val = client(ENDPOINT_ADDRESS, MediaType.TEXT_PLAIN_TYPE).path("johnzon/primitive").get(String.class);
+        final String val = client(MediaType.TEXT_PLAIN_TYPE).path("johnzon/primitive").get(String.class);
         assertEquals("1986", val);
     }
 
@@ -140,7 +140,7 @@ public class JsonbJaxRsTest {
 
     @Test
     public void testBinaryDownload() {
-        byte[] content = client(ENDPOINT_ADDRESS, MediaType.TEXT_PLAIN_TYPE)
+        byte[] content = client(MediaType.TEXT_PLAIN_TYPE)
                 .path("johnzon/mybinary")
                 .get(byte[].class);
 
@@ -178,7 +178,11 @@ public class JsonbJaxRsTest {
     }
 
     private static WebClient client() {
-        return client(ENDPOINT_ADDRESS, MediaType.APPLICATION_JSON_TYPE);
+        return client(MediaType.APPLICATION_JSON_TYPE);
+    }
+
+    private static WebClient client(final MediaType mediaType) {
+        return client(ENDPOINT_ADDRESS, mediaType);
     }
 
     private static WebClient client(final String endpoint, final MediaType mediaType) {
