@@ -20,14 +20,20 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
+import javax.json.Json;
+import javax.json.bind.JsonbConfig;
+import javax.json.bind.JsonbException;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
+import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.spi.JsonbProvider;
 
 import java.io.ByteArrayInputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -94,6 +100,22 @@ public class JsonbReadTest {
         assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
     }
 
+    @Test
+    public void testValidBase64() {
+        String json = "{\"blob\":\"" + Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)) + "\"}";
+        JsonbConfig cfg = new JsonbConfig()
+                .withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
+        SimpleBinaryDto simpleBinaryDto = JsonbProvider.provider().create().withConfig(cfg).build().fromJson(new StringReader(json), SimpleBinaryDto.class);
+        assertEquals("test", new String(simpleBinaryDto.getBlob(), StandardCharsets.UTF_8));
+    }
+
+    @Test(expected = JsonbException.class)
+    public void testInvalidBase64() {
+        String jsonWithIllegalBase64 = "{\"blob\":\"dGVXz@dA==\"}";
+        JsonbConfig cfg = new JsonbConfig()
+                .withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
+        SimpleBinaryDto simpleBinaryDto = JsonbProvider.provider().create().withConfig(cfg).build().fromJson(new StringReader(jsonWithIllegalBase64), SimpleBinaryDto.class);
+    }
 
 
     public static class Simple {
@@ -145,6 +167,18 @@ public class JsonbReadTest {
 
         public void setDate(final LocalDate value) {
             this.date = value;
+        }
+    }
+
+    public static class SimpleBinaryDto {
+        private byte[] blob;
+
+        public byte[] getBlob() {
+            return blob;
+        }
+
+        public void setBlob(byte[] blob) {
+            this.blob = blob;
         }
     }
 }
