@@ -20,7 +20,6 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.Json;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
 import javax.json.bind.annotation.JsonbDateFormat;

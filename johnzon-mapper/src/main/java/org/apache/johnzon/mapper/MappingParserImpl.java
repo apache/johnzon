@@ -696,9 +696,16 @@ public class MappingParserImpl implements MappingParser {
             }
         }
 
-        return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType)
-                : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
-                : convertTo(converter, jsonValue, jsonPointer);
+        try {
+            return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType)
+                    : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
+                    : convertTo(converter, jsonValue, jsonPointer);
+        } catch (Exception e) {
+            if (e instanceof MapperException) {
+                throw e;
+            }
+            throw new MapperException(e);
+        }
     }
 
 
