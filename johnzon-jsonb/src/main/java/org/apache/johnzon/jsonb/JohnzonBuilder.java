@@ -238,13 +238,13 @@ public class JohnzonBuilder implements JsonbBuilder {
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
                 .orElseGet(() -> new JsonbAccessMode(
-                propertyNamingStrategy, orderValue, visibilityStrategy,
-                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                defaultConverters,
-                factory, parserFactoryProvider,
-                config.getProperty("johnzon.accessModeDelegate")
-                        .map(this::toAccessMode)
-                        .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
+                    propertyNamingStrategy, orderValue, visibilityStrategy,
+                    !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                    defaultConverters,
+                    factory, parserFactoryProvider,
+                    config.getProperty("johnzon.accessModeDelegate")
+                            .map(this::toAccessMode)
+                            .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
         builder.setAccessMode(accessMode);
 
 
@@ -320,7 +320,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 final ParameterizedType pt = findPT(s, JsonbSerializer.class);
                 if (pt == null) {
                     throw new IllegalArgumentException(s + " doesn't implement JsonbSerializer");
-                    }
+                }
                 final Type[] args = pt.getActualTypeArguments();
                 // TODO: support PT in ObjectConverter (list)
                 if (args.length != 1 || !Class.class.isInstance(args[0])) {
@@ -336,7 +336,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 final ParameterizedType pt = findPT(d, JsonbDeserializer.class);
                 if (pt == null) {
                     throw new IllegalArgumentException(d + " doesn't implement JsonbDeserializer");
-                    }
+                }
                 final Type[] args = pt.getActualTypeArguments();
                 if (args.length != 1 || !Class.class.isInstance(args[0])) {
                     throw new IllegalArgumentException("We only support deserializer on Class for now");
@@ -630,6 +630,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         }));
         addDateFormatConfigConverters(converters, zoneIDUTC);
 
+        
         converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
         return converters;
     }
