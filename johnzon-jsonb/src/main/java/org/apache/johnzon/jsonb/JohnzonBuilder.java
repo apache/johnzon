@@ -152,16 +152,16 @@ public class JohnzonBuilder implements JsonbBuilder {
         final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(LEXICOGRAPHICAL);
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
                 .map(PropertyVisibilityStrategy.class::cast).orElse(new PropertyVisibilityStrategy() {
-    private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
+                    private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
 
-    @Override
-    public boolean isVisible(final Field field) {
-        if (field.getAnnotation(JsonbProperty.class) != null) {
-            return true;
-        }
-        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
-        return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
-    }
+                    @Override
+                    public boolean isVisible(final Field field) {
+                        if (field.getAnnotation(JsonbProperty.class) != null) {
+                            return true;
+                        }
+                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
+                        return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
+                    }
 
     @Override
     public boolean isVisible(final Method method) {
