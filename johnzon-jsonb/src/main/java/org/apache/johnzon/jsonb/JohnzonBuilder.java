@@ -238,13 +238,13 @@ public class JohnzonBuilder implements JsonbBuilder {
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
                 .orElseGet(() -> new JsonbAccessMode(
-                    propertyNamingStrategy, orderValue, visibilityStrategy,
-                    !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                    defaultConverters,
-                    factory, parserFactoryProvider,
-                    config.getProperty("johnzon.accessModeDelegate")
-                            .map(this::toAccessMode)
-                            .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
+                        propertyNamingStrategy, orderValue, visibilityStrategy,
+                        !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                        defaultConverters,
+                        factory, parserFactoryProvider,
+                        config.getProperty("johnzon.accessModeDelegate")
+                                .map(this::toAccessMode)
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
         builder.setAccessMode(accessMode);
 
 
@@ -630,7 +630,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         }));
         addDateFormatConfigConverters(converters, zoneIDUTC);
 
-        
+
         converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
         return converters;
     }
