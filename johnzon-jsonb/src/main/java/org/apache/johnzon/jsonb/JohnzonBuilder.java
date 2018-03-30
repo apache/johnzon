@@ -163,41 +163,41 @@ public class JohnzonBuilder implements JsonbBuilder {
                         return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
                     }
 
-    @Override
-    public boolean isVisible(final Method method) {
-        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
-        return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
-    }
+                    @Override
+                    public boolean isVisible(final Method method) {
+                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
+                        return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
+                    }
 
-            private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
-                JsonbVisibility visibility = type.getAnnotation(JsonbVisibility.class);
-                if (visibility != null) {
-                    try {
-                        return visibility.value().newInstance();
-                    } catch (final InstantiationException | IllegalAccessException e) {
-                        throw new IllegalArgumentException(e);
-                    }
-                }
-                Package p = type.getPackage();
-                while (p != null) {
-                    visibility = p.getAnnotation(JsonbVisibility.class);
-                    if (visibility != null) {
-                        try {
-                            return visibility.value().newInstance();
-                        } catch (final InstantiationException | IllegalAccessException e) {
-                            throw new IllegalArgumentException(e);
+                    private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
+                        JsonbVisibility visibility = type.getAnnotation(JsonbVisibility.class);
+                        if (visibility != null) {
+                            try {
+                                return visibility.value().newInstance();
+                            } catch (final InstantiationException | IllegalAccessException e) {
+                                throw new IllegalArgumentException(e);
+                            }
                         }
+                        Package p = type.getPackage();
+                        while (p != null) {
+                            visibility = p.getAnnotation(JsonbVisibility.class);
+                            if (visibility != null) {
+                                try {
+                                    return visibility.value().newInstance();
+                                } catch (final InstantiationException | IllegalAccessException e) {
+                                    throw new IllegalArgumentException(e);
+                                }
+                            }
+                            final String name = p.getName();
+                            final int end = name.lastIndexOf('.');
+                            if (end < 0) {
+                                break;
+                            }
+                            p = Package.getPackage(name.substring(0, end));
+                        }
+                        return this;
                     }
-                    final String name = p.getName();
-                    final int end = name.lastIndexOf('.');
-                    if (end < 0) {
-                        break;
-                    }
-                    p = Package.getPackage(name.substring(0, end));
-                }
-                return this;
-            }
-        });
+                });
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
         config.getProperty("johnzon.enforceQuoteString")
