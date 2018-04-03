@@ -92,9 +92,11 @@ import java.util.stream.Stream;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 import static java.time.temporal.ChronoField.YEAR;
 import java.time.temporal.TemporalAccessor;
@@ -776,8 +778,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         int hour = parse.isSupported(HOUR_OF_DAY) ? parse.get(HOUR_OF_DAY) : 0;
         int minute = parse.isSupported(MINUTE_OF_HOUR) ? parse.get(MINUTE_OF_HOUR) : 0;
         int second = parse.isSupported(SECOND_OF_MINUTE) ? parse.get(SECOND_OF_MINUTE) : 0;
-        int millisecond = parse.isSupported(MILLI_OF_SECOND) ? parse.get(MILLI_OF_SECOND) : 0;
-        return ZonedDateTime.of(year, month, day, hour, minute, second, millisecond, zone);
+        int nanosecond = parse.isSupported(NANO_OF_SECOND) ? parse.get(NANO_OF_SECOND) : 
+                parse.isSupported(MICRO_OF_SECOND) ? parse.get(MICRO_OF_SECOND) * 1000 : 
+                parse.isSupported(MILLI_OF_SECOND) ? parse.get(MILLI_OF_SECOND) * 1000000 : 0;
+        return ZonedDateTime.of(year, month, day, hour, minute, second, nanosecond, zone);
     }
 
     private static void logIfDeprecatedTimeZone(final String text) {

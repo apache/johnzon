@@ -117,18 +117,23 @@ public class JsonbTypesTest {
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyyMMdd+HHmmssZ"), "yyyyMMdd+HHmmssZ");
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd"), "yyyy-MM-dd");
+        readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSZ"), "yyyy-MM-dd'T'HH:mm:ss.SSSSSSSSSZ");
     }
     
     private void readAndWriteWithDateFormat(DateTimeFormatter dateTimeFormatter, String dateFormat) {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
-        final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
+        final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1, 1, 111111111);
         final ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
+        final Calendar instance = Calendar.getInstance();
+        instance.setTime(Date.from(zonedDateTime.toInstant()));
+        final Calendar gregorianCalendar = GregorianCalendar.getInstance();
+        gregorianCalendar.setTime(Date.from(zonedDateTime.toInstant()));
         final String expected = "{" +
-            "\"calendar\":\"" + dateTimeFormatter.format(zonedDateTime) + "\"," +
-            "\"date\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(localDateTime.toInstant(ZoneOffset.UTC), ZoneId.of("UTC"))) + "\"," +
-            "\"gregorianCalendar\":\"" + dateTimeFormatter.format(zonedDateTime) + "\"," +
-            "\"instant\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())), ZoneId.of("UTC"))) + "\"," +
-            "\"localDate\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())), ZoneId.of("UTC"))) + "\"," +
+            "\"calendar\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(instance.toInstant(), ZoneId.of("UTC"))) + "\"," +
+            "\"date\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(Date.from(zonedDateTime.toInstant()).toInstant(), ZoneId.of("UTC"))) + "\"," +
+            "\"gregorianCalendar\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(gregorianCalendar.toInstant(), ZoneId.of("UTC"))) + "\"," +
+            "\"instant\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(zonedDateTime.toInstant(), ZoneId.of("UTC"))) + "\"," +
+            "\"localDate\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(localDate.atStartOfDay().toInstant(ZoneOffset.UTC), ZoneId.of("UTC"))) + "\"," +
             "\"localDateTime\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(localDateTime.toInstant(ZoneOffset.UTC), ZoneId.of("UTC"))) + "\"," +
             "\"offsetDateTime\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(OffsetDateTime.of(localDateTime, ZoneOffset.UTC).toInstant(), ZoneId.of("UTC"))) + "\"" +
             "}";
