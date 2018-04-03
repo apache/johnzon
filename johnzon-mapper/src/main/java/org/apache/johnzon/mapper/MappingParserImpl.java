@@ -700,7 +700,7 @@ public class MappingParserImpl implements MappingParser {
         return collection;
     }
 
-    
+
     private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object, JsonPointerTracker jsonPointer) {
         final int length = mapping.factory.getParameterTypes().length;
         final Object[] objects = new Object[length];
