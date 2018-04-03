@@ -288,6 +288,12 @@ public class MappingParserImpl implements MappingParser {
                     }
                     
                 }
+            } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
+                final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+                for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
+                    map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null, jsonPointer, Object.class));
+                }
+                return map;
             } else if (TypeVariable.class.isInstance(type)) {
                 
                 // if a specific mapping has not been declared, let's try finding and using bounds
@@ -302,12 +308,6 @@ public class MappingParserImpl implements MappingParser {
                     }
                 }
 
-            } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
-                final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
-                for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
-                    map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null, jsonPointer, Object.class));
-                }
-                return map;
             }
         }
         if (classMapping == null) {
