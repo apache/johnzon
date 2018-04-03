@@ -137,7 +137,7 @@ public class MappingParserImpl implements MappingParser {
 
     @Override
     public <T> T readObject(JsonValue jsonValue, Type targetType) {
-        return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType);
+        return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType || targetType instanceof TypeVariable);
     }
 
     private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
@@ -220,7 +220,7 @@ public class MappingParserImpl implements MappingParser {
             type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
         }
 
-        if (applyObjectConverter && !(type instanceof ParameterizedType)) {
+        if (applyObjectConverter && !(type instanceof ParameterizedType) && !(type instanceof TypeVariable)) {
 
             if (!(type instanceof Class)) {
                 throw new MapperException("ObjectConverters are only supported for Classes not Types");
@@ -278,15 +278,9 @@ public class MappingParserImpl implements MappingParser {
                         }
                         return map;
                     }
-                } else {
-                
-                    // if a specific mapping has not been declared, let's try finding and using one without generics
-                    ObjectConverter.Reader objectConverter = config.findObjectConverterReader((Class) aType.getRawType());
-                
-                    if (objectConverter != null) {
-                        return objectConverter.fromJson(object, type, new SuppressConversionMappingParser(this, object));
-                    }
-                    
+                } else if (aType.getRawType() instanceof Class) {
+                    // if a specific mapping has not been declared, let's try building without generics
+                    return buildObject(Class.class.cast(aType.getRawType()), object, applyObjectConverter, jsonPointer);
                 }
             } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
                 final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
@@ -295,17 +289,11 @@ public class MappingParserImpl implements MappingParser {
                 }
                 return map;
             } else if (TypeVariable.class.isInstance(type)) {
-                
-                // if a specific mapping has not been declared, let's try finding and using bounds
-                TypeVariable vType = TypeVariable.class.cast(type);
-                
-                Optional<AnnotatedType> findFirst = Arrays.asList(vType.getAnnotatedBounds()).stream().findFirst();
+                // if a specific mapping has not been declared, let's try building using bounds
+                Optional<AnnotatedType> findFirst = Arrays.asList(TypeVariable.class.cast(type).getAnnotatedBounds()).stream().findFirst();
 
                 if (findFirst.isPresent() && findFirst.get().getType() instanceof Class) {
-                    ObjectConverter.Reader objectConverter = config.findObjectConverterReader(Class.class.cast(findFirst.get().getType()));
-                    if (objectConverter != null) {
-                        return objectConverter.fromJson(object, type, new SuppressConversionMappingParser(this, object));
-                    }
+                    return buildObject(findFirst.get().getType(), object, applyObjectConverter, jsonPointer);
                 }
 
             }
@@ -548,7 +536,7 @@ public class MappingParserImpl implements MappingParser {
             final Object object = buildObject(
                     baseInstance != null ? baseInstance.getClass() : (
                             typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
-                    JsonObject.class.cast(jsonValue), type instanceof Class,
+                    JsonObject.class.cast(jsonValue), type instanceof Class || type instanceof ParameterizedType || type instanceof TypeVariable,
                     jsonPointer);
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
