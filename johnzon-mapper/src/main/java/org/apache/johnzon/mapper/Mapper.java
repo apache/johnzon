@@ -44,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
+import org.apache.johnzon.mapper.Mappings.ClassMapping;
+import org.apache.johnzon.mapper.Mappings.MappingType;
 import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
 public class Mapper implements Closeable {
@@ -138,9 +140,9 @@ public class Mapper implements Closeable {
     private boolean isDeduplicateObjects(Class<?> rootType) {
         Boolean dedup = config.isDeduplicateObjects();
         if (dedup == null) {
-            Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
-            if (classMapping != null) {
-                dedup = classMapping.isDeduplicateObjects();
+            Mappings.TypeMapping classMapping = mappings.findOrCreateTypeMapping(rootType);
+            if (classMapping != null && MappingType.CLASSMAPPING.equals(classMapping.getType())) {
+                dedup = ClassMapping.class.cast(classMapping).isDeduplicateObjects();
             }
         }
 

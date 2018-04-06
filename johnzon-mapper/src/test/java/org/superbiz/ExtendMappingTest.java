@@ -45,7 +45,7 @@ public class ExtendMappingTest {
     @Test // strictly speaking compilation checked 50% of the test
     public void run() {
         final MyMappings myMappings = new MyMappings();
-        final Mappings.ClassMapping model = myMappings.findOrCreateClassMapping(MyModel.class);
+        final Mappings.TypeMapping model = myMappings.findOrCreateTypeMapping(MyModel.class);
         assertTrue(myMappings.classes().isEmpty());
         assertEquals(1, model.getters.size());
         assertEquals(1, model.setters.size());
@@ -75,8 +75,8 @@ public class ExtendMappingTest {
         }
 
         @Override
-        public ClassMapping findOrCreateClassMapping(final Type clazz) {
-            final ClassMapping mapping = super.findOrCreateClassMapping(clazz);
+        public TypeMapping findOrCreateTypeMapping(final Type clazz) {
+            final TypeMapping mapping = super.findOrCreateTypeMapping(clazz);
             classes.remove(clazz); // no leak for single usage cases
             return mapping;
         }

@@ -237,7 +237,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
 
         final Class<?> objectClass = object.getClass();
-        final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(objectClass);
+        final Mappings.TypeMapping classMapping = mappings.findOrCreateTypeMapping(objectClass);
         if (classMapping == null) {
             throw new MapperException("No mapping for " + objectClass.getName());
         }

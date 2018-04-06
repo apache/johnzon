@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.lang.reflect.AnnotatedType;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
@@ -47,7 +46,6 @@ import java.math.BigInteger;
 import java.time.temporal.TemporalAccessor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
@@ -75,7 +73,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 import java.util.Date;
-import java.util.Optional;
 import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.NULL;
 import static javax.json.JsonValue.ValueType.NUMBER;
@@ -232,9 +229,9 @@ public class MappingParserImpl implements MappingParser {
             }
         }
 
-        final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
+        final Mappings.TypeMapping typeMapping = mappings.findOrCreateTypeMapping(type);
 
-        if (classMapping == null) {
+        if (typeMapping == null) {
             if (ParameterizedType.class.isInstance(type)) {
                 final ParameterizedType aType = ParameterizedType.class.cast(type);
                 final Type[] fieldArgTypes = aType.getActualTypeArguments();
@@ -278,9 +275,6 @@ public class MappingParserImpl implements MappingParser {
                         }
                         return map;
                     }
-                } else if (aType.getRawType() instanceof Class) {
-                    // if a specific mapping has not been declared, let's try building without generics
-                    return buildObject(Class.class.cast(aType.getRawType()), object, applyObjectConverter, jsonPointer);
                 }
             } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
                 final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
@@ -288,53 +282,45 @@ public class MappingParserImpl implements MappingParser {
                     map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null, jsonPointer, Object.class));
                 }
                 return map;
-            } else if (TypeVariable.class.isInstance(type)) {
-                // if a specific mapping has not been declared, let's try building using bounds
-                Optional<AnnotatedType> findFirst = Arrays.asList(TypeVariable.class.cast(type).getAnnotatedBounds()).stream().findFirst();
-
-                if (findFirst.isPresent() && findFirst.get().getType() instanceof Class) {
-                    return buildObject(findFirst.get().getType(), object, applyObjectConverter, jsonPointer);
-                }
-
             }
         }
-        if (classMapping == null) {
+        if (typeMapping == null) {
             throw new MapperException("Can't map " + type);
         }
 
-        if (applyObjectConverter && classMapping.reader != null) {
-            return classMapping.reader.fromJson(object, type, new SuppressConversionMappingParser(this, object));
+        if (applyObjectConverter && typeMapping.reader != null) {
+            return typeMapping.reader.fromJson(object, type, new SuppressConversionMappingParser(this, object));
         }
         /* doesn't work yet
-        if (classMapping.adapter != null) {
-            return classMapping.adapter.from(t);
+        if (typeMapping.adapter != null) {
+            return typeMapping.adapter.from(t);
         }
         */
 
-        if (classMapping.factory == null) {
-            throw new MapperException(classMapping.clazz + " not instantiable");
+        if (typeMapping.factory == null) {
+            throw new MapperException(typeMapping.type + " not instantiable");
         }
 
         if (config.isFailOnUnknown()) {
-            if (!classMapping.setters.keySet().containsAll(object.keySet())) {
+            if (!typeMapping.setters.keySet().containsAll(object.keySet())) {
                 throw new MapperException("(fail on unknown properties): " + new HashSet<String>(object.keySet()) {{
-                    removeAll(classMapping.setters.keySet());
+                    removeAll(typeMapping.setters.keySet());
                 }});
                     }
             }
 
         Object t;
-        if (classMapping.factory.getParameterTypes().length == 0) {
-            t = classMapping.factory.create(null);
+        if (typeMapping.factory.getParameterTypes().length == 0) {
+            t = typeMapping.factory.create(null);
         } else {
-            t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
+            t = typeMapping.factory.create(createParameters(typeMapping, object, jsonPointer));
         }
         // store the new object under it's jsonPointer in case it gets referenced later
         if (isDeduplicateObjects) {
             jsonPointers.put(jsonPointer.toString(), t);
         }
 
-        for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
+        for (final Map.Entry<String, Mappings.Setter> setter : typeMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
             final Mappings.Setter value = setter.getValue();
             if (JsonValue.class == value.paramType) {
@@ -351,7 +337,7 @@ public class MappingParserImpl implements MappingParser {
             } else {
                 Object existingInstance = null;
                 if (config.isReadAttributeBeforeWrite()) {
-                    final Mappings.Getter getter = classMapping.getters.get(setter.getKey());
+                    final Mappings.Getter getter = typeMapping.getters.get(setter.getKey());
                     if (getter != null) {
                         try {
                             existingInstance = getter.reader.read(t);
@@ -367,12 +353,12 @@ public class MappingParserImpl implements MappingParser {
                 }
             }
         }
-        if (classMapping.anySetter != null) {
+        if (typeMapping.anySetter != null) {
             for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
                 final String key = entry.getKey();
-                if (!classMapping.setters.containsKey(key)) {
+                if (!typeMapping.setters.containsKey(key)) {
                     try {
-                        classMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null,
+                        typeMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null,
                                 isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type));
                     } catch (final IllegalAccessException e) {
                         throw new IllegalStateException(e);
@@ -689,7 +675,7 @@ public class MappingParserImpl implements MappingParser {
     }
 
 
-    private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object, JsonPointerTracker jsonPointer) {
+    private Object[] createParameters(final Mappings.TypeMapping mapping, final JsonObject object, JsonPointerTracker jsonPointer) {
         final int length = mapping.factory.getParameterTypes().length;
         final Object[] objects = new Object[length];
 
@@ -703,7 +689,7 @@ public class MappingParserImpl implements MappingParser {
                     mapping.factory.getParameterTypes()[i],
                     mapping.factory.getObjectConverter()[i],
                     isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, paramName) : null,
-                    mapping.clazz); //X TODO ObjectConverter in @JohnzonConverter with Constructors!
+                    mapping.type); //X TODO ObjectConverter in @JohnzonConverter with Constructors!
         }
 
         return objects;
