@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.core;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.json.Json;
@@ -49,6 +50,19 @@ public class JsonGeneratorImplTest {
         assertEquals("[{}]", new String(baos.toByteArray()));
     }
 
+    @Test
+    public void testCreateGenerator() {
+        StringWriter sw = new StringWriter();
+        JsonGenerator jsonGenerator = Json.createGenerator(sw);
+        jsonGenerator.writeStartObject()
+                .write("a", "b")
+                .write("c", "d")
+                .writeEnd();
+
+        jsonGenerator.close();
+
+        Assert.assertEquals("{\"a\":\"b\",\"c\":\"d\"}", sw.toString());
+    }
     @Test
     public void emptyArray() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();

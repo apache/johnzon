@@ -29,8 +29,8 @@
   <name>Johnzon :: WebSocket</name>
 
   <properties>
-    <tomcat.version>8.5.3</tomcat.version>
-    <tomee.version>7.0.1</tomee.version>
+    <tomcat.version>8.5.9</tomcat.version>
+    <tomee.version>7.0.3</tomee.version>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
 
@@ -109,6 +109,13 @@
   </dependencies>
 
   <build>
+    <testResources>
+      <testResource>
+        <directory>src/test/resources</directory>
+        <filtering>true</filtering>
+      </testResource>
+    </testResources>
+
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -116,6 +123,41 @@
         <configuration>
           <skip>true</skip>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+        <executions>
+          <execution> <!-- override some ee api -->
+            <id>unpack-ee-api</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>unpack</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/ee-api</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>org.apache.tomee</groupId>
+                  <artifactId>javaee-api</artifactId>
+                  <version>7.0-1</version>
+                  <type>zip</type>
+                  <excludes>
+                    LICENSE,NOTICE,README.txt,
+                    geronimo-jaspic_1.0_spec*jar,
+                    geronimo-jsp_2.2_spec*.jar,
+                    javaee-api*.jar,
+                    tomcat-el-api*.jar,
+                    tomcat-servlet-api*.jar,
+                    tomcat-websocket-api*.jar,
+                    geronimo-json_1.0_spec*.jar
+                  </excludes>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

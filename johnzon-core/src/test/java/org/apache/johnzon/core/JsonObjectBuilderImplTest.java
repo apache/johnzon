@@ -21,15 +21,29 @@ package org.apache.johnzon.core;
 import static org.junit.Assert.assertEquals;
 
 import javax.json.Json;
+import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
 import org.junit.Test;
 
 public class JsonObjectBuilderImplTest {
     @Test
-    public void build() {
+    public void testBuild() {
         final JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("a", "b");
-        assertEquals("{\"a\":\"b\"}", builder.build().toString());
+        JsonObject jsonObject = builder.build();
+        assertEquals("{\"a\":\"b\"}", jsonObject.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testNullCheckValue() {
+        final JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("a", (Integer) null);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testNullCheckName() {
+        final JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add(null, "b");
     }
 }

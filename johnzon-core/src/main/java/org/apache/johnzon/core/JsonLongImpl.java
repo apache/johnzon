@@ -25,6 +25,7 @@ import java.math.BigInteger;
 
 public final class JsonLongImpl implements JsonNumber, Serializable {
     private final long value;
+    private Integer hashCode = null;
 
     JsonLongImpl(final long value) {
         this.value = value;
@@ -87,11 +88,17 @@ public final class JsonLongImpl implements JsonNumber, Serializable {
 
     @Override
     public int hashCode() {
-        return (int) value;
+        if (hashCode == null) {
+            hashCode = bigDecimalValue().hashCode();
+        }
+        return hashCode;
     }
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonNumber.class.isInstance(obj) && JsonNumber.class.cast(obj).longValue() == value;
+        if (JsonLongImpl.class.isInstance(obj)) {
+            return JsonLongImpl.class.cast(obj).value == value;
+        }
+        return JsonNumber.class.isInstance(obj) && JsonNumber.class.cast(obj).bigDecimalValue().equals(bigDecimalValue());
     }
 }

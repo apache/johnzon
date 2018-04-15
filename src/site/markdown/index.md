@@ -18,16 +18,13 @@ under the License.
 -->
 # Apache Johnzon
 
-Apache Johnzon is a project providing an implementation of JsonProcessing (aka jsr-353) and a set of useful extension
-for this specification like an Object mapper, some JAX-RS providers and a WebSocket module provides a basic integration with Java WebSocket API (JSR 356).
+Apache Johnzon is a project providing an implementation of JsonProcessing (aka JSR-353) and a set of useful extension
+for this specification like an Object mapper, some JAX-RS providers and a WebSocket module provides a basic integration with Java WebSocket API (JSR-356).
 
 ## Status
 
 Apache Johnzon is a Top Level Project at the Apache Software Foundation (ASF).
-It fully implements the JSON-P_1.0 specification (JSR-353).
-Johnzon also targets the upcoming JSON-P_1.1 and JSON-B_1.0 specifications.
-
-The current version is Apache Johnzon 1.0.0.
+It fully implements the JSON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
 
 ## Get started
 
@@ -43,12 +40,13 @@ Johnzon comes with four main modules.
 </dependency>
 ]]></pre>
 
-This is the implementation of the specification. You'll surely want to add the API as dependency too:
+This is the implementation of the JSON-P 1.1 specification. 
+You'll surely want to add the API as dependency too:
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
   <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-json_1.0_spec</artifactId>
+  <artifactId>geronimo-json_1.1_spec</artifactId>
   <version>${jsonspecversion}</version>
   <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
 </dependency>
@@ -292,9 +290,9 @@ TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want h
 Note: as you can see you mainly just need to define a service with the id johnzon (same as in openejb-jar.xml)
 and you can reference other instances using $id for services and @id for resources.
 
-### JSON-B (not yet fully compliant)
+### JSON-B (JSON-B 1.0 compliant)
 
-Johnzon provides a module johnzon-jsonb and jsonb-api implementing JSON-B standard based on Johnzon Mapper.
+Johnzon provides a module johnzon-jsonb implementing JSON-B standard based on Johnzon Mapper.
 
 It fully reuses the JSON-B as API.
 
@@ -392,6 +390,3 @@ in `MessageDecoder`.
         }
     }
 
-## Thanks
-
-We would like to thank ej-technologies for their [Java profiler JProfiler](http://www.ej-technologies.com/products/jprofiler/overview.html) which helped us a lot optimizing memory footprint and speed. ![JProfiler](http://www.ej-technologies.com/images/banners/jprofiler_small.png)

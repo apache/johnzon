@@ -229,7 +229,7 @@ public class JsonParserTest {
         
         ob.add("d", ab);
 
-        final JsonParser parser = Json.createParserFactory(Collections.<String, Object>emptyMap()).createParser(ob.build());
+        final JsonParser parser = Json.createParserFactory(Collections.EMPTY_MAP).createParser(ob.build());
         assertNotNull(parser);
         assertSimple(parser);
     }
@@ -247,18 +247,19 @@ public class JsonParserTest {
         assertNotNull(parser);
         assertSimple(parser);
     }
-    
+
     @Test
     public void simpleUTF16LE() {
         final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread()
-                .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"),UTF_16LE);
+                .getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"), UTF_16LE);
         assertNotNull(parser);
         assertSimple(parser);
     }
     
     @Test
     public void simpleUTF16LEAutoDetect() {
-        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"));
+        final JsonParser parser = Json.createParserFactory(null).createParser(Thread.currentThread().
+                getContextClassLoader().getResourceAsStream("json/simple_utf16le.json"));
         assertNotNull(parser);
         assertSimple(parser);
     }

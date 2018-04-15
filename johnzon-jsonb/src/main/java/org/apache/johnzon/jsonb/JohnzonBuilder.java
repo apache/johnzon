@@ -20,6 +20,7 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
+import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
@@ -31,6 +32,9 @@ import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.SerializeValueFilter;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
@@ -48,7 +52,9 @@ import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParserFactory;
+import java.io.Closeable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -84,8 +90,19 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.YEAR;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQueries;
 import static java.util.Collections.emptyMap;
+import java.util.Objects;
 import static java.util.Optional.ofNullable;
+import java.util.concurrent.TimeUnit;
 import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
 import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
 
@@ -114,27 +131,9 @@ public class JohnzonBuilder implements JsonbBuilder {
     public Jsonb build() {
         if (jsonp != null) {
             builder.setGeneratorFactory(jsonp.createGeneratorFactory(generatorConfig()));
-            builder.setReaderFactory(jsonp.createReaderFactory(emptyMap()));
+            builder.setReaderFactory(jsonp.createReaderFactory(readerConfig()));
         }
-        final Supplier<JsonParserFactory> parserFactoryProvider = new Supplier<JsonParserFactory>() { // thread safety is not mandatory
-            private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
-
-            @Override
-            public JsonParserFactory get() {
-                JsonParserFactory factory = ref.get();
-                if (factory == null) {
-                    factory = doCreate();
-                    if (!ref.compareAndSet(null, factory)) {
-                        factory = ref.get();
-                    }
-                }
-                return factory;
-            }
-
-            private JsonParserFactory doCreate() {
-                return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
-            }
-        };
+        final Supplier<JsonParserFactory> parserFactoryProvider = createJsonParserFactory();
 
         if (config == null) {
             config = new JsonbConfig();
@@ -207,6 +206,12 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("johnzon.primitiveConverters")
                 .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
                 .ifPresent(builder::setPrimitiveConverters);
+        config.getProperty("johnzon.useBigDecimalForFloats")
+                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .ifPresent(builder::setUseBigDecimalForFloats);
+        config.getProperty("johnzon.deduplicateObjects")
+                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .ifPresent(builder::setDeduplicateObjects);
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 
@@ -230,11 +235,16 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
             throw new IllegalArgumentException("Unsupported factory: " + val);
         }).orElseGet(this::findFactory);
-        final JsonbAccessMode accessMode = new JsonbAccessMode(
-                propertyNamingStrategy, orderValue, visibilityStrategy,
-                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                defaultConverters,
-                factory, parserFactoryProvider);
+        final AccessMode accessMode = config.getProperty("johnzon.accessMode")
+                .map(this::toAccessMode)
+                .orElseGet(() -> new JsonbAccessMode(
+                        propertyNamingStrategy, orderValue, visibilityStrategy,
+                        !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                        defaultConverters,
+                        factory, parserFactoryProvider,
+                        config.getProperty("johnzon.accessModeDelegate")
+                                .map(this::toAccessMode)
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
         builder.setAccessMode(accessMode);
 
 
@@ -253,6 +263,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
             // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec should be fine by default
         });
+        config.getProperty("johnzon.fail-on-unknown-properties")
+                .map(v -> Boolean.class.isInstance(v) ? Boolean.class.cast(v) : Boolean.parseBoolean(String.valueOf(v)))
+                .ifPresent(builder::setFailOnUnknownProperties);
 
         config.getProperty(JsonbConfig.BINARY_DATA_STRATEGY).map(String.class::cast).ifPresent(bin -> {
             switch (bin) {
@@ -284,6 +297,23 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         builder.setReadAttributeBeforeWrite(
                 config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
+        builder.setAutoAdjustStringBuffers(
+                config.getProperty("johnzon.autoAdjustBuffer").map(Boolean.class::cast).orElse(true));
+        config.getProperty("johnzon.serialize-value-filter")
+                .map(s -> {
+                    if (String.class.isInstance(s)) {
+                        try {
+                            return SerializeValueFilter.class.cast(
+                                    Thread.currentThread().getContextClassLoader().loadClass(s.toString()).getConstructor().newInstance());
+                        } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
+                            throw new IllegalArgumentException(e);
+                        } catch (InvocationTargetException e) {
+                            throw new IllegalArgumentException(e.getCause());
+                        }
+                    }
+                    return s;
+                })
+                .ifPresent(s -> builder.setSerializeValueFilter(SerializeValueFilter.class.cast(s)));
 
         config.getProperty(JsonbConfig.SERIALIZERS).map(JsonbSerializer[].class::cast).ifPresent(serializers -> {
             Stream.of(serializers).forEach(s -> {
@@ -298,7 +328,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 }
                 builder.addObjectConverter(
                         Class.class.cast(args[0]), (ObjectConverter.Writer)
-                        (instance, jsonbGenerator) -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
+                                (instance, jsonbGenerator) -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
             });
         });
         config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
@@ -314,15 +344,18 @@ public class JohnzonBuilder implements JsonbBuilder {
                 // TODO: support PT in ObjectConverter (list)
                 builder.addObjectConverter(
                         Class.class.cast(args[0]), (ObjectConverter.Reader)
-                        (jsonObject, targetType, parser) -> d.deserialize(
-                                parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
+                                (jsonObject, targetType, parser) -> d.deserialize(
+                                        parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
             });
         });
 
         final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && config.getProperty("johnzon.cdi.activated").map(Boolean.class::cast).orElse(Boolean.TRUE);
-        final Mapper mapper = builder.addCloseable(accessMode).build();
+        if (Closeable.class.isInstance(accessMode)) {
+            builder.addCloseable(Closeable.class.cast(accessMode));
+        }
+        final Mapper mapper = builder.build();
 
-        return useCdi ? new JohnsonJsonb(mapper) {
+        return useCdi ? new JohnzonJsonb(mapper) {
             {
                 cdiIntegration.track(this);
             }
@@ -337,14 +370,50 @@ public class JohnzonBuilder implements JsonbBuilder {
                     }
                 }
             }
-        } : new JohnsonJsonb(mapper);
+        } : new JohnzonJsonb(mapper);
+    }
+
+    private AccessMode toAccessMode(final Object s) {
+        if (String.class.isInstance(s)) {
+            try {
+                return AccessMode.class.cast(
+                        Thread.currentThread().getContextClassLoader().loadClass(s.toString()).getConstructor().newInstance());
+            } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            } catch (InvocationTargetException e) {
+                throw new IllegalArgumentException(e.getCause());
+            }
+        }
+        return AccessMode.class.cast(s);
+    }
+
+    private Supplier<JsonParserFactory> createJsonParserFactory() {
+        return new Supplier<JsonParserFactory>() { // thread safety is not mandatory
+            private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
+
+            @Override
+            public JsonParserFactory get() {
+                JsonParserFactory factory = ref.get();
+                if (factory == null) {
+                    factory = doCreate();
+                    if (!ref.compareAndSet(null, factory)) {
+                        factory = ref.get();
+                    }
+                }
+                return factory;
+            }
+
+            private JsonParserFactory doCreate() {
+                return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
+            }
+        };
     }
 
     private ParameterizedType findPT(final Object s, final Class<?> type) {
         return ParameterizedType.class.cast(
-                            Stream.of(s.getClass().getGenericInterfaces())
-                                    .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type)
-                                    .findFirst().orElse(null));
+                Stream.of(s.getClass().getGenericInterfaces())
+                        .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type)
+                        .findFirst().orElse(null));
     }
 
     private Object getBeanManager() {
@@ -572,90 +641,143 @@ public class JohnzonBuilder implements JsonbBuilder {
             final Optional<Locale> locale = config.getProperty(JsonbConfig.LOCALE).map(Locale.class::cast);
             final DateTimeFormatter formatter = locale.isPresent() ? ofPattern(dateFormat, locale.get()) : ofPattern(dateFormat);
 
-            // Note: we try and fallback in the parsing cause we don't know if the date format provided is
-            // for date, datetime, time
-
             converters.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new Converter<Date>() {
-                private volatile boolean useFormatter = true;
 
                 @Override
                 public String toString(final Date instance) {
-                    return LocalDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
                 }
 
                 @Override
                 public Date fromString(final String text) {
-                    if (useFormatter) {
-                        try {
-                            return Date.from(LocalDateTime.parse(text, formatter).toInstant(ZoneOffset.UTC));
-                        } catch (final DateTimeParseException dpe) {
-                            useFormatter = false;
-                        }
+                    try {
+                        return Date.from(parseZonedDateTime(text, formatter, zoneIDUTC).toInstant());
+                    } catch (final DateTimeParseException dpe) {
+                        return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
                     }
-                    return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
                 }
             }));
             converters.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new Converter<LocalDateTime>() {
-                private volatile boolean useFormatter = true;
 
                 @Override
                 public String toString(final LocalDateTime instance) {
-                    return instance.toString();
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(ZoneOffset.UTC), zoneIDUTC));
                 }
 
                 @Override
                 public LocalDateTime fromString(final String text) {
-                    if (useFormatter) {
-                        try {
-                            return LocalDateTime.parse(text, formatter);
-                        } catch (final DateTimeParseException dpe) {
-                            useFormatter = false;
-                        }
+                    try {
+                        return parseZonedDateTime(text, formatter, zoneIDUTC).toLocalDateTime();
+                    } catch (final DateTimeParseException dpe) {
+                        return LocalDateTime.parse(text);
                     }
-                    return LocalDateTime.parse(text);
                 }
             }));
             converters.put(new AdapterKey(LocalDate.class, String.class), new ConverterAdapter<>(new Converter<LocalDate>() {
-                private volatile boolean useFormatter = true;
 
                 @Override
                 public String toString(final LocalDate instance) {
-                    return instance.toString();
+                    return formatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(instance.toEpochDay())), zoneIDUTC));
                 }
 
                 @Override
                 public LocalDate fromString(final String text) {
-                    if (useFormatter) {
-                        try {
-                            return LocalDate.parse(text, formatter);
-                        } catch (final DateTimeParseException dpe) {
-                            useFormatter = false;
-                        }
+                    try {
+                        return parseZonedDateTime(text, formatter, zoneIDUTC).toLocalDate();
+                    } catch (final DateTimeParseException dpe) {
+                        return LocalDate.parse(text);
                     }
-                    return LocalDate.parse(text);
+                }
+            }));
+            converters.put(new AdapterKey(OffsetDateTime.class, String.class), new ConverterAdapter<>(new Converter<OffsetDateTime>() {
+
+                @Override
+                public String toString(final OffsetDateTime instance) {
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
+                }
+
+                @Override
+                public OffsetDateTime fromString(final String text) {
+                    try {
+                        return parseZonedDateTime(text, formatter, zoneIDUTC).toOffsetDateTime();
+                    } catch (final DateTimeParseException dpe) {
+                        return OffsetDateTime.parse(text);
+                    }
                 }
             }));
             converters.put(new AdapterKey(ZonedDateTime.class, String.class), new ConverterAdapter<>(new Converter<ZonedDateTime>() {
-                private volatile boolean useFormatter = true;
 
                 @Override
                 public String toString(final ZonedDateTime instance) {
-                    return instance.toString();
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
                 }
 
                 @Override
                 public ZonedDateTime fromString(final String text) {
-                    if (useFormatter) {
-                        try {
-                            return ZonedDateTime.parse(text, formatter);
-                        } catch (final DateTimeParseException dpe) {
-                            useFormatter = false;
-                        }
+                    try {
+                        return parseZonedDateTime(text, formatter, zoneIDUTC);
+                    } catch (final DateTimeParseException dpe) {
+                        return ZonedDateTime.parse(text);
                     }
-                    return ZonedDateTime.parse(text);
+                }
+            }));
+            converters.put(new AdapterKey(Calendar.class, String.class), new ConverterAdapter<>(new Converter<Calendar>() {
+
+                @Override
+                public String toString(final Calendar instance) {
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
+                }
+
+                @Override
+                public Calendar fromString(final String text) {
+                    Calendar instance = Calendar.getInstance();
+                    instance.setTime(Date.from(parseZonedDateTime(text, formatter, zoneIDUTC).toInstant()));
+                    return instance;
+                }
+            }));
+            converters.put(new AdapterKey(GregorianCalendar.class, String.class), new ConverterAdapter<>(new Converter<GregorianCalendar>() {
+
+                @Override
+                public String toString(final GregorianCalendar instance) {
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
+                }
+
+                @Override
+                public GregorianCalendar fromString(final String text) {
+                    Calendar instance = GregorianCalendar.getInstance();
+                    instance.setTime(Date.from(parseZonedDateTime(text, formatter, zoneIDUTC).toInstant()));
+                    return GregorianCalendar.class.cast(instance);
+                }
+            }));
+            converters.put(new AdapterKey(Instant.class, String.class), new ConverterAdapter<>(new Converter<Instant>() {
+
+                @Override
+                public String toString(final Instant instance) {
+                    return formatter.format(ZonedDateTime.ofInstant(instance, zoneIDUTC));
+                }
+
+                @Override
+                public Instant fromString(final String text) {
+                    return parseZonedDateTime(text, formatter, zoneIDUTC).toInstant();
                 }
             }));
         });
+    }
+    
+    private static ZonedDateTime parseZonedDateTime(final String text, final DateTimeFormatter formatter, final ZoneId defaultZone){
+        TemporalAccessor parse = formatter.parse(text);
+        ZoneId zone = parse.query(TemporalQueries.zone());
+        if (Objects.isNull(zone)) {
+            zone = defaultZone;
+        }
+        int year = parse.isSupported(YEAR) ? parse.get(YEAR) : 0;
+        int month = parse.isSupported(MONTH_OF_YEAR) ? parse.get(MONTH_OF_YEAR) : 0;
+        int day = parse.isSupported(DAY_OF_MONTH) ? parse.get(DAY_OF_MONTH) : 0;
+        int hour = parse.isSupported(HOUR_OF_DAY) ? parse.get(HOUR_OF_DAY) : 0;
+        int minute = parse.isSupported(MINUTE_OF_HOUR) ? parse.get(MINUTE_OF_HOUR) : 0;
+        int second = parse.isSupported(SECOND_OF_MINUTE) ? parse.get(SECOND_OF_MINUTE) : 0;
+        int millisecond = parse.isSupported(MILLI_OF_SECOND) ? parse.get(MILLI_OF_SECOND) : 0;
+        return ZonedDateTime.of(year, month, day, hour, minute, second, millisecond, zone);
     }
 
     private static void logIfDeprecatedTimeZone(final String text) {
@@ -663,7 +785,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (text.length() == 3) { // don't fail but log it
             Logger.getLogger(JohnzonBuilder.class.getName()).severe("Deprecated timezone: " + text);
         }
-        */
+         */
     }
 
     private Map<String, ?> generatorConfig() {
@@ -674,6 +796,18 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty(JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH).ifPresent(b -> map.put(JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH, b));
         config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
         config.getProperty(JsonbConfig.FORMATTING).ifPresent(b -> map.put(JsonGenerator.PRETTY_PRINTING, b));
+        return map;
+    }
+
+    private Map<String, ?> readerConfig() {
+        final Map<String, Object> map = new HashMap<>();
+        if (config == null) {
+            return map;
+        }
+        config.getProperty(JsonParserFactoryImpl.BUFFER_LENGTH).ifPresent(b -> map.put(JsonParserFactoryImpl.BUFFER_LENGTH, b));
+        config.getProperty(JsonParserFactoryImpl.MAX_STRING_LENGTH).ifPresent(b -> map.put(JsonParserFactoryImpl.MAX_STRING_LENGTH, b));
+        config.getProperty(JsonParserFactoryImpl.SUPPORTS_COMMENTS).ifPresent(b -> map.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, b));
+        config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
         return map;
     }
 }

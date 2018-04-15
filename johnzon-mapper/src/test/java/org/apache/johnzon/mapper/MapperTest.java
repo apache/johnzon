@@ -38,6 +38,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 import static java.util.Arrays.asList;
@@ -160,6 +161,29 @@ public class MapperTest {
     }
 
     @Test
+    public void sortedMap() {
+        final Mapper sortedMapper = new MapperBuilder().setAttributeOrder(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return o2.compareTo(o1);
+            }
+        }).build();
+        final Map<String, String> sorted = new TreeMap<String, String>(new Comparator<String>() {
+            @Override
+            public int compare(final String o1, final String o2) {
+                return o1.compareTo(o2);
+            }
+        });
+        sorted.put("a", "1");
+        sorted.put("b", "2");
+        sorted.put("c", "3");
+        assertEquals("{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}", sortedMapper.writeObjectAsString(sorted));
+        assertEquals(asList("c", "b", "a"), new ArrayList<Object>(Map.class.cast(
+                sortedMapper.readObject("{\"a\":\"1\",\"b\":\"2\",\"c\":\"3\"}",
+                        new JohnzonParameterizedType(SortedMap.class, String.class, String.class))).keySet()));
+    }
+
+    @Test
     public void justObjectAsModel() {
         final Mapper encodingAwareMapper = new MapperBuilder().setEncoding("UTF-8" /*otherwise guess algo fails for too small string*/).build();
         final Mapper simpleMapper = new MapperBuilder().build();
@@ -184,8 +208,9 @@ public class MapperTest {
             // read
             assertEquals(Boolean.TRUE, simpleMapper.readObject(new ByteArrayInputStream("true".getBytes()), Object.class));
             assertEquals(Boolean.FALSE, simpleMapper.readObject(new ByteArrayInputStream("false".getBytes()), Object.class));
-            assertEquals(1., encodingAwareMapper
-                    .readObject(new ByteArrayInputStream("1".getBytes()), Object.class));
+            assertEquals(1.,
+                    (Double) encodingAwareMapper.readObject(new ByteArrayInputStream("1".getBytes()), Object.class),
+                         0.1);
             assertEquals("val", simpleMapper.readObject(new ByteArrayInputStream("\"val\"".getBytes()), Object.class));
             assertEquals(asList("val1", "val2"), simpleMapper.readObject(new ByteArrayInputStream("[\"val1\", \"val2\"]".getBytes()), Object.class));
             assertEquals(new HashMap<String, Object>() {{

@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb.cdi;
 
-import org.apache.johnzon.jsonb.JohnsonJsonb;
+import org.apache.johnzon.jsonb.JohnzonJsonb;
 
 // helper class to lazy trigger CDI deps
 public final class CDIs {
@@ -28,12 +28,12 @@ public final class CDIs {
         this.tracker = Lazy.load(beanManager);
     }
 
-    public void track(final JohnsonJsonb johnsonJsonb) {
-        tracker.track(johnsonJsonb);
+    public void track(final JohnzonJsonb johnzonJsonb) {
+        tracker.track(johnzonJsonb);
     }
 
-    public void untrack(final JohnsonJsonb johnsonJsonb) {
-        tracker.untrack(johnsonJsonb);
+    public void untrack(final JohnzonJsonb johnzonJsonb) {
+        tracker.untrack(johnzonJsonb);
     }
 
     public boolean isCanWrite() {
