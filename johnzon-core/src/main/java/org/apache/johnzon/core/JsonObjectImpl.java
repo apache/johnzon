@@ -109,7 +109,14 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public boolean getBoolean(final String name) {
-        return JsonValue.TRUE.equals(valueOrExcpetion(name, JsonValue.class));
+        final JsonValue obj = valueOrExcpetion(name, JsonValue.class);
+        if (JsonValue.TRUE == obj) {
+            return true;
+        }
+        if (JsonValue.FALSE == obj) {
+            return false;
+        }
+        throw new ClassCastException("Wrong value for a boolean: " + obj);
     }
 
     @Override
@@ -117,9 +124,8 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
         final Object v = value(name, JsonValue.class);
         if (v != null) {
             return JsonValue.TRUE.equals(v) || !JsonValue.FALSE.equals(v) && defaultValue;
-        } else {
-            return defaultValue;
         }
+        return defaultValue;
     }
 
     @Override

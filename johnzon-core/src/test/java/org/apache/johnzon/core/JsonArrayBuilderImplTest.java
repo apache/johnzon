@@ -167,4 +167,5 @@ public class JsonArrayBuilderImplTest {
         final JsonArrayBuilder builder = Json.createArrayBuilder();
         builder.add((double) Double.NEGATIVE_INFINITY);
     }
+
 }

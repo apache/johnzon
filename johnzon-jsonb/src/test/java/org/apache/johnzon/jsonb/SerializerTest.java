@@ -31,6 +31,8 @@ import javax.json.bind.serializer.SerializationContext;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -41,19 +43,31 @@ public class SerializerTest {
     public void roundTrip() {
         final Jsonb jsonb = JsonbBuilder.create();
 
-        final String json = "{\"foo\":{\"full\":true,\"name\":\"SerializerTest\"}}";
+        final String expectedJson = "{\"foo\":{\"full\":true,\"name\":\"SerializerTest\"},\"moreFoos\":[{\"full\":true,\"name\":\"foo2\"},{\"full\":true,\"name\":\"foo3\"}]}";
 
         final Foo foo = new Foo();
         foo.name = "SerializerTest";
         final Wrapper wrapper = new Wrapper();
         wrapper.foo = foo;
 
-        assertEquals(json, jsonb.toJson(wrapper));
+        Foo foo2 = new Foo();
+        foo2.name = "foo2";
+        Foo foo3 = new Foo();
+        foo3.name = "foo3";
+        wrapper.moreFoos.add(foo2);
+        wrapper.moreFoos.add(foo3);
 
-        final Wrapper deser = jsonb.fromJson(json, Wrapper.class);
+        assertEquals(expectedJson, jsonb.toJson(wrapper));
+
+        final Wrapper deser = jsonb.fromJson(expectedJson, Wrapper.class);
         assertEquals(foo.name, deser.foo.name);
         assertEquals(foo.name.length(), deser.foo.value);
         assertTrue(deser.foo.flag);
+
+        assertEquals(2, deser.moreFoos.size());
+        assertEquals("foo2", deser.moreFoos.get(0).name);
+        assertEquals(4, deser.moreFoos.get(0).value);
+        assertEquals(4, deser.moreFoos.get(1).value);
     }
 
     public static class Foo {
@@ -66,6 +80,10 @@ public class SerializerTest {
         @JsonbTypeSerializer(FooSer.class)
         @JsonbTypeDeserializer(FooDeser.class)
         public Foo foo;
+
+        @JsonbTypeSerializer(FooSer.class)
+        @JsonbTypeDeserializer(FooDeser.class)
+        public List<Foo> moreFoos = new ArrayList<>();
     }
 
     public static class FooDeser implements JsonbDeserializer<Foo> {

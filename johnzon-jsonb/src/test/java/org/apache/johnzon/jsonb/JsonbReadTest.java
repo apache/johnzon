@@ -20,16 +20,40 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
+import javax.json.bind.JsonbConfig;
+import javax.json.bind.JsonbException;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
+import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.spi.JsonbProvider;
+
+import java.io.ByteArrayInputStream;
 import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Base64;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JsonbReadTest {
+
+    @Test
+    public void boolFromString() {
+        assertTrue(JsonbProvider.provider().create().build().fromJson("true", Boolean.class));
+    }
+
+    @Test
+    public void boolFromReader() {
+        assertTrue(JsonbProvider.provider().create().build().fromJson(new StringReader("true"), Boolean.class));
+    }
+
+    @Test
+    public void boolFromStream() {
+        assertTrue(JsonbProvider.provider().create().build().fromJson(new ByteArrayInputStream("true".getBytes()), Boolean.class));
+    }
+
     @Test
     public void simple() {
         assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader("{\"value\":\"test\"}"), Simple.class).value);
@@ -47,6 +71,51 @@ public class JsonbReadTest {
             LocalDate.now().getYear(),
             JsonbProvider.provider().create().build().fromJson(new StringReader("{\"date\":\"" + date + "\"}"), DateFormatting.class).date.getYear());
     }
+
+    @Test
+    public void propertyMappingNewLine() {
+        String json = "{\n" +
+                "  \"simple\":\"test\"\n" +
+                "}\n";
+
+        assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
+    }
+
+    @Test
+    public void propertyMappingNewLineCr() {
+        String json = "{\r\n" +
+                "  \"simple\":\"test\"\r\n" +
+                "}\r\n";
+
+        assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
+    }
+
+    @Test
+    public void propertyMappingNewLineTabs() {
+        String json = "{\n" +
+                "\t\"simple\":\"test\"\n" +
+                "}\n";
+
+        assertEquals("test", JsonbProvider.provider().create().build().fromJson(new StringReader(json), SimpleProperty.class).value);
+    }
+
+    @Test
+    public void testValidBase64() {
+        String json = "{\"blob\":\"" + Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8)) + "\"}";
+        JsonbConfig cfg = new JsonbConfig()
+                .withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
+        SimpleBinaryDto simpleBinaryDto = JsonbProvider.provider().create().withConfig(cfg).build().fromJson(new StringReader(json), SimpleBinaryDto.class);
+        assertEquals("test", new String(simpleBinaryDto.getBlob(), StandardCharsets.UTF_8));
+    }
+
+    @Test(expected = JsonbException.class)
+    public void testInvalidBase64() {
+        String jsonWithIllegalBase64 = "{\"blob\":\"dGVXz@dA==\"}";
+        JsonbConfig cfg = new JsonbConfig()
+                .withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
+        SimpleBinaryDto simpleBinaryDto = JsonbProvider.provider().create().withConfig(cfg).build().fromJson(new StringReader(jsonWithIllegalBase64), SimpleBinaryDto.class);
+    }
+
 
     public static class Simple {
         private String value;
@@ -97,6 +166,18 @@ public class JsonbReadTest {
 
         public void setDate(final LocalDate value) {
             this.date = value;
+        }
+    }
+
+    public static class SimpleBinaryDto {
+        private byte[] blob;
+
+        public byte[] getBlob() {
+            return blob;
+        }
+
+        public void setBlob(byte[] blob) {
+            this.blob = blob;
         }
     }
 }

@@ -19,6 +19,7 @@
 package org.apache.johnzon.jaxrs;
 
 import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 
 import javax.json.JsonReaderFactory;
@@ -34,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.List;
@@ -43,14 +45,14 @@ import static java.util.Arrays.asList;
 
 @Provider
 @Produces({
-    "*/json",
-    "*/*+json", "*/x-json",
-    "*/javascript", "*/x-javascript"
+        "*/json",
+        "*/*+json", "*/x-json",
+        "*/javascript", "*/x-javascript"
 })
 @Consumes({
-    "*/json",
-    "*/*+json", "*/x-json",
-    "*/javascript", "*/x-javascript"
+        "*/json",
+        "*/*+json", "*/x-json",
+        "*/javascript", "*/x-javascript"
 })
 public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
     // build/configuration
@@ -122,6 +124,10 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
                 throw new IllegalArgumentException(e);
             }
         }
+    }
+
+    public void setFailOnUnknownProperties(final boolean active) {
+        builder.setFailOnUnknownProperties(active);
     }
 
     public void setSupportConstructors(final boolean supportConstructors) {
@@ -214,5 +220,26 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
 
     public void setPrimitiveConverters(final boolean val) {
         builder.setPrimitiveConverters(val);
+    }
+
+    public void setUseBigDecimalForFloats(final boolean useBigDecimalForFloats) {
+        builder.setUseBigDecimalForFloats(useBigDecimalForFloats);
+    }
+
+    public void setSerializeValueFilter(final String val) {
+        try {
+            builder.setSerializeValueFilter(SerializeValueFilter.class.cast(
+                    Thread.currentThread().getContextClassLoader().loadClass(val).getConstructor().newInstance()));
+        } catch (final InstantiationException e) {
+            throw new IllegalArgumentException(e);
+        } catch (final IllegalAccessException e) {
+            throw new IllegalArgumentException(e);
+        } catch (final NoSuchMethodException e) {
+            throw new IllegalArgumentException(e);
+        } catch (final ClassNotFoundException e) {
+            throw new IllegalArgumentException(e);
+        } catch (InvocationTargetException e) {
+            throw new IllegalArgumentException(e.getCause());
+        }
     }
 }

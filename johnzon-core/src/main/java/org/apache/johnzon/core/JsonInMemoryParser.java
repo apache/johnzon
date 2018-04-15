@@ -30,14 +30,14 @@ import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
 
-class JsonInMemoryParser implements JsonParser {
+class JsonInMemoryParser extends JohnzonJsonParserImpl {
 
     private final SimpleStack<Iterator<Event>> stack = new SimpleStack<Iterator<Event>>();
 
     private Event currentEvent;
     private JsonValue currentValue;
+    private int arrayDepth = 0;
 
     private class ArrayIterator implements Iterator<Event> {
 
@@ -171,6 +171,19 @@ class JsonInMemoryParser implements JsonParser {
 
     }
 
+    @Override
+    public Event current() {
+        if (currentEvent == null && hasNext()) {
+            next();
+        }
+        return currentEvent;
+    }
+
+    @Override
+    protected boolean isInArray() {
+        return arrayDepth > 0;
+    }
+
     private static Event getEvent(final ValueType value) {
 
         switch (value) {
@@ -213,6 +226,12 @@ class JsonInMemoryParser implements JsonParser {
 
         currentEvent = stack.peek().next();
 
+        if (currentEvent == Event.START_ARRAY) {
+            arrayDepth++;
+        } else if (currentEvent == Event.END_ARRAY) {
+            arrayDepth--;
+        }
+
         return currentEvent;
     }
 
@@ -230,6 +249,11 @@ class JsonInMemoryParser implements JsonParser {
             throw new IllegalStateException("isIntegralNumber is for numbers");
         }
         return JsonNumber.class.cast(currentValue).isIntegral();
+    }
+
+    @Override
+    public boolean isNotTooLong() {
+        return true;
     }
 
     @Override

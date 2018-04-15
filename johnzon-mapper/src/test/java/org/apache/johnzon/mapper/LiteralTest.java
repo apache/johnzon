@@ -85,6 +85,16 @@ public class LiteralTest {
 
     }
 
+    @Test
+    public void readWhenUseBigDecimalForFloats() throws Exception {
+        final String json = "[1.5]";
+        final List<Object> expected = new ArrayList<Object>();
+        expected.add(new BigDecimal(1.5d));
+        final Collection<Object> read = new MapperBuilder().setUseBigDecimalForFloats(true).build()
+                .readCollection(new StringReader(json), new JohnzonParameterizedType(List.class, Object.class));
+        assertEquals(expected, read);
+    }
+
     @Test(expected = NumberFormatException.class)
     public void writeReadNumbersInf() {
         final NumberClass nc = new NumberClass();

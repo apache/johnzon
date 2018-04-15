@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import javax.json.JsonObject;
+import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
@@ -157,6 +158,38 @@ public class ObjectConverterWithAnnotationTest {
         Object tourDeFlanderen = mapper.readObject(json, CycleRace.class);
         Assert.assertNotNull(tourDeFlanderen);
         Assert.assertEquals(expected, tourDeFlanderen);
+    }
+
+    @Test
+    public void testDeserializeObjectWithAnnotatedConsturctorParameter() {
+
+        String json = "{" +
+                        "\"bike\": {" +
+                          "\"" + MANUFACTURER_ID + "\":1," +
+                          "\"" + TYPE_INDEX + "\":0" +
+                        "}" +
+                      "}";
+
+        Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)
+                                           .setReadAttributeBeforeWrite(true)
+                                           .build();
+
+        BikeWrapper bikeWrapper = mapper.readObject(json, BikeWrapper.class);
+        Assert.assertNotNull(bikeWrapper);
+        Assert.assertEquals(bikeWrapper.getBike(), new Bike("Canyon", BikeType.ROAD));
+    }
+
+    public static class BikeWrapper {
+        private final Bike bike;
+
+        @ConstructorProperties(value = "bike")
+        BikeWrapper(@JohnzonConverter(value = BikeConverter.class) Bike bike) {
+            this.bike = bike;
+        }
+
+        Bike getBike() {
+            return bike;
+        }
     }
 
 

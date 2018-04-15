@@ -32,4 +32,5 @@ public class CircularExceptionTest {
         assertTrue(serialized.contains("\"detailMessage\":\"circular\""));
         assertTrue(serialized.contains("\"stackTrace\":[{"));
     }
+
 }

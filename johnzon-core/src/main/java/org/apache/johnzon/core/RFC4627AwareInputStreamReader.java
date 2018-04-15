@@ -23,18 +23,21 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import javax.json.JsonException;
 
 final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
-    RFC4627AwareInputStreamReader(final InputStream in) {
-        this(new PushbackInputStream(in,4));
+    /**
+     * @param preferredCharset the Charset to use if no BOM is used. If {@code null} use UTF-8
+     */
+    RFC4627AwareInputStreamReader(final InputStream in, Charset preferredCharset) {
+        this(new PushbackInputStream(in,4), preferredCharset);
     }
-    
-    private RFC4627AwareInputStreamReader(final PushbackInputStream in) {
-        super(in, getCharset(in).newDecoder());
-       
+
+    private RFC4627AwareInputStreamReader(final PushbackInputStream in, Charset preferredCharset) {
+        super(in, getCharset(in, preferredCharset).newDecoder());
     }
 
     /**
@@ -44,10 +47,15 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
      */
     private static byte[] readAllBytes(final PushbackInputStream inputStream) throws IOException {
         final int first = inputStream.read();
-        final int second = inputStream.read();
-        if(first == -1|| second == -1) {
-            throw new JsonException("Invalid Json. Valid Json has at least 2 bytes");
+        if(first == -1) {
+            return new byte[0];
         }
+
+        final int second = inputStream.read();
+        if(second == -1) {
+            return new byte[] {(byte) first};
+        }
+
         final int third = inputStream.read();
         final int fourth = inputStream.read();
         if(third == -1) {
@@ -78,11 +86,19 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
         */
 
-    private static Charset getCharset(final PushbackInputStream inputStream) {
-        Charset charset = Charset.forName("UTF-8");
+    private static Charset getCharset(final PushbackInputStream inputStream, Charset preferredCharset) {
+        Charset charset = preferredCharset != null ? preferredCharset : Charset.forName("UTF-8");
         int bomLength=0;
         try {
             final byte[] utfBytes = readAllBytes(inputStream);
+            if (utfBytes.length == 0) {
+                return StandardCharsets.UTF_8; // empty file -> doesn't matter anyway
+            }
+            if (utfBytes.length == 1) {
+                inputStream.unread(utfBytes);
+                return StandardCharsets.UTF_8; // almost empty file -> doesn't matter neither
+            }
+
             int first = (utfBytes[0] & 0xFF);
             int second = (utfBytes[1] & 0xFF);
             if (first == 0x00) {

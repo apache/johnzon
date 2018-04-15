@@ -40,7 +40,7 @@
   <url>http://johnzon.apache.org</url>
 
   <properties>
-    <jsonspecversion>1.0-alpha-1</jsonspecversion>
+    <geronimo-jsonp.version>1.0-alpha-1</geronimo-jsonp.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
@@ -67,7 +67,7 @@
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-json_1.0_spec</artifactId>
-      <version>${jsonspecversion}</version>
+      <version>${geronimo-jsonp.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -92,6 +92,7 @@
           <showWarnings>true</showWarnings>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
@@ -123,6 +124,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-scm-publish-plugin</artifactId>
@@ -167,6 +169,7 @@
           </dependency>
         </dependencies>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
@@ -181,13 +184,13 @@
           </execution>
         </executions>
         <configuration>
-         <encoding>UTF-8</encoding>
-         <consoleOutput>true</consoleOutput>
-         <failOnViolation>true</failOnViolation>
-         <includeTestSourceDirectory>true</includeTestSourceDirectory>
-         <failsOnError>true</failsOnError>
-         <linkXRef>true</linkXRef>
-         <logViolationsToConsole>true</logViolationsToConsole>
+          <encoding>UTF-8</encoding>
+          <consoleOutput>true</consoleOutput>
+          <failOnViolation>true</failOnViolation>
+          <includeTestSourceDirectory>true</includeTestSourceDirectory>
+          <failsOnError>true</failsOnError>
+          <linkXRef>true</linkXRef>
+          <logViolationsToConsole>true</logViolationsToConsole>
           <checkstyleRules>
             <module name="Checker">
               <module name="SuppressionCommentFilter" />
@@ -260,6 +263,7 @@
           </checkstyleRules>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
@@ -273,6 +277,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -281,6 +286,7 @@
           <skipIfEmpty>true</skipIfEmpty>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -298,6 +304,7 @@
           </execution>
         </executions>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -306,58 +313,63 @@
           <argLine>${surefire.jvm.params}</argLine>
         </configuration>
       </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
         <configuration>
-            <tagNameFormat>v@{project.version}</tagNameFormat>
-            <pushChanges>false</pushChanges>
-            <localCheckout>true</localCheckout>
-            <autoVersionSubmodules>true</autoVersionSubmodules>
-          </configuration>
-       </plugin>
-       <plugin>
+          <tagNameFormat>v@{project.version}</tagNameFormat>
+          <pushChanges>false</pushChanges>
+          <localCheckout>true</localCheckout>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>cobertura-maven-plugin</artifactId>
         <version>2.6</version>
-            <configuration>
-                <instrumentation>
-                    <ignores>
-                       <ignore>org.apache.johnzon.maven.*</ignore>
-                    </ignores>
-                    <excludes>
-                        <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
-                        <exclude>org/apache/johnzon/**/*Test.class</exclude>
-                    </excludes>
-                </instrumentation>
-                <formats>
-                     <format>xml</format>
-                </formats>
-                <aggregate>true</aggregate>
-            </configuration>
-       </plugin>
-       <plugin>
-         <groupId>org.eluder.coveralls</groupId>
-         <artifactId>coveralls-maven-plugin</artifactId>
-         <version>3.0.1</version>
-         <configuration>
-         </configuration>
-       </plugin>
-       <plugin>
-         <groupId>org.apache.felix</groupId>
-         <artifactId>maven-bundle-plugin</artifactId>
-         <version>${felix.plugin.version}</version>
-         <inherited>true</inherited>
-         <extensions>true</extensions>
-         <configuration>
-             <instructions>
-                 <_removeheaders>Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool</_removeheaders>
-                 <_versionpolicy>${bnd.version.policy}</_versionpolicy>
-                 <Bundle-DocURL>http://johnzon.apache.org/</Bundle-DocURL>
-             </instructions>
-         </configuration>
-        </plugin>
-        <plugin>
+        <configuration>
+          <instrumentation>
+            <ignores>
+              <ignore>org.apache.johnzon.maven.*</ignore>
+            </ignores>
+            <excludes>
+              <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
+              <exclude>org/apache/johnzon/**/*Test.class</exclude>
+            </excludes>
+          </instrumentation>
+          <formats>
+            <format>xml</format>
+          </formats>
+          <aggregate>true</aggregate>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.eluder.coveralls</groupId>
+        <artifactId>coveralls-maven-plugin</artifactId>
+        <version>3.0.1</version>
+        <configuration>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>${felix.plugin.version}</version>
+        <inherited>true</inherited>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <_removeheaders>Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool</_removeheaders>
+            <_versionpolicy>${bnd.version.policy}</_versionpolicy>
+            <Bundle-DocURL>http://johnzon.apache.org/</Bundle-DocURL>
+          </instructions>
+        </configuration>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
         <version>1.4</version>
@@ -429,7 +441,7 @@
         <artifactId>maven-project-info-reports-plugin</artifactId>
         <version>2.9</version>
         <configuration>
-           <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
+          <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
         </configuration>
       </plugin>
       <plugin>
@@ -460,57 +472,57 @@
         <artifactId>maven-surefire-report-plugin</artifactId>
         <version>2.19.1</version>
         <configuration>
-            <argLine>${surefire.jvm.params}</argLine>
-            <aggregate>true</aggregate>
+          <argLine>${surefire.jvm.params}</argLine>
+          <aggregate>true</aggregate>
         </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>cobertura-maven-plugin</artifactId>
         <version>2.6</version>
-            <configuration>
-                <instrumentation>
-                    <ignores>
-                       <ignore>org.apache.johnzon.maven.*</ignore>
-                    </ignores>
-                    <excludes>
-                        <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
-                        <exclude>org/apache/johnzon/**/*Test.class</exclude>
-                    </excludes>
-                </instrumentation>
-                <formats>
-                     <format>html</format>
-                </formats>
-                <aggregate>true</aggregate>
-            </configuration>
-       </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>${checkstyle.version}</version>
-          <reportSets>
-            <reportSet>
-              <reports>
-                <report>checkstyle</report>
-              </reports>
-            </reportSet>
-          </reportSets>
-        </plugin>
-        <plugin>
-       <groupId>org.codehaus.mojo</groupId>
-       <artifactId>versions-maven-plugin</artifactId>
-       <version>2.1</version>
-       <reportSets>
-         <reportSet>
-           <reports>
-             <report>dependency-updates-report</report>
-             <report>plugin-updates-report</report>
-             <report>property-updates-report</report>
-           </reports>
-         </reportSet>
-       </reportSets>
-     </plugin>
-     <plugin>
+        <configuration>
+          <instrumentation>
+            <ignores>
+              <ignore>org.apache.johnzon.maven.*</ignore>
+            </ignores>
+            <excludes>
+              <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
+              <exclude>org/apache/johnzon/**/*Test.class</exclude>
+            </excludes>
+          </instrumentation>
+          <formats>
+            <format>html</format>
+          </formats>
+          <aggregate>true</aggregate>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>${checkstyle.version}</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>checkstyle</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>2.1</version>
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>dependency-updates-report</report>
+              <report>plugin-updates-report</report>
+              <report>property-updates-report</report>
+            </reports>
+          </reportSet>
+        </reportSets>
+      </plugin>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>taglist-maven-plugin</artifactId>
         <version>2.4</version>
@@ -625,12 +637,14 @@
       <id>rmannibucau</id>
       <name>Romain Manni-Bucau</name>
       <email>rmannibucau AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
       <id>jlmonteiro</id>
       <name>Jean-Louis Monteiro</name>
       <email>jlmonteiro AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
@@ -638,20 +652,22 @@
       <name>Mark Struberg</name>
       <email>struberg AT apache.org</email>
       <roles>
-        <role>Champion</role>
+        <role>PMC</role>
       </roles>
     </developer>
 
     <developer>
-      <id>gpetracek</id>
-      <name>Gerhard Petracek</name>
-      <email>gpetracek AT apache.org</email>
+      <id>rsandtner</id>
+      <name>Reinhard Sandtner</name>
+      <email>rsandtner AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
       <id>dblevins</id>
       <name>David Blevins</name>
       <email>dblevins AT apache.org</email>
+      <roles><role>PMC</role></roles>
     </developer>
 
     <developer>
@@ -667,15 +683,16 @@
       <properties>
         <picUrl>http://www.gravatar.com/avatar/af23e69dbed585db0ce6445d0adb4985.png</picUrl>
       </properties>
+      <roles><role>PMC</role></roles>
     </developer>
   </developers>
 
   <contributors>
     <contributor>
-       <name>Thiago Veronezi</name>
-  </contributor>
-     <contributor>
-       <name>Karl Grosse</name>
+      <name>Thiago Veronezi</name>
+    </contributor>
+    <contributor>
+      <name>Karl Grosse</name>
     </contributor>
 
   </contributors>
@@ -701,7 +718,6 @@
                 <jdk>[1.8,)</jdk>
             </activation>
             <modules>
-              <module>jsonb-api</module>
               <module>johnzon-jsonb</module>
             </modules>
             <properties>

@@ -69,7 +69,7 @@ public class TestBufferProvider implements BufferStrategy.BufferProvider<char[]>
     }
 
     public int newBufferCalls() {
-        return releaseCalls.get();
+        return newBufferCalls.get();
     }
 
     public void clear() {

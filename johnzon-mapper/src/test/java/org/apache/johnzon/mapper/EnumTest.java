@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 
 public class EnumTest {
@@ -89,6 +90,21 @@ public class EnumTest {
             .build());
     }
 
+    @Test
+    public void testEnumSet() {
+        EnumSetObject eso = new EnumSetObject();
+        eso.setEnumset(EnumSet.of(AdvancedEnum.VALUE_1, AdvancedEnum.VALUE_2));
+
+        String json = newTestMapperBuilder().build().writeObjectAsString(eso);
+
+        EnumSetObject eso2 = newTestMapperBuilder().build().readObject(json, EnumSetObject.class);
+        Assert.assertNotNull(eso2);
+        Assert.assertNotNull(eso2.getEnumset());
+        Assert.assertEquals(2, eso2.getEnumset().size());
+        Assert.assertTrue(eso2.getEnumset().contains(AdvancedEnum.VALUE_1));
+        Assert.assertTrue(eso2.getEnumset().contains(AdvancedEnum.VALUE_2));
+    }
+
     private void testAdvancedEnum(Mapper mapper) {
         AdvancedEnumObject object = new AdvancedEnumObject(AdvancedEnum.VALUE_1, Arrays.asList(AdvancedEnum.VALUE_2,
             AdvancedEnum.VALUE_1,
@@ -146,10 +162,22 @@ public class EnumTest {
         }
     }
 
+    public static class EnumSetObject {
+        private EnumSet<AdvancedEnum> enumset;
+
+        public EnumSet<AdvancedEnum> getEnumset() {
+            return enumset;
+        }
+
+        public void setEnumset(EnumSet<AdvancedEnum> enumset) {
+            this.enumset = enumset;
+        }
+    }
 
     public enum AdvancedEnum {
         VALUE_1("one", 1),
-        VALUE_2("two", 2);
+        VALUE_2("two", 2),
+        VALUE_3("three", 3);
 
         private String string;
         private int i;

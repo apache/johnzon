@@ -132,12 +132,12 @@ public class AdapterTest {
 
     public static class PolyBarAdapter implements JsonbAdapter<Bar, TypeInstance> {
         @Override
-        public Bar adaptToJson(final TypeInstance obj) throws Exception {
+        public Bar adaptFromJson(final TypeInstance obj) throws Exception {
             return obj.value;
         }
 
         @Override
-        public TypeInstance adaptFromJson(final Bar obj) throws Exception {
+        public TypeInstance adaptToJson(final Bar obj) throws Exception {
             final TypeInstance typeInstance = new TypeInstance();
             typeInstance.type = obj.getClass().getName();
             typeInstance.value = obj;
@@ -151,29 +151,29 @@ public class AdapterTest {
 
     public static class DummyAdapter implements JsonbAdapter<Dummy, String> {
         @Override
-        public Dummy adaptToJson(final String obj) throws Exception {
+        public Dummy adaptFromJson(final String obj) throws Exception {
             final Dummy bar = new Dummy();
             bar.value = Long.parseLong(obj);
             return bar;
         }
 
         @Override
-        public String adaptFromJson(final Dummy obj) throws Exception {
+        public String adaptToJson(final Dummy obj) throws Exception {
             return Long.toString(obj.value);
         }
     }
 
     public static class BarAdapter implements JsonbAdapter<Bar, String> {
         @Override
-        public Bar adaptToJson(final String obj) throws Exception {
-            final Bar bar = new Bar();
-            bar.value = Integer.parseInt(obj);
-            return bar;
+        public String adaptToJson(final Bar obj) throws Exception {
+            return Integer.toString(obj.value);
         }
 
         @Override
-        public String adaptFromJson(final Bar obj) throws Exception {
-            return Integer.toString(obj.value);
+        public Bar adaptFromJson(final String obj) throws Exception {
+            final Bar bar = new Bar();
+            bar.value = Integer.parseInt(obj);
+            return bar;
         }
     }
 }

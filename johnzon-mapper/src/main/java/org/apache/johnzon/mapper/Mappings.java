@@ -24,6 +24,7 @@ import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.reflection.Generics;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.lang.annotation.Annotation;
@@ -37,6 +38,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -52,6 +54,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 public class Mappings {
     public static class ClassMapping {
@@ -64,6 +67,9 @@ public class Mappings {
         public final ObjectConverter.Writer writer;
         public final Getter anyGetter;
         public final Method anySetter;
+
+        private Boolean deduplicateObjects;
+        private boolean deduplicationEvaluated = false;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
@@ -80,6 +86,18 @@ public class Mappings {
             this.anyGetter = anyGetter;
             this.anySetter = anySetter;
         }
+
+        public Boolean isDeduplicateObjects() {
+            if (!deduplicationEvaluated) {
+                JohnzonDeduplicateObjects jdo = ((Class<JohnzonDeduplicateObjects>) clazz).getAnnotation(JohnzonDeduplicateObjects.class);
+                if (jdo != null){
+                    deduplicateObjects = jdo.value();
+                }
+                deduplicationEvaluated = true;
+            }
+            return deduplicateObjects;
+        }
+
     }
 
     public static class CollectionMapping {
@@ -100,22 +118,26 @@ public class Mappings {
         public final Adapter converter;
         public final Adapter itemConverter;
         public final ObjectConverter.Writer objectConverter;
+        public final boolean dynamic;
         public final boolean primitive;
         public final boolean array;
         public final boolean map;
         public final boolean collection;
+        public final Collection<String> ignoreNested;
 
-        public Getter(final AccessMode.Reader reader,
+        public Getter(final AccessMode.Reader reader, final boolean dynamic,
                       final boolean primitive, final boolean array,
                       final boolean collection, final boolean map,
                       final MapperConverter converter,
                       final ObjectConverter.Writer providedObjectConverter,
-                      final int version) {
+                      final int version, final String[] ignoreNested) {
             this.reader = reader;
             this.version = version;
+            this.dynamic = dynamic;
             this.array = array;
             this.collection = collection;
             this.primitive = primitive;
+            this.ignoreNested = ignoreNested == null || ignoreNested.length == 0 ? null : new HashSet<String>(asList(ignoreNested));
 
             Adapter theConverter = null;
             Adapter theItemConverter = null;
@@ -238,10 +260,10 @@ public class Mappings {
         this.config = config;
     }
 
-    public CollectionMapping findCollectionMapping(final ParameterizedType genericType) {
+    public CollectionMapping findCollectionMapping(final ParameterizedType genericType, final Type enclosingType) {
         CollectionMapping collectionMapping = collections.get(genericType);
         if (collectionMapping == null) {
-            collectionMapping = createCollectionMapping(genericType);
+            collectionMapping = createCollectionMapping(genericType, enclosingType);
             if (collectionMapping == null) {
                 return null;
             }
@@ -253,7 +275,7 @@ public class Mappings {
         return collectionMapping;
     }
 
-    private <T> CollectionMapping createCollectionMapping(final ParameterizedType aType) {
+    private <T> CollectionMapping createCollectionMapping(final ParameterizedType aType, final Type root) {
         final Type[] fieldArgTypes = aType.getActualTypeArguments();
         final Type raw = aType.getRawType();
         if (fieldArgTypes.length == 1 && Class.class.isInstance(raw)) {
@@ -263,6 +285,8 @@ public class Mappings {
                 collectionType = List.class;
             } else if (SortedSet.class.isAssignableFrom(r)) {
                 collectionType = SortedSet.class;
+            } else if (EnumSet.class.isAssignableFrom(r)) {
+                collectionType = EnumSet.class;
             } else if (Set.class.isAssignableFrom(r)) {
                 collectionType = Set.class;
             } else if (Deque.class.isAssignableFrom(r)) {
@@ -275,7 +299,8 @@ public class Mappings {
                 return null;
             }
 
-            final CollectionMapping mapping = new CollectionMapping(isPrimitive(fieldArgTypes[0]), collectionType, fieldArgTypes[0]);
+            final CollectionMapping mapping = new CollectionMapping(isPrimitive(fieldArgTypes[0]), collectionType,
+                    Generics.resolve(fieldArgTypes[0], Class.class.isInstance(root) ? Class.class.cast(root) : null));
             collections.putIfAbsent(aType, mapping);
             return mapping;
         }
@@ -353,13 +378,13 @@ public class Mappings {
             final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
             if (virtualObjects != null) {
                 for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
-                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate);
+                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
                 }
             }
 
             final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
             if (virtualObject != null) {
-                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate);
+                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
             }
         }
 
@@ -368,7 +393,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addGetterIfNeeded(getters, key, reader.getValue(), copyDate);
+            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, clazz);
         }
 
         for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
@@ -376,7 +401,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addSetterIfNeeded(setters, key, writer.getValue(), copyDate);
+            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz);
         }
 
         final Method anyGetter = accessMode.findAnyGetter(clazz);
@@ -387,7 +412,7 @@ public class Mappings {
                 accessMode.findWriter(clazz),
                 anyGetter != null ? new Getter(
                         new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false, false, false, true, null, null, -1) : null,
+                        false,false, false, false, true, null, null, -1, null) : null,
                 accessMode.findAnySetter(clazz));
 
         accessMode.afterParsed(clazz);
@@ -416,7 +441,8 @@ public class Mappings {
     private void addSetterIfNeeded(final Map<String, Setter> setters,
                                    final String key,
                                    final AccessMode.Writer value,
-                                   final boolean copyDate) {
+                                   final boolean copyDate,
+                                   final Class<?> rootClass) {
         final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
         if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
             if (key.equals("metaClass")) {
@@ -425,7 +451,7 @@ public class Mappings {
             final Type param = value.getType();
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
-                    value, isPrimitive(param), returnType != null && returnType.isArray(), param,
+                    value, isPrimitive(param), returnType != null && returnType.isArray(), resolve(param, rootClass),
                     findConverter(copyDate, value), value.findObjectConverterReader(),
                     writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
@@ -435,19 +461,22 @@ public class Mappings {
     private void addGetterIfNeeded(final Map<String, Getter> getters,
                                    final String key,
                                    final AccessMode.Reader value,
-                                   final boolean copyDate) {
+                                   final boolean copyDate,
+                                   final Class<?> rootClass) {
         final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
+        final JohnzonIgnoreNested ignoreNested = value.getAnnotation(JohnzonIgnoreNested.class);
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
-            final Getter getter = new Getter(value, isPrimitive(returnType),
+            final Getter getter = new Getter(value, returnType == Object.class, isPrimitive(returnType),
                     returnType != null && returnType.isArray(),
                     (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Collection.class.isAssignableFrom(returnType)),
                     (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Map.class.isAssignableFrom(returnType)),
                     findConverter(copyDate, value), value.findObjectConverterWriter(),
-                    readIgnore != null ? readIgnore.minVersion() : -1);
+                    readIgnore != null ? readIgnore.minVersion() : -1,
+                    ignoreNested != null ? ignoreNested.properties() : null);
             getters.put(key, getter);
         }
     }
@@ -459,7 +488,8 @@ public class Mappings {
                                      final Map<String, Setter> setters,
                                      final Map<String, AccessMode.Reader> readers,
                                      final Map<String, AccessMode.Writer> writers,
-                                     final boolean copyDate) {
+                                     final boolean copyDate,
+                                     final Class<?> rootClazz) {
         final String[] path = o.path();
         if (path.length < 1) {
             throw new IllegalArgumentException("@JohnzonVirtualObject need a path");
@@ -479,13 +509,13 @@ public class Mappings {
             if (f.read()) {
                 final AccessMode.Reader reader = readers.get(name);
                 if (reader != null) {
-                    addGetterIfNeeded(objectGetters, name, reader, copyDate);
+                    addGetterIfNeeded(objectGetters, name, reader, copyDate, rootClazz);
                 }
             }
             if (f.write()) {
                 final AccessMode.Writer writer = writers.get(name);
                 if (writer != null) {
-                    addSetterIfNeeded(objectSetters, name, writer, copyDate);
+                    addSetterIfNeeded(objectSetters, name, writer, copyDate, rootClazz);
                 }
             }
         }
@@ -494,7 +524,8 @@ public class Mappings {
 
         final Getter getter = getters.get(key);
         final MapBuilderReader newReader = new MapBuilderReader(objectGetters, path, config.getVersion());
-        getters.put(key, new Getter(getter == null ? newReader : new CompositeReader(getter.reader, newReader), false, false, false, true, null, null, -1));
+        getters.put(key, new Getter(getter == null ? newReader :
+                new CompositeReader(getter.reader, newReader), false, false, false, false, true, null, null, -1, null));
 
         final Setter newSetter = setters.get(key);
         final MapUnwrapperWriter newWriter = new MapUnwrapperWriter(objectSetters, path);
@@ -531,13 +562,6 @@ public class Mappings {
 
             if (Date.class.isAssignableFrom(type) && copyDate) {
                 converter = new DateWithCopyConverter(Adapter.class.cast(adapters.get(new AdapterKey(Date.class, String.class))));
-            } else if (type.isEnum()) {
-                final AdapterKey key = new AdapterKey(String.class, type);
-                converter = adapters.get(key); // first ensure user didnt override it
-                if (converter == null) {
-                    converter = new ConverterAdapter(new EnumConverter(type));
-                    adapters.put(key, (Adapter<?, ?>) converter);
-                }
             } else {
                 for (final Map.Entry<AdapterKey, Adapter<?, ?>> adapterEntry : adapters.entrySet()) {
                     if (adapterEntry.getKey().getFrom() == adapterEntry.getKey().getTo()) { // String -> String
@@ -553,6 +577,14 @@ public class Mappings {
                         }
                         converter = adapterEntry.getValue();
                     }
+                }
+            }
+            if (converter == null && type.isEnum()) {
+                final AdapterKey key = new AdapterKey(String.class, type);
+                converter = adapters.get(key); // first ensure user didnt override it
+                if (converter == null) {
+                    converter = new ConverterAdapter(new EnumConverter(type));
+                    adapters.put(key, (Adapter<?, ?>) converter);
                 }
             }
         }

@@ -20,18 +20,17 @@ package org.apache.johnzon.core;
 
 import javax.json.JsonException;
 import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.NoSuchElementException;
 
 //This class represents either the Json tokenizer and the Json parser.
-public class JsonStreamParserImpl implements JsonChars, JsonParser{
+public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonChars {
+    private final boolean autoAdjust;
 
     //the main buffer where the stream will be buffered
     private final char[] buffer;
@@ -63,11 +62,12 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //we use a byte here, because comparing bytes
     //is more efficient than comparing enums
     //Additionally we handle internally two more event: COMMA_EVENT and KEY_SEPARATOR_EVENT
-    private byte previousEvent;
+    private byte previousEvent = -1;
 
     //this buffer is used to store current String or Number value in case that
     //within the value a buffer boundary is crossed or the string contains escaped characters
-    private final char[] fallBackCopyBuffer;
+    private char[] fallBackCopyBuffer;
+    private boolean releaseFallBackCopyBufferLength = true;
     private int fallBackCopyBufferLength;
 
     // location (line, column, offset)
@@ -93,6 +93,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     //Stack can cause out of memory issues when the nesting depth of a Json stream is too deep.
     private StructureElement currentStructureElement = null;
 
+    private int arrayDepth = 0;
+
     //minimal stack implementation
     private static final class StructureElement {
         private final StructureElement previous;
@@ -107,27 +109,31 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
     //detect charset according to RFC 4627
     public JsonStreamParserImpl(final InputStream inputStream, final int maxStringLength,
-            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+                                final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                final boolean autoAdjust) {
 
-        this(inputStream, null, null, maxStringLength, bufferProvider, valueBuffer);
+        this(inputStream, null, null, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
     }
 
     //use charset provided
     public JsonStreamParserImpl(final InputStream inputStream, final Charset encoding, final int maxStringLength,
-            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+                                final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                final boolean autoAdjust) {
 
-        this(inputStream, null, encoding, maxStringLength, bufferProvider, valueBuffer);
+        this(inputStream, null, encoding, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
     }
 
     public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+                                final BufferStrategy.BufferProvider<char[]> valueBuffer, final boolean autoAdjust) {
 
-        this(null, reader, null, maxStringLength, bufferProvider, valueBuffer);
+        this(null, reader, null, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
     }
 
     private JsonStreamParserImpl(final InputStream inputStream, final Reader reader, final Charset encoding, final int maxStringLength,
-            final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer) {
+                                 final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                 final boolean autoAdjust) {
 
+        this.autoAdjust = autoAdjust;
         this.maxValueLength = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.fallBackCopyBuffer = valueBuffer.newBuffer();
         this.buffer = bufferProvider.newBuffer();
@@ -140,11 +146,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
         if (reader != null) {
             this.in = reader;
-        } else if (encoding == null) {
-            this.in = new RFC4627AwareInputStreamReader(inputStream);
-
         } else {
-            this.in = new InputStreamReader(inputStream, encoding.newDecoder());
+            this.in = new RFC4627AwareInputStreamReader(inputStream, encoding);
         }
     }
 
@@ -155,29 +158,52 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
 
     //copy content between "start" and "end" from buffer to value buffer 
     private void copyCurrentValue() {
+        final int length = endOfValueInBuffer - startOfValueInBuffer;
+        if (length > 0) {
 
-        if ((endOfValueInBuffer - startOfValueInBuffer) > 0) {
-
-            if ((endOfValueInBuffer - startOfValueInBuffer) > maxValueLength) {
+            if (length > maxValueLength) {
                 throw tmc();
             }
 
-            System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength,
-                    (endOfValueInBuffer - startOfValueInBuffer));
-            fallBackCopyBufferLength += (endOfValueInBuffer - startOfValueInBuffer);
+            if (fallBackCopyBufferLength >= fallBackCopyBuffer.length - length) { // not good at runtime but handled
+                if (!autoAdjust) {
+                    throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
+                }
 
+                final char[] newArray = new char[fallBackCopyBuffer.length + Math.max(getBufferExtends(fallBackCopyBuffer.length), length)];
+                // TODO: log to adjust size once?
+                System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
+                System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
+                if (releaseFallBackCopyBufferLength) {
+                    bufferProvider.release(fallBackCopyBuffer);
+                    releaseFallBackCopyBufferLength = false;
+                }
+                fallBackCopyBuffer = newArray;
+            } else {
+                System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength, length);
+            }
+            fallBackCopyBufferLength += length;
         }
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
     }
 
+    /**
+     * @return the amount of bytes the current buffer should get extended with
+     */
+    protected int getBufferExtends(int currentLength) {
+        return currentLength / 4;
+    }
+
+
     @Override
     public final boolean hasNext() {
 
         if (currentStructureElement != null ||
-            (previousEvent != END_ARRAY && previousEvent != END_OBJECT &&
-                previousEvent != VALUE_STRING && previousEvent != VALUE_FALSE && previousEvent != VALUE_TRUE && previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) ||
-            previousEvent == 0) {
+                (previousEvent != END_ARRAY && previousEvent != END_OBJECT &&
+                        previousEvent != VALUE_STRING && previousEvent != VALUE_FALSE && previousEvent != VALUE_TRUE &&
+                        previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) ||
+                previousEvent == 0) {
 
             return true;
         }
@@ -317,6 +343,16 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     }
 
     @Override
+    public Event current() {
+        if (previousEvent < 0 && hasNext()) {
+            next();
+        }
+        return previousEvent >= 0 && previousEvent < Event.values().length
+                ? Event.values()[previousEvent]
+                : null;
+    }
+
+    @Override
     public final Event next() {
         //main entry, make decision how to handle the current character in the stream
 
@@ -324,7 +360,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
             throw new NoSuchElementException();
         }
 
-        if (previousEvent != 0 && currentStructureElement == null) {
+        if (previousEvent > 0 && currentStructureElement == null) {
             throw uexc("Unexpected end of structure");
         }
 
@@ -415,6 +451,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         }
     }
 
+
     protected Event defaultHandling(char c) {
         if (c == EOF) {
             throw uexc("End of file hit too early");
@@ -425,7 +462,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private Event handleStartObject() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent > 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -433,7 +470,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, false);
         } else {
-            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
+            if (!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
                 throw uexc("Expected :");
             }
             final StructureElement localStructureElement = new StructureElement(currentStructureElement, false);
@@ -465,7 +502,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private Event handleStartArray() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent > 0 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -473,12 +510,14 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         if (currentStructureElement == null) {
             currentStructureElement = new StructureElement(null, true);
         } else {
-            if(!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
+            if (!currentStructureElement.isArray && previousEvent != KEY_SEPARATOR_EVENT) {
                 throw uexc("Expected \"");
             }
             final StructureElement localStructureElement = new StructureElement(currentStructureElement, true);
             currentStructureElement = localStructureElement;
         }
+
+        arrayDepth++;
 
         return EVT_MAP[previousEvent = START_ARRAY];
     }
@@ -498,7 +537,14 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //pop from stack
         currentStructureElement = currentStructureElement.previous;
 
+        arrayDepth--;
+
         return EVT_MAP[previousEvent = END_ARRAY];
+    }
+
+    @Override
+    protected boolean isInArray() {
+        return arrayDepth > 0;
     }
 
     //read a string, gets called recursively
@@ -577,7 +623,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
                 bufferPos--; //unread one char
 
             }
-        }  while (true);
+        } while (true);
 
         // before this do while(true) it was:
         //
@@ -630,8 +676,8 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         //always the beginning quote of a key or value  
 
         //last event must one of the following-> : { [ ,
-        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
-                && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
+                && previousEvent != COMMA_EVENT)) {
             throw uexc("Expected : { [ ,");
         }
         //starting quote already consumed
@@ -775,7 +821,7 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     private Event handleLiteral() {
 
         //last event must one of the following-> : , [
-        if (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
+        if (previousEvent != -1 && previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_ARRAY && previousEvent != COMMA_EVENT) {
             throw uexc("Expected : , [");
         }
 
@@ -836,6 +882,11 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
         } else {
             return isCurrentNumberIntegral;
         }
+    }
+
+    @Override
+    public boolean isNotTooLong() {
+        return (endOfValueInBuffer - startOfValueInBuffer) < 19;
     }
 
     @Override
@@ -914,7 +965,9 @@ public class JsonStreamParserImpl implements JsonChars, JsonParser{
     @Override
     public void close() {
         bufferProvider.release(buffer);
-        valueProvider.release(fallBackCopyBuffer);
+        if (releaseFallBackCopyBufferLength) {
+            valueProvider.release(fallBackCopyBuffer);
+        }
 
         try {
             in.close();

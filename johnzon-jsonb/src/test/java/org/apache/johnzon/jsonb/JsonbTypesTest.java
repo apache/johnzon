@@ -36,11 +36,13 @@ import java.time.Period;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -49,6 +51,7 @@ import java.util.OptionalLong;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import org.apache.cxf.common.util.StringUtils;
 
 import static org.junit.Assert.assertEquals;
 
@@ -109,8 +112,44 @@ public class JsonbTypesTest {
         assertEquals(expected, jsonb.toJson(types));
     }
 
+    @Test
+    public void readAndWriteWithDateFormats() {
+        readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyyMMdd+HHmmssZ"), "yyyyMMdd+HHmmssZ");
+        readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd"), "yyyy-MM-dd");
+    }
+    
+    private void readAndWriteWithDateFormat(DateTimeFormatter dateTimeFormatter, String dateFormat) {
+        final LocalDate localDate = LocalDate.of(2015, 1, 1);
+        final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
+        final ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
+        final String expected = "{" +
+            "\"calendar\":\"" + dateTimeFormatter.format(zonedDateTime) + "\"," +
+            "\"date\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(localDateTime.toInstant(ZoneOffset.UTC), ZoneId.of("UTC"))) + "\"," +
+            "\"gregorianCalendar\":\"" + dateTimeFormatter.format(zonedDateTime) + "\"," +
+            "\"instant\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())), ZoneId.of("UTC"))) + "\"," +
+            "\"localDate\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())), ZoneId.of("UTC"))) + "\"," +
+            "\"localDateTime\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(localDateTime.toInstant(ZoneOffset.UTC), ZoneId.of("UTC"))) + "\"," +
+            "\"offsetDateTime\":\"" + dateTimeFormatter.format(ZonedDateTime.ofInstant(OffsetDateTime.of(localDateTime, ZoneOffset.UTC).toInstant(), ZoneId.of("UTC"))) + "\"" +
+            "}";
+
+        final Jsonb jsonb = newJsonb(dateFormat);
+        
+        final DateTypes types = jsonb.fromJson(new StringReader(expected), DateTypes.class);
+        assertEquals(localDate, types.localDate);
+        assertEquals(expected, jsonb.toJson(types));
+    }
+    
     private static Jsonb newJsonb() {
-        return JsonbProvider.provider().create().withConfig(new JsonbConfig().setProperty("johnzon.attributeOrder", new Comparator<String>() {
+        return newJsonb(null);
+    }
+    
+    private static Jsonb newJsonb(String dateFormat) {
+        JsonbConfig jsonbConfig = new JsonbConfig();
+        if (!StringUtils.isEmpty(dateFormat)){
+            jsonbConfig.withDateFormat(dateFormat, Locale.getDefault());
+        }
+        return JsonbProvider.provider().create().withConfig(jsonbConfig.setProperty("johnzon.attributeOrder", new Comparator<String>() {
             @Override
             public int compare(final String o1, final String o2) {
                 return o1.compareTo(o2);
@@ -337,6 +376,99 @@ public class JsonbTypesTest {
                 url, uri, optionalString, optionalInt, optionalLong, optionalDouble, date,
                 calendar, gregorianCalendar, timeZone, zoneId, zoneOffset, simpleTimeZone, instant, duration,
                 period, localDateTime, localDate, offsetDateTime, offsetTime);
+        }
+    }
+
+    public static class DateTypes {
+        private Date date;
+        private Calendar calendar;
+        private GregorianCalendar gregorianCalendar;
+        private Instant instant;
+        private LocalDateTime localDateTime;
+        private LocalDate localDate;
+        private OffsetDateTime offsetDateTime;
+
+
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+
+        public Calendar getCalendar() {
+            return calendar;
+        }
+
+        public void setCalendar(Calendar calendar) {
+            this.calendar = calendar;
+        }
+
+        public GregorianCalendar getGregorianCalendar() {
+            return gregorianCalendar;
+        }
+
+        public void setGregorianCalendar(GregorianCalendar gregorianCalendar) {
+            this.gregorianCalendar = gregorianCalendar;
+        }
+
+        public Instant getInstant() {
+            return instant;
+        }
+
+        public void setInstant(Instant instant) {
+            this.instant = instant;
+        }
+
+        public LocalDateTime getLocalDateTime() {
+            return localDateTime;
+        }
+
+        public void setLocalDateTime(LocalDateTime localDateTime) {
+            this.localDateTime = localDateTime;
+        }
+
+        public LocalDate getLocalDate() {
+            return localDate;
+        }
+
+        public void setLocalDate(LocalDate localDate) {
+            this.localDate = localDate;
+        }
+
+        public OffsetDateTime getOffsetDateTime() {
+            return offsetDateTime;
+        }
+
+        public void setOffsetDateTime(OffsetDateTime offsetDateTime) {
+            this.offsetDateTime = offsetDateTime;
+        }
+
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Types types = Types.class.cast(o);
+            return 
+                Objects.equals(date, types.date) &&
+                Objects.equals(calendar, types.calendar) &&
+                Objects.equals(gregorianCalendar, types.gregorianCalendar) &&
+                Objects.equals(instant, types.instant) &&
+                Objects.equals(localDateTime, types.localDateTime) &&
+                Objects.equals(localDate, types.localDate) &&
+                Objects.equals(offsetDateTime, types.offsetDateTime);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(
+                date, calendar, gregorianCalendar, instant, localDateTime, localDate, offsetDateTime);
         }
     }
 }

@@ -28,10 +28,10 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
     private transient Integer hashCode = null;
 
     JsonNumberImpl(final BigDecimal decimal) {
-        if(decimal == null) {
+        if (decimal == null) {
             throw new NullPointerException("decimal must not be null");
         }
-        
+
         this.value = decimal;
     }
 
@@ -47,6 +47,7 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public int intValueExact() {
+        checkFractionalPart();
         return value.intValueExact();
     }
 
@@ -57,6 +58,7 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public long longValueExact() {
+        checkFractionalPart();
         return value.longValueExact();
     }
 
@@ -92,10 +94,10 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public int hashCode() {
-        Integer h=hashCode;
+        Integer h = hashCode;
         if (h == null) {
             h = value.hashCode();
-            hashCode=h;
+            hashCode = h;
         }
         return h;
     }
@@ -103,5 +105,11 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
     @Override
     public boolean equals(final Object obj) {
         return JsonNumber.class.isInstance(obj) && JsonNumber.class.cast(obj).bigDecimalValue().equals(value);
+    }
+
+    private void checkFractionalPart() {
+        if (value.remainder(BigDecimal.ONE).doubleValue() != 0) {
+            throw new ArithmeticException("Not an int/long, use other value readers");
+        }
     }
 }

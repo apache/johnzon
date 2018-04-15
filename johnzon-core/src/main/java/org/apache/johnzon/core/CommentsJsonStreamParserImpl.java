@@ -26,23 +26,26 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
     public CommentsJsonStreamParserImpl(final InputStream inputStream,
                                         final int maxStringLength,
                                         final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                                        final BufferStrategy.BufferProvider<char[]> valueBuffer) {
-        super(inputStream, maxStringLength, bufferProvider, valueBuffer);
+                                        final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                        final boolean autoAdjust) {
+        super(inputStream, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
     }
 
     public CommentsJsonStreamParserImpl(final InputStream inputStream,
                                         final Charset encoding,
                                         final int maxStringLength,
                                         final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                                        final BufferStrategy.BufferProvider<char[]> valueBuffer) {
-        super(inputStream, encoding, maxStringLength, bufferProvider, valueBuffer);
+                                        final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                        final boolean autoAdjust) {
+        super(inputStream, encoding, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
     }
 
     public CommentsJsonStreamParserImpl(final Reader reader,
                                         final int maxStringLength,
                                         final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                                        final BufferStrategy.BufferProvider<char[]> valueBuffer) {
-        super(reader, maxStringLength, bufferProvider, valueBuffer);
+                                        final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                        final boolean autoAdjust) {
+        super(reader, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
     }
 
     @Override

@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 
 import javax.json.JsonException;
@@ -63,7 +64,7 @@ public class Mapper implements Closeable {
         this.mappings = new Mappings(config);
         this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
-        this.charset = config.getEncoding() == null ? null : config.getEncoding();
+        this.charset = config.getEncoding();
     }
 
 
@@ -84,8 +85,14 @@ public class Mapper implements Closeable {
     }
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
-        JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator);
+        final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
+
+        try {
+            boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
+            writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
+        } finally {
+            generator.close();
+        }
     }
 
     public <T> void writeIterable(final Iterable<T> object, final OutputStream stream) {
@@ -93,8 +100,13 @@ public class Mapper implements Closeable {
     }
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
-        JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator);
+        final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
+        try {
+            boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
+            writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
+        } finally {
+            generator.close();
+        }
     }
 
     public void writeObject(final Object object, final Writer stream) {
@@ -125,24 +137,12 @@ public class Mapper implements Closeable {
         }
 
         final JsonGenerator generator = generatorFactory.createGenerator(stream(stream));
-        writeObject(object, generator);
-    }
-
-    public void writeObject(final Object object, final OutputStream stream) {
-        final JsonGenerator generator = generatorFactory.createGenerator(stream(stream), config.getEncoding());
-        writeObject(object, generator);
-    }
-
-    private void writeObject(final Object object, final JsonGenerator generator) {
-        MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
-
         RuntimeException originalException = null;
         try {
-            mappingGenerator.doWriteObject(object, generator, true);
+            writeObject(object, generator);
         } catch (RuntimeException e) {
             originalException = e;
         } finally {
-
             try {
                 generator.close();
             } catch (JsonException e) {
@@ -154,7 +154,38 @@ public class Mapper implements Closeable {
                 }
             }
         }
+    }
 
+
+    private void writeObject(final Object object, final JsonGenerator generator) {
+            writeObject(object, generator, null,
+                    isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+    }
+
+    private boolean isDeduplicateObjects(Class<?> rootType) {
+        Boolean dedup = config.isDeduplicateObjects();
+        if (dedup == null) {
+            Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
+            if (classMapping != null) {
+                dedup = classMapping.isDeduplicateObjects();
+            }
+        }
+
+        return dedup != null ? dedup : false;
+    }
+
+    public void writeObject(final Object object, final OutputStream stream) {
+        Charset charset = config.getEncoding();
+        if (charset == null) {
+            writeObject(object, new OutputStreamWriter(stream));
+        } else {
+            writeObject(object, new OutputStreamWriter(stream));
+        }
+    }
+
+    private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
+        MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings, jsonPointer != null);
+        mappingGenerator.doWriteObject(object, generator, true, ignored, jsonPointer);
     }
 
     public String writeArrayAsString(final Collection<?> instance) {
@@ -181,15 +212,33 @@ public class Mapper implements Closeable {
     }
 
     public <T> T readObject(final Reader stream, final Type clazz) {
-        return mapObject(clazz, readerFactory.createReader(stream(stream)));
+        final JsonReader reader = readerFactory.createReader(stream(stream));
+        try {
+            return mapObject(clazz, reader);
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> T readObject(final InputStream stream, final Type clazz) {
-        return mapObject(clazz, charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset));
+        final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)) : readerFactory.createReader(
+                stream(stream), charset);
+
+        try {
+            return mapObject(clazz, reader);
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> Collection<T> readCollection(final InputStream stream, final ParameterizedType genericType) {
-        return mapObject(genericType, charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset));
+        final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset);
+
+        try {
+            return mapObject(genericType, reader);
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> T readJohnzonCollection(final InputStream stream, final JohnzonCollectionType<T> genericType) {
@@ -201,27 +250,51 @@ public class Mapper implements Closeable {
     }
 
     public <T> Collection<T> readCollection(final Reader stream, final ParameterizedType genericType) {
-        return mapObject(genericType, readerFactory.createReader(stream(stream)));
+        final JsonReader reader = readerFactory.createReader(stream(stream));
+
+        try {
+            return mapObject(genericType, reader);
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> T[] readArray(final Reader stream, final Class<T> clazz) {
         final JsonReader reader = readerFactory.createReader(stream(stream));
-        return (T[]) mapArray(clazz, reader);
+
+        try {
+            return (T[]) mapArray(clazz, reader);
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> T readTypedArray(final InputStream stream, final Class<?> elementType, final Class<T> arrayType) {
         final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset);
-        return arrayType.cast(mapArray(elementType, reader));
+        try {
+            return arrayType.cast(mapArray(elementType, reader));
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> T readTypedArray(final Reader stream, final Class<?> elementType, final Class<T> arrayType) {
         final JsonReader reader = readerFactory.createReader(stream(stream));
-        return arrayType.cast(mapArray(elementType, reader));
+
+        try {
+            return arrayType.cast(mapArray(elementType, reader));
+        } finally {
+            reader.close();
+        }
     }
 
     public <T> T[] readArray(final InputStream stream, final Class<T> clazz) {
         final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset);
-        return (T[]) mapArray(clazz, reader);
+        try {
+            return (T[]) mapArray(clazz, reader);
+        } finally {
+            reader.close();
+        }
     }
 
     private Object mapArray(final Class<?> clazz, final JsonReader reader) {
@@ -230,7 +303,11 @@ public class Mapper implements Closeable {
 
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
-        return new MappingParserImpl(config, mappings, reader).readObject(clazz);
+        boolean dedup = false;
+        if (clazz instanceof Class) {
+            dedup = isDeduplicateObjects((Class) clazz);
+        }
+        return new MappingParserImpl(config, mappings, reader, dedup).readObject(clazz);
     }
 
 
@@ -239,10 +316,6 @@ public class Mapper implements Closeable {
     }
 
     private Writer stream(final Writer stream) {
-        return !config.isClose() ? noClose(stream) : stream;
-    }
-
-    private OutputStream stream(final OutputStream stream) {
         return !config.isClose() ? noClose(stream) : stream;
     }
 

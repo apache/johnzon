@@ -53,8 +53,8 @@ class SimpleStack<T> {
 
         }
 
-        Element<T> previous;
-        T payload;
+        private Element<T> previous;
+        private T payload;
 
     }
 

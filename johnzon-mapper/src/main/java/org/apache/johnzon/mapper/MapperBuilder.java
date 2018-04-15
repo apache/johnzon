@@ -107,6 +107,7 @@ public class MapperBuilder {
     private int maxSize = -1;
     private int bufferSize = -1;
     private String bufferStrategy;
+    private boolean autoAdjustStringBuffers;
     private Comparator<String> attributeOrder = null;
     private boolean supportConstructors;
     private boolean useGetterForCollections;
@@ -129,6 +130,10 @@ public class MapperBuilder {
     private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
     private boolean primitiveConverters;
+    private boolean failOnUnknownProperties;
+    private SerializeValueFilter serializeValueFilter;
+    private boolean useBigDecimalForFloats;
+    private Boolean deduplicateObjects = null;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -154,6 +159,9 @@ public class MapperBuilder {
             }
             if (bufferSize > 0) {
                 config.put(JsonParserFactoryImpl.BUFFER_LENGTH, bufferSize);
+            }
+            if (autoAdjustStringBuffers) {
+                config.put("org.apache.johnzon.auto-adjust-buffer", true);
             }
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
@@ -215,8 +223,14 @@ public class MapperBuilder {
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
-                        accessMode, encoding, attributeOrder, enforceQuoteString),
+                        accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
+                        serializeValueFilter, useBigDecimalForFloats, deduplicateObjects),
                 closeables);
+    }
+
+    public MapperBuilder setFailOnUnknownProperties(final boolean failOnUnknownProperties) {
+        this.failOnUnknownProperties = failOnUnknownProperties;
+        return this;
     }
 
     public MapperBuilder addCloseable(final Closeable closeable) {
@@ -387,6 +401,58 @@ public class MapperBuilder {
 
     public MapperBuilder setPrimitiveConverters(final boolean val) {
         this.primitiveConverters = val;
+        return this;
+    }
+
+    public MapperBuilder setSerializeValueFilter(final SerializeValueFilter serializeValueFilter) {
+        this.serializeValueFilter = serializeValueFilter;
+        return this;
+    }
+
+    public MapperBuilder setUseBigDecimalForFloats(final boolean useBigDecimalForFloats) {
+        this.useBigDecimalForFloats = useBigDecimalForFloats;
+        return this;
+    }
+
+    public MapperBuilder setAutoAdjustStringBuffers(final boolean autoAdjustStringBuffers) {
+        this.autoAdjustStringBuffers = autoAdjustStringBuffers;
+        return this;
+    }
+
+    /**
+     * If any non-primitive Java Object gets serialised more than just one time,
+     * then we write a JsonPointer to the first occurrence instead.
+     *
+     * This will effectively also avoid endless loops in data with cycles!
+     *
+     * An example: Assume you have a Person with a name 'Sarah' and her daughter,
+     * a Person with the name 'Clemens' both stored in a JSON array.
+     * Given the Java Code:
+     * <pre>
+     * Person sarah = new Person("Sarah");
+     * Person clemens = new Person("Clemens");
+     * clemens.setMother(sarah);
+     * Person[] family = new Person[]{sarah, clemens};
+     * </pre>
+     * Transformed to JSON this will now look like the following:
+     * <pre>
+     * [{"name":"Sarah"},{"name":"Clemens","mother":"/0"}]
+     * </pre>
+     * That means instead of serialising 'mother' as full object we will
+     * now only store a JsonPointer to the Person 'Sarah'.
+     *
+     * When deserialised back Johnzon will automatically de-reference the JsonPointer
+     * back to the correct instance.
+     *
+     * Possible values:
+     * <ul>
+     *     <li>{@code true}: deduplicate objects</li>
+     *     <li>{@code false}: do <b>not</b> deduplicate objects</li>
+     *     <li>{@code null}: dedupliate based on the {@link JohnzonDeduplicateObjects} annotation. This is the default</li>
+     * </ul>
+     */
+    public MapperBuilder setDeduplicateObjects(Boolean deduplicateObjects) {
+        this.deduplicateObjects = deduplicateObjects;
         return this;
     }
 }

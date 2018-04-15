@@ -60,8 +60,10 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
         return new JsonArrayBuilderImpl();
     }
 
+
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
     }
+
 }

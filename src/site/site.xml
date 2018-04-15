@@ -72,7 +72,7 @@
 
     <menu name="User Guide">
       <item name="Home" href="/index.html"/>
-      <item name="Download" href="http://www.apache.org/dyn/closer.cgi/johnzon"/>
+      <item name="Download" href="./download.html"/>
       <item name="Javadoc" href="/apidocs/index.html"/>
       <item name="Source Code" href="/source-repository.html"/>
       <item name="Changelog" href="/changelog.html"/>
