@@ -142,7 +142,7 @@ public class Mapper implements Closeable {
         if (dedup == null) {
             Mappings.TypeMapping classMapping = mappings.findOrCreateTypeMapping(rootType);
             if (classMapping != null && MappingType.CLASSMAPPING.equals(classMapping.getType())) {
-                dedup = ClassMapping.class.cast(classMapping).isDeduplicateObjects();
+                dedup = classMapping.as(ClassMapping.class).isDeduplicateObjects();
             }
         }
 

@@ -92,6 +92,10 @@ public class Mappings {
             this.anySetter = anySetter;
         }
         
+        public <T extends TypeMapping> T as(Class<T> type){
+            return type.cast(this);
+        } 
+        
         public abstract MappingType getType();
     }
     

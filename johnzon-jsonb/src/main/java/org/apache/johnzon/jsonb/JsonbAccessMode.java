@@ -96,6 +96,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import java.util.Objects;
 import static java.util.Optional.ofNullable;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
@@ -586,6 +587,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final Type[] genericInterfaces = aClass.getGenericInterfaces();
         return Stream.of(genericInterfaces).filter(ParameterizedType.class::isInstance)
                 .filter(i -> ParameterizedType.class.cast(i).getRawType() instanceof Class)
+                .filter(i -> Objects.nonNull(ParameterizedType.class.cast(i).getActualTypeArguments()) && ParameterizedType.class.cast(i).getActualTypeArguments().length>0)
                 .filter(i -> ParameterizedType.class.cast(i).getActualTypeArguments()[0] instanceof Class)
                 .filter(i -> Adapter.class.isAssignableFrom(Class.class.cast(ParameterizedType.class.cast(i).getRawType())))
                 .findFirst()
