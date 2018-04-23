@@ -45,6 +45,6 @@ public class JohnzonDeserializationContext implements DeserializationContext {
     }
 
     private JsonValue read(final JsonParser parser) { // TODO: use jsonp 1.1 and not johnzon internals
-        return new JsonReaderImpl(parser).readValue();
+        return new JsonReaderImpl(parser, true).readValue();
     }
 }

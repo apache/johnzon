@@ -63,6 +63,7 @@
     <module>johnzon-maven-plugin</module>
     <module>johnzon-websocket</module>
     <module>johnzon-jsonb</module>
+    <module>johnzon-json-extras</module>
   </modules>
 
   <dependencies>
