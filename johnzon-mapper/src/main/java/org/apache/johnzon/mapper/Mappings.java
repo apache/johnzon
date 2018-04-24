@@ -65,9 +65,9 @@ public class Mappings {
         public final AccessMode.Factory factory;
         public final Map<String, Getter> getters;
         public final Map<String, Setter> setters;
+        public final Adapter adapter;
         public final ObjectConverter.Reader reader;
         public final ObjectConverter.Writer writer;
-        public final Adapter adapter;
         public final Getter anyGetter;
         public final Method anySetter;
         
@@ -90,9 +90,9 @@ public class Mappings {
         public <T extends TypeMapping> T as(Class<T> type){
             return type.cast(this);
         }
-        
+
     }
-    
+
     public static class CollectionMapping {
         public final Class<?> raw;
         public final Type arg;
@@ -304,7 +304,7 @@ public class Mappings {
         return null;
     }
 
-    // has JSon API a method for this annotatedType
+    // has JSon API a method for this type
     public static boolean isPrimitive(final Type type) {
         if (type == String.class) {
             return true;
