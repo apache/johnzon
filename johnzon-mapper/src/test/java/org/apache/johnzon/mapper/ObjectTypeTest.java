@@ -53,7 +53,7 @@ public class ObjectTypeTest {
     }
 
 
-//    @Test
+    @Test
     public void testObjectConverterMapper() {
         Mapper mapper = new MapperBuilder()
                 .setAccessModeName(accessMode)
