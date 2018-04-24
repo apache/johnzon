@@ -60,11 +60,7 @@ import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 public class Mappings {
     
-    public enum MappingType {
-        CLASSMAPPING;
-    }
-    
-    public abstract static class TypeMapping {
+    public static class TypeMapping {
         public final Type type;
         public final AccessMode.Factory factory;
         public final Map<String, Getter> getters;
@@ -93,40 +89,8 @@ public class Mappings {
         
         public <T extends TypeMapping> T as(Class<T> type){
             return type.cast(this);
-        } 
+        }
         
-        public abstract MappingType getType();
-    }
-    
-    public static class ClassMapping extends TypeMapping {
-
-        private Boolean deduplicateObjects;
-        private boolean deduplicationEvaluated = false;
-
-        protected ClassMapping(final Type type, final AccessMode.Factory factory,
-                               final Map<String, Getter> getters, final Map<String, Setter> setters,
-                               final Adapter<?, ?> adapter,
-                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
-                               final Getter anyGetter, final Method anySetter) {
-            super(type, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter);
-        }
-
-        public Boolean isDeduplicateObjects() {
-            if (!deduplicationEvaluated) {
-                JohnzonDeduplicateObjects jdo = ((Class<JohnzonDeduplicateObjects>) type).getAnnotation(JohnzonDeduplicateObjects.class);
-                if (jdo != null){
-                    deduplicateObjects = jdo.value();
-                }
-                deduplicationEvaluated = true;
-            }
-            return deduplicateObjects;
-        }
-
-        @Override
-        public MappingType getType() {
-            return MappingType.CLASSMAPPING;
-        }
-
     }
     
     public static class CollectionMapping {
@@ -457,7 +421,7 @@ public class Mappings {
         reader = applyObjectConverter && Objects.nonNull(reader)  ? reader : accessMode.findReader(clazz);
         writer = applyObjectConverter && Objects.nonNull(writer)  ? writer : accessMode.findWriter(clazz);
         
-        final TypeMapping mapping = new ClassMapping(
+        final TypeMapping mapping = new TypeMapping(
                 type, accessMode.findFactory(clazz), getters, setters,
                 adapter,
                 reader,

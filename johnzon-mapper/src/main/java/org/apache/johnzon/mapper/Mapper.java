@@ -44,8 +44,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static java.util.Arrays.asList;
-import org.apache.johnzon.mapper.Mappings.ClassMapping;
-import org.apache.johnzon.mapper.Mappings.MappingType;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
 public class Mapper implements Closeable {
@@ -57,6 +58,7 @@ public class Mapper implements Closeable {
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
     protected final Charset charset;
+    protected final Map<Type, Boolean> deduplicateMap = new ConcurrentHashMap<>();
 
     Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory, MapperConfig config,
                   final Collection<Closeable> closeables) {
@@ -140,10 +142,15 @@ public class Mapper implements Closeable {
     private boolean isDeduplicateObjects(Class<?> rootType) {
         Boolean dedup = config.isDeduplicateObjects();
         if (dedup == null) {
-            Mappings.TypeMapping classMapping = mappings.findOrCreateTypeMapping(rootType, mappings.getApplyObjectConverter(rootType));
-            if (classMapping != null && MappingType.CLASSMAPPING.equals(classMapping.getType())) {
-                dedup = classMapping.as(ClassMapping.class).isDeduplicateObjects();
+            if (!deduplicateMap.containsKey(rootType)){
+                JohnzonDeduplicateObjects jdo = rootType.getAnnotation(JohnzonDeduplicateObjects.class);
+                if (Objects.nonNull(jdo)){
+                    deduplicateMap.put(rootType, jdo.value());
+                } else {
+                    deduplicateMap.put(rootType, Boolean.FALSE);
+                }
             }
+            dedup = deduplicateMap.get(rootType);
         }
 
         return dedup != null ? dedup : false;
