@@ -35,7 +35,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -55,14 +54,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
-import java.util.Optional;
+import java.util.Objects;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 public class Mappings {
     
     public enum MappingType {
-        TYPEVARIABLEMAPPING, PARAMETERIZEDTYPEMAPPING, CLASSMAPPING;
+        CLASSMAPPING;
     }
     
     public abstract static class TypeMapping {
@@ -126,40 +125,6 @@ public class Mappings {
         @Override
         public MappingType getType() {
             return MappingType.CLASSMAPPING;
-        }
-
-    }
-
-    public static class ParameterizedTypeMapping extends TypeMapping {
-
-        protected ParameterizedTypeMapping(final ParameterizedType type, final AccessMode.Factory factory,
-                               final Map<String, Getter> getters, final Map<String, Setter> setters,
-                               final Adapter<?, ?> adapter,
-                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
-                               final Getter anyGetter, final Method anySetter) {
-            super(type, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter);
-        }
-
-        @Override
-        public MappingType getType() {
-            return MappingType.PARAMETERIZEDTYPEMAPPING;
-        }
-
-    }
-
-    public static class TypeVariableMapping extends TypeMapping {
-
-        protected TypeVariableMapping(final TypeVariable type, final AccessMode.Factory factory,
-                               final Map<String, Getter> getters, final Map<String, Setter> setters,
-                               final Adapter<?, ?> adapter,
-                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
-                               final Getter anyGetter, final Method anySetter) {
-            super(type, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter);
-        }
-
-        @Override
-        public MappingType getType() {
-            return MappingType.TYPEVARIABLEMAPPING;
         }
 
     }
@@ -401,16 +366,23 @@ public class Mappings {
     }
 
     public TypeMapping findOrCreateTypeMapping(final Type clazz) {
+        return findOrCreateTypeMapping(clazz, false);
+    }
+
+    public TypeMapping findOrCreateTypeMapping(final Type clazz, final boolean applyObjectConverter) {
         TypeMapping classMapping = classes.get(clazz);
         if (classMapping == null) {
             if (Class.class.isInstance(clazz)) {
                 if (!Map.class.isAssignableFrom(Class.class.cast(clazz))){
-                    classMapping = createTypeMapping(Class.class.cast(clazz));
+                    classMapping = createTypeMapping(Class.class.cast(clazz), applyObjectConverter);
                 }
             } else if (ParameterizedType.class.isInstance(clazz)){
-                classMapping = createTypeMapping(ParameterizedType.class.cast(clazz));
+                classMapping = findOrCreateTypeMapping(ParameterizedType.class.cast(clazz).getRawType(), applyObjectConverter);
             } else if (TypeVariable.class.isInstance(clazz)){
-                classMapping = createTypeMapping(TypeVariable.class.cast(clazz));
+                TypeVariable cast = TypeVariable.class.cast(clazz);
+                if (Objects.nonNull(cast.getAnnotatedBounds()) && cast.getAnnotatedBounds().length > 0){
+                    classMapping = findOrCreateTypeMapping(TypeVariable.class.cast(clazz).getAnnotatedBounds()[0].getType(), applyObjectConverter);
+                }
             }
             
             if (classMapping != null) {
@@ -420,7 +392,7 @@ public class Mappings {
         return classMapping;
     }
 
-    protected TypeMapping createTypeMapping(final Class<?> type) {
+    protected TypeMapping createTypeMapping(final Class<?> type, final boolean applyObjectConverter) {
         boolean copyDate = false;
         for (final Class<?> itf : type.getInterfaces()) {
             if ("org.apache.openjpa.enhance.PersistenceCapable".equals(itf.getName())) {
@@ -473,167 +445,26 @@ public class Mappings {
         }
 
         final Method anyGetter = accessMode.findAnyGetter(clazz);
-        final ClassMapping mapping = new ClassMapping(
-                clazz, accessMode.findFactory(clazz), getters, setters,
-                accessMode.findAdapter(clazz),
-                accessMode.findReader(clazz),
-                accessMode.findWriter(clazz),
-                anyGetter != null ? new Getter(
-                        new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false,false, false, false, true, null, null, -1, null) : null,
-                accessMode.findAnySetter(clazz));
-
-        accessMode.afterParsed(clazz);
-
-        return mapping;
-    }
-
-    protected TypeMapping createTypeMapping(final ParameterizedType type) {
-        boolean copyDate = false;
-
-        Type rawType = type.getRawType();
         
-        if (!(rawType instanceof Class) || Map.class.isAssignableFrom(Class.class.cast(rawType))){
-            return null;
-        }
+        Adapter<?, ?> adapter = applyObjectConverter ? config.findAdapter(clazz) : null;
+        ObjectConverter.Reader<?> reader = applyObjectConverter ? config.findObjectConverterReader(clazz) : null;
+        ObjectConverter.Writer<?> writer = applyObjectConverter ? config.findObjectConverterWriter(clazz) : null;
+        adapter = applyObjectConverter && Objects.nonNull(adapter) ? adapter : accessMode.findAdapter(clazz);
+        reader = applyObjectConverter && Objects.nonNull(reader)  ? reader : accessMode.findReader(clazz);
+        writer = applyObjectConverter && Objects.nonNull(writer)  ? writer : accessMode.findWriter(clazz);
         
-        final Class<?> clazz = Class.class.cast(rawType);
-
-        AccessMode accessMode = config.getAccessMode();
-
-        Comparator<String> fieldComparator = accessMode.fieldComparator(clazz);
-        fieldComparator = fieldComparator == null ? config.getAttributeOrder() : fieldComparator;
-
-        final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<>(fieldComparator);
-        final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<>(fieldComparator);
-
-        final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
-        final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
-
-        final Collection<String> virtualFields = new HashSet<>();
-        {
-            final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
-            if (virtualObjects != null) {
-                for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
-                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
-                }
-            }
-
-            final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
-            if (virtualObject != null) {
-                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
-            }
-        }
-
-        for (final Map.Entry<String, AccessMode.Reader> reader : readers.entrySet()) {
-            final String key = reader.getKey();
-            if (virtualFields.contains(key)) {
-                continue;
-            }
-            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, clazz);
-        }
-
-        for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
-            final String key = writer.getKey();
-            if (virtualFields.contains(key)) {
-                continue;
-            }
-            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz);
-        }
-
-        final Method anyGetter = accessMode.findAnyGetter(clazz);
-        
-        Adapter<?, ?> adapter = accessMode.findAdapter(clazz);
-        ObjectConverter.Reader<?> reader = accessMode.findReader(clazz);
-        ObjectConverter.Writer<?> writer = accessMode.findWriter(clazz);
-        
-        final TypeMapping mapping = new ParameterizedTypeMapping(
+        final TypeMapping mapping = new ClassMapping(
                 type, accessMode.findFactory(clazz), getters, setters,
-                adapter != null ? adapter : config.findAdapter(clazz),
-                reader != null ? reader : config.findObjectConverterReader(clazz),
-                writer != null ? writer : config.findObjectConverterWriter(clazz),
+                adapter,
+                reader,
+                writer,
                 anyGetter != null ? new Getter(
                         new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
                         false,false, false, false, true, null, null, -1, null) : null,
                 accessMode.findAnySetter(clazz));
 
         accessMode.afterParsed(clazz);
-        
-        return mapping;
-    }
 
-    protected TypeMapping createTypeMapping(final TypeVariable type) {
-        boolean copyDate = false;
-
-        TypeVariable cast = TypeVariable.class.cast(type);
-        Optional<Type> annotatedType = Arrays.asList(TypeVariable.class.cast(cast).getAnnotatedBounds()).stream().map(at -> at.getType()).findFirst();
-        
-        if (!annotatedType.isPresent() || !(annotatedType.get() instanceof Class)|| Map.class.isAssignableFrom(Class.class.cast(annotatedType.get()))){
-            return null;
-        }
-        
-        final Class<?> clazz = Class.class.cast(annotatedType.get());
-
-        AccessMode accessMode = config.getAccessMode();
-
-        Comparator<String> fieldComparator = accessMode.fieldComparator(clazz);
-        fieldComparator = fieldComparator == null ? config.getAttributeOrder() : fieldComparator;
-
-        final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<>(fieldComparator);
-        final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<>(fieldComparator);
-
-        final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
-        final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
-
-        final Collection<String> virtualFields = new HashSet<>();
-        {
-            final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
-            if (virtualObjects != null) {
-                for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
-                    handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
-                }
-            }
-
-            final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
-            if (virtualObject != null) {
-                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
-            }
-        }
-
-        for (final Map.Entry<String, AccessMode.Reader> reader : readers.entrySet()) {
-            final String key = reader.getKey();
-            if (virtualFields.contains(key)) {
-                continue;
-            }
-            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, clazz);
-        }
-
-        for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
-            final String key = writer.getKey();
-            if (virtualFields.contains(key)) {
-                continue;
-            }
-            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz);
-        }
-
-        final Method anyGetter = accessMode.findAnyGetter(clazz);
-        
-        Adapter<?, ?> adapter = accessMode.findAdapter(clazz);
-        ObjectConverter.Reader<?> reader = accessMode.findReader(clazz);
-        ObjectConverter.Writer<?> writer = accessMode.findWriter(clazz);
-        
-        final TypeMapping mapping = new TypeVariableMapping(
-                type, accessMode.findFactory(clazz), getters, setters,
-                adapter != null ? adapter : config.findAdapter(clazz),
-                reader != null ? reader : config.findObjectConverterReader(clazz),
-                writer != null ? writer : config.findObjectConverterWriter(clazz),
-                anyGetter != null ? new Getter(
-                        new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false,false, false, false, true, null, null, -1, null) : null,
-                accessMode.findAnySetter(clazz));
-
-        accessMode.afterParsed(clazz);
-        
         return mapping;
     }
 

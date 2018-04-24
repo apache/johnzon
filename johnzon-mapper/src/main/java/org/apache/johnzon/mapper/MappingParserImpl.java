@@ -229,7 +229,7 @@ public class MappingParserImpl implements MappingParser {
             }
         }
 
-        final Mappings.TypeMapping typeMapping = mappings.findOrCreateTypeMapping(type);
+        final Mappings.TypeMapping typeMapping = mappings.findOrCreateTypeMapping(type, applyObjectConverter);
 
         if (typeMapping == null) {
             if (ParameterizedType.class.isInstance(type)) {
