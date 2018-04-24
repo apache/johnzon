@@ -289,6 +289,10 @@ public class Mappings {
         this.config = config;
     }
 
+    public Boolean getApplyObjectConverter(Type targetType){
+        return targetType instanceof Class || targetType instanceof ParameterizedType || targetType instanceof TypeVariable;
+    }
+    
     public CollectionMapping findCollectionMapping(final ParameterizedType genericType, final Type enclosingType) {
         CollectionMapping collectionMapping = collections.get(genericType);
         if (collectionMapping == null) {

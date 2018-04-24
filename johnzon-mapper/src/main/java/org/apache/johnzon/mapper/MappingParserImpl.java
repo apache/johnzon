@@ -40,7 +40,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.temporal.TemporalAccessor;
@@ -121,8 +120,7 @@ public class MappingParserImpl implements MappingParser {
             jsonPointers = Collections.emptyMap();
         }
     }
-
-
+    
     @Override
     public <T> T readObject(Type targetType) {
         try {
@@ -134,7 +132,7 @@ public class MappingParserImpl implements MappingParser {
 
     @Override
     public <T> T readObject(JsonValue jsonValue, Type targetType) {
-        return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType || targetType instanceof TypeVariable);
+        return readObject(jsonValue, targetType, mappings.getApplyObjectConverter(targetType));
     }
 
     private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
@@ -215,18 +213,6 @@ public class MappingParserImpl implements MappingParser {
         Type type = inType;
         if (inType == Object.class) {
             type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
-        }
-
-        if (applyObjectConverter && !(type instanceof ParameterizedType) && !(type instanceof TypeVariable)) {
-
-            if (!(type instanceof Class)) {
-                throw new MapperException("ObjectConverters are only supported for Classes not Types");
-            }
-
-            ObjectConverter.Reader objectConverter = config.findObjectConverterReader((Class) type);
-            if (objectConverter != null) {
-                return objectConverter.fromJson(object, type, new SuppressConversionMappingParser(this, object));
-            }
         }
 
         final Mappings.TypeMapping typeMapping = mappings.findOrCreateTypeMapping(type, applyObjectConverter);
@@ -522,7 +508,7 @@ public class MappingParserImpl implements MappingParser {
             final Object object = buildObject(
                     baseInstance != null ? baseInstance.getClass() : (
                             typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
-                    JsonObject.class.cast(jsonValue), type instanceof Class || type instanceof ParameterizedType || type instanceof TypeVariable,
+                    JsonObject.class.cast(jsonValue), mappings.getApplyObjectConverter(type),
                     jsonPointer);
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
