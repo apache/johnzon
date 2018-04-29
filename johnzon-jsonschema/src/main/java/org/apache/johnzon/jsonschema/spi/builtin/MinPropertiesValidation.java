@@ -23,42 +23,45 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.json.JsonNumber;
+import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
 import org.apache.johnzon.jsonschema.spi.ValidationContext;
 import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 
-public class MaximumValidation implements ValidationExtension {
+public class MinPropertiesValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        if (model.getSchema().getString("type", "object").equals("number")) {
-            return Optional.ofNullable(model.getSchema().get("maximum"))
-                    .filter(v -> v.getValueType() == JsonValue.ValueType.NUMBER)
-                    .map(m -> new Impl(model.toPointer(), model.getValueProvider(), JsonNumber.class.cast(m).doubleValue()));
-        }
-        return Optional.empty();
+        return Optional.ofNullable(model.getSchema().get("minProperties"))
+                .filter(it -> it.getValueType() == JsonValue.ValueType.NUMBER)
+                .map(it -> JsonNumber.class.cast(it).intValue())
+                .filter(it -> it >= 0)
+                .map(max -> new Impl(model.toPointer(), model.getValueProvider(), max));
     }
 
-    private static class Impl extends BaseNumberValidation {
-        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final double bound) {
-            super(pointer, valueProvider, bound);
+    private static class Impl extends BaseValidation {
+        private final int bound;
+
+        private Impl(final String pointer,
+                     final Function<JsonValue, JsonValue> extractor,
+                     final int bound) {
+            super(pointer, extractor, JsonValue.ValueType.OBJECT);
+            this.bound = bound;
         }
 
         @Override
-        protected boolean isValid(final double val) {
-            return val <= this.bound;
-        }
-
-        @Override
-        protected Stream<ValidationResult.ValidationError> toError(final double val) {
-            return Stream.of(new ValidationResult.ValidationError(pointer, val + " is more than " + this.bound));
+        protected Stream<ValidationResult.ValidationError> onObject(final JsonObject object) {
+            if (object.size() < bound) {
+                return Stream.of(new ValidationResult.ValidationError(pointer, "Not enough properties (> " + bound + ")"));
+            }
+            return Stream.empty();
         }
 
         @Override
         public String toString() {
-            return "Maximum{" +
-                    "factor=" + bound +
+            return "MinProperties{" +
+                    "min=" + bound +
                     ", pointer='" + pointer + '\'' +
                     '}';
         }

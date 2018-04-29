@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.json.JsonNumber;
-import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
@@ -36,14 +35,14 @@ public class MultipleOfValidation implements ValidationExtension {
         if (model.getSchema().getString("type", "object").equals("number")) {
             return Optional.ofNullable(model.getSchema().get("multipleOf"))
                     .filter(v -> v.getValueType() == JsonValue.ValueType.NUMBER)
-                    .map(m -> new Impl(model.toPointer(), model::readValue, JsonNumber.class.cast(m).doubleValue()));
+                    .map(m -> new Impl(model.toPointer(), model.getValueProvider(), JsonNumber.class.cast(m).doubleValue()));
         }
         return Optional.empty();
     }
 
-    private static class Impl extends BaseNumberValidationImpl {
-        private Impl(final String pointer, final Function<JsonObject, JsonValue> extractor, final double multipleOf) {
-            super(pointer, extractor, multipleOf, JsonValue.ValueType.NUMBER);
+    private static class Impl extends BaseNumberValidation {
+        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final double multipleOf) {
+            super(pointer, valueProvider, multipleOf);
         }
 
         @Override

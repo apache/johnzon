@@ -18,48 +18,49 @@
  */
 package org.apache.johnzon.jsonschema.spi.builtin;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.json.JsonNumber;
+import javax.json.JsonArray;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
 import org.apache.johnzon.jsonschema.spi.ValidationContext;
 import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 
-public class MaximumValidation implements ValidationExtension {
+public class UniqueItemsValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        if (model.getSchema().getString("type", "object").equals("number")) {
-            return Optional.ofNullable(model.getSchema().get("maximum"))
-                    .filter(v -> v.getValueType() == JsonValue.ValueType.NUMBER)
-                    .map(m -> new Impl(model.toPointer(), model.getValueProvider(), JsonNumber.class.cast(m).doubleValue()));
-        }
-        return Optional.empty();
+        return Optional.ofNullable(model.getSchema().get("uniqueItems"))
+                .filter(it -> it.getValueType() == JsonValue.ValueType.TRUE)
+                .map(max -> new Impl(model.toPointer(), model.getValueProvider()));
     }
 
-    private static class Impl extends BaseNumberValidation {
-        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final double bound) {
-            super(pointer, valueProvider, bound);
+    private static class Impl extends BaseValidation {
+        private Impl(final String pointer,
+                     final Function<JsonValue, JsonValue> extractor) {
+            super(pointer, extractor, JsonValue.ValueType.ARRAY);
         }
 
         @Override
-        protected boolean isValid(final double val) {
-            return val <= this.bound;
-        }
-
-        @Override
-        protected Stream<ValidationResult.ValidationError> toError(final double val) {
-            return Stream.of(new ValidationResult.ValidationError(pointer, val + " is more than " + this.bound));
+        protected Stream<ValidationResult.ValidationError> onArray(final JsonArray array) {
+            final Collection<JsonValue> uniques = new HashSet<>(array);
+            if (array.size() != uniques.size()) {
+                final Collection<JsonValue> duplicated = new ArrayList<>(array);
+                duplicated.removeAll(uniques);
+                return Stream.of(new ValidationResult.ValidationError(pointer, "duplicated items: " + duplicated));
+            }
+            return Stream.empty();
         }
 
         @Override
         public String toString() {
-            return "Maximum{" +
-                    "factor=" + bound +
-                    ", pointer='" + pointer + '\'' +
+            return "UniqueItems{" +
+                    "pointer='" + pointer + '\'' +
                     '}';
         }
     }

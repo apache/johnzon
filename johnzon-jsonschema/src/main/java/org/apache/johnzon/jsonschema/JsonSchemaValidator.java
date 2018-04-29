@@ -25,11 +25,11 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.json.JsonObject;
 import javax.json.JsonValue;
 
-public class JsonSchemaValidator implements Function<JsonObject, ValidationResult>, AutoCloseable {
+public class JsonSchemaValidator implements Function<JsonValue, ValidationResult>, AutoCloseable {
     private static final ValidationResult SUCCESS = new ValidationResult(emptyList());
+
     private final Function<JsonValue, Stream<ValidationResult.ValidationError>> validationFunction;
 
     JsonSchemaValidator(final Function<JsonValue, Stream<ValidationResult.ValidationError>> validationFunction) {
@@ -37,7 +37,7 @@ public class JsonSchemaValidator implements Function<JsonObject, ValidationResul
     }
 
     @Override
-    public ValidationResult apply(final JsonObject object) {
+    public ValidationResult apply(final JsonValue object) {
         final Collection<ValidationResult.ValidationError> errors = validationFunction.apply(object).collect(toList());
         if (!errors.isEmpty()) {
             return new ValidationResult(errors);

@@ -42,33 +42,23 @@ public class RequiredValidation implements ValidationExtension {
                 .map(JsonValue::asJsonArray)
                 .filter(arr -> arr.stream().allMatch(it -> it.getValueType() == JsonValue.ValueType.STRING))
                 .map(arr -> arr.stream().map(it -> JsonString.class.cast(it).getString()).collect(toSet()))
-                .map(required -> new Impl(required, model.toPointer(), model::readValue));
+                .map(required -> new Impl(required, model.getValueProvider(), model.toPointer()));
     }
 
-    private static class Impl implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
+    private static class Impl extends BaseValidation {
         private final Collection<String> required;
-        private final String pointer;
-        private final Function<JsonObject, JsonValue> extractor;
 
-        private Impl(final Collection<String> required, final String pointer, final Function<JsonObject, JsonValue> extractor) {
+        private Impl(final Collection<String> required, final Function<JsonValue, JsonValue> extractor, final String pointer) {
+            super(pointer, extractor, JsonValue.ValueType.OBJECT);
             this.required = required;
-            this.pointer = pointer;
-            this.extractor = extractor;
         }
 
         @Override
-        public Stream<ValidationResult.ValidationError> apply(final JsonValue obj) {
+        public Stream<ValidationResult.ValidationError> onObject(final JsonObject obj) {
             if (obj == null || obj == JsonValue.NULL) {
                 return toErrors(required.stream());
             }
-            return toErrors(required.stream().filter(name -> {
-                final JsonValue jsonValue = extractor.apply(obj.asJsonObject());
-                return isNull(jsonValue) || isNull(jsonValue.asJsonObject().get(name));
-            }));
-        }
-
-        private boolean isNull(final JsonValue jsonValue) {
-            return jsonValue == null || JsonValue.NULL.equals(jsonValue);
+            return toErrors(required.stream().filter(name -> isNull(obj.get(name))));
         }
 
         private Stream<ValidationResult.ValidationError> toErrors(final Stream<String> fields) {

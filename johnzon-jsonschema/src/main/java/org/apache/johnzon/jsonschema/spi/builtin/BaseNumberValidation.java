@@ -22,35 +22,21 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.json.JsonNumber;
-import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
 
-abstract class BaseNumberValidationImpl implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
-    protected final String pointer;
-    protected final Function<JsonObject, JsonValue> extractor;
+abstract class BaseNumberValidation extends BaseValidation {
     protected final double bound;
-    private final JsonValue.ValueType validType;
 
-    BaseNumberValidationImpl(final String pointer, final Function<JsonObject, JsonValue> extractor, final double bound,
-                             final JsonValue.ValueType validType) {
+    BaseNumberValidation(final String pointer, final Function<JsonValue, JsonValue> extractor, final double bound) {
+        super(pointer, extractor, JsonValue.ValueType.NUMBER);
         this.bound = bound;
-        this.pointer = pointer;
-        this.extractor = extractor;
-        this.validType = validType;
     }
 
     @Override
-    public Stream<ValidationResult.ValidationError> apply(final JsonValue obj) {
-        if (obj == null || obj == JsonValue.NULL) {
-            return Stream.empty();
-        }
-        final JsonValue value = extractor.apply(obj.asJsonObject());
-        if (value == null || value.getValueType() != validType) {
-            return Stream.empty();
-        }
-        final double val = toNumber(value);
+    protected Stream<ValidationResult.ValidationError> onNumber(final JsonNumber number) {
+        final double val = number.doubleValue();
         if (val <= 0) {
             return toError(val);
         }
@@ -58,10 +44,6 @@ abstract class BaseNumberValidationImpl implements Function<JsonValue, Stream<Va
             return Stream.empty();
         }
         return toError(val);
-    }
-
-    protected double toNumber(final JsonValue value) {
-        return JsonNumber.class.cast(value).doubleValue();
     }
 
     protected abstract boolean isValid(double val);

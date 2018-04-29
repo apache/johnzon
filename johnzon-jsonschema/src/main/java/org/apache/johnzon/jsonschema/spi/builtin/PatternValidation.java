@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.script.Bindings;
@@ -41,32 +40,22 @@ public class PatternValidation implements ValidationExtension {
         if (model.getSchema().getString("type", "object").equals("string")) {
             return Optional.ofNullable(model.getSchema().get("pattern"))
                     .filter(val -> val.getValueType() == JsonValue.ValueType.STRING)
-                    .map(pattern -> new Impl(model.toPointer(), model::readValue, JsonString.class.cast(pattern).getString()));
+                    .map(pattern -> new Impl(model.toPointer(), model.getValueProvider(), JsonString.class.cast(pattern).getString()));
         }
         return Optional.empty();
     }
 
-    private static class Impl implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
-        private final String pointer;
-        private final Function<JsonObject, JsonValue> extractor;
+    private static class Impl extends BaseValidation {
         private final JsRegex jsRegex;
 
-        private Impl(final String pointer, final Function<JsonObject, JsonValue> extractor, final String pattern) {
+        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final String pattern) {
+            super(pointer, valueProvider, JsonValue.ValueType.STRING);
             this.jsRegex = new JsRegex(pattern);
-            this.pointer = pointer;
-            this.extractor = extractor;
         }
 
         @Override
-        public Stream<ValidationResult.ValidationError> apply(final JsonValue obj) {
-            if (obj == null || obj == JsonValue.NULL) {
-                return Stream.empty();
-            }
-            final JsonValue value = extractor.apply(obj.asJsonObject());
-            if (value == null || value.getValueType() != JsonValue.ValueType.STRING || JsonValue.NULL.equals(value)) {
-                return Stream.empty();
-            }
-            if (!jsRegex.test(JsonString.class.cast(value).getString())) {
+        public Stream<ValidationResult.ValidationError> onString(final JsonString value) {
+            if (!jsRegex.test(value.getString())) {
                 return Stream.of(new ValidationResult.ValidationError(pointer, value + " doesn't match " + jsRegex));
             }
             return Stream.empty();

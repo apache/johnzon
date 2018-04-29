@@ -23,7 +23,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.json.JsonNumber;
-import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
@@ -37,29 +36,25 @@ public class MinLengthValidation implements ValidationExtension {
         if (model.getSchema().getString("type", "object").equals("string")) {
             return Optional.ofNullable(model.getSchema().get("minLength"))
                     .filter(v -> v.getValueType() == JsonValue.ValueType.NUMBER)
-                    .map(m -> new Impl(model.toPointer(), model::readValue, JsonNumber.class.cast(m).intValue()));
+                    .map(m -> new Impl(model.toPointer(), model.getValueProvider(), JsonNumber.class.cast(m).intValue()));
         }
         return Optional.empty();
     }
 
-    private static class Impl extends BaseNumberValidationImpl {
-        private Impl(final String pointer, final Function<JsonObject, JsonValue> extractor, final double bound) {
-            super(pointer, extractor, bound, JsonValue.ValueType.STRING);
+    private static class Impl extends BaseValidation {
+        private final int bound;
+
+        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final int bound) {
+            super(pointer, valueProvider, JsonValue.ValueType.STRING);
+            this.bound = bound;
         }
 
         @Override
-        protected double toNumber(final JsonValue value) {
-            return JsonString.class.cast(value).getString().length();
-        }
-
-        @Override
-        protected boolean isValid(final double val) {
-            return val >= this.bound;
-        }
-
-        @Override
-        protected Stream<ValidationResult.ValidationError> toError(final double val) {
-            return Stream.of(new ValidationResult.ValidationError(pointer, val + " length is less than " + this.bound));
+        protected Stream<ValidationResult.ValidationError> onString(final JsonString val) {
+            if (val.getString().length() < bound) {
+                return Stream.of(new ValidationResult.ValidationError(pointer, val + " length is less than " + this.bound));
+            }
+            return Stream.empty();
         }
 
         @Override

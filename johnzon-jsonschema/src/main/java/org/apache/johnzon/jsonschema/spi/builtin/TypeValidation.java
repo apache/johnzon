@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
@@ -37,36 +36,33 @@ public class TypeValidation implements ValidationExtension {
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
         switch (model.getSchema().getString("type", "object")) {
             case "string":
-                return Optional.of(new Impl(model.toPointer(), model::readValue, JsonValue.ValueType.STRING));
+                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.STRING));
             case "number":
-                return Optional.of(new Impl(model.toPointer(), model::readValue, JsonValue.ValueType.NUMBER));
+                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.NUMBER));
             case "array":
-                return Optional.of(new Impl(model.toPointer(), model::readValue, JsonValue.ValueType.ARRAY));
+                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.ARRAY));
             case "boolean":
-                return Optional.of(new Impl(model.toPointer(), model::readValue, JsonValue.ValueType.FALSE, JsonValue.ValueType.TRUE));
+                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.FALSE, JsonValue.ValueType.TRUE));
             case "object":
             default:
-                return Optional.of(new Impl(model.toPointer(), model::readValue, JsonValue.ValueType.OBJECT));
+                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.OBJECT));
         }
     }
 
-    private static class Impl implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
-        private final String pointer;
-        private final Function<JsonObject, JsonValue> extractor;
+    private static class Impl extends BaseValidation {
         private final JsonValue.ValueType[] types;
 
-        private Impl(final String pointer, final Function<JsonObject, JsonValue> extractor, final JsonValue.ValueType... types) {
+        private Impl(final String pointer, final Function<JsonValue, JsonValue> extractor, final JsonValue.ValueType... types) {
+            super(pointer, extractor, JsonValue.ValueType.OBJECT /*ignored*/);
             this.types = types;
-            this.pointer = pointer;
-            this.extractor = extractor;
         }
 
         @Override
-        public Stream<ValidationResult.ValidationError> apply(final JsonValue obj) {
-            if (obj == null || obj == JsonValue.NULL) {
+        public Stream<ValidationResult.ValidationError> apply(final JsonValue root) {
+            if (isNull(root)) {
                 return Stream.empty();
             }
-            final JsonValue value = extractor.apply(obj.asJsonObject());
+            final JsonValue value = extractor.apply(root);
             if (value == null || Stream.of(types).anyMatch(it -> it == value.getValueType()) || JsonValue.ValueType.NULL == value.getValueType()) {
                 return Stream.empty();
             }

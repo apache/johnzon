@@ -20,6 +20,7 @@ package org.apache.johnzon.jsonschema.spi;
 
 import static java.util.stream.Collectors.joining;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.json.JsonObject;
@@ -28,10 +29,16 @@ import javax.json.JsonValue;
 public class ValidationContext {
     private final String[] path;
     private final JsonObject schema;
+    private final Function<JsonValue, JsonValue> valueProvider;
 
-    public ValidationContext(final String[] path, final JsonObject schema) {
+    public ValidationContext(final String[] path, final JsonObject schema, final Function<JsonValue, JsonValue> valueProvider) {
         this.path = path;
         this.schema = schema;
+        this.valueProvider = valueProvider;
+    }
+
+    public Function<JsonValue, JsonValue> getValueProvider() {
+        return valueProvider;
     }
 
     public String[] getPath() {
@@ -40,19 +47,6 @@ public class ValidationContext {
 
     public JsonObject getSchema() {
         return schema;
-    }
-
-    public JsonValue readValue(final JsonValue root) { // move to JsonPointer? requires to store a provider if we want
-        JsonValue current = root;
-        for (final String segment : path) {
-            if (current == null) {
-                return null;
-            }
-            if (current.getValueType() == JsonValue.ValueType.OBJECT) {
-                current = current.asJsonObject().get(segment);
-            }
-        }
-        return current;
     }
 
     public String toPointer() {

@@ -25,7 +25,6 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
@@ -38,26 +37,23 @@ public class EnumValidation implements ValidationExtension {
         return ofNullable(model.getSchema().get("enum"))
                 .filter(it -> it.getValueType() == JsonValue.ValueType.ARRAY)
                 .map(JsonValue::asJsonArray)
-                .map(values -> new Impl(values, model.toPointer(), model::readValue));
+                .map(values -> new Impl(values, model.getValueProvider(), model.toPointer()));
     }
 
-    private static class Impl implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
+    private static class Impl extends BaseValidation {
         private final Collection<JsonValue> valid;
-        private final String pointer;
-        private final Function<JsonObject, JsonValue> extractor;
 
-        private Impl(final Collection<JsonValue> valid, final String pointer, final Function<JsonObject, JsonValue> extractor) {
+        private Impl(final Collection<JsonValue> valid, final Function<JsonValue, JsonValue> extractor, final String pointer) {
+            super(pointer, extractor, JsonValue.ValueType.OBJECT /* ignored */);
             this.valid = valid;
-            this.pointer = pointer;
-            this.extractor = extractor;
         }
 
         @Override
-        public Stream<ValidationResult.ValidationError> apply(final JsonValue obj) {
-            if (obj == null || obj == JsonValue.NULL) {
+        public Stream<ValidationResult.ValidationError> apply(final JsonValue root) {
+            if (isNull(root)) {
                 return Stream.empty();
             }
-            final JsonValue value = extractor.apply(obj.asJsonObject());
+            final JsonValue value = extractor.apply(root);
             if (value != null && !JsonValue.NULL.equals(value)) {
                 return Stream.empty();
             }
