@@ -64,6 +64,7 @@
     <module>johnzon-websocket</module>
     <module>johnzon-jsonb</module>
     <module>johnzon-json-extras</module>
+    <module>johnzon-jsonschema</module>
   </modules>
 
   <dependencies>
