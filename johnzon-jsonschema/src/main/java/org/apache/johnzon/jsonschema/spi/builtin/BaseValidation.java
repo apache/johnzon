@@ -67,8 +67,9 @@ abstract class BaseValidation implements Function<JsonValue, Stream<ValidationRe
                 return onArray(value.asJsonArray());
             case NULL:
                 return Stream.empty();
+            default:
+                throw new IllegalArgumentException("Unsupported value type: " + value);
         }
-        throw new IllegalArgumentException("Unsupported value type: " + value);
     }
 
     protected boolean isNull(final JsonValue obj) {

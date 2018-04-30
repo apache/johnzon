@@ -25,38 +25,41 @@ import java.util.stream.Stream;
 
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import javax.script.Bindings;
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
 import org.apache.johnzon.jsonschema.spi.ValidationContext;
 import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 
 public class PatternValidation implements ValidationExtension {
+    private final Function<String, Predicate<CharSequence>> predicateFactory;
+
+    public PatternValidation(final Function<String, Predicate<CharSequence>> predicateFactory) {
+        this.predicateFactory = predicateFactory;
+    }
+
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
         if (model.getSchema().getString("type", "object").equals("string")) {
             return Optional.ofNullable(model.getSchema().get("pattern"))
                     .filter(val -> val.getValueType() == JsonValue.ValueType.STRING)
-                    .map(pattern -> new Impl(model.toPointer(), model.getValueProvider(), JsonString.class.cast(pattern).getString()));
+                    .map(pattern -> new Impl(model.toPointer(), model.getValueProvider(), predicateFactory.apply(JsonString.class.cast(pattern).getString())));
         }
         return Optional.empty();
     }
 
     private static class Impl extends BaseValidation {
-        private final JsRegex jsRegex;
+        private final Predicate<CharSequence> matcher;
 
-        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final String pattern) {
+        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider,
+                     final Predicate<CharSequence> matcher) {
             super(pointer, valueProvider, JsonValue.ValueType.STRING);
-            this.jsRegex = new JsRegex(pattern);
+            this.matcher = matcher;
         }
 
         @Override
         public Stream<ValidationResult.ValidationError> onString(final JsonString value) {
-            if (!jsRegex.test(value.getString())) {
-                return Stream.of(new ValidationResult.ValidationError(pointer, value + " doesn't match " + jsRegex));
+            if (!matcher.test(value.getString())) {
+                return Stream.of(new ValidationResult.ValidationError(pointer, value + " doesn't match " + matcher));
             }
             return Stream.empty();
         }
@@ -64,51 +67,9 @@ public class PatternValidation implements ValidationExtension {
         @Override
         public String toString() {
             return "Pattern{" +
-                    "regex=" + jsRegex +
+                    "regex=" + matcher +
                     ", pointer='" + pointer + '\'' +
                     '}';
-        }
-    }
-
-    private static class JsRegex implements Predicate<CharSequence> {
-
-        private static final ScriptEngine ENGINE;
-
-        static {
-            ENGINE = new ScriptEngineManager().getEngineByName("javascript");
-        }
-
-        private final String regex;
-
-        private final String indicators;
-
-        private JsRegex(final String regex) {
-            if (regex.startsWith("/") && regex.length() > 1) {
-                final int end = regex.lastIndexOf('/');
-                if (end < 0) {
-                    this.regex = regex;
-                    this.indicators = "";
-                } else {
-                    this.regex = regex.substring(1, end);
-                    this.indicators = regex.substring(end + 1);
-                }
-            } else {
-                this.regex = regex;
-                this.indicators = "";
-            }
-        }
-
-        @Override
-        public boolean test(final CharSequence string) {
-            final Bindings bindings = ENGINE.createBindings();
-            bindings.put("text", string);
-            bindings.put("regex", regex);
-            bindings.put("indicators", indicators);
-            try {
-                return Boolean.class.cast(ENGINE.eval("new RegExp(regex, indicators).test(text)", bindings));
-            } catch (final ScriptException e) {
-                return false;
-            }
         }
     }
 }

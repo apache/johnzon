@@ -555,4 +555,42 @@ public class JsonSchemaValidatorTest {
 
         validator.close();
     }
+
+    @Test
+    public void patternProperties() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("patternProperties", jsonFactory.createObjectBuilder()
+                        .add("[0-9]+", jsonFactory.createObjectBuilder().add("type", "number"))
+                    .build())
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("1", 1)
+                .build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("1", "test")
+                .build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void additionalProperties() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("additionalProperties", jsonFactory.createObjectBuilder().add("type", "number"))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("1", 1)
+                .build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("1", "test")
+                .build()).isSuccess());
+
+        validator.close();
+    }
 }
