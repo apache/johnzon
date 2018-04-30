@@ -438,3 +438,38 @@ bind the corresponding serializer and/or deserializer:
         @JsonbTypeDeserializer(Polymorphic.DeSerializer.class)
         public List<Root> roots;
     }
+
+
+### JSON Schema
+
+<pre class="prettyprint linenums"><![CDATA[
+<dependency>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-jsonschema</artifactId>
+  <version>${johnzon.version}</version>
+</dependency>
+]]></pre>
+
+This module provides a way to validate an instance against a [JSON Schema](http://json-schema.org/).
+
+
+<pre class="prettyprint linenums"><![CDATA[
+// long live instances (@ApplicationScoped/@Singleton)
+JsonObject schema = getJsonSchema();
+JsonSchemaValidatorFactory factory = new JsonSchemaValidatorFactory();
+JsonSchemaValidator validator = factory.newInstance(schema);
+
+// runtime starts here
+JsonObject objectToValidateAgainstSchema = getObject();
+ValidatinResult result = validator.apply(objectToValidateAgainstSchema);
+// if result.isSuccess, result.getErrors etc...
+
+// end of runtime
+validator.close();
+factory.close();
+]]></pre>
+
+Known limitations are (feel free to do a PR on github to add these missing features):
+
+* Doesn't support references in the schema
+* Doesn't support: dependencies, propertyNames, if/then/else, allOf/anyOf/oneOf/not, format validations
