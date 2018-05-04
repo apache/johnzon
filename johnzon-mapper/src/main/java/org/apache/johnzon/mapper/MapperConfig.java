@@ -63,6 +63,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders;
     private final Comparator<String> attributeOrder;
     private final boolean enforceQuoteString;
+    private final boolean failOnUnknown;
+    private final SerializeValueFilter serializeValueFilter;
+    private final boolean useBigDecimalForFloats;
+    private final Boolean deduplicateObjects;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -78,7 +82,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean readAttributeBeforeWrite,
                         final AccessMode accessMode, final Charset encoding,
                         final Comparator<String> attributeOrder,
-                        final boolean enforceQuoteString) {
+                        final boolean enforceQuoteString, final boolean failOnUnknown,
+                        final SerializeValueFilter serializeValueFilter,
+                        final boolean useBigDecimalForFloats,
+                        final Boolean deduplicateObjects) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -94,9 +101,24 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.adapters = adapters;
         this.attributeOrder = attributeOrder;
         this.enforceQuoteString = enforceQuoteString;
+        this.failOnUnknown = failOnUnknown;
+
+        this.serializeValueFilter = serializeValueFilter != null ? serializeValueFilter : new SerializeValueFilter() {
+            @Override
+            public boolean shouldIgnore(String name, Object value) {
+                return false;
+            }
+        };
 
         this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
+        this.useBigDecimalForFloats = useBigDecimalForFloats;
+        this.deduplicateObjects = deduplicateObjects;
+    }
+
+
+    public SerializeValueFilter getSerializeValueFilter() {
+        return serializeValueFilter;
     }
 
     public Adapter findAdapter(final Type aClass) {
@@ -104,6 +126,12 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         if (converter != null) {
             return converter;
         }
+        /* could be an option but doesnt fit well our old converters
+        final Adapter<?, ?> reverseConverter = adapters.get(new AdapterKey(String.class, aClass));
+        if (reverseConverter != null) {
+            return new ReversedAdapter<>(reverseConverter);
+        }
+        */
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (clazz.isEnum()) {
@@ -220,6 +248,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         return converter;
     }
 
+    public boolean isFailOnUnknown() {
+        return failOnUnknown;
+    }
+
     public int getVersion() {
         return version;
     }
@@ -274,5 +306,13 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     public boolean isEnforceQuoteString() {
         return enforceQuoteString;
+    }
+
+    public boolean isUseBigDecimalForFloats() {
+        return useBigDecimalForFloats;
+    }
+
+    public Boolean isDeduplicateObjects() {
+        return deduplicateObjects;
     }
 }

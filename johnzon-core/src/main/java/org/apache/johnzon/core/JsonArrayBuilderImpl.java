@@ -97,30 +97,25 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         addValue(builder.build());
         return this;
     }
-    
-    private void addValue(JsonValue value){
+
+    private void addValue(JsonValue value) {
         if (value == null) {
             throw npe();
         }
-        
+
         if(tmpList==null){
             tmpList=new ArrayList<JsonValue>();
         }
-        
+
         tmpList.add(value);
     }
 
     @Override
     public JsonArray build() {
-        
         if(tmpList == null) {
             return new JsonArrayImpl(Collections.EMPTY_LIST);
-        } else {
-            List<JsonValue> dump = (Collections.unmodifiableList(tmpList));
-            tmpList=null;
-            return new JsonArrayImpl(dump);
         }
-        
+        return new JsonArrayImpl(Collections.unmodifiableList(tmpList));
     }
 
     private static NullPointerException npe() {

@@ -26,6 +26,8 @@ import java.math.BigInteger;
 final class JsonDoubleImpl implements JsonNumber, Serializable {
     private final double value;
 
+    private Integer hashCode = null;
+
     JsonDoubleImpl(final double value) {
         
         if(Double.isInfinite(value) || Double.isNaN(value)) {
@@ -47,6 +49,7 @@ final class JsonDoubleImpl implements JsonNumber, Serializable {
 
     @Override
     public int intValueExact() {
+        checkFractionalPart();
         return intValue();
     }
 
@@ -57,6 +60,7 @@ final class JsonDoubleImpl implements JsonNumber, Serializable {
 
     @Override
     public long longValueExact() {
+        checkFractionalPart();
         return (long) value;
     }
 
@@ -92,11 +96,24 @@ final class JsonDoubleImpl implements JsonNumber, Serializable {
 
     @Override
     public int hashCode() {
-        return Double.valueOf(value).hashCode();
+        if (hashCode == null) {
+            hashCode = bigDecimalValue().hashCode();
+        }
+
+        return hashCode;
     }
 
     @Override
     public boolean equals(final Object obj) {
+        if (JsonDoubleImpl.class.isInstance(obj)) {
+            return JsonDoubleImpl.class.cast(obj).value == value;
+        }
         return JsonNumber.class.isInstance(obj) && JsonNumber.class.cast(obj).doubleValue() == value;
+    }
+
+    private void checkFractionalPart() {
+        if ((value % 1) != 0) {
+            throw new ArithmeticException("Not an int/long, use other value readers");
+        }
     }
 }

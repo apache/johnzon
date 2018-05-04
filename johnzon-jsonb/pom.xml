@@ -27,6 +27,7 @@
 
   <artifactId>johnzon-jsonb</artifactId>
   <name>Johnzon :: JSON-B Implementation</name>
+  <packaging>bundle</packaging>
 
   <properties>
     <java-compile.version>1.8</java-compile.version>
@@ -35,24 +36,33 @@
 
   <dependencies>
     <dependency>
-      <groupId>javax.ws.rs</groupId>
-      <artifactId>javax.ws.rs-api</artifactId>
-      <version>2.0</version>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-annotation_1.2_spec</artifactId>
+      <version>1.0</version>
       <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-jaxrs_2.0_spec</artifactId>
+      <version>1.0-alpha-1</version>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jcdi_1.1_spec</artifactId>
       <version>1.0</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
-
     <dependency>
-      <groupId>org.apache.johnzon</groupId>
-      <artifactId>jsonb-api</artifactId>
-      <version>1.0.1-SNAPSHOT</version>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+      <version>1.0</version>
       <scope>provided</scope>
     </dependency>
+
     <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-mapper</artifactId>
@@ -96,5 +106,19 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-  <packaging>bundle</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Require-Capability>osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
+            <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

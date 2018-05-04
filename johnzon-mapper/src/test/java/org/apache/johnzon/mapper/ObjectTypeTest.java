@@ -127,11 +127,15 @@ public class ObjectTypeTest {
     }
 
     @Test
-    public void multiple() {
+    public void testGenericList() {
         assumeFalse("field".equals(accessMode) /*we need setType*/);
 
         final Multiple multiple = new Multiple();
-        multiple.dogs = asList(new Dog(), new Beagle());
+        Poodle poodle = new Poodle();
+        poodle.setHairCut(true);
+        Beagle beagle = new Beagle();
+        beagle.setColor("brown");
+        multiple.dogs = asList(poodle, beagle);
         final Mapper mapper = new MapperBuilder()
                 .setAccessModeName(accessMode)
                 .setReadAttributeBeforeWrite(true)
@@ -142,16 +146,17 @@ public class ObjectTypeTest {
                     }
                 }).build();
         final String json = "{\"dogs\":[" +
-                "{\"type\":\"org.apache.johnzon.mapper.ObjectTypeTest$Dog\",\"value\":{}}," +
-                "{\"type\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\",\"value\":{}}]}";
+                "{\"type\":\"org.apache.johnzon.mapper.ObjectTypeTest$Poodle\",\"value\":{\"hairCut\":true}}," +
+                "{\"type\":\"org.apache.johnzon.mapper.ObjectTypeTest$Beagle\",\"value\":{\"color\":\"brown\"}}]}";
         assertEquals(json, mapper.writeObjectAsString(multiple));
 
         final Multiple deser = mapper.readObject(json, Multiple.class);
         assertEquals(2, deser.dogs.size());
-        assertTrue(Dog.class.isInstance(deser.dogs.get(0)));
+        assertTrue(Poodle.class.isInstance(deser.dogs.get(0)));
         assertFalse(Beagle.class.isInstance(deser.dogs.get(0)));
         assertTrue(Beagle.class.isInstance(deser.dogs.get(1)));
     }
+
 
 
     private Mutt getJavaObject() {
@@ -306,7 +311,7 @@ public class ObjectTypeTest {
         }
     }
 
-    public static class Dog {
+    public static abstract class Dog {
         private String name;
         private Dog father;
         private Dog mother;
@@ -366,6 +371,15 @@ public class ObjectTypeTest {
     }
 
     public static class Beagle extends Dog {
+        private String color;
+
+        public String getColor() {
+            return color;
+        }
+
+        public void setColor(String color) {
+            this.color = color;
+        }
     }
 
     public static class Poodle extends Dog {
@@ -412,6 +426,27 @@ public class ObjectTypeTest {
         @Override
         public Poodle fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
             return POODLES.get(jsonObject.getString("poodleName"));
+        }
+    }
+
+    public static class DogOwner {
+        private String name;
+        private List<Dog> dogs;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public List<Dog> getDogs() {
+            return dogs;
+        }
+
+        public void setDogs(List<Dog> dogs) {
+            this.dogs = dogs;
         }
     }
 }

@@ -30,7 +30,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
-    private Map<String, JsonValue> tmpMap;
+    private Map<String, JsonValue> attributeMap = new LinkedHashMap<String, JsonValue>();
 
     @Override
     public JsonObjectBuilder add(final String name, final JsonValue value) {
@@ -97,31 +97,23 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         putValue(name, builder.build());
         return this;
     }
-    
+
     private void putValue(String name, JsonValue value){
         if(name == null || value == null) {
-            throw npe();
+            throw new NullPointerException("name or value/builder must not be null");
         }
         
-        if(tmpMap==null){
-            tmpMap=new LinkedHashMap<String, JsonValue>();
-        }
-        
-        tmpMap.put(name, value);
+        attributeMap.put(name, value);
     }
     
-    private static NullPointerException npe() {
-        return new NullPointerException("name or value/builder must not be null");
-    }
 
     @Override
     public JsonObject build() {
         
-        if(tmpMap==null) {
+        if(attributeMap == null || attributeMap.isEmpty()) {
             return new JsonObjectImpl(Collections.EMPTY_MAP);
         } else {
-            Map<String, JsonValue> dump = (Collections.unmodifiableMap(tmpMap));
-            tmpMap=null;
+            Map<String, JsonValue> dump = (Collections.unmodifiableMap(attributeMap));
             return new JsonObjectImpl(dump);
         }
         

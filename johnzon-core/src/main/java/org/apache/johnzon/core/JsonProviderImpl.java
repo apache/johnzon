@@ -115,13 +115,13 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> stringMap) {
         return DELEGATE.createBuilderFactory(stringMap);
     }
-
+    
     static class JsonProviderDelegate extends JsonProvider {
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
         private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
         private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
-        private final JsonBuilderFactory builderFactory = new JsonBuilderFactoryImpl(null);
+        private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null);
 
         @Override
         public JsonParser createParser(final InputStream in) {

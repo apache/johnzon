@@ -36,20 +36,34 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.StringReader;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.Properties;
+import java.util.function.Function;
+import java.util.logging.Logger;
+
+import javax.annotation.Priority;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.Providers;
 
 // here while we dont compile in java 8 jaxrs module, when migrated we'll merge it with IgnorableTypes hierarchy at least
 @Provider
-@Produces("application/json")
-@Consumes("application/json")
-public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {
-    private final Collection<String> ignores;
-    private final AtomicReference<Jsonb> delegate = new AtomicReference<>();
-    private final JsonbConfig config = new JsonbConfig();
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@Priority(value = 4900)
+public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T>, AutoCloseable {
+
+    protected final Collection<String> ignores;
+    protected final JsonbConfig config = new JsonbConfig();
+    protected volatile Function<Class<?>, Jsonb> delegate = null;
+    private boolean customized;
+
+    @Context
+    private Providers providers;
 
     public JsonbJaxrsProvider() {
         this(null);
@@ -59,41 +73,61 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         this.ignores = ignores;
     }
 
-    protected Jsonb createJsonb() {
-        return JsonbBuilder.create(config);
-    }
-
     private boolean isIgnored(final Class<?> type) {
         return ignores != null && ignores.contains(type.getName());
     }
 
     // config - main containers support the configuration of providers this way
+    public void setFailOnUnknownProperties(final boolean active) {
+        config.setProperty("johnzon.fail-on-unknown-properties", active);
+        customized = true;
+    }
+
+    public void setOtherProperties(final String others) {
+        final Properties properties = new Properties() {{
+            try {
+                load(new StringReader(others));
+            } catch (final IOException e) {
+                throw new IllegalArgumentException(e);
+            }
+        }};
+        properties.stringPropertyNames().forEach(k -> config.setProperty(k, properties.getProperty(k)));
+        customized = true;
+    }
+
     public void setIJson(final boolean active) {
         config.withStrictIJSON(active);
+        customized = true;
     }
 
     public void setEncoding(final String encoding) {
         config.withEncoding(encoding);
+        customized = true;
     }
 
     public void setBinaryDataStrategy(final String binaryDataStrategy) {
         config.withBinaryDataStrategy(binaryDataStrategy);
+        customized = true;
     }
 
     public void setPropertyNamingStrategy(final String propertyNamingStrategy) {
         config.withPropertyNamingStrategy(propertyNamingStrategy);
+        customized = true;
     }
 
     public void setPropertyOrderStrategy(final String propertyOrderStrategy) {
         config.withPropertyOrderStrategy(propertyOrderStrategy);
+        customized = true;
     }
 
     public void setNullValues(final boolean nulls) {
         config.withNullValues(nulls);
+        customized = true;
     }
 
     public void setPretty(final boolean pretty) {
         config.withFormatting(pretty);
+        customized = true;
     }
 
     // actual impl
@@ -101,21 +135,23 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     @Override
     public boolean isReadable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
-            && InputStream.class != genericType && Reader.class != genericType && Response.class != genericType
-            && String.class != genericType
-            && !JsonStructure.class.isAssignableFrom(type);
+                && !InputStream.class.isAssignableFrom(type)
+                && !Reader.class.isAssignableFrom(type)
+                && !Response.class.isAssignableFrom(type)
+                && !CharSequence.class.isAssignableFrom(type)
+                && !JsonStructure.class.isAssignableFrom(type);
     }
 
     @Override
     public boolean isWriteable(final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(type)
-            && InputStream.class != genericType
-            && OutputStream.class != genericType
-            && Writer.class != genericType
-            && StreamingOutput.class != genericType
-            && String.class != genericType
-            && Response.class != genericType
-            && !JsonStructure.class.isAssignableFrom(type);
+                && !InputStream.class.isAssignableFrom(type)
+                && !OutputStream.class.isAssignableFrom(type)
+                && !Writer.class.isAssignableFrom(type)
+                && !StreamingOutput.class.isAssignableFrom(type)
+                && !CharSequence.class.isAssignableFrom(type)
+                && !Response.class.isAssignableFrom(type)
+                && !JsonStructure.class.isAssignableFrom(type);
     }
 
     @Override
@@ -125,26 +161,75 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     @Override
     public T readFrom(final Class<T> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-                      final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
-        return delegate().fromJson(entityStream, genericType);
+            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
+        return getJsonb(type).fromJson(entityStream, genericType);
     }
 
     @Override
     public void writeTo(final T t, final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-                        final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
-        delegate().toJson(t, entityStream);
+            final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
+        getJsonb(type).toJson(t, entityStream);
     }
 
-    private Jsonb delegate() {
-        Jsonb jsonb = delegate.get();
-        if (jsonb == null) {
-            final Jsonb newJsonb = createJsonb();
-            if (delegate.compareAndSet(null, newJsonb)) {
-                jsonb = newJsonb;
-            } else {
-                jsonb = delegate.get();
+    protected Jsonb createJsonb() {
+        return JsonbBuilder.create(config);
+    }
+
+    protected Jsonb getJsonb(final Class<?> type) {
+        if (delegate == null){
+            synchronized (this) {
+                if (delegate == null) {
+                    final ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
+                    if (contextResolver != null) {
+                        if (customized) {
+                            Logger.getLogger(JsonbJaxrsProvider.class.getName())
+                                  .warning("Customizations done on the Jsonb instance will be ignored because a ContextResolver<Jsonb> was found");
+                        }
+                        delegate = new DynamicInstance(contextResolver); // faster than contextResolver::getContext
+                    } else {
+                        delegate = new ProvidedInstance(createJsonb()); // don't recreate it
+                    }
+                }
             }
         }
-        return jsonb;
+        return delegate.apply(type);
+    }
+
+    @Override
+    public synchronized void close() throws Exception {
+        if (AutoCloseable.class.isInstance(delegate)) {
+            AutoCloseable.class.cast(delegate).close();
+        }
+    }
+
+    private static final class DynamicInstance implements Function<Class<?>, Jsonb> {
+        private final ContextResolver<Jsonb> contextResolver;
+
+        private DynamicInstance(final ContextResolver<Jsonb> resolver) {
+            this.contextResolver = resolver;
+        }
+
+        @Override
+        public Jsonb apply(final Class<?> type) {
+            return contextResolver.getContext(type);
+        }
+    }
+
+    private static final class ProvidedInstance implements Function<Class<?>, Jsonb>, AutoCloseable {
+        private final Jsonb instance;
+
+        private ProvidedInstance(final Jsonb instance) {
+            this.instance = instance;
+        }
+
+        @Override
+        public Jsonb apply(final Class<?> aClass) {
+            return instance;
+        }
+
+        @Override
+        public void close() throws Exception {
+            instance.close();
+        }
     }
 }

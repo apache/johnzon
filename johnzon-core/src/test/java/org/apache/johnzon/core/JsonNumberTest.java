@@ -18,17 +18,47 @@
  */
 package org.apache.johnzon.core;
 
-import java.math.BigInteger;
-
-import javax.json.Json;
-import javax.json.JsonArray;
-
 import org.junit.Assert;
 import org.junit.Test;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonNumber;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.math.BigInteger;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 
 public class JsonNumberTest {
+    @Test
+    public void nonZeroFractional() {
+        final JsonNumber number = Json.createArrayBuilder()
+                .add(12345.6489)
+                .build()
+                .getJsonNumber(0);
+        try {
+            number.intValueExact();
+            fail();
+        } catch (final ArithmeticException ae) {
+            // ok
+        }
+        try {
+            number.longValueExact();
+            fail();
+        } catch (final ArithmeticException ae) {
+            // ok
+        }
+    }
+    @Test
+    public void equals() {
+        final JsonNumber a = Json.createObjectBuilder().add("a", 1).build().getJsonNumber("a");
+        final JsonNumber b = Json.createObjectBuilder().add("b", 1.1).build().getJsonNumber("b");
+        assertFalse(a.equals(b));
+        assertFalse(b.equals(a));
+    }
     
     @Test(expected=ArithmeticException.class)
     public void testBigIntegerExact() {
@@ -48,4 +78,21 @@ public class JsonNumberTest {
        
     }
 
+    @Test
+    public void testBigIntegerButFromJustALongTooLong() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer).writeStartObject().write("value", new BigInteger("10002000000000000000")).writeEnd().close();
+        final String asJson = writer.toString();
+        final JsonNumber jsonNumber = Json.createReader(new StringReader(asJson)).readObject().getJsonNumber("value");
+        Assert.assertEquals(new BigInteger("10002000000000000000"), jsonNumber.bigIntegerValue());
+    }
+
+    @Test
+    public void testHashCode() {
+        JsonNumber a = Json.createObjectBuilder().add("a", 1).build().getJsonNumber("a");
+        JsonNumber b = Json.createObjectBuilder().add("b", 1.1).build().getJsonNumber("b");
+
+        Assert.assertEquals(a.hashCode(), a.bigDecimalValue().hashCode());
+        Assert.assertEquals(b.hashCode(), b.bigDecimalValue().hashCode());
+    }
 }

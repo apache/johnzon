@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
@@ -28,18 +29,27 @@ import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
     private final JsonGenerator generator;
     private final Mappings mappings;
+    
+    private final Boolean isDeduplicateObjects;
+    private Map<Object, String> jsonPointers;
 
 
-    MappingGeneratorImpl(MapperConfig config, JsonGenerator jsonGenerator, final Mappings mappings) {
+    MappingGeneratorImpl(MapperConfig config, JsonGenerator jsonGenerator, final Mappings mappings, Boolean isDeduplicateObjects) {
         this.config = config;
         this.generator = jsonGenerator;
         this.mappings = mappings;
+
+        this.isDeduplicateObjects = isDeduplicateObjects;
+
+        this.jsonPointers = isDeduplicateObjects ?  new HashMap<Object, String>() : Collections.<Object, String>emptyMap();
     }
 
     @Override
@@ -54,12 +64,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
         } else if (object instanceof JsonValue) {
             generator.write((JsonValue) object);
         } else {
-            doWriteObject(object, generator, false);
+            doWriteObject(object, generator, false, null, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null);
         }
         return this;
     }
 
-    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody) {
+    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
+
         try {
             if (object instanceof Map) {
                 if (writeBody) {
@@ -85,7 +96,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             if (object instanceof Iterable) {
-                doWriteIterable((Iterable) object);
+                doWriteIterable((Iterable) object, ignoredProperties, jsonPointer);
                 return;
             }
 
@@ -97,7 +108,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             if (writeBody && objectConverter != null) {
                 objectConverter.writeJson(object, this);
             } else {
-                doWriteObjectBody(object);
+                doWriteObjectBody(object, ignoredProperties, jsonPointer);
             }
 
             if (writeBody) {
@@ -125,14 +136,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             final Class<?> valueClass = value.getClass();
-            final boolean primitive = Mappings.isPrimitive(valueClass);
-            final boolean clazz = mappings.getClassMapping(valueClass) != null;
-            final boolean array = clazz || primitive ? false : valueClass.isArray();
-            final boolean collection = clazz || primitive || array ? false : Collection.class.isAssignableFrom(valueClass);
-            final boolean map = clazz || primitive || array || collection ? false : Map.class.isAssignableFrom(valueClass);
-            writeValue(valueClass,
-                    primitive, array, collection, map, itemConverter,
-                    key == null ? "null" : key.toString(), value, null);
+            writeValue(valueClass, true,
+                    false, false, false, false, itemConverter,
+                    key == null ? "null" : key.toString(), value, null, null, null);
         }
         return generator;
     }
@@ -224,7 +230,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
 
-    private void doWriteObjectBody(final Object object) throws IllegalAccessException, InvocationTargetException {
+    private void doWriteObjectBody(final Object object, final Collection<String> ignored, JsonPointerTracker jsonPointer)
+            throws IllegalAccessException, InvocationTargetException {
+
+        if (jsonPointer != null) {
+            jsonPointers.put(object, jsonPointer.toString());
+        }
+
         final Class<?> objectClass = object.getClass();
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(objectClass);
         if (classMapping == null) {
@@ -236,12 +248,15 @@ public class MappingGeneratorImpl implements MappingGenerator {
             return;
         }
         if (classMapping.adapter != null) {
-            doWriteObjectBody(classMapping.adapter.to(object));
+            doWriteObjectBody(classMapping.adapter.to(object), ignored, jsonPointer);
             return;
         }
 
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {
             final Mappings.Getter getter = getterEntry.getValue();
+            if (ignored != null && ignored.contains(getterEntry.getKey())) {
+                continue;
+            }
             if (getter.version >= 0 && config.getVersion() >= getter.version) {
                 continue;
             }
@@ -263,12 +278,24 @@ public class MappingGeneratorImpl implements MappingGenerator {
 
             final Object val = getter.converter == null ? value : getter.converter.from(value);
 
-            writeValue(val.getClass(),
-                    getter.primitive, getter.array,
-                    getter.collection, getter.map,
-                    getter.itemConverter,
-                    getterEntry.getKey(),
-                    val, getter.objectConverter);
+            String valJsonPointer = jsonPointers.get(val);
+            if (valJsonPointer != null) {
+                // write the JsonPointer instead
+                generator.write(getterEntry.getKey(), valJsonPointer);
+            } else {
+                writeValue(val.getClass(),
+                        getter.dynamic,
+                        getter.primitive,
+                        getter.array,
+                        getter.collection,
+                        getter.map,
+                        getter.itemConverter,
+                        getterEntry.getKey(),
+                        val,
+                        getter.objectConverter,
+                        getter.ignoreNested,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, getterEntry.getKey()) : null);
+            }
         }
 
         // @JohnzonAny doesn't respect comparator since it is a map and not purely in the model we append it after and
@@ -281,13 +308,21 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
     }
 
-    private void writeValue(final Class<?> type,
+    //CHECKSTYLE:OFF
+    private void writeValue(final Class<?> type, final boolean dynamic,
                             final boolean primitive, final boolean array,
                             final boolean collection, final boolean map,
                             final Adapter itemConverter,
                             final String key, final Object value,
-                            final ObjectConverter.Writer objectConverter) throws InvocationTargetException, IllegalAccessException {
-        if (array) {
+                            final ObjectConverter.Writer objectConverter,
+                            final Collection<String> ignoredProperties,
+                            final JsonPointerTracker jsonPointer)
+            throws InvocationTargetException, IllegalAccessException {
+        //CHECKSTYLE:ON
+        if (config.getSerializeValueFilter().shouldIgnore(key, value)) {
+            return;
+        }
+        if (array || (dynamic && type.isArray())) {
             final int length = Array.getLength(value);
             if (length == 0 && config.isSkipEmptyArray()) {
                 return;
@@ -306,25 +341,46 @@ public class MappingGeneratorImpl implements MappingGenerator {
             generator.writeStartArray(key);
             for (int i = 0; i < length; i++) {
                 final Object o = Array.get(value, i);
-                writeItem(itemConverter != null ? itemConverter.from(o) : o);
+                String valJsonPointer = jsonPointers.get(o);
+                if (valJsonPointer != null) {
+                    writePrimitives(valJsonPointer);
+                } else {
+                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
+                }
             }
             generator.writeEnd();
-            return;
-        } else if (collection) {
+        } else if (collection || (dynamic && Collection.class.isAssignableFrom(type))) {
             generator.writeStartArray(key);
+            int i = 0;
             for (final Object o : Collection.class.cast(value)) {
-                writeItem(itemConverter != null ? itemConverter.from(o) : o);
+                String valJsonPointer = jsonPointers.get(o);
+                if (valJsonPointer != null) {
+                    // write JsonPointer instead of the original object
+                    writePrimitives(valJsonPointer);
+                } else {
+                    ObjectConverter.Writer objectConverterToUse = objectConverter;
+                    if (o != null && objectConverterToUse == null) {
+                        objectConverterToUse = config.findObjectConverterWriter(o.getClass());
+                    }
+
+                    if (objectConverterToUse != null) {
+                        generator.writeStartObject();
+                        objectConverterToUse.writeJson(o, this);
+                        generator.writeEnd();
+                    } else {
+                        writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties,
+                                isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
+                    }
+                }
+                i++;
             }
             generator.writeEnd();
-            return;
-        } else if (map) {
+        } else if (map || (dynamic && Map.class.isAssignableFrom(type))) {
             generator.writeStartObject(key);
             writeMapBody((Map<?, ?>) value, itemConverter);
             generator.writeEnd();
-            return;
-        } else if (primitive) {
+        } else if (primitive || (dynamic && Mappings.isPrimitive(type))) {
             writePrimitives(key, type, value);
-            return;
         } else {
             final Adapter converter = config.findAdapter(type);
             if (converter != null) {
@@ -332,10 +388,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (writePrimitives(key, adapted.getClass(), adapted)) {
                     return;
                 }
-                writeValue(String.class, true, false, false, false, null, key, adapted, null);
+                writeValue(String.class, true, true, false, false, false, null, key, adapted, null, ignoredProperties, jsonPointer);
                 return;
             } else {
-
                 ObjectConverter.Writer objectConverterToUse = objectConverter;
                 if (objectConverterToUse == null) {
                     objectConverterToUse = config.findObjectConverterWriter(type);
@@ -352,16 +407,18 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
             generator.writeStartObject(key);
-            doWriteObjectBody(value);
+            doWriteObjectBody(value, ignoredProperties, jsonPointer);
             generator.writeEnd();
         }
     }
 
-    private void writeItem(final Object o) {
-        if (!writePrimitives(o)) {
+    private void writeItem(final Object o, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
+        if (o == null) {
+            generator.writeNull();
+        } else if (!writePrimitives(o)) {
             if (Collection.class.isInstance(o)) {
-                doWriteIterable(Collection.class.cast(o));
-            } else if (o != null && o.getClass().isArray()) {
+                doWriteIterable(Collection.class.cast(o), ignoredProperties, jsonPointer);
+            } else if (o.getClass().isArray()) {
                 final int length = Array.getLength(o);
                 if (length > 0 || !config.isSkipEmptyArray()) {
                     generator.writeStartArray();
@@ -370,24 +427,29 @@ public class MappingGeneratorImpl implements MappingGenerator {
                         if (t == null) {
                             generator.writeNull();
                         } else {
-                            writeItem(t);
+                            writeItem(t, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                         }
                     }
                     generator.writeEnd();
                 }
-            } else if (o == null) {
-                generator.writeNull();
             } else {
-                doWriteObject(o, generator, true);
+                String valJsonPointer = jsonPointers.get(o);
+                if (valJsonPointer != null) {
+                    // write the JsonPointer instead
+                    generator.write(valJsonPointer);
+                } else {
+                    doWriteObject(o, generator, true, ignoredProperties, jsonPointer);
+                }
             }
         }
     }
 
-    private <T> void doWriteIterable(final Iterable<T> object) {
+    private <T> void doWriteIterable(final Iterable<T> object, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
         if (object == null) {
             generator.writeStartArray().writeEnd();
         } else {
             generator.writeStartArray();
+            int i = 0;
             for (final T t : object) {
                 if (JsonValue.class.isInstance(t)) {
                     generator.write(JsonValue.class.cast(t));
@@ -395,9 +457,10 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     if (t == null) {
                         generator.writeNull();
                     } else {
-                        writeItem(t);
+                        writeItem(t, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                     }
                 }
+                i++;
             }
             generator.writeEnd();
         }

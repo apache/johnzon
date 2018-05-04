@@ -52,6 +52,7 @@ public interface AccessMode {
         String[] getParameterNames();
         Adapter<?, ?>[] getParameterConverter();
         Adapter<?, ?>[] getParameterItemConverter();
+        ObjectConverter.Codec<?>[] getObjectConverter();
     }
 
     Factory findFactory(Class<?> clazz);

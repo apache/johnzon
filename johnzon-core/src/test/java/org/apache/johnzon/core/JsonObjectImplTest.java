@@ -22,6 +22,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -31,6 +32,22 @@ import javax.json.JsonValue;
 import org.junit.Test;
 
 public class JsonObjectImplTest {
+    @Test
+    public void boolErrors() {
+        {
+            final JsonObject val = Json.createObjectBuilder().add("a", true).build();
+            assertTrue(val.getBoolean("a"));
+        }
+        {
+            final JsonObject val = Json.createObjectBuilder().add("a", "wrong").build();
+            try {
+                val.getBoolean("a");
+                fail();
+            } catch (final ClassCastException cce) {
+                // ok
+            }
+        }
+    }
     @Test
     public void objectToString() {
         final JsonObjectBuilder ob = Json.createObjectBuilder();

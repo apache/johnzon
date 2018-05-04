@@ -42,11 +42,11 @@ import javax.json.JsonReaderFactory;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
 
 public class JsonReaderImplTest {
-
 
 
     public JsonReaderImplTest() {
@@ -61,6 +61,16 @@ public class JsonReaderImplTest {
     @SuppressWarnings("unchecked")
     protected Map<String, ?> getFactoryConfig() {
         return Collections.EMPTY_MAP;
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void badTypeObject() {
+        Json.createReaderFactory(getFactoryConfig()).createReader(new StringReader("[]")).readObject();
+    }
+
+    @Test(expected = JsonParsingException.class)
+    public void badTypeArray() {
+        Json.createReaderFactory(getFactoryConfig()).createReader(new StringReader("{}")).readArray();
     }
 
     @Test
@@ -173,7 +183,7 @@ public class JsonReaderImplTest {
         assertEquals("hallo\u20acö\uffff \u08a5 থ?ß§$%&´'`*+#\udbff\udfff", object.getString("নa"));
         reader.close();
     }
-    
+
     @Test
     public void specialKeysWithStringAsByteArrayInputStream() {
         final String s = "{\"\\\"a\":\"\u0055\",\"\u0055\":\"test2\"}";
@@ -348,7 +358,7 @@ public class JsonReaderImplTest {
         assertEquals(-2, array.getInt(1));
         reader.close();
     }
-    
+
     @Test
     public void simple2BadBufferSize8() {
         final JsonReader reader = Json.createReaderFactory(new HashMap<String, Object>() {
@@ -435,8 +445,8 @@ public class JsonReaderImplTest {
 
     @Test
     public void stringescapeVariousBufferSizes() {
-        final int[] buffersizes = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
-                26, 27, 28, 32, 64, 128, 1024, 8192 };
+        final int[] buffersizes = new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,
+                26, 27, 28, 32, 64, 128, 1024, 8192};
 
         for (final int buffersize : buffersizes) {
             final String value = String.valueOf(buffersize);
@@ -474,7 +484,7 @@ public class JsonReaderImplTest {
     public void testGrowingString() throws Throwable {
         JsonReaderFactory factory = Json.createReaderFactory(null);
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 40000; i++) {
+        for (int i = 0; i < 10000; i++) {
             sb.append('x');
             String growingString = sb.toString();
             String str = "[4, \"\", \"" + growingString + "\", \"\", \"" + growingString + "\", \"\", 400]";
@@ -507,7 +517,7 @@ public class JsonReaderImplTest {
             JsonReaderFactory factory = Json.createReaderFactory(config);
 
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 100; i++) {
                 sb.append('x');
                 String name = sb.toString();
                 String str = "[4, \"\", \"" + name + "\", \"\", \"" + name + "\", \"\", 400]";
@@ -558,4 +568,12 @@ public class JsonReaderImplTest {
             assertEquals(1234.5, JsonNumber.class.cast(value).doubleValue(), 0.);
         }
     }
+
+
+    @Test(expected = JsonParsingException.class)
+    public void testInvalidNumber() {
+        String jsonWithIllegalNumber = "{\"val\":12.34-2}";
+        JsonReaderImpl.class.cast(Json.createReader(new StringReader(jsonWithIllegalNumber))).readObject();
+    }
+
 }

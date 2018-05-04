@@ -58,8 +58,10 @@ public class JohnzonMessageBodyReader<T> extends IgnorableTypes implements Messa
     public boolean isReadable(final Class<?> rawType, final Type genericType,
                               final Annotation[] annotations, final MediaType mediaType) {
         return !isIgnored(rawType)
-                && InputStream.class != genericType && Reader.class != genericType && Response.class != genericType
-                && String.class != genericType
+                && !InputStream.class.isAssignableFrom(rawType)
+                && !Reader.class.isAssignableFrom(rawType)
+                && !Response.class.isAssignableFrom(rawType)
+                && !CharSequence.class.isAssignableFrom(rawType)
                 && !JsonStructure.class.isAssignableFrom(rawType);
     }
 

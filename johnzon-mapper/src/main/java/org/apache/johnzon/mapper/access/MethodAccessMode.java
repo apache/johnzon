@@ -18,12 +18,6 @@
  */
 package org.apache.johnzon.mapper.access;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.JohnzonAny;
-import org.apache.johnzon.mapper.JohnzonProperty;
-import org.apache.johnzon.mapper.MapperException;
-import org.apache.johnzon.mapper.ObjectConverter;
-
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -33,6 +27,12 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.JohnzonAny;
+import org.apache.johnzon.mapper.JohnzonProperty;
+import org.apache.johnzon.mapper.MapperException;
+import org.apache.johnzon.mapper.ObjectConverter;
 
 public class MethodAccessMode extends BaseAccessMode {
     private final boolean supportGetterAsWritter;
@@ -52,7 +52,7 @@ public class MethodAccessMode extends BaseAccessMode {
                 if (isIgnored(descriptor.getName()) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
                     continue;
                 }
-                readers.put(extractKey(descriptor.getName(), readMethod, null), new MethodReader(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
+                readers.put(extractKey(descriptor.getName(), readMethod, null), new MethodReader(readMethod, readMethod.getGenericReturnType()));
             }
         }
         return readers;
@@ -69,12 +69,12 @@ public class MethodAccessMode extends BaseAccessMode {
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null) {
                 writers.put(extractKey(descriptor.getName(), writeMethod, descriptor.getReadMethod()),
-                        new MethodWriter(writeMethod, fixType(clazz, writeMethod.getGenericParameterTypes()[0])));
+                        new MethodWriter(writeMethod, writeMethod.getGenericParameterTypes()[0]));
             } else if (supportGetterAsWritter
                     && Collection.class.isAssignableFrom(descriptor.getPropertyType())
                     && descriptor.getReadMethod() != null) {
                 final Method readMethod = descriptor.getReadMethod();
-                writers.put(extractKey(descriptor.getName(), readMethod, null), new MethodGetterAsWriter(readMethod, fixType(clazz, readMethod.getGenericReturnType())));
+                writers.put(extractKey(descriptor.getName(), readMethod, null), new MethodGetterAsWriter(readMethod, readMethod.getGenericReturnType()));
             }
         }
         return writers;
