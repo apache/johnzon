@@ -76,7 +76,7 @@ Should you want to build any of the above binaries, this source bundle is the ri
 
 ### Maven Dependencies
 
-#### APIs for Johnzon-1.1.x
+#### APIs for Johnzon-1.1.x (JavaEE 8)
 
     <dependency>
         <groupId>org.apache.geronimo.specs</groupId>
@@ -90,4 +90,18 @@ Should you want to build any of the above binaries, this source bundle is the ri
         <version>1.0</version>
     </dependency>
 
-Note that you should set the seope of those dependencies to either `provided` or `compile` depending on whether your environment already provide them or not.
+#### APIs for Johnzon-1.0.x (JavaEE 7)
+
+    <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-json_1.0_spec</artifactId>
+        <version>1.0-alpha-1</version>
+    </dependency>
+
+    <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+        <version>1.0</version>
+    </dependency>
+
+Note that you should set the scope of those dependencies to either `provided` or `compile` depending on whether your environment already provide them or not.
