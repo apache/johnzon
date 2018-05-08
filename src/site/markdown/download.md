@@ -61,16 +61,16 @@ This corresponds to JavaEE 7 level.
 #### Binaries
 The binary distribution contains all Johnzon modules.
 
-* [apache-johnzon-1.0.0-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.0/apache-johnzon-1.0.0-bin.zip)
-* [apache-johnzon-1.0.0-bin.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.0.0/apache-johnzon-1.0.0-bin.zip.sha1)
-* [apache-johnzon-1.0.0-bin.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.0.0/apache-johnzon-1.0.0-bin.zip.asc)
+* [apache-johnzon-1.0.1-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.1/apache-johnzon-1.0.1-bin.zip)
+* [apache-johnzon-1.0.1-bin.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.0.1/apache-johnzon-1.0.1-bin.zip.sha1)
+* [apache-johnzon-1.0.1-bin.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.0.1/apache-johnzon-1.0.1-bin.zip.asc)
 
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
 
-* [johnzon-1.0.0-source-release.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.0/johnzon-1.0.0-source-release.zip)
-* [johnzon-1.0.0-source-release.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.0.0/johnzon-1.0.0-source-release.zip.sha1)
-* [johnzon-1.0.0-source-release.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.0.0/johnzon-1.0.0-source-release.zip.asc)
+* [johnzon-1.0.1-source-release.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.1/johnzon-1.0.1-source-release.zip)
+* [johnzon-1.0.1-source-release.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.0.1/johnzon-1.0.1-source-release.zip.sha1)
+* [johnzon-1.0.1-source-release.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.0.1/johnzon-1.0.1-source-release.zip.asc)
 
 -------
 
