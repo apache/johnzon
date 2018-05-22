@@ -27,6 +27,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonPatch;
+import javax.json.JsonPatchBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.io.StringReader;
@@ -57,6 +58,31 @@ public class JsonPatchTest {
         assertEquals("qux", patched.getString("baz"));
 
         assertEquals("{\"foo\":\"bar\",\"baz\":\"qux\"}", toJsonString(patched));
+    }
+
+    /**
+     * {@linkplain} https://issues.apache.org/jira/browse/JOHNZON-172
+     */
+    @Test
+    public void testAddToRootContainingEmptyJsonObject() {
+        JsonObject object = Json.createObjectBuilder()
+                               .add("request", Json.createObjectBuilder()
+                                                   .add("test", JsonValue.EMPTY_JSON_OBJECT))
+                               .build();
+
+        JsonPatchImpl patch = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+                                                                             "/name",
+                                                                             null,
+                                                                             new JsonStringImpl("aName")));
+
+        JsonObject patched = patch.apply(object);
+        assertNotNull(patched);
+
+        JsonObject requestJson = patched.getJsonObject("request");
+        assertNotNull(requestJson);
+        assertEquals(JsonValue.EMPTY_JSON_OBJECT, requestJson.getJsonObject("test"));
+
+        assertEquals("aName", patched.getString("name"));
     }
 
     @Test

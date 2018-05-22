@@ -358,7 +358,7 @@ public class JsonPointerImpl implements JsonPointer {
             JsonObject jsonObject = (JsonObject) jsonValue;
             JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
 
-            if (jsonObject.isEmpty()) {
+            if (jsonObject.isEmpty() && isPositionToAdd(currentPath)) {
                 objectBuilder.add(lastReferenceToken, newValue);
             } else {
                 for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
@@ -367,8 +367,7 @@ public class JsonPointerImpl implements JsonPointer {
                     objectBuilder.add(entry.getKey(), addInternal(entry.getValue(), newValue, currentPath));
                     currentPath.remove(entry.getKey());
 
-                    if (currentPath.size() == referenceTokens.size() - 1 &&
-                        currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2))) {
+                    if (isPositionToAdd(currentPath)) {
                         objectBuilder.add(lastReferenceToken, newValue);
                     }
                 }
@@ -379,9 +378,7 @@ public class JsonPointerImpl implements JsonPointer {
             JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
 
             int arrayIndex = -1;
-            if (currentPath.size() == referenceTokens.size() - 1 &&
-                currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2))) {
-
+            if (isPositionToAdd(currentPath)) {
                 arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, true);
             }
 
@@ -402,6 +399,11 @@ public class JsonPointerImpl implements JsonPointer {
             return arrayBuilder.build();
         }
         return jsonValue;
+    }
+
+    private boolean isPositionToAdd(List<String> currentPath) {
+        return currentPath.size() == referenceTokens.size() - 1 &&
+                currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2));
     }
 
     private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition) {
