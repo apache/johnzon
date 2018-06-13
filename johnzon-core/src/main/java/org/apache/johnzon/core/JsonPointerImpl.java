@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
@@ -27,6 +26,8 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonPointer;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ import java.util.Map;
 
 public class JsonPointerImpl implements JsonPointer {
 
+    private final JsonProvider provider;
     private final String jsonPointer;
     private final List<String> referenceTokens = new ArrayList<>();
     private final String lastReferenceToken;
@@ -45,7 +47,7 @@ public class JsonPointerImpl implements JsonPointer {
      * @throws NullPointerException if {@code jsonPointer} is {@code null}
      * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
      */
-    public JsonPointerImpl(String jsonPointer) {
+    public JsonPointerImpl(final JsonProvider provider, final String jsonPointer) {
         if (jsonPointer == null) {
             throw new NullPointerException("jsonPointer must not be null");
         }
@@ -53,6 +55,7 @@ public class JsonPointerImpl implements JsonPointer {
             throw new JsonException("A non-empty JsonPointer string must begin with a '/'");
         }
 
+        this.provider = provider;
         this.jsonPointer = jsonPointer;
         String[] encodedReferenceTokens = jsonPointer.split("/", -1);
 
@@ -356,7 +359,7 @@ public class JsonPointerImpl implements JsonPointer {
     private JsonValue addInternal(JsonValue jsonValue, JsonValue newValue, List<String> currentPath) {
         if (jsonValue instanceof JsonObject) {
             JsonObject jsonObject = (JsonObject) jsonValue;
-            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+            JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
 
             if (jsonObject.isEmpty() && isPositionToAdd(currentPath)) {
                 objectBuilder.add(lastReferenceToken, newValue);
@@ -375,7 +378,7 @@ public class JsonPointerImpl implements JsonPointer {
             return objectBuilder.build();
         } else if (jsonValue instanceof JsonArray) {
             JsonArray jsonArray = (JsonArray) jsonValue;
-            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+            JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
 
             int arrayIndex = -1;
             if (isPositionToAdd(currentPath)) {
@@ -409,7 +412,7 @@ public class JsonPointerImpl implements JsonPointer {
     private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition) {
         if (jsonValue instanceof JsonObject) {
             JsonObject jsonObject = (JsonObject) jsonValue;
-            JsonObjectBuilder objectBuilder = Json.createObjectBuilder();
+            JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
 
             for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
                 if (currentPosition == referencePosition
@@ -421,7 +424,7 @@ public class JsonPointerImpl implements JsonPointer {
             return objectBuilder.build();
         } else if (jsonValue instanceof JsonArray) {
             JsonArray jsonArray = (JsonArray) jsonValue;
-            JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+            JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
 
             int arrayIndex = -1;
             if (currentPosition == referencePosition) {

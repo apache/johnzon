@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
@@ -32,17 +31,20 @@ import javax.json.JsonObjectBuilder;
 import javax.json.JsonPatch;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
 
 class JsonPatchImpl implements JsonPatch {
 
+    private final JsonProvider provider;
     private final List<PatchValue> patches;
 
 
-    JsonPatchImpl(PatchValue... patches) {
-        this.patches = Arrays.asList(patches);
+    JsonPatchImpl(final JsonProvider provider, final PatchValue... patches) {
+        this(provider, Arrays.asList(patches));
     }
 
-    JsonPatchImpl(List<PatchValue> patches) {
+    JsonPatchImpl(final JsonProvider provider, final List<PatchValue> patches) {
+        this.provider = provider;
         if (patches == null) {
             this.patches = Collections.emptyList();
         } else {
@@ -117,7 +119,7 @@ class JsonPatchImpl implements JsonPatch {
     @Override
     public JsonArray toJsonArray() {
 
-        JsonArrayBuilder builder = Json.createArrayBuilder();
+        JsonArrayBuilder builder = provider.createArrayBuilder();
         for (PatchValue patch : patches) {
             builder.add(patch.toJson());
         }
@@ -128,21 +130,24 @@ class JsonPatchImpl implements JsonPatch {
 
 
     static class PatchValue {
+        private final JsonProvider provider;
         private final JsonPatch.Operation operation;
         private final JsonPointerImpl path;
         private final JsonPointerImpl from;
         private final JsonValue value;
 
-        PatchValue(JsonPatch.Operation operation,
-                   String path,
-                   String from,
-                   JsonValue value) {
+        PatchValue(final JsonProvider provider,
+                   final JsonPatch.Operation operation,
+                   final String path,
+                   final String from,
+                   final JsonValue value) {
+            this.provider = provider;
             this.operation = operation;
-            this.path = new JsonPointerImpl(path);
+            this.path = new JsonPointerImpl(provider, path);
 
             // ignore from if we do not need it
             if (operation == JsonPatch.Operation.MOVE || operation == JsonPatch.Operation.COPY) {
-                this.from = new JsonPointerImpl(from);
+                this.from = new JsonPointerImpl(provider, from);
             } else {
                 this.from = null;
             }
@@ -195,7 +200,7 @@ class JsonPatchImpl implements JsonPatch {
         }
 
         JsonObject toJson() {
-            JsonObjectBuilder builder = Json.createObjectBuilder()
+            JsonObjectBuilder builder = provider.createObjectBuilder()
                                             .add("op", operation.name().toLowerCase())
                                             .add("path", path.getJsonPointer());
 

@@ -24,22 +24,25 @@ import javax.json.JsonPatch;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
 
 /**
  * Create a diff from a source and target JsonStructure
  */
 class JsonPatchDiff extends DiffBase {
 
+    private final JsonProvider provider;
     private final JsonStructure source;
     private final JsonStructure target;
 
-    JsonPatchDiff(JsonStructure source, JsonStructure target) {
+    JsonPatchDiff(final JsonProvider provider, final JsonStructure source, final JsonStructure target) {
+        this.provider = provider;
         this.source = source;
         this.target = target;
     }
 
     JsonPatch calculateDiff() {
-        JsonPatchBuilder patchBuilder = new JsonPatchBuilderImpl();
+        JsonPatchBuilder patchBuilder = new JsonPatchBuilderImpl(provider);
 
         diff(patchBuilder, "", source, target);
 

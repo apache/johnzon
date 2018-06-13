@@ -27,16 +27,20 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonPatch;
 import javax.json.JsonPatchBuilder;
 import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class JsonPatchBuilderTest {
 
+    private static final JsonProvider PROVIDER = JsonProvider.provider();
+
     @Test
     public void testPatchBuilderAddString() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/foo",
                 null,
                 new JsonStringImpl("bar")));
@@ -50,7 +54,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddStringNull() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/foo",
                 null,
                 JsonValue.NULL));
@@ -65,7 +70,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddJsonObject() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/foo",
                 null,
                 Json.createObjectBuilder()
@@ -83,7 +89,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddJsonArray() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/path",
                 null,
                 Json.createArrayBuilder()
@@ -101,7 +108,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddJsonValueNull() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/path",
                 null,
                 JsonValue.NULL));
@@ -115,7 +123,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddInt() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/foo",
                 null,
                 new JsonStringImpl("bar")));
@@ -129,11 +138,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderAddBoolean() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/path/true",
                 null,
                 JsonValue.TRUE),
-                new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+                new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.ADD,
                         "/path/false",
                         null,
                         JsonValue.FALSE));
@@ -154,7 +164,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderRemove() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REMOVE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.REMOVE,
                 "/path/to/remove",
                 null,
                 null));
@@ -174,7 +185,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceString() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.REPLACE,
                 "/path/to/replace",
                 null,
                 new JsonStringImpl("new value")));
@@ -188,7 +200,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceInt() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.REPLACE,
                 "/replace/me",
                 null,
                 new JsonLongImpl(42)));
@@ -202,11 +215,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceBoolean() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.REPLACE,
                 "/true/to/replace",
                 null,
                 JsonValue.FALSE),
-                new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+                new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.REPLACE,
                         "/false/to/replace",
                         null,
                         JsonValue.TRUE));
@@ -221,7 +235,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceJsonObject() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.REPLACE,
                 "/replace/the/object",
                 null,
                 Json.createObjectBuilder()
@@ -239,7 +254,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderReplaceJsonArray() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.REPLACE,
                 "/replace/my/array",
                 null,
                 Json.createArrayBuilder()
@@ -263,7 +279,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderMove() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.MOVE,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.MOVE,
                 "/move/to",
                 "/move/from",
                 null));
@@ -288,7 +305,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderCopy() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.COPY,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.COPY,
                 "/to",
                 "/from",
                 null));
@@ -313,7 +331,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestString() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.TEST,
                 "/to/test",
                 null,
                 new JsonStringImpl("value")));
@@ -327,11 +346,12 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestBoolean() {
 
-        JsonPatchImpl exptected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+        JsonPatchImpl exptected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.TEST,
                 "/true/to/test",
                 null,
                 JsonValue.TRUE),
-                new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+                new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.TEST,
                         "/false/to/test",
                         null,
                         JsonValue.FALSE));
@@ -346,7 +366,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestInt() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.TEST,
                 "/test/int",
                 null,
                 new JsonLongImpl(16)));
@@ -360,7 +381,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestJsonValue() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.TEST,
                 "/test/value",
                 null,
                 JsonValue.NULL));
@@ -374,7 +396,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestJsonObject() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.TEST,
                 "/test/the/object",
                 null,
                 Json.createObjectBuilder()
@@ -392,7 +415,8 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderTestJsonArray() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.TEST,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.TEST,
                 "/test/my/array",
                 null,
                 Json.createArrayBuilder()
@@ -416,13 +440,14 @@ public class JsonPatchBuilderTest {
     @Test
     public void testPatchBuilderWithinitialData() {
 
-        JsonPatchImpl expected = new JsonPatchImpl(new JsonPatchImpl.PatchValue(JsonPatch.Operation.ADD,
+        JsonPatchImpl expected = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(
+                PROVIDER, JsonPatch.Operation.ADD,
                 "/add/an/object",
                 null,
                 Json.createObjectBuilder()
                         .add("name", "Cassius")
                         .build()),
-                new JsonPatchImpl.PatchValue(JsonPatch.Operation.REPLACE,
+                new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.REPLACE,
                         "/replace/me",
                         null,
                         Json.createArrayBuilder()
@@ -430,12 +455,12 @@ public class JsonPatchBuilderTest {
                                 .add(27)
                                 .add("test")
                                 .build()),
-                new JsonPatchImpl.PatchValue(JsonPatch.Operation.REMOVE,
+                new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.REMOVE,
                         "/remove/it",
                         null,
                         null));
 
-        JsonPatch patch = new JsonPatchBuilderImpl(expected.toJsonArray()).build();
+        JsonPatch patch = new JsonPatchBuilderImpl(PROVIDER, expected.toJsonArray()).build();
         assertNotNull(patch);
         assertEquals(expected, patch);
     }

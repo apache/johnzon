@@ -347,17 +347,17 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
         @Override
         public JsonPatchBuilder createPatchBuilder() {
-            return new JsonPatchBuilderImpl();
+            return new JsonPatchBuilderImpl(this);
         }
 
         @Override
         public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
-            return new JsonPatchBuilderImpl(initialData);
+            return new JsonPatchBuilderImpl(this, initialData);
         }
 
         @Override
         public JsonPointer createPointer(String path) {
-            return new JsonPointerImpl(path);
+            return new JsonPointerImpl(this, path);
         }
 
         public JsonPatch createPatch(JsonArray array) {
@@ -366,7 +366,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
         @Override
         public JsonPatch createDiff(JsonStructure source, JsonStructure target) {
-            return new JsonPatchDiff(source, target).calculateDiff();
+            return new JsonPatchDiff(this, source, target).calculateDiff();
         }
 
         public JsonMergePatch createMergePatch(JsonValue patch) {
