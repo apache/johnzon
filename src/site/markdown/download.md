@@ -28,7 +28,7 @@ should be addressed to the [mailing list](http://johnzon.apache.org/mail-lists.h
 
 ## KEYS for verifying Apache releases
 
-The GPG keys in the [Johnzon KEYS file](https://www.apache.org/dist/johnzon/KEYS) to validate our releases.
+Please use the Johnzon [KEYS](https://www.apache.org/dist/johnzon/KEYS) file to validate our releases.
 Read more about [how we sign Apache Releases](http://www.apache.org/info/verification.html)
 
 
