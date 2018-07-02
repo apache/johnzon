@@ -29,6 +29,14 @@
   <name>Johnzon :: JSON Schema</name>
 
   <dependencies>
+    <dependency> <!-- only when nashorn will be dropped -->
+      <groupId>org.jruby.joni</groupId>
+      <artifactId>joni</artifactId>
+      <version>2.1.16</version>
+      <scope>provided</scope>
+      <optional>true</optional>
+    </dependency>
+
     <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-core</artifactId>
