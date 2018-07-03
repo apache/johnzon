@@ -21,6 +21,7 @@ package org.apache.johnzon.jaxrs;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.BaseAccessMode;
 
 import javax.json.JsonReaderFactory;
 import javax.json.stream.JsonGeneratorFactory;
@@ -148,6 +149,14 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
 
     public void setAccessModeName(final String mode) {
         builder.setAccessModeName(mode);
+    }
+
+    public void setAccessModeFieldFilteringStrategy(final BaseAccessMode.FieldFilteringStrategy strategy) {
+        builder.setAccessModeFieldFilteringStrategy(strategy);
+    }
+
+    public void setAccessModeFieldFilteringStrategyName(final String mode) {
+        builder.setAccessModeFieldFilteringStrategyName(mode);
     }
 
     public void setSupportHiddenAccess(final boolean supportHiddenAccess) {

@@ -32,6 +32,7 @@ import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -57,6 +58,22 @@ public class MapperTest {
             + "\"integer\":3," + "\"longnumber\":4" + "}" + "]," + "\"list\":[" + "{" + "\"name\":\"a3\"," + "\"integer\":5,"
             + "\"longnumber\":6" + "}," + "{" + "\"name\":\"a4\"," + "\"integer\":7," + "\"longnumber\":8" + "}" + "],"
             + "\"primitives\":[1,2,3,4,5]," + "\"collectionWrapper\":[1,2,3,4,5]," + "\"map\":{\"uno\":true,\"duos\":false}" + "}";
+
+    @Test
+    public void ignoreAllStrategy() {
+        final StringWriter writer = new StringWriter();
+        final Child object = new Child();
+        object.children = Collections.singletonList("first");
+        object.a = 5;
+        object.b = 6;
+        object.c = 7;
+        new MapperBuilder().setAccessModeFieldFilteringStrategyName("all")
+                           .setIgnoreFieldsForType(Child.class, "children")
+                           .setIgnoreFieldsForType(Parent.class, "a", "b")
+                           .build()
+                           .writeObject(object, writer);
+        assertEquals("{\"c\":7}", writer.toString());
+    }
 
     @Test
     public void writeEmptyObject() {
@@ -1097,5 +1114,15 @@ public class MapperTest {
 
     public static class PrimitiveObject {
         public Object bool;
+    }
+
+    public static class Parent {
+        public int a;
+        public int b;
+        public int c;
+    }
+
+    public static class Child extends Parent {
+        public List<String> children;
     }
 }

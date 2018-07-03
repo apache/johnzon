@@ -18,6 +18,9 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptySet;
+import static java.util.stream.Collectors.toSet;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 import java.beans.ConstructorProperties;
@@ -27,8 +30,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.johnzon.mapper.Adapter;
@@ -43,16 +47,13 @@ import org.apache.johnzon.mapper.internal.ConverterAdapter;
 public abstract class BaseAccessMode implements AccessMode {
     private static final Type[] NO_PARAMS = new Type[0];
 
-    private final Map<Class<?>, String[]> fieldsToRemove = new HashMap<Class<?>, String[]>();
+    private FieldFilteringStrategy fieldFilteringStrategy = new SingleEntryFieldFilteringStrategy();
     private final boolean acceptHiddenConstructor;
     private final boolean useConstructor;
 
     protected BaseAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor) {
         this.useConstructor = useConstructor;
         this.acceptHiddenConstructor = acceptHiddenConstructor;
-
-        // mainly built it in the JVM types == user cant handle them
-        fieldsToRemove.put(Throwable.class, new String[]{"suppressedExceptions", "cause"});
     }
 
     protected abstract Map<String,Reader> doFindReaders(Class<?> clazz);
@@ -73,9 +74,12 @@ public abstract class BaseAccessMode implements AccessMode {
         return sanitize(clazz, doFindWriters(clazz));
     }
 
-    // editable during builder time, dont do it at runtime or you get no guarantee
-    public Map<Class<?>, String[]> getFieldsToRemove() {
-        return fieldsToRemove;
+    public void setFieldFilteringStrategy(final FieldFilteringStrategy fieldFilteringStrategy) {
+        this.fieldFilteringStrategy = fieldFilteringStrategy;
+    }
+
+    public FieldFilteringStrategy getFieldFilteringStrategy() {
+        return fieldFilteringStrategy;
     }
 
     @Override
@@ -182,9 +186,7 @@ public abstract class BaseAccessMode implements AccessMode {
                 }
                 try {
                     return params == null ? cons.newInstance() : cons.newInstance(params);
-                } catch (final InstantiationException e) {
-                    throw new IllegalStateException(e);
-                } catch (final IllegalAccessException e) {
+                } catch (final InstantiationException | IllegalAccessException e) {
                     throw new IllegalStateException(e);
                 } catch (final InvocationTargetException e) {
                     throw new IllegalStateException(e.getCause());
@@ -255,14 +257,48 @@ public abstract class BaseAccessMode implements AccessMode {
     }
 
     private <T> Map<String, T> sanitize(final Class<?> type, final Map<String, T> delegate) {
-        for (final Map.Entry<Class<?>, String[]> entry : fieldsToRemove.entrySet()) {
-            if (entry.getKey().isAssignableFrom(type)) {
-                for (final String field : entry.getValue()) {
-                    delegate.remove(field);
-                }
-                return delegate;
-            }
+        for (final String field : fieldFilteringStrategy.select(type)) {
+            delegate.remove(field);
         }
         return delegate;
+    }
+
+    public interface FieldFilteringStrategy {
+        Collection<String> select(final Class<?> type);
+    }
+
+    public static abstract class ConfiguredFieldFilteringStrategy implements FieldFilteringStrategy {
+        private final Map<Class<?>, Collection<String>> fieldsToRemove = new LinkedHashMap<>();
+
+        public ConfiguredFieldFilteringStrategy() {
+            // mainly built it in the JVM types == user cant handle them
+            fieldsToRemove.put(Throwable.class, asList("suppressedExceptions", "cause"));
+        }
+
+        public Map<Class<?>, Collection<String>> getFieldsToRemove() {
+            return fieldsToRemove;
+        }
+    }
+
+    public static class SingleEntryFieldFilteringStrategy extends ConfiguredFieldFilteringStrategy {
+        @Override
+        public Collection<String> select(final Class<?> type) {
+            for (final Map.Entry<Class<?>, Collection<String>> entry : getFieldsToRemove().entrySet()) {
+                if (entry.getKey().isAssignableFrom(type)) {
+                    return entry.getValue();
+                }
+            }
+            return emptySet();
+        }
+    }
+
+    public static class AllEntriesFieldFilteringStrategy extends ConfiguredFieldFilteringStrategy {
+        @Override
+        public Collection<String> select(final Class<?> type) {
+            return getFieldsToRemove().entrySet().stream()
+                    .filter(entry -> entry.getKey().isAssignableFrom(type))
+                    .flatMap(entry -> entry.getValue().stream())
+                    .collect(toSet());
+        }
     }
 }

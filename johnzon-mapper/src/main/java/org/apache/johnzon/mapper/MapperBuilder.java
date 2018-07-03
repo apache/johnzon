@@ -18,6 +18,9 @@
  */
 package org.apache.johnzon.mapper;
 
+import static java.util.Arrays.asList;
+import static java.util.Locale.ROOT;
+
 import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
@@ -129,6 +132,7 @@ public class MapperBuilder {
     private Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders = new HashMap<Class<?>, ObjectConverter.Reader<?>>();
     private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
+    private BaseAccessMode.FieldFilteringStrategy fieldFilteringStrategy = null;
     private boolean primitiveConverters;
     private boolean failOnUnknownProperties;
     private SerializeValueFilter serializeValueFilter;
@@ -181,15 +185,26 @@ public class MapperBuilder {
                 throw new IllegalArgumentException("Unsupported access mode: " + accessModeName);
             }
         }
+        if (fieldFilteringStrategy != null) {
+            if (!BaseAccessMode.class.isInstance(accessMode)) {
+                throw new IllegalArgumentException("fieldFilteringStrategy can't be set with this access mode: " + accessMode);
+            }
+            BaseAccessMode.class.cast(accessMode).setFieldFilteringStrategy(fieldFilteringStrategy);
+        }
         if (!ignoredForFields.isEmpty()) {
             if (BaseAccessMode.class.isInstance(accessMode)) {
                 final BaseAccessMode baseAccessMode = BaseAccessMode.class.cast(accessMode);
-                for (final Map.Entry<Class<?>, String[]> ignored : ignoredForFields.entrySet()) {
-                    final String[] fields = ignored.getValue();
-                    if (fields == null || fields.length == 0) {
-                        baseAccessMode.getFieldsToRemove().remove(ignored.getKey());
-                    } else {
-                        baseAccessMode.getFieldsToRemove().put(ignored.getKey(), fields);
+                final BaseAccessMode.FieldFilteringStrategy strategy = baseAccessMode.getFieldFilteringStrategy();
+                if (BaseAccessMode.ConfiguredFieldFilteringStrategy.class.isInstance(strategy)) {
+                    final BaseAccessMode.ConfiguredFieldFilteringStrategy filteringStrategy =
+                            BaseAccessMode.ConfiguredFieldFilteringStrategy.class.cast(strategy);
+                    for (final Map.Entry<Class<?>, String[]> ignored : ignoredForFields.entrySet()) {
+                        final String[] fields = ignored.getValue();
+                        if (fields == null || fields.length == 0) {
+                            filteringStrategy.getFieldsToRemove().remove(ignored.getKey());
+                        } else {
+                            filteringStrategy.getFieldsToRemove().put(ignored.getKey(), asList(fields));
+                        }
                     }
                 }
             } else {
@@ -285,6 +300,22 @@ public class MapperBuilder {
         }
         this.accessModeName = mode;
         return this;
+    }
+
+    public MapperBuilder setAccessModeFieldFilteringStrategy(final BaseAccessMode.FieldFilteringStrategy strategy) {
+        this.fieldFilteringStrategy = strategy;
+        return this;
+    }
+
+    public MapperBuilder setAccessModeFieldFilteringStrategyName(final String mode) {
+        switch (mode.toLowerCase(ROOT)) {
+            case "all":
+                return setAccessModeFieldFilteringStrategy(new BaseAccessMode.AllEntriesFieldFilteringStrategy());
+            case "single":
+                return setAccessModeFieldFilteringStrategy(new BaseAccessMode.SingleEntryFieldFilteringStrategy());
+            default:
+                throw new IllegalArgumentException("Unknown field filter strategy: " + mode);
+        }
     }
 
     public MapperBuilder setSupportHiddenAccess(final boolean supportHiddenAccess) {
