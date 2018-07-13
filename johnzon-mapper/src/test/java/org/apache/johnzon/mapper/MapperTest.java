@@ -484,10 +484,46 @@ public class MapperTest {
 
     @Test
     public void writeArray() {
-        // integer
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        baos.reset();
+        new MapperBuilder().build().writeArray(new Byte[] { 1, 2 }, baos);
+        assertEquals("[1,2]", new String(baos.toByteArray()));
+
+        baos.reset();
+        new MapperBuilder().build().writeArray(new Short[] { 1, 2 }, baos);
+        assertEquals("[1,2]", new String(baos.toByteArray()));
+
+        baos.reset();
+        baos = new ByteArrayOutputStream();
         new MapperBuilder().build().writeArray(new Integer[] { 1, 2 }, baos);
         assertEquals("[1,2]", new String(baos.toByteArray()));
+
+        baos.reset();
+        baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Long[] { 1L, 2L }, baos);
+        assertEquals("[1,2]", new String(baos.toByteArray()));
+
+        baos.reset();
+        baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Float[] { 1f, 2f }, baos);
+        assertEquals("[1.0,2.0]", new String(baos.toByteArray()));
+
+        baos.reset();
+        baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Double[] { 1d, 2d }, baos);
+        assertEquals("[1.0,2.0]", new String(baos.toByteArray()));
+
+        baos.reset();
+        baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Character[] { 'a', 'b' }, baos);
+        assertEquals("[\"a\",\"b\"]", new String(baos.toByteArray()));
+
+        baos.reset();
+        baos = new ByteArrayOutputStream();
+        new MapperBuilder().build().writeArray(new Boolean[] { true, false }, baos);
+        assertEquals("[true,false]", new String(baos.toByteArray()));
+
 
         // object
         baos = new ByteArrayOutputStream();

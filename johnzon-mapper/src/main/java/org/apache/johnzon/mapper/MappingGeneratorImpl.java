@@ -322,32 +322,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             return;
         }
         if (array || (dynamic && type.isArray())) {
-            final int length = Array.getLength(value);
-            if (length == 0 && config.isSkipEmptyArray()) {
-                return;
-            }
-
-            if(config.isTreatByteArrayAsBase64() && (type == byte[].class /*|| type == Byte[].class*/)) {
-                String base64EncodedByteArray = Base64.getEncoder().encodeToString((byte[]) value);
-                generator.write(key, base64EncodedByteArray);
-                return;
-            }
-            if(config.isTreatByteArrayAsBase64URL() && (type == byte[].class /*|| type == Byte[].class*/)) {
-                generator.write(key, Base64.getUrlEncoder().encodeToString((byte[]) value));
-                return;
-            }
-
-            generator.writeStartArray(key);
-            for (int i = 0; i < length; i++) {
-                final Object o = Array.get(value, i);
-                String valJsonPointer = jsonPointers.get(o);
-                if (valJsonPointer != null) {
-                    writePrimitives(valJsonPointer);
-                } else {
-                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
-                }
-            }
-            generator.writeEnd();
+            writeArray(type, itemConverter, key, value, ignoredProperties, jsonPointer);
         } else if (collection || (dynamic && Collection.class.isAssignableFrom(type))) {
             generator.writeStartArray(key);
             int i = 0;
@@ -411,6 +386,121 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
     }
 
+    /**
+     * Write a JSON Array with a given Array Value, like byte[], int[], Person[] etc.
+     * @param key either the attribute key or {@code null} if the array should be rendered without key
+     */
+    private void writeArray(Class<?> type, Adapter itemConverter, String key, Object arrayValue, Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
+        final int length = Array.getLength(arrayValue);
+        if (length == 0 && config.isSkipEmptyArray()) {
+            return;
+        }
+
+        if(config.isTreatByteArrayAsBase64() && (type == byte[].class /*|| type == Byte[].class*/)) {
+            String base64EncodedByteArray = Base64.getEncoder().encodeToString((byte[]) arrayValue);
+            if (key != null) {
+                generator.write(key, base64EncodedByteArray);
+            } else {
+                generator.write(base64EncodedByteArray);
+            }
+            return;
+        }
+        if(config.isTreatByteArrayAsBase64URL() && (type == byte[].class /*|| type == Byte[].class*/)) {
+            if (key != null) {
+                generator.write(key, Base64.getUrlEncoder().encodeToString((byte[]) arrayValue));
+            } else {
+                generator.write(Base64.getUrlEncoder().encodeToString((byte[]) arrayValue));
+            }
+            return;
+        }
+
+        if (key != null) {
+            generator.writeStartArray(key);
+        } else {
+            generator.writeStartArray();
+        }
+
+        // some specialised arrays to speed up conversion.
+        // Needed since Array.get is rather slow :(
+        if (type == byte[].class) {
+            byte[] tArrayValue = (byte[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final byte o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == short[].class) {
+            short[] tArrayValue = (short[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final short o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == int[].class) {
+            int[] tArrayValue = (int[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final int o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == long[].class) {
+            long[] tArrayValue = (long[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final long o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == float[].class) {
+            float[] tArrayValue = (float[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final float o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == double[].class) {
+            double[] tArrayValue = (double[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final double o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == char[].class) {
+            char[] tArrayValue = (char[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final char o = tArrayValue[i];
+                generator.write(String.valueOf(o));
+            }
+        } else if (type == boolean[].class) {
+            boolean[] tArrayValue = (boolean[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final boolean o = tArrayValue[i];
+                generator.write(o);
+            }
+        } else if (type == Byte[].class ||
+                   type == Short[].class ||
+                   type == Integer[].class ||
+                   type == Long[].class ||
+                   type == Float[].class ||
+                   type == Double[].class ||
+                   type == Character[].class ||
+                   type == Boolean[].class) {
+            // Wrapper types do not not need deduplication
+            Object[] oArrayValue = (Object[]) arrayValue;
+            for (int i = 0; i < length; i++) {
+                final Object o = oArrayValue[i];
+                writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, null);
+            }
+        } else {
+            // must be object arrays
+            for (int i = 0; i < length; i++) {
+                Object[] oArrayValue = (Object[]) arrayValue;
+                final Object o = oArrayValue[i];
+                String valJsonPointer = jsonPointers.get(o);
+                if (valJsonPointer != null) {
+                    // write the JsonPointer as String natively
+                    generator.write(valJsonPointer);
+                } else {
+                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
+                }
+            }
+        }
+        generator.writeEnd();
+    }
+
     private void writeItem(final Object o, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
         if (o == null) {
             generator.writeNull();
@@ -420,16 +510,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             } else if (o.getClass().isArray()) {
                 final int length = Array.getLength(o);
                 if (length > 0 || !config.isSkipEmptyArray()) {
-                    generator.writeStartArray();
-                    for (int i = 0; i < length; i++) {
-                        Object t = Array.get(o, i);
-                        if (t == null) {
-                            generator.writeNull();
-                        } else {
-                            writeItem(t, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
-                        }
-                    }
-                    generator.writeEnd();
+                    writeArray(o.getClass(), null, null, o, ignoredProperties, jsonPointer);
                 }
             } else {
                 String valJsonPointer = jsonPointers.get(o);
