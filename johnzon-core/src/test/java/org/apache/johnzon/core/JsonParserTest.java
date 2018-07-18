@@ -42,6 +42,7 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
+import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
@@ -71,6 +72,54 @@ public class JsonParserTest {
         JsonParser parser = Json.createParser(new StringReader(json));
         JsonObject jsonObject = parser.getObject();
         Assert.assertNotNull(jsonObject);
+    }
+    
+    @Test
+    public void testGetValueOfStringType() {
+        String json = "\"abc\"";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonValue jsonValue = parser.getValue();
+        assertEquals(Json.createValue("abc"), jsonValue);
+    }
+
+    @Test
+    public void testGetValueOfNumberType() {
+        String json = "3.14";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonValue jsonValue = parser.getValue();
+        assertEquals(Json.createValue(new BigDecimal("3.14")), jsonValue);
+    }
+
+    @Test
+    public void testGetValueOfIntegerType() {
+        String json = "42";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonValue jsonValue = parser.getValue();
+        assertEquals(Json.createValue(42), jsonValue);
+    }
+
+    @Test
+    public void testGetValueOfTrueType() {
+        String json = "true";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonValue jsonValue = parser.getValue();
+        assertEquals(JsonValue.TRUE, jsonValue);
+    }
+
+    @Test
+    public void testGetValueOfFalseType() {
+        String json = "false";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonValue jsonValue = parser.getValue();
+        assertEquals(JsonValue.FALSE, jsonValue);
+    }
+
+    @Test
+    public void testGetValueOfNullType() {
+        String json = "null";
+        JsonParser parser = Json.createParser(new StringReader(json));
+        JsonValue jsonValue = parser.getValue();
+        assertEquals(JsonValue.NULL, jsonValue);
     }
 
     private void assertSimple(final JsonParser parser) {

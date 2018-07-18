@@ -61,12 +61,29 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
     @Override
     public JsonValue getValue() {
         Event current = current();
-        if (current != Event.START_ARRAY && current != Event.START_OBJECT) {
-            throw new IllegalStateException(current + " doesn't support getArray()");
+        switch (current) {
+            case START_ARRAY:
+            case START_OBJECT:
+                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
+                return jsonReader.readValue();
+            case VALUE_TRUE:
+                return JsonValue.TRUE;
+            case VALUE_FALSE:
+                return JsonValue.FALSE;
+            case VALUE_NULL:
+                return JsonValue.NULL;
+            case VALUE_STRING:
+            case KEY_NAME:
+                return new JsonStringImpl(getString());
+            case VALUE_NUMBER:
+                if (isIntegralNumber()) {
+                    return new JsonLongImpl(getLong());
+                } else {
+                    return new JsonNumberImpl(getBigDecimal());
+                }
+            default:
+                throw new IllegalStateException(current + " doesn't support getValue()");
         }
-
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
-        return jsonReader.readValue();
     }
 
     @Override
