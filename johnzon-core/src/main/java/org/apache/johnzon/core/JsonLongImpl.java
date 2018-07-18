@@ -48,7 +48,11 @@ public final class JsonLongImpl implements JsonNumber, Serializable {
 
     @Override
     public int intValueExact() {
-        return intValue();
+        int intVal =  intValue();
+        if (intVal != value) {
+            throw new java.lang.ArithmeticException("Overflow");
+        }
+        return intVal;
     }
 
     @Override

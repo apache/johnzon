@@ -523,20 +523,8 @@ public class MappingParserImpl implements MappingParser {
 
             final JsonNumber number = JsonNumber.class.cast(jsonValue);
 
-            if (type == Integer.class || type == int.class) {
-                return number.intValue();
-            }
-
             if (type == Long.class || type == long.class) {
-                return number.longValue();
-            }
-
-            if (type == Short.class || type == short.class) {
-                return (short) number.intValue();
-            }
-
-            if (type == Byte.class || type == byte.class) {
-                return (byte) number.intValue();
+                return number.longValueExact();
             }
 
             if (type == Float.class || type == float.class) {
@@ -554,6 +542,28 @@ public class MappingParserImpl implements MappingParser {
             if (type == BigDecimal.class) {
                 return number.bigDecimalValue();
             }
+
+            int intValue = number.intValueExact();
+            if (type == Integer.class || type == int.class) {
+                return intValue;
+            }
+
+            if (type == Short.class || type == short.class) {
+                short shortVal = (short) intValue;
+                if (intValue != shortVal) {
+                    throw new java.lang.ArithmeticException("Overflow");
+                }
+                return shortVal;
+            }
+
+            if (type == Byte.class || type == byte.class) {
+                byte byteVal = (byte) intValue;
+                if (intValue != byteVal) {
+                    throw new java.lang.ArithmeticException("Overflow");
+                }
+                return byteVal;
+            }
+
         } else if (JsonString.class.isInstance(jsonValue)) {
             if (JsonString.class == type) {
                 return jsonValue;

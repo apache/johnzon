@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.beans.ConstructorProperties;
@@ -29,6 +30,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.ParameterizedType;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -52,11 +54,11 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class MapperTest {
-    private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"integer\":56," + "\"longnumber\":118,"
-            + "\"bool\":true," + "\"nested\":{" + "\"name\":\"another value\"," + "\"integer\":97," + "\"longnumber\":34" + "},"
-            + "\"array\":[" + "{" + "\"name\":\"a1\"," + "\"integer\":1," + "\"longnumber\":2" + "}," + "{" + "\"name\":\"a2\","
-            + "\"integer\":3," + "\"longnumber\":4" + "}" + "]," + "\"list\":[" + "{" + "\"name\":\"a3\"," + "\"integer\":5,"
-            + "\"longnumber\":6" + "}," + "{" + "\"name\":\"a4\"," + "\"integer\":7," + "\"longnumber\":8" + "}" + "],"
+    private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"intVal\":56," + "\"longnumber\":118,"
+            + "\"bool\":true," + "\"nested\":{" + "\"name\":\"another value\"," + "\"intVal\":97," + "\"longnumber\":34" + "},"
+            + "\"array\":[" + "{" + "\"name\":\"a1\"," + "\"intVal\":1," + "\"longnumber\":2" + "}," + "{" + "\"name\":\"a2\","
+            + "\"intVal\":3," + "\"longnumber\":4" + "}" + "]," + "\"list\":[" + "{" + "\"name\":\"a3\"," + "\"intVal\":5,"
+            + "\"longnumber\":6" + "}," + "{" + "\"name\":\"a4\"," + "\"intVal\":7," + "\"longnumber\":8" + "}" + "],"
             + "\"primitives\":[1,2,3,4,5]," + "\"collectionWrapper\":[1,2,3,4,5]," + "\"map\":{\"uno\":true,\"duos\":false}" + "}";
 
     @Test
@@ -405,23 +407,58 @@ public class MapperTest {
        mapper.writeObject(bsr, writer);
        assertEquals(expectedJson, writer.toString());
    }
-   
+
+    /**
+     * Verify that assigning a short or byte number
+     * which is too big to fit into the java field
+     * does raise a MapperException.
+     */
+   @Test
+   public void tooLongShortAndByte() {
+        Mapper mapper = new MapperBuilder().build();
+        expectMapperException(() -> mapper.readObject("{\"numShort\":123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"numShort\":-123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"shortW\":123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"shortW\":-123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"numByte\":123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"numByte\":-123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"byteW\":123456}", ByteShort.class));
+        expectMapperException(() -> mapper.readObject("{\"byteW\":-123456}", ByteShort.class));
+   }
+
+    /**
+     * Verify that assigning a long or int number
+     * which is too big to fit into the java field
+     * does raise a MapperException.
+     */
+   @Test
+   public void tooLongIntAndLong() {
+       Mapper mapper = new MapperBuilder().build();
+       String intCap = new BigDecimal(Integer.MAX_VALUE).add(new BigDecimal(2L)).toString();
+       String longCap = new BigDecimal(Long.MAX_VALUE).add(new BigDecimal(2L)).toString();
+       expectMapperException(() -> mapper.readObject("{\"intVal\":" + intCap + "}", TheObject.class));
+       expectMapperException(() -> mapper.readObject("{\"intVal\":-" + intCap + "}", TheObject.class));
+       expectMapperException(() -> mapper.readObject("{\"longnumber\":" + longCap + "}", TheObject.class));
+       expectMapperException(() -> mapper.readObject("{\"longnumber\":-" + longCap + "}", TheObject.class));
+   }
+
+
    /*@Test
    public void byteArrayBase64Converter() {
-       
+
        Mapper mapper = new MapperBuilder().setTreatByteArrayAsBase64(false).build();
-       
+
        ByteArray ba = new ByteArray();
        ba.setByteArray(new byte[]{(byte) 1,(byte) 1,(byte) 1 });
-       
+
        final String expectedJson = "{\"shortW\":22,\"shortWA\":[7,-2],\"byteW\":7,\"numShortA\":[4,-2],\"numByteA\":\"Af8C\",\"byteWA\":[4,-12,2],\"numByte\":6,\"numShort\":-1}";
-       
+
        StringWriter writer = new StringWriter();
        mapper.writeObject(ba, writer);
        assertEquals(expectedJson, writer.toString());
-   
+
        ByteShort bsr = mapper.readObject(new StringReader(expectedJson), ByteArray.class);
-       
+
        writer = new StringWriter();
        mapper.writeObject(bsr, writer);
        assertEquals(expectedJson, writer.toString());
@@ -538,26 +575,26 @@ public class MapperTest {
 
         assertNotNull(object);
         assertEquals("the string", object.name);
-        assertEquals(56, object.integer);
+        assertEquals(56, object.intVal);
         assertEquals(118, object.longnumber);
         assertTrue(object.bool);
         assertEquals("another value", object.nested.name);
-        assertEquals(97, object.nested.integer);
+        assertEquals(97, object.nested.intVal);
         assertEquals(34, object.nested.longnumber);
         assertFalse(object.nested.bool);
         assertNotNull(object.array);
         assertEquals(2, object.array.length);
         assertEquals("a1", object.array[0].name);
-        assertEquals(1, object.array[0].integer);
+        assertEquals(1, object.array[0].intVal);
         assertEquals(2, object.array[0].longnumber);
         assertEquals("a2", object.array[1].name);
-        assertEquals(3, object.array[1].integer);
+        assertEquals(3, object.array[1].intVal);
         assertEquals(4, object.array[1].longnumber);
         assertEquals("a3", object.list.get(0).name);
-        assertEquals(5, object.list.get(0).integer);
+        assertEquals(5, object.list.get(0).intVal);
         assertEquals(6, object.list.get(0).longnumber);
         assertEquals("a4", object.list.get(1).name);
-        assertEquals(7, object.list.get(1).integer);
+        assertEquals(7, object.list.get(1).intVal);
         assertEquals(8, object.list.get(1).longnumber);
         assertEquals(5, object.primitives.length);
         for (int i = 0; i < object.primitives.length; i++) {
@@ -579,15 +616,15 @@ public class MapperTest {
     @Test
     public void readArray() {
         final TheObject[] object = new MapperBuilder().build().readArray(
-                new ByteArrayInputStream(("[" + "{" + "\"name\":\"a3\"," + "\"integer\":5," + "\"longnumber\":6" + "}," + "{"
-                        + "\"name\":\"a4\"," + "\"integer\":7," + "\"longnumber\":8" + "}" + "]").getBytes()), TheObject.class);
+                new ByteArrayInputStream(("[" + "{" + "\"name\":\"a3\"," + "\"intVal\":5," + "\"longnumber\":6" + "}," + "{"
+                        + "\"name\":\"a4\"," + "\"intVal\":7," + "\"longnumber\":8" + "}" + "]").getBytes()), TheObject.class);
         assertNotNull(object);
         assertEquals(2, object.length);
         assertEquals("a3", object[0].name);
-        assertEquals(5, object[0].integer);
+        assertEquals(5, object[0].intVal);
         assertEquals(6, object[0].longnumber);
         assertEquals("a4", object[1].name);
-        assertEquals(7, object[1].integer);
+        assertEquals(7, object[1].intVal);
         assertEquals(8, object[1].longnumber);
     }
 
@@ -702,6 +739,15 @@ public class MapperTest {
         assertNotEquals(utf8, latin); // means encoding was considered, we don't need more here
     }
 
+    private void expectMapperException(Runnable runnable) {
+        try {
+            runnable.run();
+            Assert.fail("MapperException expected!");
+        } catch (MapperException me) {
+            // all fine!
+        }
+    }
+
     public static class NanHolder {
         private Double nan = Double.NaN;
 
@@ -716,7 +762,8 @@ public class MapperTest {
 
     public static class TheObject {
         private String name;
-        private int integer;
+        private int intVal;
+        private Integer integerVal;
         private long longnumber;
         private boolean bool;
         private TheObject nested;
@@ -734,12 +781,20 @@ public class MapperTest {
             this.name = name;
         }
 
-        public int getInteger() {
-            return integer;
+        public int getIntVal() {
+            return intVal;
         }
 
-        public void setInteger(final int integer) {
-            this.integer = integer;
+        public void setIntVal(final int intVal) {
+            this.intVal = intVal;
+        }
+
+        public Integer getIntegerVal() {
+            return integerVal;
+        }
+
+        public void setIntegerVal(Integer integerVal) {
+            this.integerVal = integerVal;
         }
 
         public long getLongnumber() {
@@ -808,7 +863,7 @@ public class MapperTest {
 
         @Override
         public String toString() {
-            return "TheObject [name=" + name + ", integer=" + integer + ", longnumber=" + longnumber + ", bool=" + bool + ", nested="
+            return "TheObject [name=" + name + ", integer=" + intVal + ", longnumber=" + longnumber + ", bool=" + bool + ", nested="
                     + nested + ", array=" + Arrays.toString(array) + ", list=" + list + ", primitives=" + Arrays.toString(primitives)
                     + ", collectionWrapper=" + collectionWrapper + ", map=" + map + "]";
         }
@@ -820,7 +875,7 @@ public class MapperTest {
             result = prime * result + Arrays.hashCode(array);
             result = prime * result + (bool ? 1231 : 1237);
             result = prime * result + ((collectionWrapper == null) ? 0 : collectionWrapper.hashCode());
-            result = prime * result + integer;
+            result = prime * result + intVal;
             result = prime * result + ((list == null) ? 0 : list.hashCode());
             result = prime * result + (int) (longnumber ^ (longnumber >>> 32));
             result = prime * result + ((map == null) ? 0 : map.hashCode());
@@ -855,7 +910,7 @@ public class MapperTest {
             } else if (!collectionWrapper.equals(other.collectionWrapper)) {
                 return false;
             }
-            if (integer != other.integer) {
+            if (intVal != other.intVal) {
                 return false;
             }
             if (list == null) {
