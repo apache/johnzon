@@ -557,11 +557,15 @@ public class MappingParserImpl implements MappingParser {
             }
 
             if (type == Byte.class || type == byte.class) {
-                byte byteVal = (byte) intValue;
-                if (intValue != byteVal) {
+
+                // bytes have a special handling as they are often used
+                // to transport binary. So we have to pass on the full 8 bit.
+                // TODO: ATTENTION: this is only an intermediate solution until JOHNZON-177
+                // resp https://github.com/eclipse-ee4j/jsonb-api/issues/82 is properly specced
+                if (intValue < -128 || intValue > 255) {
                     throw new java.lang.ArithmeticException("Overflow");
                 }
-                return byteVal;
+                return (byte) intValue;
             }
 
         } else if (JsonString.class.isInstance(jsonValue)) {
