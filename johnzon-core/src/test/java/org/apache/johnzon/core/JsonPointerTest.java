@@ -476,6 +476,38 @@ public class JsonPointerTest {
         assertEquals("{\"foo\":\"bar\"}", result.toString()); // {"foo":"bar"}
     }
 
+    @Test
+    public void testRemoveFieldMemberWithObjectAndArray() {
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/test/status");
+        JsonStructure target = Json.createObjectBuilder()
+                .add("test", Json.createObjectBuilder().add("status", "200"))
+                .add("array", Json.createArrayBuilder().build()).build(); // {"test":{"status":"200"},"array":[]}
+
+        JsonStructure result = jsonPointer.remove(target);
+        assertEquals("{\"test\":{},\"array\":[]}", result.toString()); // {"foo":"bar"}
+    }
+
+    @Test
+    public void testRemoveFieldMemberWithNestedArray() {
+        JsonStructure target = Json.createObjectBuilder()
+                .add("test", Json.createArrayBuilder().add(
+                        Json.createObjectBuilder().add("OK", "200")).add(
+                        Json.createObjectBuilder().add("REDIREDT", 
+                             Json.createArrayBuilder().add(
+                                  Json.createObjectBuilder().add("CREATED", "201"))
+                                      .add(Json.createObjectBuilder()
+                                      .add("UNAUTH", "201") .add("ACCEPTED", "202")))))
+                                      .build();
+        // {"test":[{"OK":"200"},{"REDIREDT":[{"CREATED":"201"},{"UNAUTH":"401","ACCEPTED":"202"}]}]}
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/test/1/REDIREDT/1/UNAUTH");
+        JsonStructure result = jsonPointer.remove(target);
+        assertEquals("{\"test\":[{\"OK\":\"200\"},{\"REDIREDT\":[{\"CREATED\":\"201\"}"
+                   + ",{\"ACCEPTED\":\"202\"}]}]}", result.toString());
+        jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/test/1/REDIREDT/1");
+        result = jsonPointer.remove(target);
+        assertEquals("{\"test\":[{\"OK\":\"200\"},{\"REDIREDT\":[{\"CREATED\":\"201\"}]}]}", result.toString());
+    }
+
     @Test(expected = NullPointerException.class)
     public void testReplaceJsonObjectWithTargetNull() {
         JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/");

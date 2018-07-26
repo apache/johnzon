@@ -283,7 +283,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonObject remove(JsonObject target) {
         validateRemove(target);
 
-        return (JsonObject) remove(target, 1, referenceTokens.size() - 1);
+        return (JsonObject) remove(target, 1, referenceTokens.size() - 1, referenceTokens);
     }
 
     /**
@@ -299,7 +299,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonArray remove(JsonArray target) {
         validateRemove(target);
 
-        return (JsonArray) remove(target, 1, referenceTokens.size() - 1);
+        return (JsonArray) remove(target, 1, referenceTokens.size() - 1, referenceTokens);
     }
 
     String getJsonPointer() {
@@ -409,7 +409,7 @@ public class JsonPointerImpl implements JsonPointer {
                 currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2));
     }
 
-    private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition) {
+    private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition, List<String> referenceTokens) {
         if (jsonValue instanceof JsonObject) {
             JsonObject jsonObject = (JsonObject) jsonValue;
             JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
@@ -419,7 +419,7 @@ public class JsonPointerImpl implements JsonPointer {
                         && lastReferenceToken.equals(entry.getKey())) {
                     continue;
                 }
-                objectBuilder.add(entry.getKey(), remove(entry.getValue(), currentPosition + 1, referencePosition));
+                objectBuilder.add(entry.getKey(), remove(entry.getValue(), currentPosition + 1, referencePosition, referenceTokens));
             }
             return objectBuilder.build();
         } else if (jsonValue instanceof JsonArray) {
@@ -427,16 +427,19 @@ public class JsonPointerImpl implements JsonPointer {
             JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
 
             int arrayIndex = -1;
-            if (currentPosition == referencePosition) {
-                arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, false);
+            if (referenceTokens.size() > currentPosition && referenceTokens.get(currentPosition).matches("\\d+")) {
+                arrayIndex = getArrayIndex(referenceTokens.get(currentPosition), jsonArray, false);
             }
 
             int jsonArraySize = jsonArray.size();
             for (int i = 0; i < jsonArraySize; i++) {
                 if (i == arrayIndex) {
-                    continue;
+                    if (currentPosition != referencePosition) {
+                        arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1, referencePosition, referenceTokens));
+                    }
+                } else {
+                    arrayBuilder.add(jsonArray.get(i));
                 }
-                arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1, referencePosition));
             }
             return arrayBuilder.build();
         }
