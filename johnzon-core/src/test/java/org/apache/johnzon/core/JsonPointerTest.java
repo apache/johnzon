@@ -488,7 +488,7 @@ public class JsonPointerTest {
     }
 
     @Test
-    public void testRemoveFieldMemberWithNestedArray() {
+    public void testRemoveFieldMemberWithInNestedArray() {
         JsonStructure target = Json.createObjectBuilder()
                 .add("test", Json.createArrayBuilder().add(
                         Json.createObjectBuilder().add("OK", "200")).add(
@@ -503,8 +503,22 @@ public class JsonPointerTest {
         JsonStructure result = jsonPointer.remove(target);
         assertEquals("{\"test\":[{\"OK\":\"200\"},{\"REDIREDT\":[{\"CREATED\":\"201\"}"
                    + ",{\"ACCEPTED\":\"202\"}]}]}", result.toString());
-        jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/test/1/REDIREDT/1");
-        result = jsonPointer.remove(target);
+    }
+
+    @Test
+    public void testRemoveObjectWithInNestedArray() {
+        JsonStructure target = Json.createObjectBuilder()
+                .add("test", Json.createArrayBuilder().add(
+                        Json.createObjectBuilder().add("OK", "200")).add(
+                        Json.createObjectBuilder().add("REDIREDT", 
+                             Json.createArrayBuilder().add(
+                                  Json.createObjectBuilder().add("CREATED", "201"))
+                                      .add(Json.createObjectBuilder()
+                                      .add("UNAUTH", "201") .add("ACCEPTED", "202")))))
+                                      .build();
+        // {"test":[{"OK":"200"},{"REDIREDT":[{"CREATED":"201"},{"UNAUTH":"401","ACCEPTED":"202"}]}]}
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/test/1/REDIREDT/1");
+        JsonStructure result = jsonPointer.remove(target);
         assertEquals("{\"test\":[{\"OK\":\"200\"},{\"REDIREDT\":[{\"CREATED\":\"201\"}]}]}", result.toString());
     }
 
