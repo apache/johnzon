@@ -522,6 +522,25 @@ public class JsonPointerTest {
         assertEquals("{\"test\":[{\"OK\":\"200\"},{\"REDIREDT\":[{\"CREATED\":\"201\"}]}]}", result.toString());
     }
 
+    @Test
+    public void testRemoveObjectWithInNestedArrayAndResusableJsonPointer() {
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/test/1/REDIREDT/1");
+        for (int i = 0; i < 3; i++) {
+            JsonStructure target = Json.createObjectBuilder()
+                .add("test", Json.createArrayBuilder().add(
+                    Json.createObjectBuilder().add("OK", "200")).add(
+                    Json.createObjectBuilder().add("REDIREDT", 
+                         Json.createArrayBuilder().add(
+                              Json.createObjectBuilder().add("CREATED", "201"))
+                                  .add(Json.createObjectBuilder()
+                                  .add("UNAUTH", "201") .add("ACCEPTED", "202")))))
+                                  .build();
+            // {"test":[{"OK":"200"},{"REDIREDT":[{"CREATED":"201"},{"UNAUTH":"401","ACCEPTED":"202"}]}]}
+            JsonStructure result = jsonPointer.remove(target);
+            assertEquals("{\"test\":[{\"OK\":\"200\"},{\"REDIREDT\":[{\"CREATED\":\"201\"}]}]}", result.toString());
+        }
+    }
+
     @Test(expected = NullPointerException.class)
     public void testReplaceJsonObjectWithTargetNull() {
         JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/");
