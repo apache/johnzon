@@ -31,6 +31,7 @@ import javax.json.spi.JsonProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 
 public class JsonPointerImpl implements JsonPointer {
@@ -39,6 +40,7 @@ public class JsonPointerImpl implements JsonPointer {
     private final String jsonPointer;
     private final List<String> referenceTokens = new ArrayList<>();
     private final String lastReferenceToken;
+    private static final Pattern IS_NUMBER = Pattern.compile("\\d+");
 
     /**
      * Constructs and initializes a JsonPointer.
@@ -283,7 +285,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonObject remove(JsonObject target) {
         validateRemove(target);
 
-        return (JsonObject) remove(target, 1, referenceTokens.size() - 1, referenceTokens);
+        return (JsonObject) remove(target, 1, referenceTokens.size() - 1);
     }
 
     /**
@@ -299,7 +301,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonArray remove(JsonArray target) {
         validateRemove(target);
 
-        return (JsonArray) remove(target, 1, referenceTokens.size() - 1, referenceTokens);
+        return (JsonArray) remove(target, 1, referenceTokens.size() - 1);
     }
 
     String getJsonPointer() {
@@ -409,7 +411,7 @@ public class JsonPointerImpl implements JsonPointer {
                 currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2));
     }
 
-    private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition, List<String> referenceTokens) {
+    private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition) {
         if (jsonValue instanceof JsonObject) {
             JsonObject jsonObject = (JsonObject) jsonValue;
             JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
@@ -419,7 +421,7 @@ public class JsonPointerImpl implements JsonPointer {
                         && lastReferenceToken.equals(entry.getKey())) {
                     continue;
                 }
-                objectBuilder.add(entry.getKey(), remove(entry.getValue(), currentPosition + 1, referencePosition, referenceTokens));
+                objectBuilder.add(entry.getKey(), remove(entry.getValue(), currentPosition + 1, referencePosition));
             }
             return objectBuilder.build();
         } else if (jsonValue instanceof JsonArray) {
@@ -427,19 +429,16 @@ public class JsonPointerImpl implements JsonPointer {
             JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
 
             int arrayIndex = -1;
-            if (referenceTokens.size() > currentPosition && referenceTokens.get(currentPosition).matches("\\d+")) {
-                arrayIndex = getArrayIndex(referenceTokens.get(currentPosition), jsonArray, false);
+            if (currentPosition == referencePosition && IS_NUMBER.matcher(lastReferenceToken).matches()) {
+                arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, false);
             }
 
             int jsonArraySize = jsonArray.size();
             for (int i = 0; i < jsonArraySize; i++) {
                 if (i == arrayIndex) {
-                    if (currentPosition != referencePosition) {
-                        arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1, referencePosition, referenceTokens));
-                    }
-                } else {
-                    arrayBuilder.add(jsonArray.get(i));
+                    continue;
                 }
+                arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1, referencePosition));
             }
             return arrayBuilder.build();
         }
