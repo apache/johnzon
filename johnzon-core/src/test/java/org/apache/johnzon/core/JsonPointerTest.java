@@ -492,7 +492,7 @@ public class JsonPointerTest {
         JsonStructure target = Json.createObjectBuilder()
                 .add("test", Json.createArrayBuilder().add(
                         Json.createObjectBuilder().add("OK", "200")).add(
-                        Json.createObjectBuilder().add("REDIREDT", 
+                        Json.createObjectBuilder().add("REDIREDT",
                              Json.createArrayBuilder().add(
                                   Json.createObjectBuilder().add("CREATED", "201"))
                                       .add(Json.createObjectBuilder()
@@ -510,7 +510,7 @@ public class JsonPointerTest {
         JsonStructure target = Json.createObjectBuilder()
                 .add("test", Json.createArrayBuilder().add(
                         Json.createObjectBuilder().add("OK", "200")).add(
-                        Json.createObjectBuilder().add("REDIREDT", 
+                        Json.createObjectBuilder().add("REDIREDT",
                              Json.createArrayBuilder().add(
                                   Json.createObjectBuilder().add("CREATED", "201"))
                                       .add(Json.createObjectBuilder()
@@ -529,7 +529,7 @@ public class JsonPointerTest {
             JsonStructure target = Json.createObjectBuilder()
                 .add("test", Json.createArrayBuilder().add(
                     Json.createObjectBuilder().add("OK", "200")).add(
-                    Json.createObjectBuilder().add("REDIREDT", 
+                    Json.createObjectBuilder().add("REDIREDT",
                          Json.createArrayBuilder().add(
                               Json.createObjectBuilder().add("CREATED", "201"))
                                   .add(Json.createObjectBuilder()
