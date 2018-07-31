@@ -198,13 +198,17 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     @Override
     public final boolean hasNext() {
-
-        if (currentStructureElement != null ||
-                (previousEvent != END_ARRAY && previousEvent != END_OBJECT &&
-                        previousEvent != VALUE_STRING && previousEvent != VALUE_FALSE && previousEvent != VALUE_TRUE &&
-                        previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) ||
-                previousEvent == 0) {
-
+        if (currentStructureElement != null || previousEvent == 0) {
+            return true;
+        }
+        if (previousEvent != END_ARRAY && previousEvent != END_OBJECT &&
+                previousEvent != VALUE_STRING && previousEvent != VALUE_FALSE && previousEvent != VALUE_TRUE &&
+                previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) {
+            if (bufferPos == Integer.MIN_VALUE) { // check we don't have an empty string to parse
+                final char c = readNextChar();
+                bufferPos--;
+                return c != EOF;
+            }
             return true;
         }
 
@@ -357,6 +361,11 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         //main entry, make decision how to handle the current character in the stream
 
         if (!hasNext()) {
+            final char c = readNextChar();
+            bufferPos--;
+            if (c != EOF) {
+                throw uexc("No available event");
+            }
             throw new NoSuchElementException();
         }
 

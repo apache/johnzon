@@ -67,6 +67,13 @@ public class JsonParserTest {
     }
 
     @Test
+    public void emptyObject() {
+        final JsonParser parser = Json.createParser(new StringReader(""));
+        assertFalse(parser.hasNext());
+        parser.close();
+    }
+
+    @Test
     public void testParseGetObject() throws Exception {
         String json = "{\"a\":1,\"b\":2 }";
         JsonParser parser = Json.createParser(new StringReader(json));
@@ -991,14 +998,14 @@ public class JsonParserTest {
         Json.createReader(new ByteArrayInputStream("{\"z\":nulll}".getBytes())).read();
     }
     
-    @Test(expected = JsonException.class)
+    @Test(expected = IllegalStateException.class)
     public void zeroByteInput() {
         // using a reader as wrapper of parser
   
         Json.createReader(new ByteArrayInputStream(new byte[]{})).read();
     }
     
-    @Test(expected = JsonParsingException.class)
+    @Test(expected = IllegalStateException.class)
     public void zeroCharInput() {
         // using a reader as wrapper of parser
   
@@ -1142,13 +1149,13 @@ public class JsonParserTest {
         try {
             parser.next();
             fail();
-        } catch (JsonParsingException e) {
+        } catch (NoSuchElementException e) {
             //expected
         }
        
     }
     
-    @Test(expected=JsonParsingException.class)
+    @Test(expected=NoSuchElementException.class)
     public void testBinaryNullStream() {
         ByteArrayInputStream bin = new ByteArrayInputStream("\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0".getBytes(UTF_8));
         JsonParser parser = Json.createParser(bin);
@@ -1327,7 +1334,7 @@ public class JsonParserTest {
        JsonParser parser = Json.createParser(new ByteArrayInputStream("[]".getBytes()));
         assertEquals(Event.START_ARRAY, parser.next());
         assertEquals(Event.END_ARRAY, parser.next());
-        assertEquals(false, parser.hasNext());
+        assertFalse(parser.hasNext());
         try {
             parser.next();
             fail("Should have thrown a NoSuchElementException");
