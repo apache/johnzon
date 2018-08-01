@@ -43,6 +43,7 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
+import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParser.Event;
 import javax.json.stream.JsonParsingException;
@@ -67,8 +68,19 @@ public class JsonParserTest {
     }
 
     @Test
-    public void emptyObject() {
+    public void emptyInput() {
         final JsonParser parser = Json.createParser(new StringReader(""));
+        assertFalse(parser.hasNext());
+        JsonLocation location = parser.getLocation();
+        assertEquals(1, location.getLineNumber());
+        assertEquals(1, location.getColumnNumber());
+        assertEquals(0, location.getStreamOffset());
+        parser.close();
+    }
+
+    @Test
+    public void blankInput() {
+        final JsonParser parser = Json.createParser(new StringReader(" "));
         assertFalse(parser.hasNext());
         parser.close();
     }
