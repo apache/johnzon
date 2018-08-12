@@ -409,6 +409,28 @@ public class JohnzonBuilder implements JsonbBuilder {
         };
     }
 
+    private Supplier<JsonParserFactory> createJsonParserFactory() {
+        return new Supplier<JsonParserFactory>() { // thread safety is not mandatory
+                private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
+
+                @Override
+                public JsonParserFactory get() {
+                    JsonParserFactory factory = ref.get();
+                    if (factory == null) {
+                        factory = doCreate();
+                        if (!ref.compareAndSet(null, factory)) {
+                            factory = ref.get();
+                        }
+                    }
+                    return factory;
+                }
+
+                private JsonParserFactory doCreate() {
+                    return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
+                }
+            };
+    }
+
     private ParameterizedType findPT(final Object s, final Class<?> type) {
         return ParameterizedType.class.cast(
                 Stream.of(s.getClass().getGenericInterfaces())
