@@ -28,6 +28,14 @@ import java.util.List;
 
 public class EnumTest {
 
+    @Test(expected = MapperException.class)
+    public void testUnknownEnumValue() {
+        Mapper mapper = newTestMapperBuilder().build();
+
+        String json = "{\"myEnum\":\"UNKNOWN\"}";
+        SimpleObject simpleObject = mapper.<SimpleObject>readObject(json, SimpleObject.class);
+    }
+
     @Test
     public void testSimpleEnumAccessModeBoth() {
         testSimpleField(newTestMapperBuilder().setAccessModeName("both")

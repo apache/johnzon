@@ -45,7 +45,11 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T>, Converter
 
     @Override
     public T fromString(final String text) {
-        return values.get(text);
+        T val = values.get(text);
+        if (val == null) {
+            throw new IllegalArgumentException("Illegal " + enumType + " enum value: " + text);
+        }
+        return val;
     }
 
     @Override
