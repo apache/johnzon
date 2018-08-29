@@ -177,4 +177,6 @@ public class JsonbWriteTest {
             this.date = value;
         }
     }
+
+
 }

@@ -300,6 +300,19 @@ public class MapperTest {
     }
 
     @Test
+    public void writeListWithNulls() {
+        List<String> list = new ArrayList<>();
+        list.add("bla");
+        list.add(null);
+        list.add("blub");
+        final StringWriter sw = new StringWriter();
+        new MapperBuilder().build().writeArray(list, sw);
+
+        String json = sw.toString();
+        assertEquals("[\"bla\",null,\"blub\"]", json);
+    }
+
+    @Test
     public void writeObject() {
         final TheObject instance = new MapperBuilder().build().readObject(new ByteArrayInputStream(BIG_OBJECT_STR.getBytes()),
                 TheObject.class); // suppose reader writes but this is tested
@@ -530,6 +543,14 @@ public class MapperTest {
         baos.reset();
         new MapperBuilder().build().writeArray(new Short[] { 1, 2 }, baos);
         assertEquals("[1,2]", new String(baos.toByteArray()));
+
+        baos.reset();
+        new MapperBuilder().build().writeArray(new Short[] { 1, null, 2 }, baos);
+        assertEquals("[1,null,2]", new String(baos.toByteArray()));
+
+        baos.reset();
+        new MapperBuilder().build().writeArray(new Short[] { null }, baos);
+        assertEquals("[null]", new String(baos.toByteArray()));
 
         baos.reset();
         baos = new ByteArrayOutputStream();

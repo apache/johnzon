@@ -71,6 +71,24 @@ public class SerializerTest {
         assertEquals(4, deser.moreFoos.get(1).value);
     }
 
+    @Test
+    public void nullValuesInList() {
+        Jsonb jsonb = JsonbBuilder.create();
+
+        IntList wrapper = new IntList();
+        wrapper.elems.add(null);
+        assertEquals("{\"elems\":[null]}", jsonb.toJson(wrapper));
+
+        wrapper.elems.add(1);
+        assertEquals("{\"elems\":[null,1]}", jsonb.toJson(wrapper));
+
+        wrapper.elems.add(0, 2);
+        assertEquals("{\"elems\":[2,null,1]}", jsonb.toJson(wrapper));
+
+        wrapper.elems.remove(2);
+        assertEquals("{\"elems\":[2,null]}", jsonb.toJson(wrapper));
+    }
+
     public static class Foo {
         public String name;
         public int value;
@@ -85,6 +103,10 @@ public class SerializerTest {
         @JsonbTypeSerializer(FooSer.class)
         @JsonbTypeDeserializer(FooDeser.class)
         public List<Foo> moreFoos = new ArrayList<>();
+    }
+
+    public static class IntList {
+        public List<Integer> elems = new ArrayList<>();
     }
 
     public static class FooDeser implements JsonbDeserializer<Foo> {
