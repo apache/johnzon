@@ -442,17 +442,24 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (adapterKey == null) {
-            final Type[] types = converter.getClass().getGenericInterfaces();
-            for (final Type t : types) {
-                if (!ParameterizedType.class.isInstance(t)) {
-                    continue;
-                }
-                final ParameterizedType pt = ParameterizedType.class.cast(t);
-                if (Adapter.class == pt.getRawType()) {
-                    final Type[] actualTypeArguments = pt.getActualTypeArguments();
-                    adapterKey = new AdapterKey(actualTypeArguments[0], actualTypeArguments[1]);
-                    reverseAdaptersRegistry.putIfAbsent(converter, adapterKey);
-                    break;
+            if (converter instanceof TypeAwareAdapter) {
+                TypeAwareAdapter typeAwareAdapter = (TypeAwareAdapter) converter;
+                adapterKey = new AdapterKey(typeAwareAdapter.getFrom(), typeAwareAdapter.getTo());
+                reverseAdaptersRegistry.putIfAbsent(converter, adapterKey);
+
+            } else {
+                final Type[] types = converter.getClass().getGenericInterfaces();
+                for (final Type t : types) {
+                    if (!ParameterizedType.class.isInstance(t)) {
+                        continue;
+                    }
+                    final ParameterizedType pt = ParameterizedType.class.cast(t);
+                    if (Adapter.class == pt.getRawType()) {
+                        final Type[] actualTypeArguments = pt.getActualTypeArguments();
+                        adapterKey = new AdapterKey(actualTypeArguments[0], actualTypeArguments[1]);
+                        reverseAdaptersRegistry.putIfAbsent(converter, adapterKey);
+                        break;
+                    }
                 }
             }
         }

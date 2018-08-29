@@ -176,4 +176,47 @@ public class AdapterTest {
             return bar;
         }
     }
+
+    @Test
+    public void testAdapterOnEnum() {
+        Jsonb jsonb = JsonbBuilder.newBuilder().build();
+
+        DoorDTO door = new DoorDTO();
+        door.status = DoorStatus.OPEN;
+        String jsonS = jsonb.toJson(door);
+        assertEquals(
+                "The expected result must be a door with a status open as its enum ordinal",
+                "{\"status\":0}",
+                jsonS);
+
+        DoorDTO doorDTO = jsonb.fromJson(jsonS, DoorDTO.class);
+
+        assertEquals(
+                "The expected result must be a door with a status open as an enum value",
+                DoorStatus.OPEN,
+                doorDTO.status);
+    }
+
+    static class DoorDTO {
+        @JsonbTypeAdapter(StatusAdapter.class)
+        public DoorStatus status;
+    }
+
+    public enum DoorStatus {
+        OPEN, CLOSE
+    }
+
+    public static class StatusAdapter implements JsonbAdapter<DoorStatus, Integer> {
+
+        @Override
+        public Integer adaptToJson(DoorStatus obj) {
+            return obj.ordinal();
+        }
+
+        @Override
+        public DoorStatus adaptFromJson(Integer obj) {
+            return DoorStatus.values()[obj];
+        }
+
+    }
 }
