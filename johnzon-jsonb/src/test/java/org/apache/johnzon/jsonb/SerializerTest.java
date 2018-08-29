@@ -35,10 +35,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-// TODO: enhance
 public class SerializerTest {
+
     @Test
     public void roundTrip() {
         final Jsonb jsonb = JsonbBuilder.create();
@@ -118,6 +119,69 @@ public class SerializerTest {
         public void serialize(final Foo obj, final JsonGenerator generator, final SerializationContext ctx) {
             generator.write("full", true);
             generator.write("name", obj.name);
+        }
+    }
+
+    /**
+     * see JOHNZON-169
+     */
+    @Test
+    public void testArrayParseWithDeserializer() {
+        String json = "{\"student\":[{\"val\":\"max,24\"}]}";
+        Jsonb jsonb = JsonbBuilder.create();
+
+        StudentHolder studentHolder = jsonb.fromJson(json, StudentHolder.class);
+        assertNotNull(studentHolder);
+        assertNotNull(studentHolder.getStudent());
+        assertEquals(1, studentHolder.getStudent().size());
+        assertEquals("max", studentHolder.getStudent().get(0).getName());
+        assertEquals(24, studentHolder.getStudent().get(0).getAge());
+    }
+
+    public static class Student {
+        private String name;
+        private int age;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+    }
+
+    public static class StudentDeserializer implements JsonbDeserializer<Student> {
+        @Override
+        public Student deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
+            String val = parser.getObject().getString("val");
+            String[] parts = val.split(",");
+            Student s = new Student();
+            s.setName(parts[0]);
+            s.setAge(Integer.parseInt(parts[1]));
+
+            return s;
+        }
+    }
+
+    public static class StudentHolder {
+        @JsonbTypeDeserializer(StudentDeserializer.class)
+        private List<Student> student;
+
+        public List<Student> getStudent() {
+            return student;
+        }
+
+        public void setStudent(List<Student> student) {
+            this.student = student;
         }
     }
 }
