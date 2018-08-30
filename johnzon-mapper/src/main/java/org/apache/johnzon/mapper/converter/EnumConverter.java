@@ -40,7 +40,7 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T>, Converter
 
     @Override // no need of cache here, it is already fast
     public String toString(final T instance) {
-        return instance.name();
+        return instance != null ? instance.name() : null;
     }
 
     @Override

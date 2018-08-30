@@ -89,6 +89,25 @@ public class SerializerTest {
         assertEquals("{\"elems\":[2,null]}", jsonb.toJson(wrapper));
     }
 
+    @Test
+    public void nullValuesInEnumList() {
+        Jsonb jsonb = JsonbBuilder.create();
+
+        EnumList wrapper = new EnumList();
+        wrapper.elems.add(null);
+        assertEquals("{\"elems\":[null]}", jsonb.toJson(wrapper));
+
+        wrapper.elems.add(MyStatus.OK);
+        assertEquals("{\"elems\":[null,\"OK\"]}", jsonb.toJson(wrapper));
+
+        wrapper.elems.add(0, MyStatus.WRONG);
+        assertEquals("{\"elems\":[\"WRONG\",null,\"OK\"]}", jsonb.toJson(wrapper));
+
+        wrapper.elems.remove(2);
+        assertEquals("{\"elems\":[\"WRONG\",null]}", jsonb.toJson(wrapper));
+    }
+
+
     public static class Foo {
         public String name;
         public int value;
@@ -107,6 +126,14 @@ public class SerializerTest {
 
     public static class IntList {
         public List<Integer> elems = new ArrayList<>();
+    }
+
+    public enum MyStatus {
+        OK, WRONG;
+    }
+
+    public static class EnumList {
+        public List<MyStatus> elems = new ArrayList<>();
     }
 
     public static class FooDeser implements JsonbDeserializer<Foo> {
