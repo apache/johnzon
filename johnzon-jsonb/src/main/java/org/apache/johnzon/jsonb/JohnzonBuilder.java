@@ -235,6 +235,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
             throw new IllegalArgumentException("Unsupported factory: " + val);
         }).orElseGet(this::findFactory);
+
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
                 .orElseGet(() -> new JsonbAccessMode(
@@ -247,17 +248,18 @@ public class JohnzonBuilder implements JsonbBuilder {
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
         builder.setAccessMode(accessMode);
 
-
         // user adapters
         config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter -> {
             final ParameterizedType pt = ParameterizedType.class.cast(
                     Stream.of(adapter.getClass().getGenericInterfaces())
-                            .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+                          .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
             if (pt == null) {
                 throw new IllegalArgumentException(adapter + " doesn't implement JsonbAdapter");
             }
             final Type[] args = pt.getActualTypeArguments();
-            builder.addAdapter(args[0], args[1], new JohnzonJsonbAdapter(adapter, args[0], args[1]));
+            final JohnzonJsonbAdapter johnzonJsonbAdapter = new JohnzonJsonbAdapter(adapter, args[0], args[1]);
+            builder.addAdapter(args[0], args[1], johnzonJsonbAdapter);
+            defaultConverters.put(new AdapterKey(args[0], args[1]), johnzonJsonbAdapter);
         }));
 
         config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
