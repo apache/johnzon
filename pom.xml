@@ -40,12 +40,12 @@
   <url>http://johnzon.apache.org</url>
 
   <properties>
-    <geronimo-jsonp.version>1.0</geronimo-jsonp.version>
+    <geronimo-jsonp.version>1.1</geronimo-jsonp.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
-    <felix.plugin.version>2.5.3</felix.plugin.version>
+    <felix.plugin.version>4.0.0</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <java-compile.version>1.8</java-compile.version>
     <cxf.version>3.0.0</cxf.version>
@@ -367,6 +367,7 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
+            <_contract>*</_contract>
             <_removeheaders>Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool</_removeheaders>
             <_versionpolicy>${bnd.version.policy}</_versionpolicy>
             <Bundle-DocURL>http://johnzon.apache.org/</Bundle-DocURL>
