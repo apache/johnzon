@@ -37,28 +37,58 @@
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-annotation_1.3_spec</artifactId>
-      <version>1.0</version>
+      <version>1.1</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jaxrs_2.1_spec</artifactId>
-      <version>1.0</version>
+      <version>1.1</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-jcdi_1.1_spec</artifactId>
-      <version>1.0</version>
+      <artifactId>geronimo-jcdi_2.0_spec</artifactId>
+      <version>1.1</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-      <version>1.0</version>
+      <version>1.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.aries.component-dsl</groupId>
+      <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
+      <version>1.2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.service.metatype.annotations</artifactId>
+      <version>1.4.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.service.jaxrs</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.util.converter</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.util.function</artifactId>
+      <version>1.1.0</version>
       <scope>provided</scope>
     </dependency>
 
@@ -113,8 +143,35 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
-            <Require-Capability>osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
-            <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
+            <Bundle-Activator>org.apache.johnzon.jaxrs.jsonb.jaxrs.osgi.Activator</Bundle-Activator>
+            <Require-Capability><![CDATA[
+              osgi.implementation;
+                filter:="(osgi.implementation=osgi.cdi)";
+                resolution:=optional,
+              osgi.extender;
+                filter:="(osgi.extender=osgi.serviceloader.registrar)"
+            ]]></Require-Capability>
+            <Provide-Capability><![CDATA[
+              osgi.serviceloader;
+                osgi.cdi.extension=JavaJSONB;
+                osgi.serviceloader=javax.enterprise.inject.spi.Extension;
+                uses:="
+                  javax.enterprise.event,
+                  javax.enterprise.inject.spi",
+              osgi.serviceloader;
+                osgi.serviceloader=javax.json.bind.spi.JsonbProvider,
+              osgi.service;
+                effective:=active;
+                objectClass:List<String>="
+                  javax.ws.rs.ext.MessageBodyReader,
+                  javax.ws.rs.ext.MessageBodyWriter";
+                osgi.jaxrs.media.type=application/json
+            ]]></Provide-Capability>
+            <_conditionalpackage>
+                org.apache.aries.component.dsl.*,
+                org.osgi.util.converter,
+                org.osgi.util.function
+            </_conditionalpackage>
           </instructions>
         </configuration>
       </plugin>
