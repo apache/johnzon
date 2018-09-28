@@ -534,3 +534,44 @@ Known limitations are (feel free to do a PR on github to add these missing featu
 
 * Doesn't support references in the schema
 * Doesn't support: dependencies, propertyNames, if/then/else, allOf/anyOf/oneOf/not, format validations
+
+### OSGi JAX-RS Whiteboard
+
+Though Johnzon artifacts are OSGi bundles to begin with, this module provides further integration with the [OSGi JAX-RS Whiteboard](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html) and [OSGi CDI Integration](https://osgi.org/specification/osgi.enterprise/7.0.0/service.cdi.html) specifications.
+
+##### JAX-RS
+
+This module provides `MessageBodyWriter` and `MessageBodyReader` extensions for the media type `application/json` (by default) to whiteboard JAX-RS Applications.
+
+Configuration of this extension is managed via Configuration Admin using the **pid** `org.apache.johnzon.jsonb` and defines a Metatype schema with the following properties:
+
+|  Property    | Synopsis     | Type | Default |
+| ---- | ------------- | -- | -- |
+| `ignores` | List of fully qualified class names to ignore | String[] | empty |
+| `osgi.jaxrs.application.select` | Filter expression used to match the extension to JAX-RS Whiteboard Applications | String | `(!(johnzon.jsonb=false))` *(which is a convention allowing the extension to bind to all applications unless the application is configured with `johnzon.jsonb=false`)* |
+| `osgi.jaxrs.media.type` | List of media types handled by the extension | String[] | `application/json` |
+| `throw.no.content.exception.on.empty.streams` | | boolean | `false` |
+| `fail.on.unknown.properties` | | boolean | `false` |
+| `use.js.range` | | boolean | `false` |
+| `other.properties` | | String | empty |
+| `ijson` | | boolean | `false` |
+| `encoding` | | String | empty |
+| `binary.datastrategy` | | String | empty |
+| `property.naming.strategy` | | String | empty |
+| `property.order.strategy` | | String | empty |
+| `null.values` | | boolean | `false` |
+| `pretty` | | boolean | `false` |
+| `fail.on.missing.creator.values` | | boolean | `false` |
+| `polymorphic.serialization.predicate` | | String | empty |
+| `polymorphic.deserialization.predicate` | | String | empty |
+| `polymorphic.discriminator` | | String | empty |
+
+##### CDI
+
+Since JSON-B specification provides an integration with the CDI specification to handle caching, this module also provides such integration for OSGi CDI Integration specification by providing an `javax.enterprise.inject.spi.Extension` service with the required service property `osgi.cdi.extension` with the value `JavaJSONB`.
+
+##### Implicit Extensions
+
+In order to reduce the burden of configuration Apache Aries CDI (the OSGi CDI Integration RI) provides a feature of implicit extensions. These are extensions which the developer doesn't have to configure a requirement for in their CDI bundle. The Johnzon JSON-B CDI extension is such an extension and as such when running in Aries CDI does not need to be required.
+
+This is achieve using the service property `aries.cdi.extension.mode=implicit`.
