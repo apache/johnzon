@@ -36,6 +36,36 @@
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
+    <dependency>
+      <groupId>org.apache.aries.component-dsl</groupId>
+      <artifactId>org.apache.aries.component-dsl.component-dsl</artifactId>
+      <version>1.2.1</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.service.metatype.annotations</artifactId>
+      <version>1.4.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.service.jaxrs</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.util.converter</artifactId>
+      <version>1.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.osgi</groupId>
+      <artifactId>org.osgi.util.function</artifactId>
+      <version>1.1.0</version>
+      <scope>provided</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.johnzon</groupId>
@@ -67,4 +97,31 @@
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
   <packaging>bundle</packaging>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <configuration>
+          <instructions>
+            <Bundle-Activator>org.apache.johnzon.jaxrs.osgi.Activator</Bundle-Activator>
+            <Provide-Capability><![CDATA[
+              osgi.service;
+                effective:=active;
+                objectClass:List<String>="
+                  javax.ws.rs.ext.MessageBodyReader,
+                  javax.ws.rs.ext.MessageBodyWriter";
+                osgi.jaxrs.media.type=application/json
+            ]]></Provide-Capability>
+            <_conditionalpackage>
+                org.apache.aries.component.dsl.*,
+                org.osgi.util.converter,
+                org.osgi.util.function
+            </_conditionalpackage>
+          </instructions>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

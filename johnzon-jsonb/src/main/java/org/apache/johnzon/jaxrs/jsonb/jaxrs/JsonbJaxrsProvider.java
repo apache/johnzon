@@ -54,9 +54,10 @@ import javax.ws.rs.ext.Providers;
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@Priority(value = 4900)
+@Priority(value = JsonbJaxrsProvider.PRIORITY)
 public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T>, AutoCloseable {
 
+    public static final int PRIORITY = 4900;
     protected final Collection<String> ignores;
     protected final JsonbConfig config = new JsonbConfig();
     protected volatile Function<Class<?>, Jsonb> delegate = null;
