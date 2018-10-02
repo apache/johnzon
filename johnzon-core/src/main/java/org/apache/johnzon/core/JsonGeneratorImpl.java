@@ -49,6 +49,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final String INDENT = "  ";
     //private final ConcurrentMap<String, String> cache;
     private int depth = 0;
+    private boolean closed;
 
     private final HStack<GeneratorState> state = new HStack<GeneratorState>();
 
@@ -452,6 +453,9 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
         try {
             if (currentState() != GeneratorState.END) {
                 throw new JsonGenerationException("Invalid json");
@@ -463,6 +467,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             } catch (final IOException e) {
                 throw new JsonException(e.getMessage(), e);
             } finally {
+                closed = true;
                 bufferProvider.release(buffer);
             }
         }

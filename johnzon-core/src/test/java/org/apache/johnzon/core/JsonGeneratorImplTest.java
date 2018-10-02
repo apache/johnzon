@@ -18,8 +18,16 @@
  */
 package org.apache.johnzon.core;
 
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Queue;
 
 import javax.json.Json;
 import javax.json.JsonReader;
@@ -28,16 +36,35 @@ import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.StringWriter;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Assert;
+import org.junit.Test;
 
 public class JsonGeneratorImplTest {
+    @Test
+    public void closeOnce() throws Throwable {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final JsonGenerator generator = Json.createGenerator(baos).writeStartObject().writeEnd();
+        for (int i = 0; i < 10; i++) {
+            generator.close();
+            assertEquals(1, getBufferSize(generator));
+        }
+    }
+
+    private int getBufferSize(final JsonGenerator generator) throws Throwable {
+        final Field bufferProvider = generator.getClass()
+                                              .getDeclaredField("bufferProvider");
+        if (!bufferProvider.isAccessible()) {
+            bufferProvider.setAccessible(true);
+        }
+        final Object provider = bufferProvider.get(generator);
+        final Field queue = provider.getClass().getSuperclass().getDeclaredField("queue");
+        if (!queue.isAccessible()) {
+            queue.setAccessible(true);
+        }
+        return Queue.class.cast(queue.get(provider)).size();
+    }
+
     @Test
     public void notFluentGeneratorUsage() {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
