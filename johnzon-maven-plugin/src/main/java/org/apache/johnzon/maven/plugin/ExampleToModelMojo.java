@@ -18,13 +18,17 @@
  */
 package org.apache.johnzon.maven.plugin;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
+import static java.util.Arrays.asList;
+import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -33,23 +37,25 @@ import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
-import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import javax.lang.model.element.Modifier;
 
-import static java.util.Arrays.asList;
-import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.johnzon.mapper.JohnzonProperty;
+import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+
+import com.squareup.javapoet.AnnotationSpec;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
 
 @Mojo(name = "example-to-model", defaultPhase = GENERATE_SOURCES)
 public class ExampleToModelMojo extends AbstractMojo {
@@ -99,7 +105,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     }
 
     // TODO: unicity of field name, better nested array/object handling
-    private void generate(final JsonReaderFactory readerFactory, final File source, final Writer writer, final String javaName) throws MojoExecutionException {
+    private void generate(final JsonReaderFactory readerFactory, final File source, final TypeSpec.Builder targetType) throws MojoExecutionException {
         JsonReader reader = null;
         try {
             reader = readerFactory.createReader(new FileReader(source));
@@ -109,29 +115,12 @@ public class ExampleToModelMojo extends AbstractMojo {
             }
 
             final JsonObject object = JsonObject.class.cast(structure);
-            final Collection<String> imports = new TreeSet<String>();
-
-            // while we browse the example tree just store imports as well, avoids a 2 passes processing duplicating imports logic
-            final StringWriter memBuffer = new StringWriter();
-            generateFieldsAndMethods(memBuffer, object, "    ", imports);
 
             if (header != null) {
-                writer.write(header);
-                writer.write('\n');
+                targetType.addJavadoc(header);
             }
 
-            writer.write("package " + packageBase + ";\n\n");
-
-            if (!imports.isEmpty()) {
-                for (final String imp : imports) {
-                    writer.write("import " + imp + ";\n");
-                }
-                writer.write('\n');
-            }
-
-            writer.write("public class " + javaName + " {\n");
-            writer.write(memBuffer.toString());
-            writer.write("}\n");
+            generateFieldsAndMethods(object, targetType);
         } catch (final IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {
@@ -141,67 +130,54 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
     }
 
-    private void generateFieldsAndMethods(final Writer writer, final JsonObject object, final String prefix,
-                                          final Collection<String> imports) throws IOException {
+    private void generateFieldsAndMethods(final JsonObject object, TypeSpec.Builder targetType) {
         final Map<String, JsonObject> nestedTypes = new TreeMap<String, JsonObject>();
         {
-            final Iterator<Map.Entry<String, JsonValue>> iterator = object.entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Map.Entry<String, JsonValue> entry = iterator.next();
+            for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
                 final String key = entry.getKey();
                 final String fieldName = toJavaFieldName(key);
                 switch (entry.getValue().getValueType()) {
                     case ARRAY:
-                        imports.add("java.util.List");
-                        handleArray(writer, prefix, nestedTypes, entry.getValue(), key, fieldName, 1, imports);
+                        handleArray(targetType, nestedTypes, entry.getValue(), key, fieldName, 1);
                         break;
                     case OBJECT:
                         final String type = toJavaName(fieldName);
                         nestedTypes.put(type, JsonObject.class.cast(entry.getValue()));
-                        fieldGetSetMethods(writer, key, fieldName, type, prefix, 0, imports);
+                        fieldGetSetMethods(targetType, key, fieldName, type, 0);
                         break;
                     case TRUE:
                     case FALSE:
-                        fieldGetSetMethods(writer, key, fieldName, "Boolean", prefix, 0, imports);
+                        fieldGetSetMethods(targetType, key, fieldName, "Boolean", 0);
                         break;
                     case NUMBER:
-                        fieldGetSetMethods(writer, key, fieldName, "Double", prefix, 0, imports);
+                        fieldGetSetMethods(targetType, key, fieldName, "Double", 0);
                         break;
                     case STRING:
-                        fieldGetSetMethods(writer, key, fieldName, "String", prefix, 0, imports);
+                        fieldGetSetMethods(targetType, key, fieldName, "String", 0);
                         break;
                     case NULL:
                     default:
                         throw new UnsupportedOperationException("Unsupported " + entry.getValue() + ".");
                 }
-                if (iterator.hasNext()) {
-                    writer.write("\n");
-                }
             }
         }
 
-        if (!object.isEmpty() && !nestedTypes.isEmpty()) {
-            writer.write("\n");
-        }
+        for (final Map.Entry<String, JsonObject> entry : nestedTypes.entrySet()) {
+            TypeSpec.Builder nestedType = TypeSpec.classBuilder(entry.getKey())
+                                                  .addModifiers( Modifier.PUBLIC, Modifier.STATIC );
 
-        final Iterator<Map.Entry<String, JsonObject>> entries = nestedTypes.entrySet().iterator();
-        while (entries.hasNext()) {
-            final Map.Entry<String, JsonObject> entry = entries.next();
-            writer.write(prefix + "public static class " + entry.getKey() + " {\n");
-            generateFieldsAndMethods(writer, entry.getValue(), "    " + prefix, imports);
-            writer.write(prefix + "}\n");
-            if (entries.hasNext()) {
-                writer.write("\n");
-            }
+            generateFieldsAndMethods(entry.getValue(), nestedType);
+
+            targetType.addType(nestedType.build());
         }
     }
 
-    private void handleArray(final Writer writer, final String prefix,
+    private void handleArray(final TypeSpec.Builder targetType,
                              final Map<String, JsonObject> nestedTypes,
                              final JsonValue value,
-                             final String jsonField,final String fieldName,
-                             final int arrayLevel,
-                             final Collection<String> imports) throws IOException {
+                             final String jsonField,
+                             final String fieldName,
+                             final int arrayLevel) {
         final JsonArray array = JsonArray.class.cast(value);
         if (array.size() > 0) { // keep it simple for now - 1 level, we can have an awesome recursive algo later if needed
             final JsonValue jsonValue = array.get(0);
@@ -209,20 +185,20 @@ public class ExampleToModelMojo extends AbstractMojo {
                 case OBJECT:
                     final String javaName = toJavaName(fieldName);
                     nestedTypes.put(javaName, JsonObject.class.cast(jsonValue));
-                    fieldGetSetMethods(writer, jsonField, fieldName, javaName, prefix, arrayLevel, imports);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, javaName, arrayLevel);
                     break;
                 case TRUE:
                 case FALSE:
-                    fieldGetSetMethods(writer, jsonField, fieldName, "Boolean", prefix, arrayLevel, imports);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, "Boolean", arrayLevel);
                     break;
                 case NUMBER:
-                    fieldGetSetMethods(writer, jsonField, fieldName, "Double", prefix, arrayLevel, imports);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, "Double", arrayLevel);
                     break;
                 case STRING:
-                    fieldGetSetMethods(writer, jsonField, fieldName, "String", prefix, arrayLevel, imports);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, "String", arrayLevel);
                     break;
                 case ARRAY:
-                    handleArray(writer, prefix, nestedTypes, jsonValue, jsonField, fieldName, arrayLevel + 1, imports);
+                    handleArray(targetType, nestedTypes, jsonValue, jsonField, fieldName, arrayLevel + 1);
                     break;
                 case NULL:
                 default:
@@ -233,42 +209,46 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
     }
 
-    private void fieldGetSetMethods(final Writer writer,
-                                    final String jsonField, final String field,
-                                    final String type, final String prefix, final int arrayLevel,
-                                    final Collection<String> imports) throws IOException {
-        final String actualType = buildArrayType(arrayLevel, type);
+    private void fieldGetSetMethods(final TypeSpec.Builder targetType,
+                                    final String jsonField,
+                                    final String field,
+                                    final String type,
+                                    final int arrayLevel) {
+        final TypeName actualType =  buildArrayType(arrayLevel, type);
         final String actualField = buildValidFieldName(jsonField);
         final String methodName = StringUtils.capitalize(actualField);
 
-        if (!jsonField.equals(field)) { // TODO: add it to imports in eager visitor
-            imports.add("org.apache.johnzon.mapper.JohnzonProperty");
-            writer.append(prefix).append("@JohnzonProperty(\"").append(jsonField).append("\")\n");
+        FieldSpec.Builder fieldBuilder = FieldSpec.builder(actualType, actualField, Modifier.PRIVATE);
+
+        if (!jsonField.equals(field)) {
+            fieldBuilder.addAnnotation(AnnotationSpec.builder(JohnzonProperty.class)
+                                                     .addMember("value", "$S", jsonField)
+                                                     .build());
         }
 
-        writer.append(prefix).append("private ").append(actualType).append(" ").append(actualField).append(";\n");
-        writer.append(prefix).append("public ").append(actualType).append(" get").append(methodName).append("() {\n");
-        writer.append(prefix).append("    return ").append(actualField).append(";\n");
-        writer.append(prefix).append("}\n");
-        writer.append(prefix).append("public void set").append(methodName).append("(final ").append(actualType).append(" newValue) {\n");
-        writer.append(prefix).append("    this.").append(actualField).append(" = newValue;\n");
-        writer.append(prefix).append("}\n");
+        targetType.addField(fieldBuilder.build());
+
+        targetType.addMethod(MethodSpec.methodBuilder("get" + methodName)
+                                       .addModifiers(Modifier.PUBLIC)
+                                       .returns(actualType)
+                                       .addStatement("return $L", actualField)
+                                       .build());
+
+        targetType.addMethod(MethodSpec.methodBuilder("set" + methodName)
+                                       .addModifiers(Modifier.PUBLIC)
+                                       .addParameter(actualType, actualField, Modifier.FINAL)
+                                       .addStatement("this.$1L = $1L", actualField)
+                                       .build());
     }
 
-    private String buildArrayType(final int arrayLevel, final String type) {
+    private TypeName buildArrayType(final int arrayLevel, final String type) {
+        ClassName typeArgument = ClassName.bestGuess(type);
+
         if (arrayLevel == 0) { // quick exit
-            return type;
+            return typeArgument;
         }
 
-        final StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < arrayLevel; i++) {
-            builder.append("List<");
-        }
-        builder.append(type);
-        for (int i = 0; i < arrayLevel; i++) {
-            builder.append(">");
-        }
-        return builder.toString();
+        return ParameterizedTypeName.get(ClassName.get(List.class), typeArgument);
     }
 
     private void visit(final JsonStructure structure, final Visitor visitor) {
@@ -283,24 +263,15 @@ public class ExampleToModelMojo extends AbstractMojo {
 
     private void generateFile(final JsonReaderFactory readerFactory, final File source) throws MojoExecutionException {
         final String javaName = StringUtils.capitalize(toJavaName(source.getName()));
-        final String jsonToClass = packageBase + '.' + javaName;
-        final File outputFile = new File(target, jsonToClass.replace('.', '/') + ".java");
 
-        outputFile.getParentFile().mkdirs();
-        FileWriter writer = null;
+        TypeSpec.Builder targetType = TypeSpec.classBuilder(javaName).addModifiers(Modifier.PUBLIC);
+
+        generate(readerFactory, source, targetType);
+
         try {
-            writer = new FileWriter(outputFile);
-            generate(readerFactory, source, writer, javaName);
+            JavaFile.builder(packageBase, targetType.build()).build().writeTo(target);
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
-        } finally {
-            try {
-                if (writer != null) {
-                    writer.close();
-                }
-            } catch (final IOException e) {
-                // no-op
-            }
         }
     }
 
