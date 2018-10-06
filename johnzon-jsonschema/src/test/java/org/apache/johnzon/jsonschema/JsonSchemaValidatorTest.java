@@ -105,7 +105,7 @@ public class JsonSchemaValidatorTest {
         assertEquals(1, errors.size());
         final ValidationResult.ValidationError error = errors.iterator().next();
         assertEquals("/name", error.getField());
-        assertEquals("Expected STRING but got NUMBER", error.getMessage());
+        assertEquals("Expected [NULL, STRING] but got NUMBER", error.getMessage());
 
         validator.close();
     }
@@ -146,7 +146,7 @@ public class JsonSchemaValidatorTest {
         assertEquals(1, errors.size());
         final ValidationResult.ValidationError error = errors.iterator().next();
         assertEquals("/person/name", error.getField());
-        assertEquals("Expected STRING but got OBJECT", error.getMessage());
+        assertEquals("Expected [NULL, STRING] but got OBJECT", error.getMessage());
 
         validator.close();
     }
@@ -172,7 +172,7 @@ public class JsonSchemaValidatorTest {
         assertEquals(1, errors.size());
         final ValidationResult.ValidationError error = errors.iterator().next();
         assertEquals("/name", error.getField());
-        assertEquals("Expected STRING but got NUMBER", error.getMessage());
+        assertEquals("Expected [NULL, STRING] but got NUMBER", error.getMessage());
 
         validator.close();
     }
@@ -569,7 +569,7 @@ public class JsonSchemaValidatorTest {
         assertTrue(validator.apply(jsonFactory.createObjectBuilder()
                 .add("1", 1)
                 .build()).isSuccess());
-        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder()
                 .add("1", "test")
                 .build()).isSuccess());
 

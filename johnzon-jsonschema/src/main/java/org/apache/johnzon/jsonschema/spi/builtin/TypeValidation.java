@@ -18,13 +18,15 @@
  */
 package org.apache.johnzon.jsonschema.spi.builtin;
 
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.joining;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import javax.json.JsonString;
 import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
@@ -34,7 +36,11 @@ import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 public class TypeValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        switch (model.getSchema().getString("type", "object")) {
+        final JsonString value = model.getSchema().getJsonString("type");
+        if (value == null) {
+            return Optional.empty();
+        }
+        switch (JsonString.class.cast(value).getString()) {
             case "string":
                 return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.STRING));
             case "number":
@@ -50,11 +56,14 @@ public class TypeValidation implements ValidationExtension {
     }
 
     private static class Impl extends BaseValidation {
-        private final JsonValue.ValueType[] types;
+        private final Collection<JsonValue.ValueType> types;
 
         private Impl(final String pointer, final Function<JsonValue, JsonValue> extractor, final JsonValue.ValueType... types) {
-            super(pointer, extractor, JsonValue.ValueType.OBJECT /*ignored*/);
-            this.types = types;
+            super(pointer, extractor, types[0] /*ignored anyway*/);
+            this.types = Stream.concat(Stream.of(types), Stream.of(JsonValue.ValueType.NULL))
+                    .distinct()
+                    .sorted(comparing(JsonValue.ValueType::name))
+                    .collect(toList());
         }
 
         @Override
@@ -63,18 +72,18 @@ public class TypeValidation implements ValidationExtension {
                 return Stream.empty();
             }
             final JsonValue value = extractor.apply(root);
-            if (value == null || Stream.of(types).anyMatch(it -> it == value.getValueType()) || JsonValue.ValueType.NULL == value.getValueType()) {
+            if (value == null || types.contains(value.getValueType())) {
                 return Stream.empty();
             }
             return Stream.of(new ValidationResult.ValidationError(
                     pointer,
-                    "Expected " + Stream.of(types).map(JsonValue.ValueType::name).collect(joining(", ")) + " but got " + value.getValueType()));
+                    "Expected " + types + " but got " + value.getValueType()));
         }
 
         @Override
         public String toString() {
             return "Type{" +
-                    "type=" + asList(types) +
+                    "type=" + types +
                     ", pointer='" + pointer + '\'' +
                     '}';
         }

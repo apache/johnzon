@@ -192,10 +192,11 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
                                 }
                                 return validable.asJsonObject().entrySet().stream()
                                         .filter(e -> pattern.test(e.getKey()))
-                                        .flatMap(e -> buildValidator(
-                                                Stream.concat(Stream.of(path), Stream.of(e.getKey())).toArray(String[]::new),
-                                                currentSchema,
-                                                new ChainedValueAccessor(valueProvider, e.getKey())).apply(e.getValue()));
+                                        .flatMap(e -> {
+                                            final String[] subPath = Stream.concat(Stream.of(path), Stream.of(e.getKey())).toArray(String[]::new);
+                                            final Function<JsonValue, JsonValue> provider = new ChainedValueAccessor(valueProvider, e.getKey());
+                                            return buildValidator(subPath, currentSchema, provider).apply(validable);
+                                        });
                             };
                         })
                         .collect(toList()))
@@ -231,7 +232,7 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
                                         .flatMap(e -> buildValidator(
                                                 Stream.concat(Stream.of(path), Stream.of(e.getKey())).toArray(String[]::new),
                                                 currentSchema,
-                                                new ChainedValueAccessor(valueProvider, e.getKey())).apply(e.getValue()));
+                                                new ChainedValueAccessor(valueProvider, e.getKey())).apply(validable));
                     };
                 })
                 .orElse(NO_VALIDATION);
