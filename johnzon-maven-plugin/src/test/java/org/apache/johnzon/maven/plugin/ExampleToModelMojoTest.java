@@ -114,11 +114,21 @@ public class ExampleToModelMojoTest {
 
         mojo.execute();
 
-        final File output = new File(targetFolder, "org/test/apache/johnzon/mojo/SomeValue.java");
+        File outputFolder = new File(targetFolder, "org/test/apache/johnzon/mojo");
+        assertEquals(4, outputFolder.listFiles().length);
+
+        checkClass(outputFolder, "SomeValue.java");
+        checkClass(outputFolder, "PrimaryMetric.java");
+        checkClass(outputFolder, "ScorePercentiles.java");
+        checkClass(outputFolder, "SecondaryMetrics.java");
+    }
+
+    private void checkClass(File outputFolder, String name) throws Exception {
+        final File output = new File(outputFolder, name);
         assertTrue(output.exists());
         assertTrue(output.isFile());
 
-        File input = new File(getClass().getResource("/SomeValue.java").toURI());
+        File input = new File(getClass().getClassLoader().getResource(name).toURI());
         CompilationUnit expected = JavaParser.parse(input);
 
         CompilationUnit actual = JavaParser.parse(output);
@@ -126,7 +136,6 @@ public class ExampleToModelMojoTest {
         assertEquals(expected.getPackageDeclaration(), actual.getPackageDeclaration());
         assertEquals(expected.getPrimaryTypeName(), actual.getPrimaryTypeName());
 
-        //assertEquals( expected.accept( v, arg );, actual );
         CollectorVisitor expectedVisitor = visit(expected);
         CollectorVisitor actualVisitor = visit(actual);
 

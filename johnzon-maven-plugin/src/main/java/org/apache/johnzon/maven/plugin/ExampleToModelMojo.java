@@ -104,6 +104,22 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
     }
 
+    private void generate(final JsonObject object, final TypeSpec.Builder targetType) throws MojoExecutionException {
+        targetType.addModifiers(Modifier.PUBLIC);
+
+        if (header != null) {
+            targetType.addJavadoc(header);
+        }
+
+        generateFieldsAndMethods(object, targetType);
+
+        try {
+            JavaFile.builder(packageBase, targetType.build()).build().writeTo(target);
+        } catch (IOException e) {
+            throw new MojoExecutionException("An error occurred while serializing class " + targetType, e);
+        }
+    }
+
     // TODO: unicity of field name, better nested array/object handling
     private void generate(final JsonReaderFactory readerFactory, final File source, final TypeSpec.Builder targetType) throws MojoExecutionException {
         JsonReader reader = null;
@@ -116,11 +132,7 @@ public class ExampleToModelMojo extends AbstractMojo {
 
             final JsonObject object = JsonObject.class.cast(structure);
 
-            if (header != null) {
-                targetType.addJavadoc(header);
-            }
-
-            generateFieldsAndMethods(object, targetType);
+            generate(object, targetType);
         } catch (final IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {
@@ -130,7 +142,7 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
     }
 
-    private void generateFieldsAndMethods(final JsonObject object, TypeSpec.Builder targetType) {
+    private void generateFieldsAndMethods(final JsonObject object, TypeSpec.Builder targetType) throws MojoExecutionException {
         final Map<String, JsonObject> nestedTypes = new TreeMap<String, JsonObject>();
         {
             for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
@@ -143,8 +155,7 @@ public class ExampleToModelMojo extends AbstractMojo {
                     case OBJECT:
                         final String type = toJavaName(fieldName);
                         nestedTypes.put(type, JsonObject.class.cast(entry.getValue()));
-                        final ClassName nestedType = ClassName.bestGuess(type);
-                        fieldGetSetMethods(targetType, key, fieldName, nestedType, 0);
+                        fieldGetSetMethods(targetType, key, fieldName, ClassName.get(packageBase, type), 0);
                         break;
                     case TRUE:
                     case FALSE:
@@ -164,12 +175,10 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
 
         for (final Map.Entry<String, JsonObject> entry : nestedTypes.entrySet()) {
-            TypeSpec.Builder nestedType = TypeSpec.classBuilder(entry.getKey())
-                                                  .addModifiers( Modifier.PUBLIC, Modifier.STATIC );
+            ClassName nestedType = ClassName.get(packageBase, entry.getKey());
+            TypeSpec.Builder nestedTypeSpec = TypeSpec.classBuilder(nestedType);
 
-            generateFieldsAndMethods(entry.getValue(), nestedType);
-
-            targetType.addType(nestedType.build());
+            generate(entry.getValue(), nestedTypeSpec);
         }
     }
 
@@ -267,12 +276,6 @@ public class ExampleToModelMojo extends AbstractMojo {
         TypeSpec.Builder targetType = TypeSpec.classBuilder(javaName).addModifiers(Modifier.PUBLIC);
 
         generate(readerFactory, source, targetType);
-
-        try {
-            JavaFile.builder(packageBase, targetType.build()).build().writeTo(target);
-        } catch (IOException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
-        }
     }
 
     private String buildValidFieldName(final String jsonField) {
