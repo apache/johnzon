@@ -143,17 +143,18 @@ public class ExampleToModelMojo extends AbstractMojo {
                     case OBJECT:
                         final String type = toJavaName(fieldName);
                         nestedTypes.put(type, JsonObject.class.cast(entry.getValue()));
-                        fieldGetSetMethods(targetType, key, fieldName, type, 0);
+                        final ClassName nestedType = ClassName.bestGuess(type);
+                        fieldGetSetMethods(targetType, key, fieldName, nestedType, 0);
                         break;
                     case TRUE:
                     case FALSE:
-                        fieldGetSetMethods(targetType, key, fieldName, "Boolean", 0);
+                        fieldGetSetMethods(targetType, key, fieldName, ClassName.get(Boolean.class), 0);
                         break;
                     case NUMBER:
-                        fieldGetSetMethods(targetType, key, fieldName, "Double", 0);
+                        fieldGetSetMethods(targetType, key, fieldName, ClassName.get(Double.class), 0);
                         break;
                     case STRING:
-                        fieldGetSetMethods(targetType, key, fieldName, "String", 0);
+                        fieldGetSetMethods(targetType, key, fieldName, ClassName.get(String.class), 0);
                         break;
                     case NULL:
                     default:
@@ -185,17 +186,18 @@ public class ExampleToModelMojo extends AbstractMojo {
                 case OBJECT:
                     final String javaName = toJavaName(fieldName);
                     nestedTypes.put(javaName, JsonObject.class.cast(jsonValue));
-                    fieldGetSetMethods(targetType, jsonField, fieldName, javaName, arrayLevel);
+                    final ClassName javaType = ClassName.bestGuess(javaName);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, javaType, arrayLevel);
                     break;
                 case TRUE:
                 case FALSE:
-                    fieldGetSetMethods(targetType, jsonField, fieldName, "Boolean", arrayLevel);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, ClassName.get(Boolean.class), arrayLevel);
                     break;
                 case NUMBER:
-                    fieldGetSetMethods(targetType, jsonField, fieldName, "Double", arrayLevel);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, ClassName.get(Double.class), arrayLevel);
                     break;
                 case STRING:
-                    fieldGetSetMethods(targetType, jsonField, fieldName, "String", arrayLevel);
+                    fieldGetSetMethods(targetType, jsonField, fieldName, ClassName.get(String.class), arrayLevel);
                     break;
                 case ARRAY:
                     handleArray(targetType, nestedTypes, jsonValue, jsonField, fieldName, arrayLevel + 1);
@@ -212,7 +214,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     private void fieldGetSetMethods(final TypeSpec.Builder targetType,
                                     final String jsonField,
                                     final String field,
-                                    final String type,
+                                    final ClassName type,
                                     final int arrayLevel) {
         final TypeName actualType =  buildArrayType(arrayLevel, type);
         final String actualField = buildValidFieldName(jsonField);
@@ -241,14 +243,12 @@ public class ExampleToModelMojo extends AbstractMojo {
                                        .build());
     }
 
-    private TypeName buildArrayType(final int arrayLevel, final String type) {
-        ClassName typeArgument = ClassName.bestGuess(type);
-
+    private TypeName buildArrayType(final int arrayLevel, final ClassName type) {
         if (arrayLevel == 0) { // quick exit
-            return typeArgument;
+            return type;
         }
 
-        return ParameterizedTypeName.get(ClassName.get(List.class), typeArgument);
+        return ParameterizedTypeName.get(ClassName.get(List.class), type);
     }
 
     private void visit(final JsonStructure structure, final Visitor visitor) {

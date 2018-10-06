@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.AnnotationMemberDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
@@ -123,13 +124,14 @@ public class ExampleToModelMojoTest {
         CompilationUnit actual = JavaParser.parse(output);
 
         assertEquals(expected.getPackageDeclaration(), actual.getPackageDeclaration());
-        assertEquals(expected.getImports(), actual.getImports());
         assertEquals(expected.getPrimaryTypeName(), actual.getPrimaryTypeName());
 
         //assertEquals( expected.accept( v, arg );, actual );
         CollectorVisitor expectedVisitor = visit(expected);
         CollectorVisitor actualVisitor = visit(actual);
 
+        expectedVisitor.getImports()
+                       .forEach(expectedImport -> assertThat(actualVisitor.getImports(), hasItem(expectedImport)));
         expectedVisitor.getTypes()
                        .forEach(type -> assertThat(actualVisitor.getTypes(), hasItem(type)));
         expectedVisitor.getFields()
@@ -152,6 +154,8 @@ public class ExampleToModelMojoTest {
             return types;
         }
 
+        private final List<String> imports = new LinkedList<>();
+
         private final List<String> fields = new LinkedList<>();
 
         private final List<String> annotations = new LinkedList<>();
@@ -159,6 +163,10 @@ public class ExampleToModelMojoTest {
         private final List<String> methods = new LinkedList<>();
 
         private final List<String> types = new LinkedList<>();
+
+        public List<String> getImports() {
+            return imports;
+        }
 
         public List<String> getFields() {
             return fields;
@@ -170,6 +178,12 @@ public class ExampleToModelMojoTest {
 
         public List<String> getMethods() {
             return methods;
+        }
+
+        @Override
+        public void visit(ImportDeclaration importDeclaration, Void arg) {
+            imports.add(importDeclaration.getNameAsString());
+            super.visit(importDeclaration, arg);
         }
 
         @Override
