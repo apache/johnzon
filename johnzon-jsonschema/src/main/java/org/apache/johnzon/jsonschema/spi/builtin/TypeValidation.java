@@ -36,8 +36,8 @@ import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 public class TypeValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        final JsonString value = model.getSchema().getJsonString("type");
-        if (value == null) {
+        final JsonValue value = model.getSchema().get("type");
+        if (!JsonString.class.isInstance(value)) { // todo: other types?
             return Optional.empty();
         }
         switch (JsonString.class.cast(value).getString()) {
