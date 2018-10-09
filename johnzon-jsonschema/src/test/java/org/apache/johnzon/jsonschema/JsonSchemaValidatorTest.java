@@ -111,6 +111,43 @@ public class JsonSchemaValidatorTest {
     }
 
     @Test
+    public void typeArray() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+             .add("type", "object")
+             .add("properties", jsonFactory.createObjectBuilder()
+                                           .add("name", jsonFactory.createObjectBuilder()
+                                                                   .add("type", jsonFactory.createArrayBuilder()
+                                                                        .add("string")
+                                                                        .add("number"))
+                                                                   .build())
+                                           .build())
+             .build());
+
+        {
+            final ValidationResult success = validator.apply(jsonFactory.createObjectBuilder().add("name", "ok").build());
+            assertTrue(success.getErrors().toString(), success.isSuccess());
+        }
+        {
+            final ValidationResult success = validator.apply(jsonFactory.createObjectBuilder().addNull("name").build());
+            assertTrue(success.getErrors().toString(), success.isSuccess());
+        }
+        {
+            final ValidationResult success = validator.apply(jsonFactory.createObjectBuilder().add("name", 5).build());
+            assertTrue(success.getErrors().toString(), success.isSuccess());
+        }
+
+        final ValidationResult failure = validator.apply(jsonFactory.createObjectBuilder().add("name", true).build());
+        assertFalse(failure.isSuccess());
+        final Collection<ValidationResult.ValidationError> errors = failure.getErrors();
+        assertEquals(1, errors.size());
+        final ValidationResult.ValidationError error = errors.iterator().next();
+        assertEquals("/name", error.getField());
+        assertEquals("Expected [NULL, NUMBER, STRING] but got TRUE", error.getMessage());
+
+        validator.close();
+    }
+
+    @Test
     public void nestedType() {
         final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
                 .add("type", "object")

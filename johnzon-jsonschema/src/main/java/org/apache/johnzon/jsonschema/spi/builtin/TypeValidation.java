@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import javax.json.JsonArray;
 import javax.json.JsonString;
 import javax.json.JsonValue;
 
@@ -37,21 +38,31 @@ public class TypeValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
         final JsonValue value = model.getSchema().get("type");
-        if (!JsonString.class.isInstance(value)) { // todo: other types?
-            return Optional.empty();
+        if (JsonString.class.isInstance(value)) {
+            return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), mapType(JsonString.class.cast(value)).toArray(JsonValue.ValueType[]::new)));
         }
+        if (JsonArray.class.isInstance(value)) {
+            return Optional.of(new Impl(model.toPointer(), model.getValueProvider(),
+                    value.asJsonArray().stream().flatMap(this::mapType).toArray(JsonValue.ValueType[]::new)));
+        }
+        throw new IllegalArgumentException(value + " is neither an array or string nor a string");
+    }
+
+    private Stream<? extends JsonValue.ValueType> mapType(final JsonValue value) {
         switch (JsonString.class.cast(value).getString()) {
+            case "null":
+                return Stream.of(JsonValue.ValueType.NULL);
             case "string":
-                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.STRING));
+                return Stream.of(JsonValue.ValueType.STRING);
             case "number":
-                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.NUMBER));
+                return Stream.of(JsonValue.ValueType.NUMBER);
             case "array":
-                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.ARRAY));
+                return Stream.of(JsonValue.ValueType.ARRAY);
             case "boolean":
-                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.FALSE, JsonValue.ValueType.TRUE));
+                return Stream.of(JsonValue.ValueType.FALSE, JsonValue.ValueType.TRUE);
             case "object":
             default:
-                return Optional.of(new Impl(model.toPointer(), model.getValueProvider(), JsonValue.ValueType.OBJECT));
+                return Stream.of(JsonValue.ValueType.OBJECT);
         }
     }
 
@@ -60,6 +71,7 @@ public class TypeValidation implements ValidationExtension {
 
         private Impl(final String pointer, final Function<JsonValue, JsonValue> extractor, final JsonValue.ValueType... types) {
             super(pointer, extractor, types[0] /*ignored anyway*/);
+            // note: should we always add NULL? if not it leads to a very weird behavior for partial objects and required fixes it
             this.types = Stream.concat(Stream.of(types), Stream.of(JsonValue.ValueType.NULL))
                     .distinct()
                     .sorted(comparing(JsonValue.ValueType::name))
