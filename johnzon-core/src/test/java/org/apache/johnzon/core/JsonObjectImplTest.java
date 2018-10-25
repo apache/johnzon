@@ -18,20 +18,38 @@
  */
 package org.apache.johnzon.core;
 
+import org.junit.Test;
+
+import javax.json.Json;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
-
-import org.junit.Test;
-
 public class JsonObjectImplTest {
+    @Test
+    public void reuseObjectBuilder() {
+        final JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
+        final JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+        for (int numer = 1; numer < 10; numer++) {
+            jsonObjectBuilder.add("key", String.format("Key %d", numer));
+            jsonObjectBuilder.add("value", String.format("Value %d", numer));
+            jsonArrayBuilder.add(jsonObjectBuilder);
+        }
+        final String message = jsonArrayBuilder.build().toString();
+        assertEquals("[{\"key\":\"Key 1\",\"value\":\"Value 1\"},{\"key\":\"Key 2\",\"value\":\"Value 2\"}," +
+                "{\"key\":\"Key 3\",\"value\":\"Value 3\"},{\"key\":\"Key 4\",\"value\":\"Value 4\"},{\"key\":\"Key " +
+                "5\",\"value\":\"Value 5\"},{\"key\":\"Key 6\",\"value\":\"Value 6\"},{\"key\":\"Key 7\"," +
+                "\"value\":\"Value 7\"},{\"key\":\"Key 8\",\"value\":\"Value 8\"},{\"key\":\"Key 9\"," +
+                "\"value\":\"Value 9\"}]", message);
+    }
+
     @Test
     public void boolErrors() {
         {

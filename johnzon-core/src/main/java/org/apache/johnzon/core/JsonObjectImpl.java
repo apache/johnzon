@@ -27,6 +27,7 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.AbstractMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     JsonObjectImpl(final Map<String, JsonValue> backingMap) {
         super();
-        this.unmodifieableBackingMap = backingMap;
+        this.unmodifieableBackingMap = new LinkedHashMap<String, JsonValue>(backingMap);
     }
 
     @Override
