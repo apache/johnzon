@@ -18,15 +18,16 @@
  */
 package org.apache.johnzon.core;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
+import javax.json.JsonObjectBuilder;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class JsonArrayImplTest {
     @Test
@@ -50,6 +51,20 @@ public class JsonArrayImplTest {
         assertEquals("b", array.getJsonString(1).getString());
         assertEquals(5, array.getJsonNumber(2).longValue());
         assertEquals("[\"a\",\"b\",5]", array.toString());
+    }
+
+    @Test
+    public void arrayShouldAddNewObjectWhenAddingAJsonObjectBuilder() {
+        final JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
+        final JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+        for (int number = 1; number <= 2; number++) {
+            jsonObjectBuilder.add("key", String.format("Key %d", number));
+            jsonObjectBuilder.add("value", String.format("Value %d", number));
+            jsonArrayBuilder.add(jsonObjectBuilder);
+        }
+        final String message = jsonArrayBuilder.build().toString();
+        assertEquals("[{\"key\":\"Key 1\",\"value\":\"Value 1\"},{\"key\":\"Key 2\",\"value\":\"Value 2\"}]", message);
+
     }
     
     @Test
