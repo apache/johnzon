@@ -95,6 +95,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     private int arrayDepth = 0;
 
+    private boolean closed;
+
     //minimal stack implementation
     private static final class StructureElement {
         private final StructureElement previous;
@@ -973,6 +975,10 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
+
         bufferProvider.release(buffer);
         if (releaseFallBackCopyBufferLength) {
             valueProvider.release(fallBackCopyBuffer);
@@ -982,6 +988,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             in.close();
         } catch (final IOException e) {
             throw new JsonException("Unexpected IO exception " + e.getMessage(), e);
+        } finally {
+            closed = true;
         }
     }
 

@@ -31,9 +31,12 @@ import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.NoSuchElementException;
+import java.util.function.Function;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -64,6 +67,44 @@ public class JsonParserTest {
         if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
             System.err.println("Default charset is " + Charset.defaultCharset() + ", must must be UTF-8");
         }
+    }
+
+    @Test
+    public void avoidBufferStrategyLeaks() {
+        final Function<JsonParser, String> parse = parser -> {
+            final Collection<String> output = new ArrayList<>();
+            Event e;
+            do {
+                e = parser.next();
+                switch (e) {
+                    case KEY_NAME:
+                        output.add("KEY_NAME: " + parser.getString());
+                        break;
+                    case VALUE_STRING:
+                        output.add("VALUE_STRING: " + parser.getString());
+                        break;
+                    default:
+                        break;
+                }
+            } while (parser.hasNext());
+            return String.join("/", output);
+        };
+        final String jsonText1 = "{\"name\":\"App_1\", \"value\":\"value_1\"}";
+        final String jsonText2 = "{\"name\":\"App_2\", \"value\":\"value_2\"}";
+        final JsonParser jsonParser = Json.createParser(new ByteArrayInputStream(jsonText1.getBytes()));
+        jsonParser.close();
+        jsonParser.close();
+
+        final JsonParser jsonParser1 = Json.createParser(new ByteArrayInputStream(jsonText1.getBytes()));
+        jsonParser1.next();   // write jsonParser1 buffer
+        final JsonParser jsonParser2 = Json.createParser(new ByteArrayInputStream(jsonText2.getBytes()));
+        jsonParser2.next();   // overwrite jsonParser1 buffer
+
+        assertEquals("KEY_NAME: name/VALUE_STRING: App_1/KEY_NAME: value/VALUE_STRING: value_1", parse.apply(jsonParser1));
+        assertEquals("KEY_NAME: name/VALUE_STRING: App_2/KEY_NAME: value/VALUE_STRING: value_2", parse.apply(jsonParser2));
+
+        jsonParser1.close();
+        jsonParser2.close();
     }
 
     @Test
