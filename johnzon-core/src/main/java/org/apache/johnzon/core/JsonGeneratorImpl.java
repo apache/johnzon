@@ -376,42 +376,42 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String value) {
-        checkArray(false);
+        checkArray(true);
         writeValueAsJsonString(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigDecimal value) {
-        checkArray(false);
+        checkArray(true);
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigInteger value) {
-        checkArray(false);
+        checkArray(true);
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final int value) {
-        checkArray(false);
+        checkArray(true);
         writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final long value) {
-        checkArray(false);
+        checkArray(true);
         writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final double value) {
-        checkArray(false);
+        checkArray(true);
         checkDoubleRange(value);
         writeValue(String.valueOf(value));
         return this;
@@ -419,14 +419,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final boolean value) {
-        checkArray(false);
+        checkArray(true);
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator writeNull() {
-        checkArray(false);
+        checkArray(true);
         writeValue(NULL);
         return this;
     }

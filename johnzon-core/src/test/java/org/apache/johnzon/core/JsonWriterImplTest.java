@@ -21,22 +21,105 @@ package org.apache.johnzon.core;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayOutputStream;
+import java.math.BigDecimal;
 
 import javax.json.Json;
+import javax.json.JsonArrayBuilder;
 import javax.json.JsonObjectBuilder;
+import javax.json.JsonValue;
 import javax.json.JsonWriter;
 
 import org.junit.Test;
 
 public class JsonWriterImplTest {
     @Test
-    public void writer() {
+    public void objectWriter() {
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         final JsonWriter writer = Json.createWriter(out);
         final JsonObjectBuilder ob = Json.createObjectBuilder();
-        ob.add("a", new JsonStringImpl("b"));
+        ob.add("a", 123);
+        ob.add("b", new BigDecimal("234.567"));
+        ob.add("c", "string");
+        ob.add("d", JsonValue.TRUE);
+        ob.add("e", JsonValue.FALSE);
+        ob.add("f", JsonValue.NULL);
         writer.write(ob.build());
         writer.close();
-        assertEquals("{\"a\":\"b\"}", new String(out.toByteArray()));
+        assertEquals("{\"a\":123,\"b\":234.567,\"c\":\"string\",\"d\":true,\"e\":false,\"f\":null}",
+                     new String(out.toByteArray()));
+    }
+
+    @Test
+    public void arrayValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        final JsonArrayBuilder ab = Json.createArrayBuilder();
+        ab.add(123);
+        ab.add(new BigDecimal("234.567"));
+        ab.add("string");
+        ab.add(JsonValue.TRUE);
+        ab.add(JsonValue.FALSE);
+        ab.add(JsonValue.NULL);
+        writer.write(ab.build());
+        writer.close();
+        assertEquals("[123,234.567,\"string\",true,false,null]",
+                     new String(out.toByteArray()));
+    }
+
+    @Test
+    public void integralNumberValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        final JsonValue value = Json.createValue(123);
+        writer.write(value);
+        writer.close();
+        assertEquals("123", new String(out.toByteArray()));
+    }
+
+    @Test
+    public void nonIntegralNumberValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        final JsonValue value = Json.createValue(new BigDecimal("123.456"));
+        writer.write(value);
+        writer.close();
+        assertEquals("123.456", new String(out.toByteArray()));
+    }
+
+    @Test
+    public void stringValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        final JsonValue value = Json.createValue("test-value");
+        writer.write(value);
+        writer.close();
+        assertEquals("\"test-value\"", new String(out.toByteArray()));
+    }
+
+    @Test
+    public void nullValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        writer.write(JsonValue.NULL);
+        writer.close();
+        assertEquals("null", new String(out.toByteArray()));
+    }
+
+    @Test
+    public void trueValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        writer.write(JsonValue.TRUE);
+        writer.close();
+        assertEquals("true", new String(out.toByteArray()));
+    }
+
+    @Test
+    public void falseValueWriter() {
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        final JsonWriter writer = Json.createWriter(out);
+        writer.write(JsonValue.FALSE);
+        writer.close();
+        assertEquals("false", new String(out.toByteArray()));
     }
 }
