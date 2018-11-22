@@ -441,4 +441,37 @@ public class JsonGeneratorImplTest {
 
         assertEquals("{\n" + "  \"firstName\":\"John\"\n" + "}", buffer.toString());
     }
+
+    @Test(expected = JsonGenerationException.class)
+    public void errorWhenWritingValueInObject() {
+        Json.createGenerator(new StringWriter()).writeStartObject().write(1);
+    }
+
+    @Test
+    public void writeNumber() {
+        {
+            final StringWriter writer = new StringWriter();
+            Json.createGenerator(writer).write(1).writeEnd().close();
+            assertEquals("1", writer.toString());
+        }
+        {
+            final StringWriter writer = new StringWriter();
+            Json.createGenerator(writer).write(1).close();
+            assertEquals("1", writer.toString());
+        }
+    }
+
+    @Test
+    public void writeBoolean() {
+        {
+            final StringWriter writer = new StringWriter();
+            Json.createGenerator(writer).write(true).writeEnd().close();
+            assertEquals("true", writer.toString());
+        }
+        {
+            final StringWriter writer = new StringWriter();
+            Json.createGenerator(writer).write(true).close();
+            assertEquals("true", writer.toString());
+        }
+    }
 }

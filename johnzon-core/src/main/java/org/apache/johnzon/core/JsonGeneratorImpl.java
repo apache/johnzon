@@ -36,7 +36,6 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
@@ -47,27 +46,31 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private int bufferPos = 0;
     private final boolean prettyPrint;
     private static final String INDENT = "  ";
-    //private final ConcurrentMap<String, String> cache;
     private int depth = 0;
     private boolean closed;
 
     private final HStack<GeneratorState> state = new HStack<GeneratorState>();
 
     private enum GeneratorState {
-        INITIAL(false, true), START_OBJECT(true, false), IN_OBJECT(true, false), AFTER_KEY(false, true), START_ARRAY(false, true), IN_ARRAY(
-                false, true), END(false, false);
+        INITIAL(false, true, false), // nothing created yet
+        START_OBJECT(true, false, true), IN_OBJECT(true, false, true), AFTER_KEY(false, true, false), // object
+        START_ARRAY(false, true, true), IN_ARRAY(false, true, true), // array
+        END(false, false, false), // end of context
+        ROOT_VALUE(false, false, true); // direct primitive (added in jsonp 1.1, was not supported in 1.0)
 
         private final boolean acceptsKey;
         private final boolean acceptsValue;
+        private final boolean endable;
 
-        GeneratorState(final boolean acceptsKey, final boolean acceptsValue) {
+        GeneratorState(final boolean acceptsKey, final boolean acceptsValue, final boolean endable) {
             this.acceptsKey = acceptsKey;
             this.acceptsValue = acceptsValue;
+            this.endable = endable;
         }
     }
 
     JsonGeneratorImpl(final Writer writer, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
+                      final boolean prettyPrint) {
         this.writer = writer;
         //this.cache = cache;
         this.buffer = bufferProvider.newBuffer();
@@ -77,13 +80,13 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     JsonGeneratorImpl(final OutputStream out, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
-        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, cache, prettyPrint);
+                      final boolean prettyPrint) {
+        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, prettyPrint);
     }
 
     JsonGeneratorImpl(final OutputStream out, final Charset encoding, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-            final ConcurrentMap<String, String> cache, final boolean prettyPrint) {
-        this(new OutputStreamWriter(out, encoding), bufferProvider, cache, prettyPrint);
+                      final boolean prettyPrint) {
+        this(new OutputStreamWriter(out, encoding), bufferProvider, prettyPrint);
     }
 
     private void writeEol() {
@@ -144,7 +147,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator writeStartObject(final String name) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         justWrite(START_OBJECT_CHAR);
         writeEol();
@@ -166,7 +169,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator writeStartArray(final String name) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         justWrite(START_ARRAY_CHAR);
         writeEol();
@@ -176,7 +179,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     private void writeJsonValue(final String name, final JsonValue value) {
-        checkObject(false);
+        checkObject();
         //TODO check null handling
         switch (value.getValueType()) {
             case ARRAY:
@@ -227,7 +230,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     private void writeJsonValue(final JsonValue value) {
-        checkArray(true);
+        checkArray();
         //TODO check null handling
         switch (value.getValueType()) {
             case ARRAY:
@@ -279,14 +282,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final JsonValue value) {
-        checkObject(false);
+        checkObject();
         writeJsonValue(name, value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String name, final String value) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValueAsJsonString(value);
         return this;
@@ -294,7 +297,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final BigInteger value) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValue(String.valueOf(value));
         return this;
@@ -302,7 +305,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final BigDecimal value) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValue(String.valueOf(value));
         return this;
@@ -310,7 +313,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final int value) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValue(value);
         return this;
@@ -318,7 +321,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final long value) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValue(value);
         return this;
@@ -326,7 +329,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final double value) {
-        checkObject(false);
+        checkObject();
         checkDoubleRange(value);
         writeKey(name);
         writeValue(String.valueOf(value));
@@ -335,7 +338,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final String name, final boolean value) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValue(String.valueOf(value));
         return this;
@@ -343,7 +346,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator writeNull(final String name) {
-        checkObject(false);
+        checkObject();
         writeKey(name);
         writeValue(NULL);
         return this;
@@ -351,8 +354,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator writeEnd() {
-        checkArrayOrObject(false);
         final GeneratorState last = state.pop();
+        if (last == null || !last.endable) {
+            throw new JsonGenerationException("Can't end current context: " + last);
+        }
         depth--;
         if (last != GeneratorState.START_ARRAY) {
             writeEol();
@@ -360,7 +365,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         writeIndent();
         if (last == GeneratorState.IN_ARRAY || last == GeneratorState.START_ARRAY) {
             justWrite(END_ARRAY_CHAR);
-        } else {
+        } else if (last != GeneratorState.ROOT_VALUE) {
             justWrite(END_OBJECT_CHAR);
         }
         alignState();
@@ -369,49 +374,49 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final JsonValue value) {
-        checkArray(true);
+        checkArray();
         writeJsonValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String value) {
-        checkArray(true);
+        checkArray();
         writeValueAsJsonString(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigDecimal value) {
-        checkArray(true);
+        checkArray();
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigInteger value) {
-        checkArray(true);
+        checkArray();
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final int value) {
-        checkArray(true);
+        checkArray();
         writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final long value) {
-        checkArray(true);
+        checkArray();
         writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final double value) {
-        checkArray(true);
+        checkArray();
         checkDoubleRange(value);
         writeValue(String.valueOf(value));
         return this;
@@ -419,14 +424,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final boolean value) {
-        checkArray(true);
+        checkArray();
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator writeNull() {
-        checkArray(true);
+        checkArray();
         writeValue(NULL);
         return this;
     }
@@ -457,7 +462,8 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             return;
         }
         try {
-            if (currentState() != GeneratorState.END) {
+            final GeneratorState state = currentState();
+            if (state != GeneratorState.END && state != GeneratorState.ROOT_VALUE) {
                 throw new JsonGenerationException("Invalid json");
             }
         } finally {
@@ -603,30 +609,18 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         buffer[bufferPos++] = value;
     }
 
-    private void checkObject(final boolean allowInitial) {
+    private void checkObject() {
         final GeneratorState currentState = currentState();
         if (currentState != GeneratorState.IN_OBJECT && currentState != GeneratorState.START_OBJECT) {
-            if (!allowInitial || currentState != GeneratorState.INITIAL) {
-                throw new JsonGenerationException("write(name, param) is only valid in objects");
-            }
+            throw new JsonGenerationException("write(name, param) is only valid in objects");
         }
     }
 
-    private void checkArray(final boolean allowInitial) {
+    private void checkArray() {
         final GeneratorState currentState = currentState();
         if (currentState != GeneratorState.IN_ARRAY && currentState != GeneratorState.START_ARRAY) {
-            if (!allowInitial || currentState != GeneratorState.INITIAL) {
+            if (currentState != GeneratorState.INITIAL) {
                 throw new JsonGenerationException("write(param) is only valid in arrays");
-            }
-        }
-    }
-
-    private void checkArrayOrObject(final boolean allowInitial) {
-        final GeneratorState currentState = currentState();
-        if (currentState != GeneratorState.IN_ARRAY && currentState != GeneratorState.START_ARRAY
-                && currentState != GeneratorState.IN_OBJECT && currentState != GeneratorState.START_OBJECT) {
-            if (!allowInitial || currentState != GeneratorState.INITIAL) {
-                throw new JsonGenerationException("only valid within array or object");
             }
         }
     }
@@ -661,7 +655,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                 swapState(GeneratorState.IN_OBJECT);
                 break;
             case INITIAL:
-                swapState(GeneratorState.END);
+                state.push(GeneratorState.ROOT_VALUE);
                 break;
             default:
         }

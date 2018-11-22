@@ -26,7 +26,6 @@ import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
 
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
@@ -39,7 +38,6 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
         JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY
     );
     //key caching currently disabled
-    private final ConcurrentMap<String, String> cache = null;//new ConcurrentHashMap<String, String>();
     private final boolean pretty;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
 
@@ -59,17 +57,17 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorImpl(writer, bufferProvider, cache, pretty);
+        return new JsonGeneratorImpl(writer, bufferProvider, pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return new JsonGeneratorImpl(out, bufferProvider, cache, pretty);
+        return new JsonGeneratorImpl(out, bufferProvider, pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        return new JsonGeneratorImpl(out,charset, bufferProvider, cache, pretty);
+        return new JsonGeneratorImpl(out,charset, bufferProvider, pretty);
     }
 
     @Override

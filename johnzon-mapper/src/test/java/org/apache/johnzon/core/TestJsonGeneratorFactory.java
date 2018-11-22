@@ -21,7 +21,6 @@ package org.apache.johnzon.core;
 import javax.json.stream.JsonGenerator;
 import java.io.Writer;
 import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This class is only used for {@link org.apache.johnzon.mapper.JsonGeneratorCloseTest}.
@@ -36,13 +35,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class TestJsonGeneratorFactory extends JsonGeneratorFactoryImpl {
 
     public TestJsonGeneratorFactory() {
-        super(Collections.<String, Object>emptyMap());
+        super(Collections.emptyMap());
     }
 
 
     @Override
     public JsonGenerator createGenerator(Writer writer) {
-        return new JsonGeneratorImpl(writer, TestBufferProvider.INSTANCE, new ConcurrentHashMap<String, String>(0), false);
+        return new JsonGeneratorImpl(writer, TestBufferProvider.INSTANCE, false);
     }
 
 }
