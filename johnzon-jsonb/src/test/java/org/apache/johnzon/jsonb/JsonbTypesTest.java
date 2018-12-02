@@ -18,11 +18,8 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.spi.JsonbProvider;
 import java.io.StringReader;
 import java.net.URI;
 import java.net.URL;
@@ -30,6 +27,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.Period;
@@ -51,27 +49,33 @@ import java.util.OptionalLong;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import org.apache.cxf.common.util.StringUtils;
 
-import static org.junit.Assert.assertEquals;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbConfig;
+import javax.json.bind.spi.JsonbProvider;
+
+import org.apache.cxf.common.util.StringUtils;
+import org.junit.Test;
 
 public class JsonbTypesTest {
     @Test
-    public void readAndWrite() {
+    public void readAndWrite() throws Exception {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
+        final LocalTime localTime = LocalTime.of(1, 2, 3);
         final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
         final String dateTime = localDateTime.toString();
         final ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
         final String expected = "{" +
-            "\"calendar\":\"" + zonedDateTime.toString() + "\"," +
-            "\"date\":\"" + localDateTime.toString() + "\"," +
+            "\"calendar\":\"" + zonedDateTime + "\"," +
+            "\"date\":\"" + localDateTime + "\"," +
             "\"duration\":\"PT30S\"," +
             "\"gregorianCalendar\":\"" + zonedDateTime.toString() + "\"," +
-            "\"instant\":\"" + Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())).toString() + "\"," +
-            "\"localDate\":\"" + localDate.toString() + "\"," +
+            "\"instant\":\"" + Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())) + "\"," +
+            "\"localDate\":\"" + localDate + "\"," +
             "\"localDateTime\":\"" + dateTime + "\"," +
-            "\"offsetDateTime\":\"" + OffsetDateTime.of(localDateTime, ZoneOffset.UTC).toString() + "\"," +
-            "\"offsetTime\":\"" + OffsetTime.of(localDateTime.toLocalTime(), ZoneOffset.UTC).toString() + "\"," +
+            "\"localTime\":\"" + localTime + "\"," +
+            "\"offsetDateTime\":\"" + OffsetDateTime.of(localDateTime, ZoneOffset.UTC) + "\"," +
+            "\"offsetTime\":\"" + OffsetTime.of(localDateTime.toLocalTime(), ZoneOffset.UTC) + "\"," +
             "\"optionalDouble\":3.4," +
             "\"optionalInt\":1," +
             "\"optionalLong\":2," +
@@ -97,6 +101,7 @@ public class JsonbTypesTest {
         assertEquals(localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli(), types.date.getTime());
         assertEquals(localDateTime.toInstant(ZoneOffset.UTC).toEpochMilli(), types.calendar.getTime().getTime());
         assertEquals(localDateTime, types.localDateTime);
+        assertEquals(localTime, types.localTime);
         assertEquals(localDate, types.localDate);
         assertEquals(OffsetDateTime.of(localDateTime, ZoneOffset.UTC), types.offsetDateTime);
         assertEquals(OffsetTime.of(localDateTime.toLocalTime(), ZoneOffset.UTC), types.offsetTime);
@@ -110,16 +115,18 @@ public class JsonbTypesTest {
         assertEquals(Period.of(0, 1, 10), types.period);
 
         assertEquals(expected, jsonb.toJson(types));
+
+        jsonb.close();
     }
 
     @Test
-    public void readAndWriteWithDateFormats() {
+    public void readAndWriteWithDateFormats() throws Exception {
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyyMMdd+HHmmssZ"), "yyyyMMdd+HHmmssZ");
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd"), "yyyy-MM-dd");
     }
     
-    private void readAndWriteWithDateFormat(DateTimeFormatter dateTimeFormatter, String dateFormat) {
+    private void readAndWriteWithDateFormat(DateTimeFormatter dateTimeFormatter, String dateFormat) throws Exception {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
         final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
         final ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
@@ -138,6 +145,8 @@ public class JsonbTypesTest {
         final DateTypes types = jsonb.fromJson(new StringReader(expected), DateTypes.class);
         assertEquals(localDate, types.localDate);
         assertEquals(expected, jsonb.toJson(types));
+
+        jsonb.close();
     }
     
     private static Jsonb newJsonb() {
@@ -175,9 +184,18 @@ public class JsonbTypesTest {
         private Duration duration;
         private Period period;
         private LocalDateTime localDateTime;
+        private LocalTime localTime;
         private LocalDate localDate;
         private OffsetDateTime offsetDateTime;
         private OffsetTime offsetTime;
+
+        public LocalTime getLocalTime() {
+            return localTime;
+        }
+
+        public void setLocalTime(final LocalTime localTime) {
+            this.localTime = localTime;
+        }
 
         public URL getUrl() {
             return url;
