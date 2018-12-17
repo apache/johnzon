@@ -214,6 +214,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("johnzon.deduplicateObjects")
                 .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
                 .ifPresent(builder::setDeduplicateObjects);
+        config.getProperty("johnzon.interfaceImplementationMapping")
+                .map(Map.class::cast)
+                .ifPresent(builder::setInterfaceImplementationMapping);
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 

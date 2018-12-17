@@ -296,7 +296,11 @@ Johnzon provides a module johnzon-jsonb implementing JSON-B standard based on Jo
 
 It fully reuses the JSON-B as API.
 
-### Websocket (beta)
+However it supports some specific properties to wire to the native johnzon configuration - see `JohnzonBuilder` for details.
+One example is `johnzon.interfaceImplementationMapping` which will support a `Map<Class,Class>` to map interfaces to implementations
+to use for deserialization. 
+
+### Websocket
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>

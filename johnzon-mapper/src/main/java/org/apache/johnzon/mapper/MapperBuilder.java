@@ -132,6 +132,7 @@ public class MapperBuilder {
     private Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders = new HashMap<Class<?>, ObjectConverter.Reader<?>>();
     private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
+    private Map<Class<?>, Class<?>> interfaceImplementationMapping = new HashMap<>();
     private BaseAccessMode.FieldFilteringStrategy fieldFilteringStrategy = null;
     private boolean primitiveConverters;
     private boolean failOnUnknownProperties;
@@ -239,8 +240,14 @@ public class MapperBuilder {
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
-                        serializeValueFilter, useBigDecimalForFloats, deduplicateObjects),
+                        serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
+                        interfaceImplementationMapping),
                 closeables);
+    }
+
+    public MapperBuilder setInterfaceImplementationMapping(final Map<Class<?>, Class<?>> interfaceImplementationMapping) {
+        this.interfaceImplementationMapping = interfaceImplementationMapping;
+        return this;
     }
 
     public MapperBuilder setFailOnUnknownProperties(final boolean failOnUnknownProperties) {

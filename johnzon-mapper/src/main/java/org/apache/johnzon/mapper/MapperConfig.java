@@ -67,6 +67,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final SerializeValueFilter serializeValueFilter;
     private final boolean useBigDecimalForFloats;
     private final Boolean deduplicateObjects;
+    private final Map<Class<?>, Class<?>> interfaceImplementationMapping;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -85,7 +86,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean enforceQuoteString, final boolean failOnUnknown,
                         final SerializeValueFilter serializeValueFilter,
                         final boolean useBigDecimalForFloats,
-                        final Boolean deduplicateObjects) {
+                        final Boolean deduplicateObjects,
+                        final Map<Class<?>, Class<?>> interfaceImplementationMapping) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -103,6 +105,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.enforceQuoteString = enforceQuoteString;
         this.failOnUnknown = failOnUnknown;
         this.serializeValueFilter = serializeValueFilter == null ? (name, value) -> false : serializeValueFilter;
+        this.interfaceImplementationMapping = interfaceImplementationMapping;
 
         this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
@@ -110,6 +113,9 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.deduplicateObjects = deduplicateObjects;
     }
 
+    public Map<Class<?>, Class<?>> getInterfaceImplementationMapping() {
+        return interfaceImplementationMapping;
+    }
 
     public SerializeValueFilter getSerializeValueFilter() {
         return serializeValueFilter;

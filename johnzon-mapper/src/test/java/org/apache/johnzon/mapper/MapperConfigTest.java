@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.mapper;
 
+import static java.util.Collections.emptyMap;
+
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.junit.Assert;
@@ -166,7 +168,7 @@ public class MapperConfigTest {
                                 new FieldAccessMode(true, true),
                                 Charset.forName("UTF-8"),
                                 null,
-                                false, false, null, false, false);
+                                false, false, null, false, false, emptyMap());
     }
 
 

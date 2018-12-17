@@ -339,11 +339,22 @@ public class Mappings {
     public ClassMapping findOrCreateClassMapping(final Type clazz) {
         ClassMapping classMapping = classes.get(clazz);
         if (classMapping == null) {
-            if (!Class.class.isInstance(clazz) || Map.class.isAssignableFrom(Class.class.cast(clazz))) {
+            if (!Class.class.isInstance(clazz)) {
                 return null;
             }
-
-            classMapping = createClassMapping(Class.class.cast(clazz));
+            final Class asClass = Class.class.cast(clazz);
+            if (Map.class.isAssignableFrom(asClass) || asClass.isInterface()) {
+                final Class<?> mapping = config.getInterfaceImplementationMapping().get(clazz);
+                if (mapping != null) {
+                    classMapping = createClassMapping(mapping);
+                } else if (asClass.getName().startsWith("java.")) { // we'll not be able to map it with pojo rules
+                    return null;
+                } else { // assume that it can be written with pojo rules but not deserialized
+                    classMapping = createClassMapping(asClass);
+                }
+            } else {
+                classMapping = createClassMapping(asClass);
+            }
             final ClassMapping existing = classes.putIfAbsent(clazz, classMapping);
             if (existing != null) {
                 classMapping = existing;

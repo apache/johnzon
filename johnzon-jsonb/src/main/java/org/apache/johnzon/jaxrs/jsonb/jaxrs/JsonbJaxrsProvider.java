@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.jaxrs.jsonb.jaxrs;
 
+import static java.util.stream.Collectors.toMap;
+
 import javax.json.JsonStructure;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -41,6 +43,7 @@ import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -127,6 +130,20 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     public void setPretty(final boolean pretty) {
         config.withFormatting(pretty);
+        customized = true;
+    }
+
+    public void setInterfaceImplementationMapping(final Map<String, String> interfaceImplementationMapping) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Function<String, Class<?>> load = name -> {
+            try {
+                return loader.loadClass(name.trim());
+            } catch (final ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            }
+        };
+        config.setProperty("johnzon.interfaceImplementationMapping", interfaceImplementationMapping.entrySet().stream()
+             .collect(toMap(it -> load.apply(it.getKey()), it -> load.apply(it.getValue()))));
         customized = true;
     }
 

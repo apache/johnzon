@@ -28,11 +28,11 @@ import org.junit.Test;
 
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -65,13 +65,8 @@ public class ExtendMappingTest {
                     new HashMap<Class<?>, ObjectConverter.Reader<?>>(),
                     -1, true, true, true, false, false, false,
                     new FieldAccessMode(false, false),
-                    Charset.forName("UTF-8"),
-                    new Comparator<String>() {
-                        @Override
-                        public int compare(final String o1, final String o2) {
-                            return o1.compareTo(o2);
-                        }
-                    }, false, false, null, false, false));
+                    Charset.forName("UTF-8"), String::compareTo, false, false, null, false, false,
+                    emptyMap()));
         }
 
         @Override

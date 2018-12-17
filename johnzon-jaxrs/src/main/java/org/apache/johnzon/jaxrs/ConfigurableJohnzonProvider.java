@@ -18,10 +18,20 @@
  */
 package org.apache.johnzon.jaxrs;
 
-import org.apache.johnzon.mapper.MapperBuilder;
-import org.apache.johnzon.mapper.SerializeValueFilter;
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.access.BaseAccessMode;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toMap;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import javax.json.JsonReaderFactory;
 import javax.json.stream.JsonGeneratorFactory;
@@ -32,17 +42,11 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
-import static java.util.Arrays.asList;
+import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.SerializeValueFilter;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.BaseAccessMode;
 
 @Provider
 @Produces("application/json")
@@ -153,6 +157,19 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
 
     public void setAccessModeFieldFilteringStrategy(final BaseAccessMode.FieldFilteringStrategy strategy) {
         builder.setAccessModeFieldFilteringStrategy(strategy);
+    }
+
+    public void setInterfaceImplementationMapping(final Map<String, String> interfaceImplementationMapping) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Function<String, Class<?>> load = name -> {
+            try {
+                return loader.loadClass(name.trim());
+            } catch (final ClassNotFoundException e) {
+                throw new IllegalArgumentException(e);
+            }
+        };
+        builder.setInterfaceImplementationMapping(interfaceImplementationMapping.entrySet().stream()
+            .collect(toMap(it -> load.apply(it.getKey()), it -> load.apply(it.getValue()))));
     }
 
     public void setAccessModeFieldFilteringStrategyName(final String mode) {
