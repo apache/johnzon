@@ -357,6 +357,26 @@ public class MappingParserImpl implements MappingParser {
                 }
             }
         }
+        if (classMapping.mapAdder != null) {
+            object.entrySet().stream()
+                .filter(it -> !classMapping.setters.containsKey(it.getKey()))
+                .filter(it -> it.getValue().getValueType() != NULL)
+                .forEach(e -> {
+                    final Object convertedValue = toValue(
+                            null, e.getValue(), null, null,
+                            classMapping.mapAdderType, null,
+                            new JsonPointerTracker(jsonPointer, e.getKey()), inType);
+                    if (convertedValue != null) {
+                        try {
+                            classMapping.mapAdder.invoke(t, e.getKey(), convertedValue);
+                        } catch (final IllegalAccessException ex) {
+                            throw new IllegalStateException(ex);
+                        } catch (final InvocationTargetException ex) {
+                            throw new MapperException(ex.getCause());
+                        }
+                    }
+                });
+        }
 
         return t;
     }

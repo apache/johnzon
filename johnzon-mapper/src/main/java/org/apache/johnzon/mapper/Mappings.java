@@ -67,6 +67,8 @@ public class Mappings {
         public final ObjectConverter.Writer writer;
         public final Getter anyGetter;
         public final Method anySetter;
+        public final Method mapAdder;
+        public final Class<?> mapAdderType;
 
         private Boolean deduplicateObjects;
         private boolean deduplicationEvaluated = false;
@@ -75,7 +77,8 @@ public class Mappings {
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
                                final Adapter<?, ?> adapter,
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
-                               final Getter anyGetter, final Method anySetter) {
+                               final Getter anyGetter, final Method anySetter,
+                               final Method mapAdder) {
             this.clazz = clazz;
             this.factory = factory;
             this.getters = getters;
@@ -85,11 +88,13 @@ public class Mappings {
             this.reader = reader;
             this.anyGetter = anyGetter;
             this.anySetter = anySetter;
+            this.mapAdder = mapAdder;
+            this.mapAdderType = mapAdder == null ? null : mapAdder.getParameterTypes()[1];
         }
 
         public Boolean isDeduplicateObjects() {
             if (!deduplicationEvaluated) {
-                JohnzonDeduplicateObjects jdo = ((Class<JohnzonDeduplicateObjects>) clazz).getAnnotation(JohnzonDeduplicateObjects.class);
+                JohnzonDeduplicateObjects jdo = clazz.getAnnotation(JohnzonDeduplicateObjects.class);
                 if (jdo != null){
                     deduplicateObjects = jdo.value();
                 }
@@ -424,7 +429,8 @@ public class Mappings {
                 anyGetter != null ? new Getter(
                         new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
                         false,false, false, false, true, null, null, -1, null) : null,
-                accessMode.findAnySetter(clazz));
+                accessMode.findAnySetter(clazz),
+                Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
 
         accessMode.afterParsed(clazz);
 
