@@ -256,7 +256,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             if (ignored != null && ignored.contains(getterEntry.getKey())) {
                 continue;
             }
-            if (getter.version >= 0 && config.getVersion() >= getter.version) {
+            if (getter.version >= 0 && config.getVersion() >= 0 && config.getVersion() < getter.version) {
                 continue;
             }
 

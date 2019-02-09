@@ -19,42 +19,45 @@
 package org.apache.johnzon.mapper;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.StringWriter;
 
 import static org.junit.Assert.assertEquals;
 
+@RunWith(Parameterized.class)
 public class MapperVersionTest {
+
+    private final int mapperVersion;
+    private final String name;
+    private final String expectedJson;
+
+    public MapperVersionTest(int mapperVersion, String name, String expectedJson) {
+        this.mapperVersion = mapperVersion;
+        this.name = name;
+        this.expectedJson = expectedJson;
+    }
+
+    @Parameterized.Parameters(name = "Run {index}: mapperVersion={0}, name={1}, expectedJson={2}")
+    public static Object[][] data() {
+        return new Object[][] {
+                { -1, "foo", "{\"name\":\"foo\"}"}, // no version eg version of -1
+                { 0, "foo", "{}"},                  // version 0 < minVersion 2 -- dont serialize it
+                { 1, "foo", "{}"},                  // version 1 < minVersion 2 -- dont serialize it
+                { 2, "foo", "{\"name\":\"foo\"}"},  // version 2 >= minVersion 2 -- serialize it
+                { 3, "foo", "{\"name\":\"foo\"}"}   // version 2 >= minVersion 2 -- serialize it
+        };
+    }
+
     @Test
-    public void version() {
-        { // no version
-            final Mapper mapper = new MapperBuilder().build();
-            final Versioned versioned = new Versioned();
-            versioned.name = "foo";
-            final StringWriter writer = new StringWriter();
-            mapper.writeObject(versioned, writer);
-            assertEquals("{\"name\":\"foo\"}", writer.toString());
-        }
-        { // version ko
-            for (int i = 0; i < 2; i++) {
-                final Mapper mapper = new MapperBuilder().setVersion(i).build();
-                final Versioned versioned = new Versioned();
-                versioned.name = "foo";
-                final StringWriter writer = new StringWriter();
-                mapper.writeObject(versioned, writer);
-                assertEquals("{\"name\":\"foo\"}", writer.toString());
-            }
-        }
-        { // version ok
-            for (int i = 2; i < 4; i++) {
-                final Mapper mapper = new MapperBuilder().setVersion(i).build();
-                final Versioned versioned = new Versioned();
-                versioned.name = "foo";
-                final StringWriter writer = new StringWriter();
-                mapper.writeObject(versioned, writer);
-                assertEquals("{}", writer.toString());
-            }
-        }
+    public void test() {
+        final Mapper mapper = new MapperBuilder().setVersion(mapperVersion).build();
+        final Versioned versioned = new Versioned();
+        versioned.name = name;
+        final StringWriter writer = new StringWriter();
+        mapper.writeObject(versioned, writer);
+        assertEquals(expectedJson, writer.toString());
     }
 
     public static class Versioned {
