@@ -42,11 +42,11 @@ public class MapperVersionTest {
     @Parameterized.Parameters(name = "Run {index}: mapperVersion={0}, name={1}, expectedJson={2}")
     public static Object[][] data() {
         return new Object[][] {
-                { -1, "foo", "{\"name\":\"foo\"}"},
-                { 0, "foo", "{\"name\":\"foo\"}"},
-                { 1, "foo", "{\"name\":\"foo\"}"},
-                { 2, "foo", "{}"},
-                { 3, "foo", "{}"}
+                { -1, "foo", "{\"name\":\"foo\"}"}, // no version eg version of -1
+                { 0, "foo", "{}"},                  // version 0 < minVersion 2 -- dont serialize it
+                { 1, "foo", "{}"},                  // version 1 < minVersion 2 -- dont serialize it
+                { 2, "foo", "{\"name\":\"foo\"}"},  // version 2 >= minVersion 2 -- serialize it
+                { 3, "foo", "{\"name\":\"foo\"}"}   // version 2 >= minVersion 2 -- serialize it
         };
     }
 
