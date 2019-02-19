@@ -19,10 +19,12 @@
 package org.apache.johnzon.jsonb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
+import javax.json.bind.JsonbException;
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbPropertyOrder;
@@ -32,14 +34,14 @@ import org.junit.Test;
 
 public class DynamicBufferResizingTest {
     @Test
-    public void main() {
+    public void main() throws Exception {
         final JsonbConfig config = new JsonbConfig()
                 .withFormatting(Boolean.TRUE)
                 .withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
         Jsonb jsonb = JsonbBuilder.create(config);
 
         final Request request = new Request("Screenshot.png", "image/png", new byte[558140]);
-        String json = jsonb.toJson(request);
+        final String json = jsonb.toJson(request);
 
         // the first call works
         for (int i = 0; i < 10; i++) { // originally the second call was failling
@@ -47,6 +49,28 @@ public class DynamicBufferResizingTest {
             assertEquals("Screenshot.png", fromJson.name);
             assertEquals("image/png", fromJson.mimeType);
             assertEquals(558140, fromJson.body.length);
+        }
+
+        jsonb.close();
+    }
+
+    @Test(expected = JsonbException.class)
+    public void failOnMissingProp() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            jsonb.fromJson(jsonb.toJson(new Request("Screenshot.png", null, null)), Request.class);
+        }
+    }
+
+    @Test
+    public void dontFailOnMissingPropsIfConfiguredAsSuch() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().setProperty("johnzon.failOnMissingCreatorValues", false))) {
+            final Request request = new Request("Screenshot.png", null, null);
+            final String json = jsonb.toJson(request);
+
+            final Request fromJson = jsonb.fromJson(json, Request.class);
+            assertEquals("Screenshot.png", fromJson.name);
+            assertNull(fromJson.mimeType);
+            assertNull(fromJson.body);
         }
     }
 

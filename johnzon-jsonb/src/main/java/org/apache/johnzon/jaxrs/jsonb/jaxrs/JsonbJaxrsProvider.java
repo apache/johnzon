@@ -133,6 +133,11 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         customized = true;
     }
 
+    public void setFailOnMissingCreatorValues(final boolean failOnMissingCreatorValues) {
+        config.setProperty("failOnMissingCreatorValues", failOnMissingCreatorValues);
+        customized = true;
+    }
+
     public void setInterfaceImplementationMapping(final Map<String, String> interfaceImplementationMapping) {
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
         final Function<String, Class<?>> load = name -> {

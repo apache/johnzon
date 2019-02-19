@@ -32,10 +32,7 @@ import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
 import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
 
 import java.io.Closeable;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -66,8 +63,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -77,8 +72,6 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.adapter.JsonbAdapter;
-import javax.json.bind.annotation.JsonbProperty;
-import javax.json.bind.annotation.JsonbVisibility;
 import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.config.PropertyNamingStrategy;
 import javax.json.bind.config.PropertyVisibilityStrategy;
@@ -153,53 +146,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         final PropertyNamingStrategy propertyNamingStrategy = new PropertyNamingStrategyFactory(namingStrategyValue.orElse(IDENTITY)).create();
         final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(LEXICOGRAPHICAL);
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
-                .map(PropertyVisibilityStrategy.class::cast).orElse(new PropertyVisibilityStrategy() {
-                    private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
-
-                    @Override
-                    public boolean isVisible(final Field field) {
-                        if (field.getAnnotation(JsonbProperty.class) != null) {
-                            return true;
-                        }
-                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(field.getDeclaringClass(), this::visibilityStrategy);
-                        return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
-                    }
-
-                    @Override
-                    public boolean isVisible(final Method method) {
-                        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(method.getDeclaringClass(), this::visibilityStrategy);
-                        return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
-                    }
-
-                    private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
-                        JsonbVisibility visibility = type.getAnnotation(JsonbVisibility.class);
-                        if (visibility != null) {
-                            try {
-                                return visibility.value().newInstance();
-                            } catch (final InstantiationException | IllegalAccessException e) {
-                                throw new IllegalArgumentException(e);
-                            }
-                        }
-                        Package p = type.getPackage();
-                        while (p != null) {
-                            visibility = p.getAnnotation(JsonbVisibility.class);
-                            if (visibility != null) {
-                                try {
-                                    return visibility.value().newInstance();
-                                } catch (final InstantiationException | IllegalAccessException e) {
-                                    throw new IllegalArgumentException(e);
-                                }
-                            }
-                            final String name = p.getName();
-                            final int end = name.lastIndexOf('.');
-                            if (end < 0) {
-                                break;
-                            }
-                            p = Package.getPackage(name.substring(0, end));
-                        }
-                        return this;
-                    }
-                });
+                .map(PropertyVisibilityStrategy.class::cast).orElse(new DefaultPropertyVisibilityStrategy());
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
         config.getProperty("johnzon.enforceQuoteString")
@@ -250,7 +197,10 @@ public class JohnzonBuilder implements JsonbBuilder {
                         factory, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
                                 .map(this::toAccessMode)
-                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false))));
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false)),
+                        config.getProperty("johnzon.failOnMissingCreatorValues")
+                              .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
+                              .orElse(true) /*spec 1.0 requirement*/));
         builder.setAccessMode(accessMode);
 
         // user adapters
@@ -425,7 +375,7 @@ public class JohnzonBuilder implements JsonbBuilder {
 
     private Object getBeanManager() {
         if (beanManager == null) {
-            try { // don't trigger CDI is not there
+            try { // don't trigger CDI if not there
                 final Class<?> cdi = tccl().loadClass("javax.enterprise.inject.spi.CDI");
                 final Object cdiInstance = cdi.getMethod("current").invoke(null);
                 beanManager = cdi.getMethod("getBeanManager").invoke(cdiInstance);
