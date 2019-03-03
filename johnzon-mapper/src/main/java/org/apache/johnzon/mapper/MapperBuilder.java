@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static java.util.Locale.ROOT;
 
 import org.apache.johnzon.core.JsonParserFactoryImpl;
@@ -47,6 +48,7 @@ import org.apache.johnzon.mapper.converter.URLConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
+import javax.json.JsonBuilderFactory;
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
@@ -106,6 +108,8 @@ public class MapperBuilder {
 
     private JsonReaderFactory readerFactory;
     private JsonGeneratorFactory generatorFactory;
+    private JsonProvider provider;
+    private JsonBuilderFactory builderFactory;
     private boolean supportHiddenAccess = true;
     private int maxSize = -1;
     private int bufferSize = -1;
@@ -142,7 +146,13 @@ public class MapperBuilder {
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
-            final JsonProvider provider = JsonProvider.provider();
+            final JsonProvider provider;
+            if (this.provider != null) {
+                provider = this.provider;
+            } else {
+                provider = JsonProvider.provider();
+                this.provider = provider;
+            }
             final Map<String, Object> config = new HashMap<String, Object>();
             if (bufferStrategy != null) {
                 config.put(JsonParserFactoryImpl.BUFFER_STRATEGY, bufferStrategy);
@@ -170,6 +180,9 @@ public class MapperBuilder {
             }
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
+            }
+            if (builderFactory == null) {
+                builderFactory = provider.createBuilderFactory(emptyMap());
             }
         }
 
@@ -233,7 +246,7 @@ public class MapperBuilder {
         }
 
         return new Mapper(
-                readerFactory, generatorFactory,
+                readerFactory, generatorFactory, builderFactory, provider,
                 new MapperConfig(
                         adapters, objectConverterWriters, objectConverterReaders,
                         version, close,
@@ -342,6 +355,16 @@ public class MapperBuilder {
 
     public MapperBuilder setGeneratorFactory(final JsonGeneratorFactory generatorFactory) {
         this.generatorFactory = generatorFactory;
+        return this;
+    }
+
+    public MapperBuilder setProvider(final JsonProvider provider) {
+        this.provider = provider;
+        return this;
+    }
+
+    public MapperBuilder setBuilderFactory(final JsonBuilderFactory builderFactory) {
+        this.builderFactory = builderFactory;
         return this;
     }
 

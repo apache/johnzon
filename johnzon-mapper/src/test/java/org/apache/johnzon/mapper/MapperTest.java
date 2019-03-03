@@ -23,6 +23,7 @@ import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.junit.Assert;
 import org.junit.Test;
+import org.superbiz.MultiStructureObject;
 
 import java.beans.ConstructorProperties;
 import java.io.ByteArrayInputStream;
@@ -53,6 +54,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
+
 public class MapperTest {
     private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"intVal\":56," + "\"longnumber\":118,"
             + "\"bool\":true," + "\"nested\":{" + "\"name\":\"another value\"," + "\"intVal\":97," + "\"longnumber\":34" + "},"
@@ -60,6 +65,47 @@ public class MapperTest {
             + "\"intVal\":3," + "\"longnumber\":4" + "}" + "]," + "\"list\":[" + "{" + "\"name\":\"a3\"," + "\"intVal\":5,"
             + "\"longnumber\":6" + "}," + "{" + "\"name\":\"a4\"," + "\"intVal\":7," + "\"longnumber\":8" + "}" + "],"
             + "\"primitives\":[1,2,3,4,5]," + "\"collectionWrapper\":[1,2,3,4,5]," + "\"map\":{\"uno\":true,\"duos\":false}" + "}";
+
+    @Test
+    public void mapToJsonValue() {
+        final Child object = new Child();
+        object.children = Collections.singletonList("first");
+        object.a = 5;
+        object.b = 6;
+        object.c = 7;
+        final JsonValue structure = new MapperBuilder().build().toStructure(object);
+        assertEquals(JsonValue.ValueType.OBJECT, structure.getValueType());
+        final JsonObject jsonObject = structure.asJsonObject();
+        assertEquals(4, jsonObject.size());
+        assertEquals(5, jsonObject.getInt("a"));
+        assertEquals(6, jsonObject.getInt("b"));
+        assertEquals(7, jsonObject.getInt("c"));
+
+        final JsonArray children = jsonObject.getJsonArray("children");
+        assertEquals(1, children.size());
+        assertEquals("first", children.getString(0));
+    }
+
+    @Test
+    public void mapToJsonValueComplex() {
+        final MultiStructureObject.Nested n1 = new MultiStructureObject.Nested();
+        n1.number = 3;
+
+        final MultiStructureObject object = new MultiStructureObject();
+        object.names = asList("first", "second");
+        object.data = "some";
+        object.polymorphic = new HashMap<>();
+        object.polymorphic.put("a", 1);
+        object.polymorphic.put("b", "2");
+        object.nesteds = Collections.singletonList(n1);
+        object.nestedMap = Collections.singletonMap("n1", n1);
+
+        final JsonValue structure = new MapperBuilder().setAttributeOrder(String.CASE_INSENSITIVE_ORDER).build().toStructure(object);
+        assertEquals(JsonValue.ValueType.OBJECT, structure.getValueType());
+        final JsonObject jsonObject = structure.asJsonObject();
+        assertEquals("{\"data\":\"some\",\"names\":[\"first\",\"second\"],\"nestedMap\":{\"n1\":{\"number\":3}}," +
+                "\"nesteds\":[{\"number\":3}],\"polymorphic\":{\"a\":1,\"b\":\"2\"}}", jsonObject.toString());
+    }
 
     @Test
     public void ignoreAllStrategy() {

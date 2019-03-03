@@ -298,7 +298,26 @@ It fully reuses the JSON-B as API.
 
 However it supports some specific properties to wire to the native johnzon configuration - see `JohnzonBuilder` for details.
 One example is `johnzon.interfaceImplementationMapping` which will support a `Map<Class,Class>` to map interfaces to implementations
-to use for deserialization. 
+to use for deserialization.
+
+#### Integration with `JsonValue`
+
+You can use some optimization to map a `JsonObject` to a POJO using Johnzon `JsonValueReader` and `JsonValueWriter`:
+
+<pre class="prettyprint linenums"><![CDATA[
+final JsonValueReader<Simple> reader = new JsonValueReader<>(Json.createObjectBuilder().add("value", "simple").build());
+final Jsonb jsonb = getJohnsonJsonb();
+final Simple simple = jsonb.fromJson(reader, SomeModel.class);
+]]></pre>
+
+<pre class="prettyprint linenums"><![CDATA[
+final JsonValueWriter writer = new JsonValueWriter();
+final Jsonb jsonb = getJohnsonJsonb();
+jsonb.toJson(object, writer);
+final JsonObject jsonObject = writer.getObject();
+]]></pre>
+
+These two example will not use any IO and directly map the `JsonValue` to/from a POJO.
 
 ### Websocket
 

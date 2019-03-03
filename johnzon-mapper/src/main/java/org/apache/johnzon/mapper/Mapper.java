@@ -18,14 +18,9 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.internal.JsonPointerTracker;
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import static java.util.Arrays.asList;
+import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,13 +33,26 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import static java.util.Arrays.asList;
-import static org.apache.johnzon.mapper.internal.Streams.noClose;
+import javax.json.JsonArray;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
 
 public class Mapper implements Closeable {
 
@@ -52,14 +60,19 @@ public class Mapper implements Closeable {
     protected final Mappings mappings;
     protected final JsonReaderFactory readerFactory;
     protected final JsonGeneratorFactory generatorFactory;
+    protected final JsonBuilderFactory builderFactory;
+    protected final JsonProvider provider;
     protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
     protected final Charset charset;
 
-    Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory, MapperConfig config,
-                  final Collection<Closeable> closeables) {
+    Mapper(final JsonReaderFactory readerFactory, final JsonGeneratorFactory generatorFactory,
+           final JsonBuilderFactory builderFactory, final JsonProvider provider,
+           final MapperConfig config, final Collection<Closeable> closeables) {
         this.readerFactory = readerFactory;
         this.generatorFactory = generatorFactory;
+        this.builderFactory = builderFactory;
+        this.provider = provider;
         this.config = config;
         this.mappings = new Mappings(config);
         this.readerHandler = ReaderHandler.create(readerFactory);
@@ -100,6 +113,43 @@ public class Mapper implements Closeable {
             boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
             writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
         }
+    }
+
+    public JsonValue toStructure(final Object object) {
+        if (object == null) {
+            return JsonValue.NULL;
+        }
+        if (JsonStructure.class.isInstance(object)) {
+            return JsonStructure.class.cast(object);
+        }
+        if (Boolean.class.isInstance(object)) {
+            return Boolean.class.cast(object) ? JsonValue.TRUE : JsonValue.FALSE;
+        }
+        if (String.class.isInstance(object)) {
+            return provider.createValue(String.class.cast(object));
+        }
+        if (Double.class.isInstance(object)) {
+            return provider.createValue(Double.class.cast(object));
+        }
+        if (Float.class.isInstance(object)) {
+            return provider.createValue(Float.class.cast(object));
+        }
+        if (Long.class.isInstance(object)) {
+            return provider.createValue(Long.class.cast(object));
+        }
+        if (Integer.class.isInstance(object)) {
+            return provider.createValue(Integer.class.cast(object));
+        }
+        if (BigDecimal.class.isInstance(object)) {
+            return provider.createValue(BigDecimal.class.cast(object));
+        }
+        if (BigInteger.class.isInstance(object)) {
+            return provider.createValue(BigInteger.class.cast(object));
+        }
+        final JsonObjectGenerator objectGenerator = new JsonObjectGenerator(builderFactory);
+        writeObject(object, objectGenerator, null,
+                isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+        return objectGenerator.getResult();
     }
 
     public void writeObject(final Object object, final Writer stream) {
@@ -179,6 +229,34 @@ public class Mapper implements Closeable {
         return writer.toString();
     }
 
+    public <T> T readObject(final JsonStructure value, final Type clazz) {
+        return new MappingParserImpl(config, mappings, new JsonReader() {
+            @Override
+            public JsonStructure read() {
+                return value;
+            }
+
+            @Override
+            public JsonValue readValue() {
+                return value;
+            }
+
+            @Override
+            public JsonObject readObject() {
+                return value.asJsonObject();
+            }
+
+            @Override
+            public JsonArray readArray() {
+                return value.asJsonArray();
+            }
+
+            @Override
+            public void close() {
+                // no-op
+            }
+        }, isDedup(clazz)).readObject(clazz);
+    }
 
     public <T> T readObject(final String string, final Type clazz) {
         return readObject(new StringReader(string), clazz);
@@ -247,11 +325,14 @@ public class Mapper implements Closeable {
 
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
-        boolean dedup = false;
+        return new MappingParserImpl(config, mappings, reader, isDedup(clazz)).readObject(clazz);
+    }
+
+    private boolean isDedup(final Type clazz) {
         if (clazz instanceof Class) {
-            dedup = isDeduplicateObjects((Class) clazz);
+            return isDeduplicateObjects((Class) clazz);
         }
-        return new MappingParserImpl(config, mappings, reader, dedup).readObject(clazz);
+        return false;
     }
 
 

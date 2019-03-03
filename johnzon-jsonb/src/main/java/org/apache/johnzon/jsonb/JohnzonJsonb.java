@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.jsonb.extension.JsonValueReader;
+import org.apache.johnzon.jsonb.extension.JsonValueWriter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
@@ -124,6 +126,10 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable {
 
     @Override
     public <T> T fromJson(final Reader reader, final Class<T> type) throws JsonbException {
+        if (JsonValueReader.class.isInstance(reader)) {
+            return delegate.readObject(JsonValueReader.class.cast(reader).getInput(), type);
+        }
+
         try {
             if (isArray(type)) {
                 return delegate.readTypedArray(reader, type.getComponentType(), type);
@@ -143,6 +149,10 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable {
 
     @Override
     public <T> T fromJson(final Reader reader, final Type runtimeType) throws JsonbException {
+        if (JsonValueReader.class.isInstance(reader)) {
+            return delegate.readObject(JsonValueReader.class.cast(reader).getInput(), runtimeType);
+        }
+
         try {
             if (isArray(runtimeType)) {
                 final Class<T> type = Class.class.cast(runtimeType);
@@ -284,6 +294,11 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable {
 
     @Override
     public void toJson(final Object inObject, final Writer writer) throws JsonbException {
+        if (JsonValueWriter.class.isInstance(writer)) {
+            JsonValueWriter.class.cast(writer).setResult(delegate.toStructure(inObject));
+            return;
+        }
+
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(object.getClass())) {
             delegate.writeArray((Object[]) object, writer);
@@ -296,6 +311,11 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable {
 
     @Override
     public void toJson(final Object inObject, final Type runtimeType, final Writer writer) throws JsonbException {
+        if (JsonValueWriter.class.isInstance(writer)) {
+            JsonValueWriter.class.cast(writer).setResult(delegate.toStructure(inObject));
+            return;
+        }
+
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(runtimeType)) {
             delegate.writeArray((Object[]) object, writer);
