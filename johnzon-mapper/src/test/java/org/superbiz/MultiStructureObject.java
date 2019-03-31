@@ -27,6 +27,7 @@ public class MultiStructureObject {
     public Collection<Nested> nesteds;
     public Map<String, Nested> nestedMap;
     public Collection<String> names;
+    public int[] anArray;
 
     public static class Nested {
         public int number;

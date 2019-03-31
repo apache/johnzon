@@ -99,12 +99,31 @@ public class MapperTest {
         object.polymorphic.put("b", "2");
         object.nesteds = Collections.singletonList(n1);
         object.nestedMap = Collections.singletonMap("n1", n1);
+        object.anArray = new int[]{3, 4, 5};
 
         final JsonValue structure = new MapperBuilder().setAttributeOrder(String.CASE_INSENSITIVE_ORDER).build().toStructure(object);
         assertEquals(JsonValue.ValueType.OBJECT, structure.getValueType());
         final JsonObject jsonObject = structure.asJsonObject();
-        assertEquals("{\"data\":\"some\",\"names\":[\"first\",\"second\"],\"nestedMap\":{\"n1\":{\"number\":3}}," +
+        assertEquals("{\"anArray\":[3,4,5],\"data\":\"some\",\"names\":[\"first\",\"second\"],\"nestedMap\":{\"n1\":{\"number\":3}}," +
                 "\"nesteds\":[{\"number\":3}],\"polymorphic\":{\"a\":1,\"b\":\"2\"}}", jsonObject.toString());
+    }
+
+    @Test
+    public void mapToJsonArray() {
+        int[] anArray = new int[]{3, 4, 5};
+        final JsonValue structure = new MapperBuilder().build().toStructure(anArray);
+        assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
+        final JsonArray jsonArray = structure.asJsonArray();
+        assertEquals("[3,4,5]", jsonArray.toString());
+    }
+
+    @Test
+    public void mapToJsonList() {
+        List<Integer> anList = asList(3,4,5);
+        final JsonValue structure = new MapperBuilder().build().toStructure(anList);
+        assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
+        final JsonArray jsonArray = structure.asJsonArray();
+        assertEquals("[3,4,5]", jsonArray.toString());
     }
 
     @Test
