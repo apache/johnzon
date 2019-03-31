@@ -94,6 +94,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
+            if (objectClass.isArray()) {
+                final Adapter adapter = config.findAdapter(objectClass);
+                writeArray(objectClass, adapter, null, object, ignoredProperties, jsonPointer);
+                return;
+            }
+
             if (object instanceof Iterable) {
                 doWriteIterable((Iterable) object, ignoredProperties, jsonPointer);
                 return;

@@ -39,7 +39,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
+
 import javax.json.JsonArray;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
@@ -146,29 +146,10 @@ public class Mapper implements Closeable {
         if (BigInteger.class.isInstance(object)) {
             return provider.createValue(BigInteger.class.cast(object));
         }
-
         final JsonObjectGenerator objectGenerator = new JsonObjectGenerator(builderFactory);
-        if (object.getClass().isArray()) {
-            writeObject(objectToList(object), objectGenerator, null,
-                    isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
-        } else {
-            writeObject(object, objectGenerator, null,
-                    isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
-        }
+        writeObject(object, objectGenerator, null,
+                isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
         return objectGenerator.getResult();
-    }
-
-    private List objectToList(Object object) {
-        if (Object[].class.isInstance(object)) {
-            return asList(Object[].class.cast(object));
-        }
-
-        int size = Array.getLength(object);
-        Object[] out = new Object[size];
-        for (int i = 0; i < size; i++) {
-            out[i] = Array.get(object, i);
-        }
-        return asList(out);
     }
 
     public void writeObject(final Object object, final Writer stream) {
