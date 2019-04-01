@@ -54,6 +54,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -124,6 +125,36 @@ public class MapperTest {
         assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
         final JsonArray jsonArray = structure.asJsonArray();
         assertEquals("[3,4,5]", jsonArray.toString());
+    }
+
+    @Test
+    public void mapToJsonObject() {
+        final JsonObject expectedObject = Json.createObjectBuilder().add("a", 1).build();
+        final JsonValue structure = new MapperBuilder().build().toStructure(expectedObject);
+        assertEquals(JsonValue.ValueType.OBJECT, structure.getValueType());
+        final JsonObject actualObject = structure.asJsonObject();
+        assertEquals("{\"a\":1}", actualObject.toString());
+    }
+
+    @Test
+    public void mapToJsonArrayOfJsonObjects() {
+        final JsonObject expectedObjectA = Json.createObjectBuilder().add("a", 1).build();
+        final JsonObject expectedObjectB = Json.createObjectBuilder().add("b", 2).build();
+        final JsonArray expectedArray = Json.createArrayBuilder().add(expectedObjectA).add(expectedObjectB).build();
+        final JsonValue structure = new MapperBuilder().build().toStructure(expectedArray);
+        assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
+        final JsonArray actualArray = structure.asJsonArray();
+        assertEquals("[{\"a\":1},{\"b\":2}]", actualArray.toString());
+    }
+
+    @Test
+    public void mapToArrayOfJsonObjects() {
+        final JsonObject expectedObjectA = Json.createObjectBuilder().add("a", 1).build();
+        final JsonObject expectedObjectB = Json.createObjectBuilder().add("b", 2).build();
+        final JsonValue structure = new MapperBuilder().build().toStructure(new Object[]{expectedObjectA, expectedObjectB});
+        assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
+        final JsonArray actualArray = structure.asJsonArray();
+        assertEquals("[{\"a\":1},{\"b\":2}]", actualArray.toString());
     }
 
     @Test
