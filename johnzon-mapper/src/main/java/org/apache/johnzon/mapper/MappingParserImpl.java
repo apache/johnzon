@@ -33,6 +33,7 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.JsonValue.ValueType;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -727,9 +728,9 @@ public class MappingParserImpl implements MappingParser {
                            final JsonPointerTracker jsonPointer, final Type rootType) {
 
         if (objectConverter != null) {
-
-            if (jsonValue instanceof JsonObject) {
-                return objectConverter.fromJson((JsonObject) jsonValue, type, this);
+            
+            if (EnumSet.of(ValueType.OBJECT, ValueType.NUMBER, ValueType.STRING, ValueType.FALSE, ValueType.TRUE).contains(jsonValue.getValueType())) {
+                return objectConverter.fromJson(jsonValue, type, this);
             } else if (jsonValue instanceof JsonArray) {
                 return buildArray(type, jsonValue.asJsonArray(), itemConverter, objectConverter, jsonPointer, rootType);
             } else {

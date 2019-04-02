@@ -84,6 +84,7 @@ import javax.json.stream.JsonParserFactory;
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.core.JsonParserFactoryImpl;
+import org.apache.johnzon.core.Types;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
@@ -274,10 +275,7 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         config.getProperty(JsonbConfig.SERIALIZERS).map(JsonbSerializer[].class::cast).ifPresent(serializers -> {
             Stream.of(serializers).forEach(s -> {
-                final ParameterizedType pt = findPT(s, JsonbSerializer.class);
-                if (pt == null) {
-                    throw new IllegalArgumentException(s + " doesn't implement JsonbSerializer");
-                }
+                final ParameterizedType pt = Types.findParameterizedType(s.getClass(), JsonbSerializer.class);
                 final Type[] args = pt.getActualTypeArguments();
                 // TODO: support PT in ObjectConverter (list)
                 if (args.length != 1 || !Class.class.isInstance(args[0])) {
@@ -292,10 +290,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         });
         config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
             Stream.of(deserializers).forEach(d -> {
-                final ParameterizedType pt = findPT(d, JsonbDeserializer.class);
-                if (pt == null) {
-                    throw new IllegalArgumentException(d + " doesn't implement JsonbDeserializer");
-                }
+                final ParameterizedType pt = Types.findParameterizedType(d.getClass(), JsonbDeserializer.class);
                 final Type[] args = pt.getActualTypeArguments();
                 if (args.length != 1 || !Class.class.isInstance(args[0])) {
                     throw new IllegalArgumentException("We only support deserializer on Class for now");
@@ -304,7 +299,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 builder.addObjectConverter(
                         Class.class.cast(args[0]), (ObjectConverter.Reader)
                                 (jsonObject, targetType, parser) -> d.deserialize(
-                                        parserFactoryProvider.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType));
+                                        JsonValueParserAdapter.createFor(jsonObject, parserFactoryProvider), new JohnzonDeserializationContext(parser), targetType));
             });
         });
 
@@ -331,6 +326,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
         } : new JohnzonJsonb(mapper);
     }
+    
 
     private AccessMode toAccessMode(final Object s) {
         if (String.class.isInstance(s)) {
@@ -366,13 +362,6 @@ public class JohnzonBuilder implements JsonbBuilder {
                 return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
             }
         };
-    }
-
-    private ParameterizedType findPT(final Object s, final Class<?> type) {
-        return ParameterizedType.class.cast(
-                Stream.of(s.getClass().getGenericInterfaces())
-                        .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type)
-                        .findFirst().orElse(null));
     }
 
     private Object getBeanManager() {

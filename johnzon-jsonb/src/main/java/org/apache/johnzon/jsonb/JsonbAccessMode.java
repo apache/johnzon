@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.core.Types;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.converter.JsonbDateConverter;
 import org.apache.johnzon.jsonb.converter.JsonbLocalDateConverter;
@@ -63,6 +64,7 @@ import javax.json.bind.config.PropertyVisibilityStrategy;
 import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.stream.JsonParserFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -335,10 +337,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final Adapter converter;
         if (adapter != null) {
             final Class<? extends JsonbAdapter> value = adapter.value();
-            final ParameterizedType pt = findPt(value, JsonbAdapter.class);
-            if (pt == null) {
-                throw new IllegalArgumentException(value + " doesn't implement JsonbAdapter");
-            }
+            final ParameterizedType pt = Types.findParameterizedType(value, JsonbAdapter.class);
             final JohnzonAdapterFactory.Instance<? extends JsonbAdapter> instance = newInstance(value);
             toRelease.add(instance);
             final Type[] actualTypeArguments = pt.getActualTypeArguments();
@@ -361,12 +360,6 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             converter = new ConverterAdapter<>(new JsonbValueConverter());
         }
         return converter;
-    }
-
-    private ParameterizedType findPt(final Class<?> value, final Class<?> type) {
-        return ParameterizedType.class.cast(
-                Stream.of(value.getGenericInterfaces())
-                        .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == type).findFirst().orElse(null));
     }
 
     private JohnzonAdapterFactory.Instance newInstance(final Class<?> value) {
@@ -736,14 +729,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
             if (deserializer != null) {
                 final Class<? extends JsonbDeserializer> value = deserializer.value();
-                final ParameterizedType pt = findPt(value, JsonbDeserializer.class);
-                if (pt == null) {
-                    throw new IllegalArgumentException(value + " doesn't implement JsonbDeserializer");
-                }
+                final ParameterizedType pt = Types.findParameterizedType(value, JsonbDeserializer.class);
                 final JohnzonAdapterFactory.Instance<? extends JsonbDeserializer> instance = newInstance(value);
                 toRelease.add(instance);
                 reader = (jsonObject, targetType, parser) ->
-                        instance.getValue().deserialize(parserFactory.get().createParser(jsonObject), new JohnzonDeserializationContext(parser), targetType);
+                        instance.getValue().deserialize(JsonValueParserAdapter.createFor(jsonObject, parserFactory), new JohnzonDeserializationContext(parser), targetType);
             } else if (johnzonConverter != null) {
                 try {
                     MapperConverter mapperConverter = johnzonConverter.value().newInstance();
@@ -781,10 +771,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
             if (serializer != null) {
                 final Class<? extends JsonbSerializer> value = serializer.value();
-                final ParameterizedType pt = findPt(value, JsonbSerializer.class);
-                if (pt == null) {
-                    throw new IllegalArgumentException(value + " doesn't implement JsonbSerializer");
-                }
+                final ParameterizedType pt = Types.findParameterizedType(value, JsonbSerializer.class);
                 final JohnzonAdapterFactory.Instance<? extends JsonbSerializer> instance = newInstance(value);
                 toRelease.add(instance);
                 writer = (instance1, jsonbGenerator) ->

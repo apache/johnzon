@@ -25,7 +25,8 @@ import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.json.JsonObject;
+import javax.json.JsonValue;
+
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Collections;
@@ -191,7 +192,7 @@ public class MapperConfigTest {
         }
 
         @Override
-        public T fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
+        public T fromJson(JsonValue jsonObject, Type targetType, MappingParser parser) {
             // dummy
             return null;
         }
@@ -204,7 +205,7 @@ public class MapperConfigTest {
         }
 
         @Override
-        public T fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
+        public T fromJson(JsonValue jsonObject, Type targetType, MappingParser parser) {
             // dummy
             return null;
         }

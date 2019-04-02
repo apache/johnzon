@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import javax.json.JsonObject;
+import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.spi.JsonbProvider;
 
@@ -92,9 +93,9 @@ public class JohnzonConverterInJsonbTest {
         }
 
         @Override
-        public TestDTO fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
+        public TestDTO fromJson(JsonValue jsonValue, Type targetType, MappingParser parser) {
             TestDTO dto = new TestDTO();
-            dto.instant = ZonedDateTime.parse(jsonObject.getString(TIMESTAMP_JSON_KEY)).toInstant();
+            dto.instant = ZonedDateTime.parse(((JsonObject) jsonValue).getString(TIMESTAMP_JSON_KEY)).toInstant();
             return dto;
         }
     }

@@ -18,18 +18,19 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.converter.EnumConverter;
-import org.apache.johnzon.mapper.internal.AdapterKey;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
-
-import javax.json.JsonObject;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
+
+import javax.json.JsonValue;
+
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 /**
  * Contains internal configuration for all the mapper stuff.
@@ -44,7 +45,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         }
 
         @Override
-        public Object fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
+        public Object fromJson(JsonValue jsonObject, Type targetType, MappingParser parser) {
             return null;
         }
     };

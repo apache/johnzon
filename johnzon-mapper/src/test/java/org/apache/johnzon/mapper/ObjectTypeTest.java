@@ -25,6 +25,8 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import javax.json.JsonObject;
+import javax.json.JsonValue;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -205,8 +207,8 @@ public class ObjectTypeTest {
         }
 
         @Override
-        public Dog fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
-            String javaType = jsonObject.getString("//javaType");
+        public Dog fromJson(JsonValue jsonObject, Type targetType, MappingParser parser) {
+            String javaType = ((JsonObject) jsonObject).getString("//javaType");
             Class targetClass = javaType != null ? getSubClass(targetType, javaType) : (Class) targetType;
 
             return parser.readObject(jsonObject, targetClass);
@@ -424,8 +426,8 @@ public class ObjectTypeTest {
         }
 
         @Override
-        public Poodle fromJson(JsonObject jsonObject, Type targetType, MappingParser parser) {
-            return POODLES.get(jsonObject.getString("poodleName"));
+        public Poodle fromJson(JsonValue jsonObject, Type targetType, MappingParser parser) {
+            return POODLES.get(((JsonObject) jsonObject).getString("poodleName"));
         }
     }
 
