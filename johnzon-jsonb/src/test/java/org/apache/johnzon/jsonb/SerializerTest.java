@@ -114,7 +114,7 @@ public class SerializerTest {
         final Jsonb jsonb = JsonbBuilder.create();
         final UUIDWrapper wrapper = new UUIDWrapper();
         wrapper.uuid = UUID.randomUUID();
-        assertEquals("{\"uuid\":\"4a34a0e8-c0c1-45f7-9fa4-2e28f15fd9be\"}", jsonb.toJson(wrapper));
+        assertEquals("{\"uuid\":\"" + wrapper.uuid + "\"}", jsonb.toJson(wrapper));
         jsonb.close();
     }
 
