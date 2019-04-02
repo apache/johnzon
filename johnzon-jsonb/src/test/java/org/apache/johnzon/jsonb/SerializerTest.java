@@ -18,7 +18,14 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -30,13 +37,8 @@ import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.bind.serializer.SerializationContext;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
-import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
 
 public class SerializerTest {
 
@@ -107,6 +109,15 @@ public class SerializerTest {
         assertEquals("{\"elems\":[\"WRONG\",null]}", jsonb.toJson(wrapper));
     }
 
+    @Test
+    public void uuid() throws Exception {
+        final Jsonb jsonb = JsonbBuilder.create();
+        final UUIDWrapper wrapper = new UUIDWrapper();
+        wrapper.uuid = UUID.randomUUID();
+        assertEquals("{\"uuid\":\"4a34a0e8-c0c1-45f7-9fa4-2e28f15fd9be\"}", jsonb.toJson(wrapper));
+        jsonb.close();
+    }
+
 
     public static class Foo {
         public String name;
@@ -114,7 +125,20 @@ public class SerializerTest {
         public boolean flag;
     }
 
+    public static class UUIDSerializer implements JsonbSerializer<UUID> {
+        @Override
+        public void serialize(final UUID obj, final JsonGenerator generator, final SerializationContext ctx) {
+            generator.write(obj.toString());
+        }
+    }
+
+    public static class UUIDWrapper {
+        @JsonbTypeSerializer(UUIDSerializer.class)
+        public UUID uuid;
+    }
+
     public static class Wrapper {
+
         @JsonbTypeSerializer(FooSer.class)
         @JsonbTypeDeserializer(FooDeser.class)
         public Foo foo;

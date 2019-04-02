@@ -105,19 +105,24 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
-            if (writeBody) {
-                generator.writeStartObject();
-            }
-
             ObjectConverter.Writer objectConverter = config.findObjectConverterWriter(objectClass);
             if (writeBody && objectConverter != null) {
-                objectConverter.writeJson(object, this);
+                if (!writeBody) {
+                    objectConverter.writeJson(object, this);
+                } else {
+                    final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
+                            generator::writeStartObject, generator::writeEnd, null);
+                    objectConverter.writeJson(object, dynamicMappingGenerator);
+                    dynamicMappingGenerator.flushIfNeeded();
+                }
             } else {
+                if (writeBody) {
+                    generator.writeStartObject();
+                }
                 doWriteObjectBody(object, ignoredProperties, jsonPointer);
-            }
-
-            if (writeBody) {
-                generator.writeEnd();
+                if (writeBody) {
+                    generator.writeEnd();
+                }
             }
         } catch (final InvocationTargetException e) {
             throw new MapperException(e);
@@ -344,9 +349,10 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     }
 
                     if (objectConverterToUse != null) {
-                        generator.writeStartObject();
-                        objectConverterToUse.writeJson(o, this);
-                        generator.writeEnd();
+                        final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
+                                generator::writeStartObject, generator::writeEnd, null);
+                        objectConverterToUse.writeJson(o, dynamicMappingGenerator);
+                        dynamicMappingGenerator.flushIfNeeded();
                     } else {
                         writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties,
                                 isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
@@ -377,9 +383,10 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 }
 
                 if (objectConverterToUse != null) {
-                    generator.writeStartObject(key);
-                    objectConverterToUse.writeJson(value, this);
-                    generator.writeEnd();
+                    final DynamicMappingGenerator generator = new DynamicMappingGenerator(this,
+                            () -> this.generator.writeStartObject(key), this.generator::writeEnd, key);
+                    objectConverterToUse.writeJson(value, generator);
+                    generator.flushIfNeeded();
                     return;
                 }
             }

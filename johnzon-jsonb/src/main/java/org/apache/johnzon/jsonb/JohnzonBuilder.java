@@ -284,8 +284,10 @@ public class JohnzonBuilder implements JsonbBuilder {
                     throw new IllegalArgumentException("We only support serializer on Class for now");
                 }
                 builder.addObjectConverter(
-                        Class.class.cast(args[0]), (ObjectConverter.Writer)
-                                (instance, jsonbGenerator) -> s.serialize(instance, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator)));
+                    Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator) ->
+                        s.serialize(
+                                instance, jsonbGenerator.getJsonGenerator(),
+                                new JohnzonSerializationContext(jsonbGenerator)));
             });
         });
         config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
