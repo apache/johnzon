@@ -33,7 +33,6 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
-import javax.json.JsonValue.ValueType;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -729,12 +728,10 @@ public class MappingParserImpl implements MappingParser {
 
         if (objectConverter != null) {
             
-            if (EnumSet.of(ValueType.OBJECT, ValueType.NUMBER, ValueType.STRING, ValueType.FALSE, ValueType.TRUE).contains(jsonValue.getValueType())) {
-                return objectConverter.fromJson(jsonValue, type, this);
-            } else if (jsonValue instanceof JsonArray) {
+            if (jsonValue instanceof JsonArray) {
                 return buildArray(type, jsonValue.asJsonArray(), itemConverter, objectConverter, jsonPointer, rootType);
             } else {
-                throw new UnsupportedOperationException("Array handling with ObjectConverter currently not implemented");
+                return objectConverter.fromJson(jsonValue, type, this);
             }
         }
 

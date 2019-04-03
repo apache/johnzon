@@ -17,105 +17,68 @@
  * under the License.
  */
 package org.apache.johnzon.core;
-
-import java.lang.reflect.GenericArrayType;
+    
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
-import java.lang.reflect.WildcardType;
 import java.util.Arrays;
 
 public class Types {
-
-    public static class TypeVisitor<T> {
-
-        public T visit(Class<?> type) {
-            throw new UnsupportedOperationException("Visiting Class not supported.");
+    
+    private static Type[] resolveArgumentTypes(Class<?> type, Class<?> superType) {
+        if (superType.equals(type)) {
+            // May return Class[] instead of Type[], so copy it as a Type[] to avoid
+            // problems in visit(ParameterizedType)
+            return Arrays.copyOf(type.getTypeParameters(), superType.getTypeParameters().length, Type[].class);
         }
-
-        public T visit(GenericArrayType type) {
-            throw new UnsupportedOperationException("Visiting GenericArrayType not supported.");
+        if (type.getSuperclass() != null && superType.isAssignableFrom(type.getSuperclass())) {
+            return resolveArgumentTypes(type.getGenericSuperclass(), superType);
         }
-
-        public T visit(ParameterizedType type) {
-            throw new UnsupportedOperationException("Visiting ParameterizedType not supported.");
-        }
-
-        public T visit(TypeVariable<?> type) {
-            throw new UnsupportedOperationException("Visiting TypeVariable not supported.");
-        }
-
-        public T visit(WildcardType type) {
-            throw new UnsupportedOperationException("Visiting WildcardType not supported.");
-        }
-
-        public final T visit(Type type) {
-            if (type instanceof Class<?>) {
-                return visit((Class<?>) type);
+        Class<?>[] interfaces = type.getInterfaces();
+        Type[] genericInterfaces = type.getGenericInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            if (superType.isAssignableFrom(interfaces[i])) {
+                return resolveArgumentTypes(genericInterfaces[i], superType);
             }
-            if (type instanceof ParameterizedType) {
-                return visit((ParameterizedType) type);
-            }
-            if (type instanceof WildcardType) {
-                return visit((WildcardType) type);
-            }
-            if (type instanceof TypeVariable<?>) {
-                return visit((TypeVariable<?>) type);
-            }
-            if (type instanceof GenericArrayType) {
-                return visit((GenericArrayType) type);
-            }
-            throw new IllegalArgumentException(String.format("Unknown type: %s", type.getClass()));
         }
+        throw new IllegalArgumentException(String.format("%s is not assignable from %s", type, superType));
     }
-
-    private static class ArgumentTypeResolver extends TypeVisitor<Type[]> {
-
-        private final Class<?> superType;
-
-        public ArgumentTypeResolver(Class<?> superType) {
-            this.superType = superType;
-        }
-
-        @Override
-        public Type[] visit(Class<?> type) {
-            if (this.superType.equals(type)) {
-                // May return Class[] instead of Type[], so copy it as a Type[] to avoid
-                // problems in visit(ParameterizedType)
-                return Arrays.copyOf(type.getTypeParameters(), superType.getTypeParameters().length, Type[].class);
-            }
-            if (type.getSuperclass() != null && this.superType.isAssignableFrom(type.getSuperclass())) {
-                return visit(type.getGenericSuperclass());
-            }
-            Class<?>[] interfaces = type.getInterfaces();
-            Type[] genericInterfaces = type.getGenericInterfaces();
-            for (int i = 0; i < interfaces.length; i++) {
-                if (this.superType.isAssignableFrom(interfaces[i])) {
-                    return visit(genericInterfaces[i]);
-                }
-            }
-            throw new IllegalArgumentException(String.format("%s is not assignable from %s", type, this.superType));
-        }
-
-        @Override
-        public Type[] visit(ParameterizedType type) {
-            Class<?> rawType = (Class<?>) type.getRawType(); // always a Class
-            TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
-            Type[] types = visit(rawType);
-            for (int i = 0; i < types.length; i++) {
-                if (types[i] instanceof TypeVariable<?>) {
-                    TypeVariable<?> typeVariable = (TypeVariable<?>) types[i];
-                    for (int j = 0; j < typeVariables.length; j++) {
-                        if (typeVariables[j].getName().equals(typeVariable.getName())) {
-                            types[i] = type.getActualTypeArguments()[j];
-                        }
+    
+    private static Type[] resolveArgumentTypes(ParameterizedType type, Class<?> superType) {
+        Class<?> rawType = (Class<?>) type.getRawType(); // always a Class
+        TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
+        Type[] types = resolveArgumentTypes(rawType, superType);
+        for (int i = 0; i < types.length; i++) {
+            if (types[i] instanceof TypeVariable<?>) {
+                TypeVariable<?> typeVariable = (TypeVariable<?>) types[i];
+                for (int j = 0; j < typeVariables.length; j++) {
+                    if (typeVariables[j].getName().equals(typeVariable.getName())) {
+                        types[i] = type.getActualTypeArguments()[j];
                     }
                 }
             }
-            return types;
         }
+        return types;
     }
 
+    private static Type[] resolveArgumentTypes(Type type, Class<?> superClass) {
+        if (type instanceof Class<?>) {
+            return resolveArgumentTypes((Class<?>) type, superClass);
+        }
+        if (type instanceof ParameterizedType) {
+            return resolveArgumentTypes((ParameterizedType) type, superClass);
+        }
+        throw new IllegalArgumentException("Cannot resolve argument types from " + type.getClass().getSimpleName());
+    }
+
+    public static ParameterizedType findParameterizedType(Type type, Class<?> superClass) {
+        return new ParameterizedTypeImpl(superClass, resolveArgumentTypes(type, superClass));
+    }
+
+    private Types() {
+        // no-op
+    }
+    
     private static class ParameterizedTypeImpl implements ParameterizedType {
 
         private final Type rawType;
@@ -141,17 +104,5 @@ public class Types {
             return arguments;
         }
 
-    }
-
-    public static Type[] resolveArgumentTypes(Type type, Class<?> superClass) {
-        return new ArgumentTypeResolver(superClass).visit(type);
-    }
-
-    public static ParameterizedType findParameterizedType(Type type, Class<?> superClass) {
-        return new ParameterizedTypeImpl(superClass, resolveArgumentTypes(type, superClass));
-    }
-
-    private Types() {
-        // no-op
     }
 }

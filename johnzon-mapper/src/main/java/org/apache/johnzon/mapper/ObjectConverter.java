@@ -18,16 +18,16 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.lang.reflect.Type;
-
 import javax.json.JsonValue;
 
+import java.lang.reflect.Type;
+
 /**
- * Convert a given Java Type a nested JSON representation.
- * And the other way around.
+ * Convert a given Java Type a nested JSON representation. And the other way
+ * around.
  *
- * An example would be to convert a custom Project POJO, like Dog.class
- * to it's JSON representation
+ * An example would be to convert a custom Project POJO, like Dog.class to it's
+ * JSON representation
  *
  */
 public final class ObjectConverter {

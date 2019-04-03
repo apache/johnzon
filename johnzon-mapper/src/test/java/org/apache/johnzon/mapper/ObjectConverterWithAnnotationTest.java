@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.json.JsonObject;
 import javax.json.JsonValue;
 
 import java.beans.ConstructorProperties;
@@ -398,8 +397,8 @@ public class ObjectConverterWithAnnotationTest {
 
         @Override
         public Bike fromJson(JsonValue jsonObject, Type targetType, MappingParser parser) {
-            return new Bike(MANUFACTURERS.get(((JsonObject) jsonObject).getInt(MANUFACTURER_ID)),
-                            BikeType.values()[((JsonObject) jsonObject).getInt(TYPE_INDEX)]);
+            return new Bike(MANUFACTURERS.get(jsonObject.asJsonObject().getInt(MANUFACTURER_ID)),
+                            BikeType.values()[jsonObject.asJsonObject().getInt(TYPE_INDEX)]);
         }
     }
 }

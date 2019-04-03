@@ -19,15 +19,11 @@
 package org.apache.johnzon.jsonb;
 
 import java.math.BigDecimal;
-import java.util.EnumSet;
 import java.util.function.Supplier;
 
-import javax.json.JsonArray;
 import javax.json.JsonNumber;
-import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
-import javax.json.JsonValue.ValueType;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
@@ -74,18 +70,13 @@ class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     }
     
     public static JsonParser createFor(JsonValue jsonValue, Supplier<JsonParserFactory> parserFactoryProvider) {
-        if (jsonValue instanceof JsonObject) {
-            return parserFactoryProvider.get().createParser((JsonObject) jsonValue);
-        } else if (jsonValue instanceof JsonArray) {
-            return parserFactoryProvider.get().createParser((JsonArray) jsonValue);
-        } else if (jsonValue instanceof JsonString) {
-            return new JsonStringParserAdapter((JsonString) jsonValue);
-        } else if (jsonValue instanceof JsonNumber) {
-            return new JsonNumberParserAdapter((JsonNumber) jsonValue);
-        } else if (EnumSet.of(ValueType.FALSE, ValueType.TRUE).contains(jsonValue.getValueType())) {
-            return new JsonValueParserAdapter<>(jsonValue);
+        switch (jsonValue.getValueType()) {
+            case OBJECT: return parserFactoryProvider.get().createParser(jsonValue.asJsonObject());
+            case ARRAY: return parserFactoryProvider.get().createParser(jsonValue.asJsonArray());
+            case STRING: return new JsonStringParserAdapter((JsonString) jsonValue);
+            case NUMBER: return new JsonNumberParserAdapter((JsonNumber) jsonValue);
+            default: return new JsonValueParserAdapter<>(jsonValue);
         }
-        throw new IllegalArgumentException("Cannot create JsonParser for " + jsonValue.getValueType());
     }
     
     private final T jsonValue;

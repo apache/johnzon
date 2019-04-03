@@ -21,7 +21,9 @@ package org.apache.johnzon.jsonb;
 import java.io.StringWriter;
 import java.lang.reflect.Type;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
+import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -40,6 +42,11 @@ import org.junit.Test;
 
 public class MoreTests {
     
+    public enum Color {
+        
+        RED, GREEN, BLUE
+    }
+       
     // Does not seem to work with enums
     public static class Option {
         
@@ -126,6 +133,39 @@ public class MoreTests {
             generator.write(obj.getValue());
         }
     }
+    
+    public static class CharsDeSer implements JsonbSerializer<String>, JsonbDeserializer<String> {
+
+        @Override
+        public String deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
+            return parser.getArrayStream().map(JsonString.class::cast).map(JsonString::getString).collect(Collectors.joining());
+        }
+
+        @Override
+        public void serialize(String obj, JsonGenerator generator, SerializationContext ctx) {
+            generator.writeStartArray();
+            obj.chars().forEach(c -> generator.write(Character.toString((char) c)));
+            generator.writeEnd();
+        }
+    }
+    
+    public static class ColorDeSer implements JsonbSerializer<Color>, JsonbDeserializer<Color> {
+
+        @Override
+        public Color deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
+            switch (parser.getString()) {
+                case "R" : return Color.RED;
+                case "G" : return Color.GREEN;
+                case "B" : return Color.BLUE;
+                default : throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public void serialize(Color obj, JsonGenerator generator, SerializationContext ctx) {
+            generator.write(obj.name().substring(0,  1));
+        }
+    }
 
     public static class Wrapper {
         
@@ -143,6 +183,16 @@ public class MoreTests {
         @JsonbTypeSerializer(VATDeSer.class)
         @JsonbTypeDeserializer(VATDeSer.class)
         public VATNumber vatNumber = new VATNumber(42);
+
+//        @JsonbTypeSerializer(CharsDeSer.class)
+//        @JsonbTypeDeserializer(CharsDeSer.class)
+        // TODO Not working as @JsonbTypeSerializer seems to be ignored ("hello world" instead of ["h", "e"...])
+        public String hello = "hello world";
+
+//        @JsonbTypeSerializer(ColorDeSer.class)
+//        @JsonbTypeDeserializer(ColorDeSer.class)
+        // TODO Not working as @JsonbTypeSerializer seems to be ignored ("GREEN" instead of "G")
+        public Color color = Color.GREEN;
         
     }
 
