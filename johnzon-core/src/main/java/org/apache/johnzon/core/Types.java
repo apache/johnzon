@@ -24,30 +24,60 @@ import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 
 public class Types {
-    
-    private static Type[] resolveArgumentTypes(Class<?> type, Class<?> superType) {
-        if (superType.equals(type)) {
+
+    /**
+     * This method helps reconstructing the resulting ParameterizedType for a specific generic type across its hierarchy.
+     *
+     * Example: Let's create some interface Converter[X, Y] and try to determine the actual type arguments for that
+     * interface from classes/interfaces which inherit from it (directly or indirectly).
+     *
+     * <ul>
+     * <li>Converter[X, Y] will yield Converter[X, Y]</li>
+     * <li>StringConverter[Z] extends Converter[Z, String] will yield Converter[Z, String]</li>
+     * <li>AbstractStringConverter[A] implements StringConverter[A] will yield Converter[A, String]</li>
+     * <li>UUIDStringConverter extends AbstractStringConverter[UUID] will yield Converter[UUID, String]</li>
+     * </ul>
+     *
+     * For the last example (UUIDStringConverter), nowhere in its hierarchy is a type directly implementing
+     * Converter[UUID, String] but this method is capable of reconstructing that information.
+     */
+    public static ParameterizedType findParameterizedType(Class<?> klass, Class<?> parameterizedClass) {
+        return new ParameterizedTypeImpl(parameterizedClass, resolveArgumentTypes(klass, parameterizedClass));
+    }
+
+    private static Type[] resolveArgumentTypes(Type type, Class<?> parameterizedClass) {
+        if (type instanceof Class<?>) {
+            return resolveArgumentTypes((Class<?>) type, parameterizedClass);
+        }
+        if (type instanceof ParameterizedType) {
+            return resolveArgumentTypes((ParameterizedType) type, parameterizedClass);
+        }
+        throw new IllegalArgumentException("Cannot resolve argument types from " + type.getClass().getSimpleName());
+    }
+
+    private static Type[] resolveArgumentTypes(Class<?> type, Class<?> parameterizedClass) {
+        if (parameterizedClass.equals(type)) {
             // May return Class[] instead of Type[], so copy it as a Type[] to avoid
             // problems in visit(ParameterizedType)
-            return Arrays.copyOf(type.getTypeParameters(), superType.getTypeParameters().length, Type[].class);
+            return Arrays.copyOf(type.getTypeParameters(), parameterizedClass.getTypeParameters().length, Type[].class);
         }
-        if (type.getSuperclass() != null && superType.isAssignableFrom(type.getSuperclass())) {
-            return resolveArgumentTypes(type.getGenericSuperclass(), superType);
+        if (type.getSuperclass() != null && parameterizedClass.isAssignableFrom(type.getSuperclass())) {
+            return resolveArgumentTypes(type.getGenericSuperclass(), parameterizedClass);
         }
         Class<?>[] interfaces = type.getInterfaces();
         Type[] genericInterfaces = type.getGenericInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
-            if (superType.isAssignableFrom(interfaces[i])) {
-                return resolveArgumentTypes(genericInterfaces[i], superType);
+            if (parameterizedClass.isAssignableFrom(interfaces[i])) {
+                return resolveArgumentTypes(genericInterfaces[i], parameterizedClass);
             }
         }
-        throw new IllegalArgumentException(String.format("%s is not assignable from %s", type, superType));
+        throw new IllegalArgumentException(String.format("%s is not assignable from %s", type, parameterizedClass));
     }
-    
-    private static Type[] resolveArgumentTypes(ParameterizedType type, Class<?> superType) {
+
+    private static Type[] resolveArgumentTypes(ParameterizedType type, Class<?> parameterizedClass) {
         Class<?> rawType = (Class<?>) type.getRawType(); // always a Class
         TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
-        Type[] types = resolveArgumentTypes(rawType, superType);
+        Type[] types = resolveArgumentTypes(rawType, parameterizedClass);
         for (int i = 0; i < types.length; i++) {
             if (types[i] instanceof TypeVariable<?>) {
                 TypeVariable<?> typeVariable = (TypeVariable<?>) types[i];
@@ -61,20 +91,6 @@ public class Types {
         return types;
     }
 
-    private static Type[] resolveArgumentTypes(Type type, Class<?> superClass) {
-        if (type instanceof Class<?>) {
-            return resolveArgumentTypes((Class<?>) type, superClass);
-        }
-        if (type instanceof ParameterizedType) {
-            return resolveArgumentTypes((ParameterizedType) type, superClass);
-        }
-        throw new IllegalArgumentException("Cannot resolve argument types from " + type.getClass().getSimpleName());
-    }
-
-    public static ParameterizedType findParameterizedType(Type type, Class<?> superClass) {
-        return new ParameterizedTypeImpl(superClass, resolveArgumentTypes(type, superClass));
-    }
-
     private Types() {
         // no-op
     }
@@ -84,7 +100,7 @@ public class Types {
         private final Type rawType;
         private final Type[] arguments;
 
-        public ParameterizedTypeImpl(Type rawType, Type... arguments) {
+        ParameterizedTypeImpl(Type rawType, Type... arguments) {
             this.rawType = rawType;
             this.arguments = arguments;
         }
@@ -104,5 +120,6 @@ public class Types {
             return arguments;
         }
 
+        // TODO equals, hashcode, toString if needed
     }
 }

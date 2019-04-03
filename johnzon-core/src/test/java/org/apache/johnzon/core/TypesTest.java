@@ -18,31 +18,61 @@
  */
 package org.apache.johnzon.core;
 
-import java.io.Serializable;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.util.Arrays;
-
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.Serializable;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.UUID;
+
 public class TypesTest {
     
-    interface GenericInterface<X, Y> {}
+    interface Converter<From, To> {}
     
-    interface PartialInterface<X> extends Serializable, GenericInterface<Integer, X> {}
+    interface ToStringConverter<X> extends Serializable, Converter<X, String> {}
     
-    static abstract class AbstractClass<Z, Y> implements PartialInterface<Y> {}
+    static abstract class AbstractToStringConverter<NotUsed, Z> implements ToStringConverter<Z> {}
     
-    static class ConcreteClass extends AbstractClass<String, Boolean> {}
+    static class UUIDToStringConverter extends AbstractToStringConverter<Void, UUID> {}
     
     @Test
     public void test() {
-        ParameterizedType parameterizedType = Types.findParameterizedType(ConcreteClass.class, GenericInterface.class);
-        
-        Assert.assertTrue(Arrays.deepEquals(parameterizedType.getActualTypeArguments(), new Type[] {
-                Integer.class,
-                Boolean.class
-        }));
+        assertTypeParameters(Converter.class, Converter.class, variable("From"), variable("To"));
+        assertTypeParameters(ToStringConverter.class, Converter.class, variable("X"), String.class);
+        assertTypeParameters(AbstractToStringConverter.class, Converter.class, variable("Z"), String.class);
+        assertTypeParameters(UUIDToStringConverter.class, Converter.class, UUID.class, String.class);
+    }
+
+    private static void assertTypeParameters(Class<?> klass, Class<?> parameterizedClass, Type... types) {
+        ParameterizedType parameterizedType = Types.findParameterizedType(klass, parameterizedClass);
+        Assert.assertNotNull(parameterizedType);
+        Assert.assertEquals(parameterizedType.getRawType(), parameterizedClass);
+        Assert.assertArrayEquals(types, parameterizedType.getActualTypeArguments());
+    }
+
+    private static Type variable(String name) {
+        return new SimplifiedTypeVariable(name);
+    }
+
+    // Serves as a placeholder to hold variable name (and not reimplementing the whole TypeVariable)
+    private static class SimplifiedTypeVariable implements Type {
+
+        private final String name;
+
+        public SimplifiedTypeVariable(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof TypeVariable<?> && ((TypeVariable<?>) obj).getName().equals(this.name);
+        }
     }
 }
