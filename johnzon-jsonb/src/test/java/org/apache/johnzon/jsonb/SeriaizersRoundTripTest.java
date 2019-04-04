@@ -18,8 +18,10 @@
  */
 package org.apache.johnzon.jsonb;
 
-import java.io.StringWriter;
+import static org.junit.Assert.assertEquals;
+
 import java.lang.reflect.Type;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -40,7 +42,7 @@ import javax.json.stream.JsonParser;
 
 import org.junit.Test;
 
-public class MoreTests {
+public class SeriaizersRoundTripTest {
     
     public enum Color {
         
@@ -66,6 +68,28 @@ public class MoreTests {
         public static Option of(boolean value) {
             return value ? YES : NO;
         }
+
+        @Override
+        public String toString() {
+            return "Option{value=" + value + '}';
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Option option = (Option) o;
+            return value == option.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
+        }
     }
     
     public static class VATNumber {
@@ -78,6 +102,28 @@ public class MoreTests {
         
         public long getValue() {
             return value;
+        }
+
+        @Override
+        public String toString() {
+            return "VATNumber{value=" + value + '}';
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            VATNumber vatNumber = (VATNumber) o;
+            return value == vatNumber.value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(value);
         }
     }
     
@@ -171,36 +217,66 @@ public class MoreTests {
         
         @JsonbTypeSerializer(UUIDComposite.class)
         @JsonbTypeDeserializer(UUIDComposite.class)
-        public UUID uuid = UUID.randomUUID();
+        public UUID uuid;
 
         @JsonbTypeAdapter(UUIDComposite.class)
-        public UUID uuid2 = UUID.randomUUID();
+        public UUID uuid2;
         
         @JsonbTypeSerializer(OptionDeSer.class)
         @JsonbTypeDeserializer(OptionDeSer.class)
-        public Option option = Option.YES;
+        public Option option;
         
         @JsonbTypeSerializer(VATDeSer.class)
         @JsonbTypeDeserializer(VATDeSer.class)
-        public VATNumber vatNumber = new VATNumber(42);
+        public VATNumber vatNumber;
 
-//        @JsonbTypeSerializer(CharsDeSer.class)
-//        @JsonbTypeDeserializer(CharsDeSer.class)
-        // TODO Not working as @JsonbTypeSerializer seems to be ignored ("hello world" instead of ["h", "e"...])
-        public String hello = "hello world";
+        @JsonbTypeSerializer(CharsDeSer.class)
+        @JsonbTypeDeserializer(CharsDeSer.class)
+        public String hello;
 
-//        @JsonbTypeSerializer(ColorDeSer.class)
-//        @JsonbTypeDeserializer(ColorDeSer.class)
-        // TODO Not working as @JsonbTypeSerializer seems to be ignored ("GREEN" instead of "G")
-        public Color color = Color.GREEN;
-        
+        @JsonbTypeSerializer(ColorDeSer.class)
+        @JsonbTypeDeserializer(ColorDeSer.class)
+        public Color color;
+
+        @Override
+        public String toString() {
+            return "Wrapper{uuid=" + uuid + ", uuid2=" + uuid2 + ", option=" + option +
+                    ", vatNumber=" + vatNumber + ", hello='" + hello + '\'' + ", color=" + color + '}';
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Wrapper wrapper = (Wrapper) o;
+            return Objects.equals(uuid, wrapper.uuid) && Objects.equals(uuid2, wrapper.uuid2) && Objects.equals(option,
+                    wrapper.option) && Objects.equals(vatNumber, wrapper.vatNumber) && Objects.equals(hello,
+                    wrapper.hello) && color == wrapper.color;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(uuid, uuid2, option, vatNumber, hello, color);
+        }
     }
 
     @Test
-    public void testIt() {
-        Jsonb jsonb = JsonbBuilder.create();
-        StringWriter w = new StringWriter();
-        jsonb.toJson(new Wrapper(), w);
-        jsonb.fromJson(w.toString(), Wrapper.class);
+    public void roundTrip() throws Exception {
+        final Wrapper original = new Wrapper();
+        original.uuid = UUID.randomUUID();
+        original.uuid2 = UUID.randomUUID();
+        original.option = Option.YES;
+        original.vatNumber  = new VATNumber(42);
+        original.hello = "hello world";
+        original.color = Color.GREEN;
+
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final Wrapper deserialized = jsonb.fromJson(jsonb.toJson(original), Wrapper.class);
+            assertEquals(original, deserialized);
+        }
     }
 }

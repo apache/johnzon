@@ -335,7 +335,9 @@ public class MappingParserImpl implements MappingParser {
                         }
                     }
                 }
-                final Object convertedValue = toValue(existingInstance, jsonValue, value.converter, value.itemConverter, value.paramType, value.objectConverter,
+                final Object convertedValue = toValue(
+                        existingInstance, jsonValue, value.converter, value.itemConverter,
+                        value.paramType, value.objectConverter,
                         new JsonPointerTracker(jsonPointer, setter.getKey()), inType);
                 if (convertedValue != null) {
                     setterMethod.write(t, convertedValue);
@@ -727,12 +729,7 @@ public class MappingParserImpl implements MappingParser {
                            final JsonPointerTracker jsonPointer, final Type rootType) {
 
         if (objectConverter != null) {
-            
-            if (jsonValue instanceof JsonArray) {
-                return buildArray(type, jsonValue.asJsonArray(), itemConverter, objectConverter, jsonPointer, rootType);
-            } else {
-                return objectConverter.fromJson(jsonValue, type, this);
-            }
+            return objectConverter.fromJson(jsonValue, type, this);
         }
 
         try {

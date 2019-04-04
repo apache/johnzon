@@ -45,8 +45,10 @@ public class TypesTest {
         assertTypeParameters(UUIDToStringConverter.class, Converter.class, UUID.class, String.class);
     }
 
-    private static void assertTypeParameters(Class<?> klass, Class<?> parameterizedClass, Type... types) {
-        ParameterizedType parameterizedType = Types.findParameterizedType(klass, parameterizedClass);
+    private static void assertTypeParameters(final Class<?> klass,
+                                             final Class<?> parameterizedClass,
+                                             final Type... types) {
+        ParameterizedType parameterizedType = new Types().findParameterizedType(klass, parameterizedClass);
         Assert.assertNotNull(parameterizedType);
         Assert.assertEquals(parameterizedType.getRawType(), parameterizedClass);
         Assert.assertArrayEquals(types, parameterizedType.getActualTypeArguments());

@@ -371,8 +371,23 @@ public class MappingGeneratorImpl implements MappingGenerator {
             writeMapBody((Map<?, ?>) value, itemConverter);
             generator.writeEnd();
         } else if (primitive || (dynamic && Mappings.isPrimitive(type))) {
-            writePrimitives(key, type, value, generator);
+            if (objectConverter != null) {
+                final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
+                        () -> this.generator.writeStartObject(key), this.generator::writeEnd, key);
+                objectConverter.writeJson(value, dynamicMappingGenerator);
+                dynamicMappingGenerator.flushIfNeeded();
+            } else {
+                writePrimitives(key, type, value, generator);
+            }
         } else {
+            if (objectConverter != null) {
+                final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
+                        () -> this.generator.writeStartObject(key), this.generator::writeEnd, key);
+                objectConverter.writeJson(value, dynamicMappingGenerator);
+                dynamicMappingGenerator.flushIfNeeded();
+                return;
+            }
+
             final Adapter converter = config.findAdapter(type);
             if (converter != null) {
                 final Object adapted = doConvertFrom(value, converter);

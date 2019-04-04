@@ -41,11 +41,26 @@ public class Types {
      * For the last example (UUIDStringConverter), nowhere in its hierarchy is a type directly implementing
      * Converter[UUID, String] but this method is capable of reconstructing that information.
      */
-    public static ParameterizedType findParameterizedType(Class<?> klass, Class<?> parameterizedClass) {
+    public ParameterizedType findParameterizedType(Class<?> klass, Class<?> parameterizedClass) {
         return new ParameterizedTypeImpl(parameterizedClass, resolveArgumentTypes(klass, parameterizedClass));
     }
 
-    private static Type[] resolveArgumentTypes(Type type, Class<?> parameterizedClass) {
+    public Class<?> findParamType(final ParameterizedType type, final Class<?> expectedWrapper) {
+        if (type.getActualTypeArguments().length != 1) {
+            return null;
+        }
+        final Class<?> asClass = asClass(type.getRawType());
+        if (asClass == null || !expectedWrapper.isAssignableFrom(asClass)) {
+            return null;
+        }
+        return asClass(type.getActualTypeArguments()[0]);
+    }
+
+    public Class<?> asClass(final Type type) {
+        return Class.class.isInstance(type) ? Class.class.cast(type) : null;
+    }
+
+    private Type[] resolveArgumentTypes(Type type, Class<?> parameterizedClass) {
         if (type instanceof Class<?>) {
             return resolveArgumentTypes((Class<?>) type, parameterizedClass);
         }
@@ -55,7 +70,7 @@ public class Types {
         throw new IllegalArgumentException("Cannot resolve argument types from " + type.getClass().getSimpleName());
     }
 
-    private static Type[] resolveArgumentTypes(Class<?> type, Class<?> parameterizedClass) {
+    private Type[] resolveArgumentTypes(Class<?> type, Class<?> parameterizedClass) {
         if (parameterizedClass.equals(type)) {
             // May return Class[] instead of Type[], so copy it as a Type[] to avoid
             // problems in visit(ParameterizedType)
@@ -74,7 +89,7 @@ public class Types {
         throw new IllegalArgumentException(String.format("%s is not assignable from %s", type, parameterizedClass));
     }
 
-    private static Type[] resolveArgumentTypes(ParameterizedType type, Class<?> parameterizedClass) {
+    private Type[] resolveArgumentTypes(ParameterizedType type, Class<?> parameterizedClass) {
         Class<?> rawType = (Class<?>) type.getRawType(); // always a Class
         TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
         Type[] types = resolveArgumentTypes(rawType, parameterizedClass);
@@ -91,16 +106,12 @@ public class Types {
         return types;
     }
 
-    private Types() {
-        // no-op
-    }
-    
     private static class ParameterizedTypeImpl implements ParameterizedType {
 
         private final Type rawType;
         private final Type[] arguments;
 
-        ParameterizedTypeImpl(Type rawType, Type... arguments) {
+        private ParameterizedTypeImpl(final Type rawType, final Type... arguments) {
             this.rawType = rawType;
             this.arguments = arguments;
         }
@@ -120,6 +131,44 @@ public class Types {
             return arguments;
         }
 
-        // TODO equals, hashcode, toString if needed
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(arguments) ^ (rawType == null ? 0 : rawType.hashCode());
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (this == obj) {
+                return true;
+            } else if (obj instanceof ParameterizedType) {
+                final ParameterizedType that = (ParameterizedType) obj;
+                final Type thatRawType = that.getRawType();
+                return that.getOwnerType() == null
+                        && (rawType == null ? thatRawType == null : rawType.equals(thatRawType))
+                        && Arrays.equals(arguments, that.getActualTypeArguments());
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder buffer = new StringBuilder();
+            buffer.append(((Class<?>) rawType).getSimpleName());
+            final Type[] actualTypes = getActualTypeArguments();
+            if (actualTypes.length > 0) {
+                buffer.append("<");
+                int length = actualTypes.length;
+                for (int i = 0; i < length; i++) {
+                    buffer.append(actualTypes[i].toString());
+                    if (i != actualTypes.length - 1) {
+                        buffer.append(",");
+                    }
+                }
+
+                buffer.append(">");
+            }
+            return buffer.toString();
+        }
     }
 }

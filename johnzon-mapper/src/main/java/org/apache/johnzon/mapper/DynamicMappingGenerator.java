@@ -68,7 +68,8 @@ public class DynamicMappingGenerator implements MappingGenerator {
     }
 
     private enum WritingState {
-        NONE, WROTE_START_OBJECT, PRIMITIVE
+        NONE, WROTE_START_OBJECT,
+        DONT_WRITE_END
     }
 
     private static class InObjectOrPrimitiveJsonGenerator implements JsonGenerator {
@@ -105,6 +106,10 @@ public class DynamicMappingGenerator implements MappingGenerator {
 
         @Override
         public JsonGenerator writeStartArray() {
+            if (keyIfNoObject != null && state == WritingState.NONE) {
+                state = WritingState.DONT_WRITE_END; // skip writeEnd since the impl will do it
+                return delegate.writeStartArray(keyIfNoObject);
+            }
             return delegate.writeStartArray();
         }
 
@@ -182,7 +187,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final JsonValue value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -191,7 +196,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final String value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -200,7 +205,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final BigDecimal value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -209,7 +214,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final BigInteger value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -218,7 +223,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final int value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -227,7 +232,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final long value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -236,7 +241,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(final double value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -245,7 +250,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator write(boolean value) {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.write(keyIfNoObject, value);
             }
             return delegate.write(value);
@@ -254,7 +259,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator writeNull() {
             if (isWritingPrimitive()) {
-                state = WritingState.PRIMITIVE;
+                state = WritingState.DONT_WRITE_END;
                 return delegate.writeNull(keyIfNoObject);
             }
             return delegate.writeNull();
