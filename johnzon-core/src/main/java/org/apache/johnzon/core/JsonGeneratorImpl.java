@@ -230,7 +230,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     }
 
     private void writeJsonValue(final JsonValue value) {
-        checkArray();
+        checkArrayOrValue();
         //TODO check null handling
         switch (value.getValueType()) {
             case ARRAY:
@@ -374,49 +374,49 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final JsonValue value) {
-        checkArray();
+        checkArrayOrValue();
         writeJsonValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final String value) {
-        checkArray();
+        checkArrayOrValue();
         writeValueAsJsonString(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigDecimal value) {
-        checkArray();
+        checkArrayOrValue();
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigInteger value) {
-        checkArray();
+        checkArrayOrValue();
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator write(final int value) {
-        checkArray();
+        checkArrayOrValue();
         writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final long value) {
-        checkArray();
+        checkArrayOrValue();
         writeValue(value);
         return this;
     }
 
     @Override
     public JsonGenerator write(final double value) {
-        checkArray();
+        checkArrayOrValue();
         checkDoubleRange(value);
         writeValue(String.valueOf(value));
         return this;
@@ -424,14 +424,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
 
     @Override
     public JsonGenerator write(final boolean value) {
-        checkArray();
+        checkArrayOrValue();
         writeValue(String.valueOf(value));
         return this;
     }
 
     @Override
     public JsonGenerator writeNull() {
-        checkArray();
+        checkArrayOrValue();
         writeValue(NULL);
         return this;
     }
@@ -616,9 +616,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         }
     }
 
-    private void checkArray() {
+    private void checkArrayOrValue() {
         final GeneratorState currentState = currentState();
-        if (currentState != GeneratorState.IN_ARRAY && currentState != GeneratorState.START_ARRAY) {
+        if (currentState != GeneratorState.IN_ARRAY && currentState != GeneratorState.START_ARRAY &
+                currentState != GeneratorState.AFTER_KEY) {
             if (currentState != GeneratorState.INITIAL) {
                 throw new JsonGenerationException("write(param) is only valid in arrays");
             }

@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
@@ -41,6 +42,29 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonGeneratorImplTest {
+    @Test
+    public void writeKeyWrite() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer).writeStartObject().writeKey("foo").write("bar").writeEnd().close();
+        assertEquals("{\"foo\":\"bar\"}", writer.toString());
+    }
+
+    @Test
+    public void writeKeyWriteFormatted() {
+        final StringWriter writer = new StringWriter();
+        Json.createGeneratorFactory(singletonMap(JsonGenerator.PRETTY_PRINTING, "true")).createGenerator(writer)
+            .writeStartObject().writeKey("foo").write("bar").writeEnd().close();
+        assertEquals("{\n  \"foo\":\"bar\"\n}", writer.toString());
+    }
+
+    @Test
+    public void writeKeyWriteNull() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer)
+            .writeStartObject().writeKey("foo").writeNull().writeEnd().close();
+        assertEquals("{\"foo\":null}", writer.toString());
+    }
+
     @Test
     public void closeOnce() throws Throwable {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
