@@ -75,6 +75,19 @@ public class JsonObjectImplTest {
         assertEquals("{\"a\":\"b\"}", ob.build().toString());
     }
 
+    @Test
+    public void testToStringShouldReturnEscapedKey() {
+        final JsonObjectBuilder ob = Json.createObjectBuilder();
+        ob.add("foo\"bar", new JsonLongImpl(42));
+        assertEquals("{\"foo\\\"bar\":42}", ob.build().toString());
+    }
+
+    @Test
+    public void testToStringShouldReturnEscapedValue() {
+        final JsonObjectBuilder ob = Json.createObjectBuilder();
+        ob.add("a", new JsonStringImpl("foo\"bar"));
+        assertEquals("{\"a\":\"foo\\\"bar\"}", ob.build().toString());
+    }
 
     @Test(expected = NullPointerException.class)
     public void testGetBooleanMissingKeyShouldThrowNullPointerException() {
