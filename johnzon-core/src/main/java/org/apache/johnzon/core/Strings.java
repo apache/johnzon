@@ -47,9 +47,9 @@ class Strings implements JsonChars {
             case '"':
                 return '\"';
             case '\\':
-                return '\\';  
+                return '\\';
             case '/':
-                return '/';  
+                return '/';
             default:
                 if(Character.isHighSurrogate(current) || Character.isLowSurrogate(current)) {
                     return current;
@@ -61,51 +61,58 @@ class Strings implements JsonChars {
     }
 
     static String escape(final String value) {
-        
+
         if(value == null || value.length()==0) {
             return value;
         }
-        
+
         final StringBuilder builder = BUILDER_CACHE.newBuffer();
         try {
-            for (int i = 0; i < value.length(); i++) {
-                final char c = value.charAt(i);
-                switch (c) {
-                    case QUOTE_CHAR:
-                    case ESCAPE_CHAR:
-                        builder.append(ESCAPE_CHAR).append(c);
-                        break;
-                    default:
-                        if (c < SPACE) { // we could do a single switch but actually we should rarely enter this if so no need to pay it
-                            switch (c) {
-                                case EOL:
-                                    builder.append("\\n");
-                                    break;
-                                case '\r':
-                                    builder.append("\\r");
-                                    break;
-                                case '\t':
-                                    builder.append("\\t");
-                                    break;
-                                case '\b':
-                                    builder.append("\\b");
-                                    break;
-                                case '\f':
-                                    builder.append("\\f");
-                                    break;
-                                default:
-                                    builder.append(toUnicode(c));
-                            }
-                        } else if ((c >= '\u0080' && c < '\u00a0') || (c >= '\u2000' && c < '\u2100')) {
-                            builder.append(toUnicode(c));
-                        } else {
-                            builder.append(c);
-                        }
-                }
-            }
+            appendEscaped(value, builder);
             return builder.toString();
         } finally {
             BUILDER_CACHE.release(builder);
+        }
+    }
+
+    static void appendEscaped(final String value, final StringBuilder builder) {
+        final int length = value.length();
+        int nextStart = 0;
+        for (int i = 0; i < length; i++) {
+            final char c = value.charAt(i);
+            if (c < SPACE || c == QUOTE_CHAR || c == ESCAPE_CHAR) {
+                if (nextStart < i) {
+                    builder.append(value, nextStart, i);
+                }
+                nextStart = i + 1;
+                switch (c) {
+                case QUOTE_CHAR:
+                case ESCAPE_CHAR:
+                    builder.append(ESCAPE_CHAR).append(c);
+                    break;
+                case EOL:
+                    builder.append("\\n");
+                    break;
+                case '\r':
+                    builder.append("\\r");
+                    break;
+                case '\t':
+                    builder.append("\\t");
+                    break;
+                case '\b':
+                    builder.append("\\b");
+                    break;
+                case '\f':
+                    builder.append("\\f");
+                    break;
+                default:
+                    builder.append(toUnicode(c));
+                    break;
+                }
+            }
+        }
+        if (nextStart < length) {
+            builder.append(value, nextStart, length);
         }
     }
 

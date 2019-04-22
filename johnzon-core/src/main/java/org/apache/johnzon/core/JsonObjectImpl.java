@@ -147,7 +147,9 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
         while (hasNext) {
             final Map.Entry<String, JsonValue> entry = it.next();
 
-            builder.append('"').append(Strings.escape(entry.getKey())).append("\":");
+            builder.append('"');
+            Strings.appendEscaped(entry.getKey(), builder);
+            builder.append("\":");
 
             final JsonValue value = entry.getValue();
             if (JsonString.class.isInstance(value)) {
