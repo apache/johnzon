@@ -17,6 +17,7 @@
 package org.apache.johnzon.core;
 
 
+import java.io.Serializable;
 import java.util.Map;
 
 import javax.json.JsonMergePatch;
@@ -27,11 +28,13 @@ import javax.json.JsonValue;
 /**
  * @author <a href="mailto:struberg@yahoo.de">Mark Struberg</a>
  */
-public class JsonMergePatchImpl implements JsonMergePatch {
-    private final JsonValue patch;
+public class JsonMergePatchImpl implements JsonMergePatch, Serializable {
+    private JsonValue patch;
+    private BufferStrategy.BufferProvider<char[]> bufferProvider;
 
-    public JsonMergePatchImpl(JsonValue patch) {
+    public JsonMergePatchImpl(final JsonValue patch, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
         this.patch = patch;
+        this.bufferProvider = bufferProvider;
     }
 
     @Override
@@ -55,7 +58,7 @@ public class JsonMergePatchImpl implements JsonMergePatch {
     }
 
     private JsonValue applyJsonObjectPatch(JsonObject jsonObject, JsonObject patch) {
-        JsonObjectBuilder builder = new JsonObjectBuilderImpl(jsonObject);
+        JsonObjectBuilder builder = new JsonObjectBuilderImpl(jsonObject, bufferProvider);
 
         for (Map.Entry<String, JsonValue> patchAttrib : patch.entrySet()) {
             String attribName = patchAttrib.getKey();

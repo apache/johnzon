@@ -60,21 +60,6 @@ class Strings implements JsonChars {
 
     }
 
-    static String escape(final String value) {
-
-        if(value == null || value.length()==0) {
-            return value;
-        }
-
-        final StringBuilder builder = BUILDER_CACHE.newBuffer();
-        try {
-            appendEscaped(value, builder);
-            return builder.toString();
-        } finally {
-            BUILDER_CACHE.release(builder);
-        }
-    }
-
     static void appendEscaped(final String value, final StringBuilder builder) {
         final int length = value.length();
         int nextStart = 0;

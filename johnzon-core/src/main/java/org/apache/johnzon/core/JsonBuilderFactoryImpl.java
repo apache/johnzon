@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.core;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,15 +33,24 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 
-class JsonBuilderFactoryImpl implements JsonBuilderFactory {
-    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
-    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-    //nothing yet
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 
+class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
+    private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
+        // nothing yet
     };
+
     protected final Logger logger = Logger.getLogger(this.getClass().getName());
 
-    JsonBuilderFactoryImpl(final Map<String, ?> config) {
+    protected JsonBuilderFactoryImpl() {
+        // no-op: serialization
+    }
+
+    JsonBuilderFactoryImpl(final Map<String, ?> config, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+        this.bufferProvider = bufferProvider;
         if (config != null && config.size() > 0) {
             final List<String> supportedConfigKeys = Arrays.asList(SUPPORTED_CONFIG_KEYS);
             for (String configKey : config.keySet()) {
@@ -55,28 +65,28 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
 
     @Override
     public JsonObjectBuilder createObjectBuilder() {
-        return new JsonObjectBuilderImpl();
+        return new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder(JsonObject initialData) {
-        return new JsonObjectBuilderImpl(initialData);
+        return new JsonObjectBuilderImpl(initialData, bufferProvider);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder() {
-        return new JsonArrayBuilderImpl();
+        return new JsonArrayBuilderImpl(emptyList(), bufferProvider);
     }
 
 
     @Override
     public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
-        return new JsonArrayBuilderImpl(initialData);
+        return new JsonArrayBuilderImpl(initialData, bufferProvider);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
-        return new JsonArrayBuilderImpl(initialData);
+        return new JsonArrayBuilderImpl(initialData, bufferProvider);
     }
 
     @Override
@@ -86,7 +96,7 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory {
 
     @Override
     public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
-        return new JsonObjectBuilderImpl(initialValues);
+        return new JsonObjectBuilderImpl(initialValues, bufferProvider);
     }
 
 }

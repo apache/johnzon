@@ -31,19 +31,26 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
+    private BufferStrategy.BufferProvider<char[]> bufferProvider;
     private Map<String, JsonValue> attributeMap = new LinkedHashMap<>();
 
-    public JsonObjectBuilderImpl() {
+    protected JsonObjectBuilderImpl() {
+        // no-op: serialization
     }
 
-    public JsonObjectBuilderImpl(JsonObject initialData) {
+    public JsonObjectBuilderImpl(final JsonObject initialData,
+                                 final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+        this.bufferProvider = bufferProvider;
         attributeMap = new LinkedHashMap<>(initialData);
     }
 
-    public JsonObjectBuilderImpl(Map<String, Object> initialValues) {
-        this();
-        for (Map.Entry<String, Object> entry : initialValues.entrySet()) {
-            add(entry.getKey(), entry.getValue());
+    public JsonObjectBuilderImpl(final Map<String, Object> initialValues,
+                                 final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+        this.bufferProvider = bufferProvider;
+        if (!initialValues.isEmpty()) {
+            for (Map.Entry<String, Object> entry : initialValues.entrySet()) {
+                add(entry.getKey(), entry.getValue());
+            }
         }
     }
 
@@ -166,10 +173,10 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     public JsonObject build() {
         
         if(attributeMap == null || attributeMap.isEmpty()) {
-            return new JsonObjectImpl(Collections.EMPTY_MAP);
+            return new JsonObjectImpl(Collections.EMPTY_MAP, bufferProvider);
         } else {
             Map<String, JsonValue> dump = (Collections.unmodifiableMap(attributeMap));
-            return new JsonObjectImpl(dump);
+            return new JsonObjectImpl(dump, bufferProvider);
         }
     }
 }

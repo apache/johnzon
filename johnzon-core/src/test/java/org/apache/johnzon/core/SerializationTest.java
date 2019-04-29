@@ -82,7 +82,8 @@ public class SerializationTest {
         final Map<String, JsonValue> map = new LinkedHashMap<String, JsonValue>();
         map.put("test", new JsonStringImpl("val"));
         map.put("test2", JsonValue.TRUE);
-        final JsonObject source = new JsonObjectImpl(Collections.unmodifiableMap(map));
+        final JsonObject source = new JsonObjectImpl(Collections.unmodifiableMap(map),
+                BufferStrategy.BY_INSTANCE.newCharProvider(512));
         final JsonObject serialization = serialDeser(source);
         assertNotSame(source, serialization);
         assertTrue(serialization.containsKey("test"));
@@ -96,7 +97,8 @@ public class SerializationTest {
         final List<JsonValue> list = new ArrayList<JsonValue>();
         list.add(new JsonStringImpl("test"));
         list.add(JsonValue.TRUE); // not ser but we should be able to handle that
-        final JsonArray source = new JsonArrayImpl(Collections.unmodifiableList(list));
+        final JsonArray source = new JsonArrayImpl(Collections.unmodifiableList(list),
+                BufferStrategy.BY_INSTANCE.newCharProvider(512));
         final JsonArray serialization = serialDeser(source);
         assertNotSame(source, serialization);
         assertEquals(2, serialization.size());

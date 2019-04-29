@@ -23,24 +23,29 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Creates a JsonMergePatch as diff between two JsonValues
  */
 class JsonMergePatchDiff extends DiffBase {
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final JsonValue source;
     private final JsonValue target;
 
-    public JsonMergePatchDiff(JsonValue source, JsonValue target) {
+    public JsonMergePatchDiff(final JsonValue source, final JsonValue target,
+                              final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+        this.bufferProvider = bufferProvider;
         this.source = source;
         this.target = target;
     }
 
     public JsonMergePatch calculateDiff() {
-        return new JsonMergePatchImpl(diff(source, target));
+        return new JsonMergePatchImpl(diff(source, target), bufferProvider);
     }
 
     private JsonValue diff(JsonValue source, JsonValue target) {
-        JsonObjectBuilder builder = new JsonObjectBuilderImpl();
+        JsonObjectBuilder builder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
 
         if (isJsonObject(source) && isJsonObject(target)) {
             JsonObject srcObj = source.asJsonObject();

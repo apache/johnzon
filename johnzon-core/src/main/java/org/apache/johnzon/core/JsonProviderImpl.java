@@ -215,11 +215,15 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     }
 
     static class JsonProviderDelegate extends JsonProvider {
+        private final BufferStrategy.BufferProvider<char[]> bufferProvider =
+            BufferStrategy.valueOf(System.getProperty("johnzon.global-char-provider.strategy", "QUEUE"))
+                .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024));
+
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
         private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
         private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
         private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
-        private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null);
+        private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null, bufferProvider);
 
         @Override
         public JsonParser createParser(final InputStream in) {
@@ -342,7 +346,8 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
         @Override
         public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
-            return (config == null || config.isEmpty()) ? builderFactory : new JsonBuilderFactoryImpl(config);
+            return (config == null || config.isEmpty()) ?
+                    builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider);
         }
 
         @Override
@@ -370,12 +375,12 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         }
 
         public JsonMergePatch createMergePatch(JsonValue patch) {
-            return new JsonMergePatchImpl(patch);
+            return new JsonMergePatchImpl(patch, bufferProvider);
         }
 
         @Override
         public JsonMergePatch createMergeDiff(JsonValue source, JsonValue target) {
-            return new JsonMergePatchDiff(source, target).calculateDiff();
+            return new JsonMergePatchDiff(source, target, bufferProvider).calculateDiff();
         }
     }
 }

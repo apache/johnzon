@@ -34,6 +34,7 @@ import javax.json.stream.JsonLocation;
 class JsonInMemoryParser extends JohnzonJsonParserImpl {
 
     private final SimpleStack<Iterator<Event>> stack = new SimpleStack<Iterator<Event>>();
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
 
     private Event currentEvent;
     private JsonValue currentValue;
@@ -184,6 +185,11 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
         return arrayDepth > 0;
     }
 
+    @Override
+    protected BufferStrategy.BufferProvider<char[]> getCharArrayProvider() {
+        return bufferProvider;
+    }
+
     private static Event getEvent(final ValueType value) {
 
         switch (value) {
@@ -204,12 +210,14 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
 
     }
 
-    JsonInMemoryParser(final JsonObject object) {
+    JsonInMemoryParser(final JsonObject object, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
         stack.push(new ObjectIterator(object));
+        this.bufferProvider = bufferProvider;
     }
 
-    JsonInMemoryParser(final JsonArray array) {
+    JsonInMemoryParser(final JsonArray array, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
         stack.push(new ArrayIterator(array));
+        this.bufferProvider = bufferProvider;
     }
 
     @Override

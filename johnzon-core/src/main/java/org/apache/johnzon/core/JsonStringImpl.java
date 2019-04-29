@@ -54,7 +54,9 @@ final class JsonStringImpl implements JsonString, Serializable {
     public String toString() {
         String s = escape;
         if (s == null) {
-            s =  JsonChars.QUOTE_CHAR+Strings.escape(value)+JsonChars.QUOTE_CHAR;
+            final StringBuilder builder = new StringBuilder();
+            Strings.appendEscaped(value, builder);
+            s =  JsonChars.QUOTE_CHAR + builder.toString() + JsonChars.QUOTE_CHAR;
             escape=s;
         }
         return s;

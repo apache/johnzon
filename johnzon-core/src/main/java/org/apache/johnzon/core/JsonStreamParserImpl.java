@@ -558,6 +558,11 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         return arrayDepth > 0;
     }
 
+    @Override
+    protected BufferStrategy.BufferProvider<char[]> getCharArrayProvider() {
+        return bufferProvider;
+    }
+
     //read a string, gets called recursively
     //Handles escape/d characters
     //if string contains escape chars and/or cross buffer boundary then copy in the value buffer

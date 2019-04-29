@@ -109,13 +109,13 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
     @Override
     public JsonParser createParser(final JsonObject obj) {
         // no need of a comment version since JsonObject has no comment event
-        return new JsonInMemoryParser(obj);
+        return new JsonInMemoryParser(obj, bufferProvider);
     }
 
     @Override
     public JsonParser createParser(final JsonArray array) {
         // no need of a comment version since JsonObject has no comment event
-        return new JsonInMemoryParser(array);
+        return new JsonInMemoryParser(array, bufferProvider);
     }
 
     @Override

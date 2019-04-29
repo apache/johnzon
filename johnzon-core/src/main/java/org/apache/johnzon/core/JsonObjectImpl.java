@@ -23,16 +23,18 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.stream.JsonGenerator;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.AbstractMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-
 final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements JsonObject, Serializable {
+    private final BufferStrategy.BufferProvider<char[]> provider;
+
     private transient Integer hashCode = null;
     private final Map<String, JsonValue> unmodifieableBackingMap;
 
@@ -53,9 +55,9 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
         return value;
     }
 
-    JsonObjectImpl(final Map<String, JsonValue> backingMap) {
-        super();
+    JsonObjectImpl(final Map<String, JsonValue> backingMap, final BufferStrategy.BufferProvider<char[]> provider) {
         this.unmodifieableBackingMap = new LinkedHashMap<>(backingMap);
+        this.provider = provider;
     }
 
     @Override
@@ -141,29 +143,13 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder("{");
-        final Iterator<Map.Entry<String, JsonValue>> it = unmodifieableBackingMap.entrySet().iterator();
-        boolean hasNext = it.hasNext();
-        while (hasNext) {
-            final Map.Entry<String, JsonValue> entry = it.next();
-
-            builder.append('"');
-            Strings.appendEscaped(entry.getKey(), builder);
-            builder.append("\":");
-
-            final JsonValue value = entry.getValue();
-            if (JsonString.class.isInstance(value)) {
-                builder.append(value.toString());
-            } else {
-                builder.append(value != JsonValue.NULL ? value.toString() : JsonChars.NULL);
-            }
-
-            hasNext = it.hasNext();
-            if (hasNext) {
-                builder.append(",");
-            }
+        final StringWriter writer = new StringWriter();
+        try (final JsonGenerator generator = new JsonGeneratorImpl(writer, provider, false)) {
+            generator.writeStartObject();
+            unmodifieableBackingMap.forEach(generator::write);
+            generator.writeEnd();
         }
-        return builder.append('}').toString();
+        return writer.toString();
     }
 
     @Override

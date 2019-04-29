@@ -30,23 +30,29 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
+
 public class JsonReaderImpl implements JsonReader {
     private final JohnzonJsonParser parser;
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private boolean closed = false;
 
     private boolean subStreamReader;
 
-    public JsonReaderImpl(final JsonParser parser) {
-        this(parser, false);
+    public JsonReaderImpl(final JsonParser parser, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+        this(parser, false, bufferProvider);
     }
 
     /**
-     *
-     * @param parser
+     * @param parser json parser.
      * @param subStreamReader {@code true} if the Stream already got started and the first
      *           operation should not be next() but {@link JohnzonJsonParser#current()} instead.
+     * @param bufferProvider buffer provider for toString of created instances.
      */
-    public JsonReaderImpl(final JsonParser parser, boolean subStreamReader) {
+    public JsonReaderImpl(final JsonParser parser, boolean subStreamReader,
+                          final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+        this.bufferProvider = bufferProvider;
         if (parser instanceof JohnzonJsonParser) {
             this.parser = (JohnzonJsonParser) parser;
         } else {
@@ -79,7 +85,7 @@ public class JsonReaderImpl implements JsonReader {
 
         switch (next) {
             case START_OBJECT:
-                final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl();
+                final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
                 parseObject(objectBuilder);
                 if (!subStreamReader) {
                     if (parser.hasNext()) {
@@ -89,7 +95,7 @@ public class JsonReaderImpl implements JsonReader {
                 }
                 return objectBuilder.build();
             case START_ARRAY:
-                final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl();
+                final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl(emptyList(), bufferProvider);
                 parseArray(arrayBuilder);
                 if (!subStreamReader) {
                     if (parser.hasNext()) {
@@ -190,14 +196,14 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case START_OBJECT:
-                    JsonObjectBuilder subObject = null;
-                    parseObject(subObject = new JsonObjectBuilderImpl());
+                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
+                    parseObject(subObject);
                     builder.add(key, subObject);
                     break;
 
                 case START_ARRAY:
-                    JsonArrayBuilder subArray = null;
-                    parseArray(subArray = new JsonArrayBuilderImpl());
+                    JsonArrayBuilder subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider);
+                    parseArray(subArray);
                     builder.add(key, subArray);
                     break;
 
@@ -250,14 +256,14 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case START_OBJECT:
-                    JsonObjectBuilder subObject = null;
-                    parseObject(subObject = new JsonObjectBuilderImpl());
+                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
+                    parseObject(subObject);
                     builder.add(subObject);
                     break;
 
                 case START_ARRAY:
                     JsonArrayBuilder subArray = null;
-                    parseArray(subArray = new JsonArrayBuilderImpl());
+                    parseArray(subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider));
                     builder.add(subArray);
                     break;
 

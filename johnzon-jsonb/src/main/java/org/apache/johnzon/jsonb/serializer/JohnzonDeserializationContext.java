@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb.serializer;
 
+import org.apache.johnzon.core.BufferStrategy;
 import org.apache.johnzon.core.JsonReaderImpl;
 import org.apache.johnzon.mapper.MappingParser;
 
@@ -26,12 +27,13 @@ import javax.json.bind.serializer.DeserializationContext;
 import javax.json.stream.JsonParser;
 import java.lang.reflect.Type;
 
-// TODO: test it
 public class JohnzonDeserializationContext implements DeserializationContext {
     private final MappingParser runtime;
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
 
-    public JohnzonDeserializationContext(final MappingParser runtime) {
+    public JohnzonDeserializationContext(final MappingParser runtime, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
         this.runtime = runtime;
+        this.bufferProvider = bufferProvider;
     }
 
     @Override
@@ -45,6 +47,6 @@ public class JohnzonDeserializationContext implements DeserializationContext {
     }
 
     private JsonValue read(final JsonParser parser) { // TODO: use jsonp 1.1 and not johnzon internals
-        return new JsonReaderImpl(parser, true).readValue();
+        return new JsonReaderImpl(parser, true, bufferProvider).readValue();
     }
 }

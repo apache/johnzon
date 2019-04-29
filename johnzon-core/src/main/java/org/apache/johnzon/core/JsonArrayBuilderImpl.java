@@ -33,18 +33,25 @@ import java.util.List;
 
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private List<JsonValue> tmpList;
+    private BufferStrategy.BufferProvider<char[]> bufferProvider;
 
-    public JsonArrayBuilderImpl() {
+    protected JsonArrayBuilderImpl() {
+        // no-op: serialization
     }
 
-    public JsonArrayBuilderImpl(JsonArray initialData) {
-        tmpList = new ArrayList<>(initialData);
+    public JsonArrayBuilderImpl(final JsonArray initialData,
+                                final BufferStrategy.BufferProvider<char[]> provider) {
+        this.tmpList = new ArrayList<>(initialData);
+        this.bufferProvider = provider;
     }
 
-    public JsonArrayBuilderImpl(Collection<?> initialData) {
-        tmpList = new ArrayList<>();
-        for (Object initialValue : initialData) {
-            add(initialValue);
+    public JsonArrayBuilderImpl(final Collection<?> initialData, final BufferStrategy.BufferProvider<char[]> provider) {
+        this.bufferProvider = provider;
+        this.tmpList = new ArrayList<>();
+        if (!initialData.isEmpty()) {
+            for (Object initialValue : initialData) {
+                add(initialValue);
+            }
         }
     }
 
@@ -316,9 +323,9 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     @Override
     public JsonArray build() {
         if(tmpList == null) {
-            return new JsonArrayImpl(Collections.emptyList());
+            return new JsonArrayImpl(Collections.emptyList(), bufferProvider);
         }
-        return new JsonArrayImpl(Collections.unmodifiableList(tmpList));
+        return new JsonArrayImpl(Collections.unmodifiableList(tmpList), bufferProvider);
     }
 
     private static NullPointerException npe() {

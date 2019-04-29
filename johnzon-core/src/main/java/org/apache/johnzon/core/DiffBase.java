@@ -19,11 +19,12 @@ package org.apache.johnzon.core;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
+import java.io.Serializable;
 
 /**
  * Commonly used methods for diffs
  */
-class DiffBase {
+class DiffBase implements Serializable {
     protected boolean isJsonObject(JsonValue jsonValue) {
         return jsonValue instanceof JsonObject;
     }

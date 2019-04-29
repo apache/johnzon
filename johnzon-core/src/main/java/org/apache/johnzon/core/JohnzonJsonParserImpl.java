@@ -34,6 +34,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
      * @return {@code true} if we are currently inside an array
      */
     protected abstract boolean isInArray();
+    protected abstract BufferStrategy.BufferProvider<char[]> getCharArrayProvider();
 
     @Override
     public JsonObject getObject() {
@@ -42,7 +43,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getObject()");
         }
 
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
+        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider());
         return jsonReader.readObject();
     }
 
@@ -54,7 +55,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getArray()");
         }
 
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
+        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider());
         return jsonReader.readArray();
     }
 
@@ -64,7 +65,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         switch (current) {
             case START_ARRAY:
             case START_OBJECT:
-                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true);
+                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider());
                 return jsonReader.readValue();
             case VALUE_TRUE:
                 return JsonValue.TRUE;

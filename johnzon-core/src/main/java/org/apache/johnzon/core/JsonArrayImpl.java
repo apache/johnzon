@@ -23,20 +23,22 @@ import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonString;
 import javax.json.JsonValue;
+import javax.json.stream.JsonGenerator;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.AbstractList;
-import java.util.Iterator;
 import java.util.List;
 
 class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serializable {
+    private final BufferStrategy.BufferProvider<char[]> provider;
     private Integer hashCode = null;
     private final List<JsonValue> unmodifieableBackingList;
     private int size = -1;
 
-    JsonArrayImpl(final List<JsonValue> backingList) {
-        super();
+    JsonArrayImpl(final List<JsonValue> backingList, final BufferStrategy.BufferProvider<char[]> provider) {
         this.unmodifieableBackingList = backingList;
+        this.provider = provider;
     }
 
     private <T> T value(final int idx, final Class<T> type) {
@@ -159,22 +161,13 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
 
     @Override
     public String toString() {
-        final StringBuilder builder = new StringBuilder("[");
-        final Iterator<JsonValue> it = unmodifieableBackingList.iterator();
-        boolean hasNext = it.hasNext();
-        while (hasNext) {
-            final JsonValue jsonValue = it.next();
-            if (JsonString.class.isInstance(jsonValue)) {
-                builder.append(jsonValue.toString());
-            } else {
-                builder.append(jsonValue != JsonValue.NULL ? jsonValue.toString() : JsonChars.NULL);
-            }
-            hasNext = it.hasNext();
-            if (hasNext) {
-                builder.append(",");
-            }
+        final StringWriter writer = new StringWriter();
+        try (final JsonGenerator generator = new JsonGeneratorImpl(writer, provider, false)) {
+            generator.writeStartArray();
+            unmodifieableBackingList.forEach(generator::write);
+            generator.writeEnd();
         }
-        return builder.append(']').toString();
+        return writer.toString();
     }
 
     @Override

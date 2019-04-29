@@ -81,6 +81,7 @@ import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.stream.JsonParserFactory;
 
+import org.apache.johnzon.core.BufferStrategy;
 import org.apache.johnzon.core.Types;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.converter.JsonbDateConverter;
@@ -132,6 +133,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             throw new UnsupportedOperationException();
         }
     };
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private boolean failOnMissingCreatorValues;
     private final Types types = new Types();
 
@@ -139,7 +141,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
                            final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory,
                            final Supplier<JsonParserFactory> parserFactory, final AccessMode delegate,
-                           final boolean failOnMissingCreatorValues) {
+                           final boolean failOnMissingCreatorValues,
+                           final BufferStrategy.BufferProvider<char[]> bufferProvider) {
         this.naming = propertyNamingStrategy;
         this.order = orderValue;
         this.visibility = visibilityStrategy;
@@ -149,6 +152,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         this.factory = factory;
         this.parserFactory = parserFactory;
         this.failOnMissingCreatorValues = failOnMissingCreatorValues;
+        this.bufferProvider = bufferProvider;
     }
 
     @Override
@@ -512,7 +516,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 writer = finalWriter::write;
             }
 
-            final ReaderConverters converters = new ReaderConverters(initialWriter);
+            final ReaderConverters converters = new ReaderConverters(initialWriter, bufferProvider);
             final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
             final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = nillable != null || (property != null && property.nillable());
@@ -613,7 +617,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     private ParsingCacheEntry getClassEntry(final Class<?> clazz) {
         ParsingCacheEntry cache = parsingCache.get(clazz);
         if (cache == null) {
-            cache = new ParsingCacheEntry(new ClassDecoratedType(clazz), types);
+            cache = new ParsingCacheEntry(new ClassDecoratedType(clazz), types, bufferProvider);
             parsingCache.putIfAbsent(clazz, cache);
         }
         return cache;
@@ -720,7 +724,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         private Adapter<?, ?> converter;
         private ObjectConverter.Reader reader;
 
-        ReaderConverters(final DecoratedType annotationHolder) {
+        ReaderConverters(final DecoratedType annotationHolder,
+                         final BufferStrategy.BufferProvider<char[]> bufferProvider) {
             final JsonbTypeDeserializer deserializer = annotationHolder.getAnnotation(JsonbTypeDeserializer.class);
             final JsonbTypeAdapter adapter = annotationHolder.getAnnotation(JsonbTypeAdapter.class);
             final JsonbDateFormat dateFormat = annotationHolder.getAnnotation(JsonbDateFormat.class);
@@ -779,7 +784,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                                            final MappingParser parser, final JsonbDeserializer jsonbDeserializer) {
                         return jsonbDeserializer.deserialize(
                                 JsonValueParserAdapter.createFor(jsonValue, parserFactory),
-                                new JohnzonDeserializationContext(parser), targetType);
+                                new JohnzonDeserializationContext(parser, bufferProvider), targetType);
                     }
                 };
             } else if (johnzonConverter != null) {
@@ -871,8 +876,9 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         private final ReaderConverters readers;
         private final WriterConverters writers;
 
-        ParsingCacheEntry(final DecoratedType type, final Types types) {
-            readers = new ReaderConverters(type);
+        ParsingCacheEntry(final DecoratedType type, final Types types,
+                          final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+            readers = new ReaderConverters(type, bufferProvider);
             writers = new WriterConverters(type, types);
         }
     }

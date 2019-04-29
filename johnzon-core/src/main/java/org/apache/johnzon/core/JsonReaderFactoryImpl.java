@@ -43,21 +43,25 @@ class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFac
 
     @Override
     public JsonReader createReader(final Reader reader) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(reader));
+        return new JsonReaderImpl(parserFactory.createInternalParser(reader), getCharArrayProvider());
     }
 
     @Override
     public JsonReader createReader(final InputStream in) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(in));
+        return new JsonReaderImpl(parserFactory.createInternalParser(in), getCharArrayProvider());
     }
 
     @Override
     public JsonReader createReader(final InputStream in, final Charset charset) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(in, charset));
+        return new JsonReaderImpl(parserFactory.createInternalParser(in, charset), getCharArrayProvider());
     }
 
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
+    }
+
+    private BufferStrategy.BufferProvider<char[]> getCharArrayProvider() {
+        return getBufferProvider().newCharProvider(1024);
     }
 }
