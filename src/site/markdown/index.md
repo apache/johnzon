@@ -183,13 +183,19 @@ public class MyModel {
 
 #### @JohnzonAny
 
-If you don't fully know you model but want to handle all keys you can use @JohnzonAny to capture/serialize them all:
+If you don't fully know your model but want to handle all keys you can use @JohnzonAny to capture/serialize them all:
 
 <pre class="prettyprint linenums"><![CDATA[
 public class AnyMe {
-    @JohnzonAny // ignore normal serialization of this field
-    private String name; // known
-    private Map<String, Object> any = new TreeMap<String, Object>(); // unknown
+    private String name; // Regular serialization for the known 'name' field
+
+    /* This example uses a TreeMap to store and retrieve the other unknown
+       fields for the @JohnzonAny annotated methods, but you can choose
+       anything you want. Use @JohnzonIgnore to avoid exposing this as
+       an actual 'unknownFields' property in JSON.
+    */
+    @JohnzonIgnore
+    private Map<String, Object> unknownFields = new TreeMap<String, Object>();
 
     public String getName() {
         return name;
@@ -199,14 +205,14 @@ public class AnyMe {
         this.name = name;
     }
 
-    @Any
+    @JohnzonAny
     public Map<String, Object> getAny() {
-        return any;
+        return unknownFields;
     }
 
-    @Any
+    @JohnzonAny
     public void handle(final String key, final Object val) {
-        any.put(key, val);
+        this.unknownFields.put(key, val);
     }
 }
 ]]></pre>
