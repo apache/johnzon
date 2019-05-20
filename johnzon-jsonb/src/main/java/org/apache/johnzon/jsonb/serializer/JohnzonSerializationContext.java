@@ -33,7 +33,7 @@ public class JohnzonSerializationContext implements SerializationContext {
 
     @Override
     public <T> void serialize(final String key, final T object, final JsonGenerator generator) {
-        runtime.writeObject(object, generator);
+        runtime.writeObject(key, object, generator);
     }
 
     @Override

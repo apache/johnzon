@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -25,10 +26,12 @@ import static org.junit.Assert.assertTrue;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeDeserializer;
 import javax.json.bind.annotation.JsonbTypeSerializer;
 import javax.json.bind.serializer.DeserializationContext;
@@ -118,11 +121,39 @@ public class SerializerTest {
         jsonb.close();
     }
 
+    @Test
+    public void serializeWithKey() throws Exception {
+        final Jsonb jsonb = JsonbBuilder.create();
+        final MyWrapper wrapper = new MyWrapper();
+        wrapper.myWrapper = new MyWrapper();
+        wrapper.myWrapper.map = singletonMap("a", "b");
+        assertEquals("{\"myWrapper\":{\"a\":\"b\"}}", jsonb.toJson(wrapper));
+        jsonb.close();
+    }
+
 
     public static class Foo {
         public String name;
         public int value;
         public boolean flag;
+    }
+
+    public static class MyWrapper {
+        @JsonbTransient
+        public Map<String, String> map;
+
+        @JsonbTypeSerializer(MyMapSerializer.class)
+        public MyWrapper myWrapper;
+    }
+
+    public static class MyMapSerializer implements JsonbSerializer<MyWrapper> {
+        @Override
+        public void serialize(final MyWrapper obj, final JsonGenerator generator, final SerializationContext ctx) {
+            ctx.serialize(obj, generator);
+            if (obj.map != null) {
+                obj.map.forEach((k, v) -> ctx.serialize(k, v, generator));
+            }
+        }
     }
 
     public static class UUIDSerializer implements JsonbSerializer<UUID> {

@@ -57,4 +57,8 @@ public interface MappingGenerator {
      * @return itself, for easier chaining of commands
      */
     MappingGenerator writeObject(Object o, JsonGenerator generator);
+
+    default MappingGenerator writeObject(final String key, final Object o, final JsonGenerator generator) {
+        return writeObject(o, generator);
+    }
 }

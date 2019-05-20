@@ -49,15 +49,20 @@ public class DynamicMappingGenerator implements MappingGenerator {
     }
 
     @Override
+    public MappingGenerator writeObject(final String key, final Object o, final JsonGenerator generator) {
+        return delegate.writeObject(key, o, ensureGenerator(generator));
+    }
+
+    @Override
     public MappingGenerator writeObject(final Object o, final JsonGenerator generator) {
+        return delegate.writeObject(o, ensureGenerator(generator));
+    }
+
+    private JsonGenerator ensureGenerator(final JsonGenerator generator) {
         if (this.generator != null && this.generator != generator && this.generator.delegate != generator) {
             this.generator = null;
         }
-        getJsonGenerator(); // ensure we wrap it
-
-        final MappingGenerator mappingGenerator = delegate.writeObject(o, this.generator);
-        flushIfNeeded();
-        return mappingGenerator;
+        return getJsonGenerator(); // ensure we wrap it
     }
 
     public void flushIfNeeded() {

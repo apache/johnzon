@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.mapper;
 
+import static java.util.Collections.emptyList;
+
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 
 import javax.json.JsonValue;
@@ -57,7 +59,50 @@ public class MappingGeneratorImpl implements MappingGenerator {
     }
 
     @Override
-    public MappingGenerator writeObject(Object object, JsonGenerator generator) {
+    public MappingGenerator writeObject(final String key, final Object object, final JsonGenerator generator) {
+        if (object == null) {
+            return this;
+        } else if (object instanceof JsonValue) {
+            generator.write(key, JsonValue.class.cast(object));
+        } else {
+            final Class<?> objectClass = object.getClass();
+            try {
+                if (Map.class.isInstance(object)) {
+                    writeValue(Map.class, false, false, false, false, true, null, key, object,
+                            null, emptyList(), isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, generator);
+                } else if(writePrimitives(key, objectClass, object, generator)) {
+                    // no-op
+                } else if (objectClass.isEnum()) {
+                    final Adapter adapter = config.findAdapter(objectClass);
+                    final String adaptedValue = adapter.from(object).toString(); // we know it ends as String for enums
+                    generator.write(key, adaptedValue);
+                } else if (objectClass.isArray()) {
+                    writeValue(Map.class, false, false, true, false, false, null, key, object,
+                            null, emptyList(), isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, generator);
+                } else if (Iterable.class.isInstance(object)) {
+                    writeValue(Map.class, false, false, false, true, false, null, key, object,
+                            null, emptyList(), isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, generator);
+                } else {
+                    final ObjectConverter.Writer objectConverter = config.findObjectConverterWriter(objectClass);
+                    if (objectConverter != null) {
+                        final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
+                                generator::writeStartObject, generator::writeEnd, null);
+                        objectConverter.writeJson(object, dynamicMappingGenerator);
+                        dynamicMappingGenerator.flushIfNeeded();
+                    } else {
+                        writeValue(objectClass, false, false, false, false, false, null, key, object,
+                                null, emptyList(), isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, generator);
+                    }
+                }
+            } catch (final InvocationTargetException | IllegalAccessException e) {
+                throw new MapperException(e);
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public MappingGenerator writeObject(final Object object, final JsonGenerator generator) {
         if (object == null) {
             return this;
         } else if (object instanceof JsonValue) {
@@ -124,9 +169,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     generator.writeEnd();
                 }
             }
-        } catch (final InvocationTargetException e) {
-            throw new MapperException(e);
-        } catch (final IllegalAccessException e) {
+        } catch (final InvocationTargetException | IllegalAccessException e) {
             throw new MapperException(e);
         }
     }
