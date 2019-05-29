@@ -28,8 +28,6 @@ import java.util.logging.Logger;
 
 public abstract class AbstractJsonFactory implements Serializable {
 
-    protected final Logger logger = Logger.getLogger(this.getClass().getName());
-    
     public static final String BUFFER_STRATEGY = "org.apache.johnzon.buffer-strategy";
     public static final BufferStrategy DEFAULT_BUFFER_STRATEGY = BufferStrategy.valueOf(System.getProperty(BUFFER_STRATEGY, "QUEUE"));
     
@@ -47,7 +45,7 @@ public abstract class AbstractJsonFactory implements Serializable {
                 if(supportedConfigKeys.contains(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
                 } else {
-                    logger.warning(configKey + " is not supported by " + getClass().getName());
+                    Logger.getLogger(this.getClass().getName()).warning(configKey + " is not supported by " + getClass().getName());
                 }
             }
         }

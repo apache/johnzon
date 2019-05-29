@@ -43,8 +43,6 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
         // nothing yet
     };
 
-    protected final Logger logger = Logger.getLogger(this.getClass().getName());
-
     protected JsonBuilderFactoryImpl() {
         // no-op: serialization
     }
@@ -57,7 +55,8 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
                 if(supportedConfigKeys.contains(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
                 } else {
-                    logger.warning(configKey + " is not supported by " + getClass().getName());
+                    Logger.getLogger(this.getClass().getName())
+                            .warning(configKey + " is not supported by " + getClass().getName());
                 }
             }
         }
