@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public abstract class AbstractJsonFactory implements Serializable {
 
     public static final String BUFFER_STRATEGY = "org.apache.johnzon.buffer-strategy";
-    public static final BufferStrategy DEFAULT_BUFFER_STRATEGY = BufferStrategy.valueOf(System.getProperty(BUFFER_STRATEGY, "QUEUE"));
+    public static final BufferStrategy DEFAULT_BUFFER_STRATEGY = BufferStrategyFactory.valueOf(System.getProperty(BUFFER_STRATEGY, "QUEUE"));
     
     protected final Map<String, Object> internalConfig = new HashMap<String, Object>();
     
@@ -54,7 +54,7 @@ public abstract class AbstractJsonFactory implements Serializable {
     protected BufferStrategy getBufferProvider() {
         final Object name = internalConfig.get(BUFFER_STRATEGY);
         if (name != null) {
-            return BufferStrategy.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
+            return BufferStrategyFactory.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
         }
         return DEFAULT_BUFFER_STRATEGY;
     }

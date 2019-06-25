@@ -83,7 +83,7 @@ public class SerializationTest {
         map.put("test", new JsonStringImpl("val"));
         map.put("test2", JsonValue.TRUE);
         final JsonObject source = new JsonObjectImpl(Collections.unmodifiableMap(map),
-                BufferStrategy.BY_INSTANCE.newCharProvider(512));
+                BufferStrategyFactory.valueOf("BY_INSTANCE").newCharProvider(512));
         final JsonObject serialization = serialDeser(source);
         assertNotSame(source, serialization);
         assertTrue(serialization.containsKey("test"));
@@ -98,7 +98,7 @@ public class SerializationTest {
         list.add(new JsonStringImpl("test"));
         list.add(JsonValue.TRUE); // not ser but we should be able to handle that
         final JsonArray source = new JsonArrayImpl(Collections.unmodifiableList(list),
-                BufferStrategy.BY_INSTANCE.newCharProvider(512));
+                BufferStrategyFactory.valueOf("BY_INSTANCE").newCharProvider(512));
         final JsonArray serialization = serialDeser(source);
         assertNotSame(source, serialization);
         assertEquals(2, serialization.size());

@@ -83,6 +83,7 @@ import javax.json.stream.JsonParserFactory;
 
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.BufferStrategy;
+import org.apache.johnzon.core.BufferStrategyFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.core.Types;
@@ -190,7 +191,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             throw new IllegalArgumentException("Unsupported factory: " + val);
         }).orElseGet(this::findFactory);
 
-        final BufferStrategy.BufferProvider<char[]> bufferProvider = BufferStrategy.QUEUE.newCharProvider(1024);
+        final BufferStrategy.BufferProvider<char[]> bufferProvider = BufferStrategyFactory.valueOf("QUEUE").newCharProvider(1024);
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
                 .orElseGet(() -> new JsonbAccessMode(
