@@ -85,11 +85,5 @@ public class BufferStrategyFactoryTest {
             counter.incrementAndGet();
             return delegate.newCharProvider(size);
         }
-
-        @Override
-        public BufferProvider<StringBuilder> newStringBuilderProvider(int size) {
-            counter.incrementAndGet();
-            return delegate.newStringBuilderProvider(size);
-        }
     }
 }

@@ -28,52 +28,10 @@ public class BufferStrategyFactory {
     static {
         DEFAULT_STRATEGIES = new HashMap<>();
 
-        DEFAULT_STRATEGIES.put("BY_INSTANCE", new BufferStrategy() {
-            @Override
-            public BufferProvider<char[]> newCharProvider(final int size) {
-                return new CharBufferByInstanceProvider(size);
-            }
-
-            @Override
-            public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
-                return new StringBuilderByInstanceProvider(size);
-            }
-        });
-
-        DEFAULT_STRATEGIES.put("THREAD_LOCAL", new BufferStrategy() {
-            @Override
-            public BufferProvider<char[]> newCharProvider(final int size) {
-                return new CharBufferThreadLocalProvider(size);
-            }
-
-            @Override
-            public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
-                return new StringBuilderThreadLocalProvider(size);
-            }
-        });
-
-        DEFAULT_STRATEGIES.put("QUEUE", new BufferStrategy() {
-            @Override
-            public BufferProvider<char[]> newCharProvider(final int size) {
-                return new CharBufferQueueProvider(size);
-            }
-
-            @Override
-            public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
-                return new StringBuilderQueueProvider(size);
-            }
-        });
-        DEFAULT_STRATEGIES.put("SINGLETON", new BufferStrategy() {
-            @Override
-            public BufferProvider<char[]> newCharProvider(final int size) {
-                return new CharBufferSingletonProvider(size);
-            }
-
-            @Override
-            public BufferProvider<StringBuilder> newStringBuilderProvider(final int size) {
-                return new StringBuilderSingletonProvider(size);
-            }
-        });
+        DEFAULT_STRATEGIES.put("BY_INSTANCE", CharBufferByInstanceProvider::new);
+        DEFAULT_STRATEGIES.put("THREAD_LOCAL", CharBufferThreadLocalProvider::new);
+        DEFAULT_STRATEGIES.put("QUEUE", CharBufferQueueProvider::new);
+        DEFAULT_STRATEGIES.put("SINGLETON", CharBufferSingletonProvider::new);
     }
 
     private BufferStrategyFactory() {
@@ -129,22 +87,6 @@ public class BufferStrategyFactory {
         @Override
         public void release(final char[] value) {
             // no-op
-        }
-    }
-
-    private static class StringBuilderSingletonProvider extends SingletonProvider<StringBuilder> {
-        public StringBuilderSingletonProvider(final int size) {
-            super(size);
-        }
-
-        @Override
-        protected StringBuilder newInstance(final int size) {
-            return new StringBuilder(size);
-        }
-
-        @Override
-        public void release(final StringBuilder value) {
-            value.setLength(0);
         }
     }
 
@@ -204,23 +146,6 @@ public class BufferStrategyFactory {
         }
     }
 
-    private static class StringBuilderThreadLocalProvider extends ThreadLocalProvider<StringBuilder> {
-        public StringBuilderThreadLocalProvider(int size) {
-            super(size);
-        }
-
-        @Override
-        protected StringBuilder newInstance(final int size) {
-            return new StringBuilder(size);
-        }
-
-        @Override
-        public void release(final StringBuilder value) {
-            value.setLength(0);
-            super.release(value);
-        }
-    }
-
     private static class CharBufferByInstanceProvider implements BufferStrategy.BufferProvider<char[]> {
         private final int size;
 
@@ -235,24 +160,6 @@ public class BufferStrategyFactory {
 
         @Override
         public void release(final char[] value) {
-            // no-op
-        }
-    }
-
-    private static class StringBuilderByInstanceProvider implements BufferStrategy.BufferProvider<StringBuilder> {
-        private final int size;
-
-        public StringBuilderByInstanceProvider(final int size) {
-            this.size = size;
-        }
-
-        @Override
-        public StringBuilder newBuffer() {
-            return new StringBuilder(size);
-        }
-
-        @Override
-        public void release(final StringBuilder value) {
             // no-op
         }
     }
@@ -292,22 +199,4 @@ public class BufferStrategyFactory {
             return new char[size];
         }
     }
-
-    private static class StringBuilderQueueProvider extends QueueProvider<StringBuilder> {
-        public StringBuilderQueueProvider(final int size) {
-            super(size);
-        }
-
-        @Override
-        protected StringBuilder newInstance(int size) {
-            return new StringBuilder(size);
-        }
-
-        @Override
-        public void release(final StringBuilder value) {
-            value.setLength(0);
-            super.release(value);
-        }
-    }
-
 }

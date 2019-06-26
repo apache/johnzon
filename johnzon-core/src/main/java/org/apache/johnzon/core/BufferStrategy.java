@@ -25,7 +25,6 @@ import java.io.Serializable;
  */
 public interface BufferStrategy {
     BufferProvider<char[]> newCharProvider(int size);
-    BufferProvider<StringBuilder> newStringBuilderProvider(int size);
 
     interface BufferProvider<T> extends Serializable {
         T newBuffer();
