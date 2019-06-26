@@ -68,6 +68,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.json.JsonBuilderFactory;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
@@ -130,7 +131,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (jsonp != null) {
             builder.setGeneratorFactory(jsonp.createGeneratorFactory(generatorConfig()));
             builder.setReaderFactory(jsonp.createReaderFactory(readerConfig()));
+        } else {
+            jsonp = JsonProvider.provider();
         }
+        final Supplier<JsonBuilderFactory> builderFactorySupplier = createJsonBuilderFactory();
         final Supplier<JsonParserFactory> parserFactoryProvider = createJsonParserFactory();
 
         if (config == null) {
@@ -198,14 +202,13 @@ public class JohnzonBuilder implements JsonbBuilder {
                         propertyNamingStrategy, orderValue, visibilityStrategy,
                         !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
                         defaultConverters,
-                        factory, parserFactoryProvider,
+                        factory, jsonp, builderFactorySupplier, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
                                 .map(this::toAccessMode)
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false)),
                         config.getProperty("johnzon.failOnMissingCreatorValues")
                               .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
-                              .orElse(true) /*spec 1.0 requirement*/,
-                        bufferProvider));
+                              .orElse(true) /*spec 1.0 requirement*/));
         builder.setAccessMode(accessMode);
 
         // user adapters
@@ -301,11 +304,12 @@ public class JohnzonBuilder implements JsonbBuilder {
                     throw new IllegalArgumentException("We only support deserializer on Class for now");
                 }
                 // TODO: support PT in ObjectConverter (list)
+                final JsonBuilderFactory builderFactory = builderFactorySupplier.get();
                 builder.addObjectConverter(
                         Class.class.cast(args[0]), (ObjectConverter.Reader)
                                 (jsonObject, targetType, parser) -> d.deserialize(
                                         JsonValueParserAdapter.createFor(jsonObject, parserFactoryProvider),
-                                        new JohnzonDeserializationContext(parser, bufferProvider), targetType));
+                                        new JohnzonDeserializationContext(parser, builderFactory, jsonp), targetType));
             });
         });
 
@@ -349,23 +353,19 @@ public class JohnzonBuilder implements JsonbBuilder {
     }
 
     private Supplier<JsonParserFactory> createJsonParserFactory() {
-        return new Supplier<JsonParserFactory>() { // thread safety is not mandatory
-            private final AtomicReference<JsonParserFactory> ref = new AtomicReference<>();
-
+        return new Lazy<JsonParserFactory>() { // thread safety is not mandatory
             @Override
-            public JsonParserFactory get() {
-                JsonParserFactory factory = ref.get();
-                if (factory == null) {
-                    factory = doCreate();
-                    if (!ref.compareAndSet(null, factory)) {
-                        factory = ref.get();
-                    }
-                }
-                return factory;
+            protected JsonParserFactory doCreate() {
+                return jsonp.createParserFactory(emptyMap());
             }
+        };
+    }
 
-            private JsonParserFactory doCreate() {
-                return (jsonp == null ? JsonProvider.provider() : jsonp).createParserFactory(emptyMap());
+    private Supplier<JsonBuilderFactory> createJsonBuilderFactory() {
+        return new Lazy<JsonBuilderFactory>() { // thread safety is not mandatory
+            @Override
+            protected JsonBuilderFactory doCreate() {
+                return jsonp.createBuilderFactory(emptyMap());
             }
         };
     }
@@ -774,5 +774,23 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty(JsonParserFactoryImpl.SUPPORTS_COMMENTS).ifPresent(b -> map.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, b));
         config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
         return map;
+    }
+
+    private static abstract class Lazy<T> implements Supplier<T> {
+        private final AtomicReference<T> ref = new AtomicReference<>();
+
+        @Override
+        public T get() {
+            T factory = ref.get();
+            if (factory == null) {
+                factory = doCreate();
+                if (!ref.compareAndSet(null, factory)) {
+                    factory = ref.get();
+                }
+            }
+            return factory;
+        }
+
+        protected abstract T doCreate();
     }
 }
