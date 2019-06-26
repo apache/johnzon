@@ -24,9 +24,6 @@ import java.util.concurrent.ConcurrentMap;
 import javax.json.stream.JsonParsingException;
 
 class Strings implements JsonChars {
-    private static final BufferStrategy.BufferProvider<StringBuilder> BUILDER_CACHE =
-        BufferStrategyFactory.valueOf(System.getProperty("johnzon.string-builder.strategy", "QUEUE"))
-            .newStringBuilderProvider(Integer.getInteger("org.apache.johnzon.default-string-builder", 1024));
 
     private static final String UNICODE_PREFIX = "\\u";
     private static final String UNICODE_PREFIX_HELPER = "000";
