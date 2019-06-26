@@ -486,6 +486,55 @@ public class MapperTest {
        assertEquals(expectedJson, writer.toString());
    }
 
+   @Test
+   public void testShortArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new short[] { 1, 2 }, baos);
+       assertEquals("[1,2]", baos.toString());
+   }
+
+   @Test
+   public void testLongArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new long[] { 1L, 2L }, baos);
+       assertEquals("[1,2]", baos.toString());
+   }
+
+   @Test
+   public void testByteArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new byte[] { 1, 2 }, baos);
+       assertEquals("[1,2]", baos.toString());
+   }
+
+   @Test
+   public void testCharArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new char[] { '1', '2' }, baos);
+       assertEquals("[\"1\",\"2\"]", baos.toString());
+   }
+
+   @Test
+   public void testIntArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new int[] { 1, 2 }, baos);
+       assertEquals("[1,2]", baos.toString());
+   }
+
+   @Test
+   public void testFloatArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new float[] { 1f, 2f }, baos);
+       assertEquals("[1.0,2.0]", baos.toString());
+   }
+
+   @Test
+   public void testDoubleArray() {
+       ByteArrayOutputStream baos = new ByteArrayOutputStream();
+       new MapperBuilder().build().writeArray(new double[] { 1d, 2d }, baos);
+       assertEquals("[1.0,2.0]", baos.toString());
+   }
+
     /**
      * Verify that assigning a short or byte number
      * which is too big to fit into the java field

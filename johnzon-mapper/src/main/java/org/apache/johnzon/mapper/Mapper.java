@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import static java.util.Arrays.asList;
 import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
 import java.io.Closeable;
@@ -38,6 +37,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 import javax.json.JsonArray;
@@ -53,6 +53,7 @@ import javax.json.stream.JsonGeneratorFactory;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.util.ArrayUtil;
 
 public class Mapper implements Closeable {
 
@@ -82,15 +83,32 @@ public class Mapper implements Closeable {
 
 
     public <T> void writeArray(final Object object, final OutputStream stream) {
-        writeObject(asList((T[]) object), stream);
+        if (object instanceof short[]) {
+            writeObject(ArrayUtil.asList((short[]) object), stream);
+        } else if (object instanceof int[]) {
+            writeObject(ArrayUtil.asList((int[]) object), stream);
+        } else if (object instanceof long[]) {
+            writeObject(ArrayUtil.asList((long[]) object), stream);
+        } else if (object instanceof byte[]) {
+            writeObject(ArrayUtil.asList((byte[]) object), stream);
+        } else if (object instanceof char[]) {
+            writeObject(ArrayUtil.asList((char[]) object), stream);
+        } else if (object instanceof float[]) {
+            writeObject(ArrayUtil.asList((float[]) object), stream);
+        } else if (object instanceof double[]) {
+            writeObject(ArrayUtil.asList((double[]) object), stream);
+        } else {
+            writeObject(Arrays.asList((T[]) object), stream);
+        }
     }
 
+
     public <T> void writeArray(final T[] object, final OutputStream stream) {
-        writeObject(asList(object), stream);
+        writeObject(Arrays.asList(object), stream);
     }
 
     public <T> void writeArray(final T[] object, final Writer stream) {
-        writeObject(asList(object), stream);
+        writeObject(Arrays.asList(object), stream);
     }
 
     public <T> void writeArray(final Collection<T> object, final OutputStream stream) {
