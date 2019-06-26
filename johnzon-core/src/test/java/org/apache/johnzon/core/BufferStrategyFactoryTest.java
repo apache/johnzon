@@ -16,8 +16,16 @@
  */
 package org.apache.johnzon.core;
 
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -41,20 +49,47 @@ public class BufferStrategyFactoryTest {
         verify(BufferStrategyFactory.valueOf(DummyBufferStrategy.class.getName()));
     }
 
+    @Test
+    public void testJsonGeneratorStrategyFromClass() {
+        DummyBufferStrategy.counter.set(0);
+
+        StringWriter sw = new StringWriter();
+        JsonGenerator generator = JsonProvider.provider().createGeneratorFactory(new HashMap<String, Object>() {
+            {
+                put(AbstractJsonFactory.BUFFER_STRATEGY, DummyBufferStrategy.class.getName());
+            }
+        }).createGenerator(sw);
+
+
+        generator.writeStartObject()
+                .write("age", 27)
+                .write("name", "karl")
+                .writeEnd()
+                .flush();
+
+        assertEquals(1, DummyBufferStrategy.counter.get());
+        assertEquals("{\"age\":27,\"name\":\"karl\"}", sw.toString());
+    }
+
     private void verify(Object bufferStrategy) {
         assertNotNull(bufferStrategy);
         assertTrue(bufferStrategy instanceof BufferStrategy);
     }
 
     public static final class DummyBufferStrategy implements BufferStrategy {
+        static AtomicInteger counter = new AtomicInteger(0);
+        private BufferStrategy delegate = BufferStrategyFactory.valueOf("BY_INSTANCE");
+
         @Override
         public BufferProvider<char[]> newCharProvider(int size) {
-            return null;
+            counter.incrementAndGet();
+            return delegate.newCharProvider(size);
         }
 
         @Override
         public BufferProvider<StringBuilder> newStringBuilderProvider(int size) {
-            return null;
+            counter.incrementAndGet();
+            return delegate.newStringBuilderProvider(size);
         }
     }
 }

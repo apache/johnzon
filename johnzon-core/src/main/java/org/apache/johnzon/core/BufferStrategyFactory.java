@@ -17,6 +17,7 @@
 package org.apache.johnzon.core;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -95,7 +96,7 @@ public class BufferStrategyFactory {
      * @throws IllegalArgumentException if the given strategyName does not resolve to a BufferStrategy.
      */
     public static BufferStrategy valueOf(String strategyName) {
-        BufferStrategy bufferStrategy = DEFAULT_STRATEGIES.get(strategyName);
+        BufferStrategy bufferStrategy = DEFAULT_STRATEGIES.get(strategyName.toUpperCase(Locale.ENGLISH));
         if (bufferStrategy == null) {
             // try to load the BufferStrategy via reflection
             Class<?> bsClass = ClassUtil.loadClassOptional(strategyName, false);

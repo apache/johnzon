@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -54,7 +53,7 @@ public abstract class AbstractJsonFactory implements Serializable {
     protected BufferStrategy getBufferProvider() {
         final Object name = internalConfig.get(BUFFER_STRATEGY);
         if (name != null) {
-            return BufferStrategyFactory.valueOf(name.toString().toUpperCase(Locale.ENGLISH));
+            return BufferStrategyFactory.valueOf(name.toString());
         }
         return DEFAULT_BUFFER_STRATEGY;
     }
