@@ -18,12 +18,18 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
 import org.apache.johnzon.jsonb.extension.JsonValueReader;
 import org.apache.johnzon.jsonb.extension.JsonValueWriter;
+import org.apache.johnzon.mapper.JsonObjectGenerator;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
+import javax.json.JsonNumber;
+import javax.json.JsonString;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbException;
 import java.io.InputStream;
@@ -34,6 +40,7 @@ import java.io.Writer;
 import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Optional;
 import java.util.OptionalDouble;
@@ -41,7 +48,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 // TODO: Optional handling for lists (and arrays)?
-public class JohnzonJsonb implements Jsonb, AutoCloseable {
+public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     private final Mapper delegate;
 
     public JohnzonJsonb(final Mapper build) {
@@ -384,5 +391,81 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable {
     @Override
     public void close() {
         delegate.close();
+    }
+
+    @Override
+    public <T> T fromJsonValue(final JsonValue json, final Class<T> type) {
+        return fromJsonValue(json, Type.class.cast(type));
+    }
+
+    @Override
+    public JsonValue toJsonValue(final Object object) {
+        return toJsonValue(object, object.getClass());
+    }
+
+    @Override
+    public <T> T fromJsonValue(final JsonValue json, final Type type) {
+        switch (json.getValueType()) {
+            case NULL:
+                if (Class.class.isInstance(type) && Class.class.cast(type).isPrimitive()) {
+                    throw new JsonbException("can't map a primritive to null");
+                }
+                return null;
+            case STRING:
+                if (String.class != type) {
+                    throw new JsonbException("STRING json can't be casted to " + type);
+                }
+                return (T) JsonString.class.cast(json).getString();
+            case TRUE:
+            case FALSE:
+                if (Boolean.class != type && boolean.class != type) {
+                    throw new JsonbException("TRUE and FALSE json can't be casted to " + type);
+                }
+                return (T) Boolean.valueOf(JsonValue.TRUE.equals(json));
+            case NUMBER:
+                if (!Class.class.isInstance(type) || !Number.class.isAssignableFrom(Class.class.cast(type))) {
+                    throw new JsonbException("NUMBER json can't be casted to " + type);
+                }
+                final JsonNumber jsonNumber = JsonNumber.class.cast(json);
+                if (int.class == type || Integer.class == type) {
+                    return (T) Integer.valueOf(jsonNumber.intValue());
+                }
+                if (long.class == type || Long.class == type) {
+                    return (T) Long.valueOf(jsonNumber.longValue());
+                }
+                if (double.class == type || Double.class == type) {
+                    return (T) Double.valueOf(jsonNumber.doubleValue());
+                }
+                if (float.class == type || Float.class == type) {
+                    return (T) Float.valueOf((float) jsonNumber.doubleValue());
+                }
+                if (byte.class == type || Byte.class == type) {
+                    return (T) Byte.valueOf((byte) jsonNumber.intValue());
+                }
+                if (short.class == type || Short.class == type) {
+                    return (T) Short.valueOf((short) jsonNumber.intValue());
+                }
+                if (BigInteger.class == type) {
+                    return (T) jsonNumber.bigIntegerValue();
+                }
+                return (T) jsonNumber.bigDecimalValue();
+            case OBJECT:
+            case ARRAY:
+                return delegate.readObject(JsonStructure.class.cast(json), type);
+            default:
+                throw new JsonbException("Unsupported type: " + json.getValueType());
+        }
+    }
+
+    @Override
+    public JsonValue toJsonValue(final Object rawObject, final Type runtimeType) {
+        if (JsonValue.class.isInstance(rawObject)) {
+            return JsonValue.class.cast(rawObject);
+        }
+        try (final JsonObjectGenerator jsonObjectGenerator = new JsonObjectGenerator(delegate.getBuilderFactory())) {
+            delegate.writeObjectWithGenerator(unwrapOptional(rawObject), jsonObjectGenerator);
+            jsonObjectGenerator.flush();
+            return jsonObjectGenerator.getResult();
+        }
     }
 }

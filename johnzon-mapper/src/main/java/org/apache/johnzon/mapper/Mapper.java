@@ -198,9 +198,13 @@ public class Mapper implements Closeable {
         }
 
         try (final JsonGenerator generator = generatorFactory.createGenerator(stream(stream))) {
-            writeObject(object, generator, null,
-                    isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+            writeObjectWithGenerator(object, generator);
         }
+    }
+
+    public void writeObjectWithGenerator(final Object object, final JsonGenerator generator) {
+        writeObject(object, generator, null,
+                isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
     }
 
     private boolean isDeduplicateObjects(Class<?> rootType) {
@@ -385,4 +389,11 @@ public class Mapper implements Closeable {
         }
     }
 
+    public JsonBuilderFactory getBuilderFactory() {
+        return builderFactory;
+    }
+
+    public JsonProvider getProvider() {
+        return provider;
+    }
 }

@@ -325,6 +325,9 @@ final JsonObject jsonObject = writer.getObject();
 
 These two example will not use any IO and directly map the `JsonValue` to/from a POJO.
 
+Also note that, as an experimental extension and pre-available feature of the next specification version, `org.apache.johnzon.jsonb.api.experimental.JsonbExtension` enables
+to map POJO to `JsonValue` and the opposite.
+
 ### Websocket
 
 <pre class="prettyprint linenums"><![CDATA[
