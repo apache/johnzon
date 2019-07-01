@@ -22,9 +22,7 @@ import java.lang.reflect.Type;
 
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
-import javax.json.JsonNumber;
 import javax.json.JsonObjectBuilder;
-import javax.json.JsonString;
 import javax.json.JsonValue;
 import javax.json.bind.serializer.DeserializationContext;
 import javax.json.spi.JsonProvider;
@@ -32,6 +30,7 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
 import org.apache.johnzon.mapper.MappingParser;
+import org.apache.johnzon.mapper.jsonp.RewindableJsonParser;
 
 public class JohnzonDeserializationContext implements DeserializationContext {
     private final MappingParser runtime;
@@ -57,49 +56,27 @@ public class JohnzonDeserializationContext implements DeserializationContext {
     }
 
     private JsonValue read(final JsonParser parser) {
-        final JsonParser.Event next = parser.next();
+        final JsonParser.Event next = RewindableJsonParser.class.isInstance(parser) ?
+                RewindableJsonParser.class.cast(parser).getLast() : parser.next();
         switch (next) {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = builderFactory.createObjectBuilder();
                 parseObject(parser, objectBuilder);
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 return objectBuilder.build();
             case START_ARRAY:
                 final JsonArrayBuilder arrayBuilder = builderFactory.createArrayBuilder();
                 parseArray(parser, arrayBuilder);
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 return arrayBuilder.build();
             case VALUE_STRING:
-                final JsonString string = jsonp.createValue(parser.getString());
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
-                return string;
+                return jsonp.createValue(parser.getString());
             case VALUE_FALSE:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 return JsonValue.FALSE;
             case VALUE_TRUE:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 return JsonValue.TRUE;
             case VALUE_NULL:
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
                 return JsonValue.NULL;
             case VALUE_NUMBER:
-                final JsonNumber number = jsonp.createValue(parser.getBigDecimal());
-                if (parser.hasNext()) {
-                    throw new JsonParsingException("Expected end of file", parser.getLocation());
-                }
-                return number;
+                return jsonp.createValue(parser.getBigDecimal());
             default:
                 throw new JsonParsingException("Unknown structure: " + next, parser.getLocation());
         }

@@ -28,6 +28,8 @@ import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
+import org.apache.johnzon.mapper.jsonp.RewindableJsonParser;
+
 class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     
     private static class JsonStringParserAdapter extends JsonValueParserAdapter<JsonString> {
@@ -69,7 +71,13 @@ class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
         }
     }
     
-    public static JsonParser createFor(JsonValue jsonValue, Supplier<JsonParserFactory> parserFactoryProvider) {
+    public static JsonParser createFor(final JsonValue jsonValue,
+                                       final Supplier<JsonParserFactory> parserFactoryProvider) {
+        return new RewindableJsonParser(doCreate(jsonValue, parserFactoryProvider));
+    }
+
+    private static JsonParser doCreate(final JsonValue jsonValue,
+                                       final Supplier<JsonParserFactory> parserFactoryProvider) {
         switch (jsonValue.getValueType()) {
             case OBJECT: return parserFactoryProvider.get().createParser(jsonValue.asJsonObject());
             case ARRAY: return parserFactoryProvider.get().createParser(jsonValue.asJsonArray());
@@ -78,7 +86,7 @@ class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
             default: return new JsonValueParserAdapter<>(jsonValue);
         }
     }
-    
+
     private final T jsonValue;
     
     JsonValueParserAdapter(T jsonValue) {
