@@ -216,7 +216,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     static class JsonProviderDelegate extends JsonProvider {
         private final BufferStrategy.BufferProvider<char[]> bufferProvider =
-            BufferStrategyFactory.valueOf(System.getProperty("johnzon.global-char-provider.strategy", "QUEUE"))
+            BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
                 .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024));
 
         private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
