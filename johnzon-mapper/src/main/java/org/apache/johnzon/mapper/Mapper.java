@@ -335,9 +335,21 @@ public class Mapper implements Closeable {
         }
     }
 
+    public JsonArray readJsonArray(final Reader stream) {
+        try (final JsonReader reader = readerFactory.createReader(stream(stream))) {
+            return reader.readArray();
+        }
+    }
+
     public <T> T[] readArray(final InputStream stream, final Class<T> clazz) {
         try (final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset)) {
             return (T[]) mapArray(clazz, reader);
+        }
+    }
+
+    public JsonArray readJsonArray(final InputStream stream) {
+        try (final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)): readerFactory.createReader(stream(stream), charset)) {
+            return reader.readArray();
         }
     }
 

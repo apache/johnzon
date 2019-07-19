@@ -26,6 +26,7 @@ import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
+import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
@@ -60,6 +61,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
         try {
             if (isArray(type)) {
                 return delegate.readTypedArray(new StringReader(str), type.getComponentType(), type);
+            } else if (JsonArray.class == type) {
+                return (T) delegate.readJsonArray(new StringReader(str));
             } else if (Collection.class.isAssignableFrom(type)) {
                 return (T) delegate.readCollection(new StringReader(str), new JohnzonParameterizedType(type, Object.class));
             }
@@ -117,6 +120,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             if (isArray(runtimeType)) {
                 final Class cast = Class.class.cast(runtimeType);
                 return (T) delegate.readTypedArray(new StringReader(str), cast.getComponentType(), cast);
+            } else if (JsonArray.class == runtimeType) {
+                return (T) delegate.readJsonArray(new StringReader(str));
             } else if (isCollection(runtimeType)) {
                 return (T) delegate.readCollection(new StringReader(str), ParameterizedType.class.cast(runtimeType));
             }
@@ -140,6 +145,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
         try {
             if (isArray(type)) {
                 return delegate.readTypedArray(reader, type.getComponentType(), type);
+            } else if (JsonArray.class == type) {
+                return (T) delegate.readJsonArray(reader);
             } else if (Collection.class.isAssignableFrom(type)) {
                 return (T) delegate.readCollection(reader, new JohnzonParameterizedType(type, Object.class));
             }
@@ -164,6 +171,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             if (isArray(runtimeType)) {
                 final Class<T> type = Class.class.cast(runtimeType);
                 return delegate.readTypedArray(reader, type.getComponentType(), type);
+            } else if (JsonArray.class == runtimeType) {
+                return (T) delegate.readJsonArray(reader);
             } else if (isCollection(runtimeType)) {
                 return (T) delegate.readCollection(reader, ParameterizedType.class.cast(runtimeType));
             }
@@ -183,6 +192,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
         try {
             if (isArray(type)) {
                 return delegate.readTypedArray(stream, type.getComponentType(), type);
+            } else if (JsonArray.class == type) {
+                return (T) delegate.readJsonArray(stream);
             } else if (Collection.class.isAssignableFrom(type)) {
                 return (T) delegate.readCollection(stream, new JohnzonParameterizedType(type, Object.class));
             }
@@ -203,6 +214,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             if (isArray(runtimeType)) {
                 final Class<T> type = Class.class.cast(runtimeType);
                 return delegate.readTypedArray(stream, type.getComponentType(), type);
+            } else if (JsonArray.class == runtimeType) {
+                return (T) delegate.readJsonArray(stream);
             } else if (isCollection(runtimeType)) {
                 return (T) delegate.readCollection(stream, ParameterizedType.class.cast(runtimeType));
             }
