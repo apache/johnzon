@@ -611,7 +611,7 @@ public class MappingParserImpl implements MappingParser {
                         return o;
                     }
                 }
-                return convertTo(Class.class.cast(type), string);
+                return convertTo(type, string);
             } else {
                 return itemConverter.to(string);
             }
@@ -786,6 +786,9 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (converter == null) {
+            if (ParameterizedType.class.isInstance(aClass)) {
+                return convertTo(ParameterizedType.class.cast(aClass).getRawType(), text);
+            }
             throw new MapperException("Missing a Converter for type " + aClass + " to convert the JSON String '" +
                     text + "' . Please register a custom converter for it.");
         }
