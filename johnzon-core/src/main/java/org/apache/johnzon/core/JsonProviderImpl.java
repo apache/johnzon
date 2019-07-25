@@ -27,6 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -52,15 +53,16 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
 public class JsonProviderImpl extends JsonProvider implements Serializable {
-    private final BufferStrategy.BufferProvider<char[]> bufferProvider =
+    private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
-            .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024));
+            .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024)));
 
     private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
     private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
     private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
     private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
-    private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null, bufferProvider);
+    private final Supplier<JsonBuilderFactory> builderFactory = new Cached<>(() ->
+            new JsonBuilderFactoryImpl(null, bufferProvider.get()));
 
     @Override
     public JsonParser createParser(final InputStream in) {
@@ -124,31 +126,32 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonObjectBuilder createObjectBuilder() {
-        return builderFactory.createObjectBuilder();
+        return builderFactory.get().createObjectBuilder();
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder(JsonObject jsonObject) {
-        return builderFactory.createObjectBuilder(jsonObject);
+        return builderFactory.get().createObjectBuilder(jsonObject);
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
-        return builderFactory.createObjectBuilder(initialValues);
+        return builderFactory.get().createObjectBuilder(initialValues);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder() {
-        return builderFactory.createArrayBuilder();
+        return builderFactory.get().createArrayBuilder();
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
-        return builderFactory.createArrayBuilder(initialData);
+        return builderFactory.get().createArrayBuilder(initialData);
     }
 
+    @Override
     public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
-        return builderFactory.createArrayBuilder(initialData);
+        return builderFactory.get().createArrayBuilder(initialData);
     }
 
     @Override
@@ -183,8 +186,9 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
+        final JsonBuilderFactory builderFactory = this.builderFactory.get();
         return (config == null || config.isEmpty()) ?
-                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider);
+                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get());
     }
 
     @Override
@@ -202,6 +206,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         return new JsonPointerImpl(this, path);
     }
 
+    @Override
     public JsonPatch createPatch(JsonArray array) {
         return createPatchBuilder(array).build();
     }
@@ -211,12 +216,38 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         return new JsonPatchDiff(this, source, target).calculateDiff();
     }
 
+    @Override
     public JsonMergePatch createMergePatch(JsonValue patch) {
-        return new JsonMergePatchImpl(patch, bufferProvider);
+        return new JsonMergePatchImpl(patch, bufferProvider.get());
     }
 
     @Override
     public JsonMergePatch createMergeDiff(JsonValue source, JsonValue target) {
-        return new JsonMergePatchDiff(source, target, bufferProvider).calculateDiff();
+        return new JsonMergePatchDiff(source, target, bufferProvider.get()).calculateDiff();
+    }
+
+    /**
+     * Enables to not allocate potentially big instances or delay the initialization but ensure it happens only once.
+     * @param <T> the type of the cached instance.
+     */
+    private static class Cached<T> implements Supplier<T> {
+        private final Supplier<T> delegate;
+        private volatile T computed;
+
+        private Cached(final Supplier<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public T get() {
+            if (computed == null) {
+                synchronized (this) {
+                    if (computed == null) {
+                        computed = delegate.get();
+                    }
+                }
+            }
+            return computed;
+        }
     }
 }
