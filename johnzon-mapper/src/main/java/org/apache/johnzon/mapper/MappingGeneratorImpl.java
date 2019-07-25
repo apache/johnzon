@@ -569,6 +569,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (valJsonPointer != null) {
                     // write the JsonPointer as String natively
                     generator.write(valJsonPointer);
+                } else if (o instanceof JsonValue) {
+                    generator.write((JsonValue) o);
                 } else {
                     writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties, isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
                 }
