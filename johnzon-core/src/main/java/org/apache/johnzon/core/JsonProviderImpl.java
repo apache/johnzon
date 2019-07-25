@@ -52,335 +52,171 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
 public class JsonProviderImpl extends JsonProvider implements Serializable {
-    private static final JsonProvider DELEGATE = new JsonProviderDelegate();
+    private final BufferStrategy.BufferProvider<char[]> bufferProvider =
+        BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
+            .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024));
+
+    private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
+    private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
+    private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
+    private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
+    private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null, bufferProvider);
+
+    @Override
+    public JsonParser createParser(final InputStream in) {
+        return parserFactory.createParser(in);
+    }
 
     @Override
     public JsonParser createParser(final Reader reader) {
-        return DELEGATE.createParser(reader);
+        return parserFactory.createParser(reader);
     }
 
     @Override
-    public JsonParser createParser(final InputStream inputStream) {
-        return DELEGATE.createParser(inputStream);
-    }
-
-    @Override
-    public JsonParserFactory createParserFactory(final Map<String, ?> stringMap) {
-        return DELEGATE.createParserFactory(stringMap);
-    }
-
-    @Override
-    public JsonGenerator createGenerator(final Writer writer) {
-        return DELEGATE.createGenerator(writer);
-    }
-
-    @Override
-    public JsonGenerator createGenerator(final OutputStream outputStream) {
-        return DELEGATE.createGenerator(outputStream);
-    }
-
-    @Override
-    public JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> stringMap) {
-        return DELEGATE.createGeneratorFactory(stringMap);
+    public JsonReader createReader(final InputStream in) {
+        return readerFactory.createReader(in);
     }
 
     @Override
     public JsonReader createReader(final Reader reader) {
-        return DELEGATE.createReader(reader);
+        return readerFactory.createReader(reader);
     }
 
     @Override
-    public JsonReader createReader(final InputStream inputStream) {
-        return DELEGATE.createReader(inputStream);
+    public JsonParserFactory createParserFactory(final Map<String, ?> config) {
+        return (config == null || config.isEmpty()) ? parserFactory : new JsonParserFactoryImpl(config);
+    }
+
+    @Override
+    public JsonReaderFactory createReaderFactory(final Map<String, ?> config) {
+        return (config == null || config.isEmpty()) ? readerFactory : new JsonReaderFactoryImpl(config);
+    }
+
+    @Override
+    public JsonGenerator createGenerator(final Writer writer) {
+        return generatorFactory.createGenerator(writer);
+    }
+
+    @Override
+    public JsonGenerator createGenerator(final OutputStream out) {
+        return generatorFactory.createGenerator(out);
+    }
+
+    @Override
+    public JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> config) {
+        return (config == null || config.isEmpty()) ? generatorFactory : new JsonGeneratorFactoryImpl(config);
     }
 
     @Override
     public JsonWriter createWriter(final Writer writer) {
-        return DELEGATE.createWriter(writer);
+        return writerFactory.createWriter(writer);
     }
 
     @Override
-    public JsonWriter createWriter(final OutputStream outputStream) {
-        return DELEGATE.createWriter(outputStream);
+    public JsonWriter createWriter(final OutputStream out) {
+        return writerFactory.createWriter(out);
     }
 
     @Override
-    public JsonWriterFactory createWriterFactory(final Map<String, ?> stringMap) {
-        return DELEGATE.createWriterFactory(stringMap);
-    }
-
-    @Override
-    public JsonReaderFactory createReaderFactory(final Map<String, ?> stringMap) {
-        return DELEGATE.createReaderFactory(stringMap);
+    public JsonWriterFactory createWriterFactory(final Map<String, ?> config) {
+        return (config == null || config.isEmpty()) ? writerFactory : new JsonWriterFactoryImpl(config);
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder() {
-        return DELEGATE.createObjectBuilder();
-    }
-
-    @Override
-    public JsonArrayBuilder createArrayBuilder() {
-        return DELEGATE.createArrayBuilder();
-    }
-
-    @Override
-    public JsonBuilderFactory createBuilderFactory(final Map<String, ?> stringMap) {
-        return DELEGATE.createBuilderFactory(stringMap);
-    }
-    
-    @Override
-    public JsonPatchBuilder createPatchBuilder() {
-        return DELEGATE.createPatchBuilder();
-    }
-
-    @Override
-    public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
-        return DELEGATE.createPatchBuilder(initialData);
+        return builderFactory.createObjectBuilder();
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder(JsonObject jsonObject) {
-        return DELEGATE.createObjectBuilder(jsonObject);
+        return builderFactory.createObjectBuilder(jsonObject);
     }
 
     @Override
-    public JsonObjectBuilder createObjectBuilder(Map<String, Object> map) {
-        return DELEGATE.createObjectBuilder(map);
+    public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
+        return builderFactory.createObjectBuilder(initialValues);
+    }
+
+    @Override
+    public JsonArrayBuilder createArrayBuilder() {
+        return builderFactory.createArrayBuilder();
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
-        return DELEGATE.createArrayBuilder(initialData);
+        return builderFactory.createArrayBuilder(initialData);
     }
 
-    @Override
     public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
-        return DELEGATE.createArrayBuilder(initialData);
-    }
-
-    @Override
-    public JsonPointer createPointer(String path) {
-        return DELEGATE.createPointer(path);
+        return builderFactory.createArrayBuilder(initialData);
     }
 
     @Override
     public JsonString createValue(String value) {
-        return DELEGATE.createValue(value);
+        return new JsonStringImpl(value);
     }
 
     @Override
     public JsonNumber createValue(int value) {
-        return DELEGATE.createValue(value);
+        return new JsonLongImpl(value);
     }
 
     @Override
     public JsonNumber createValue(long value) {
-        return DELEGATE.createValue(value);
+        return new JsonLongImpl(value);
     }
 
     @Override
     public JsonNumber createValue(double value) {
-        return DELEGATE.createValue(value);
+        return new JsonDoubleImpl(value);
     }
 
     @Override
     public JsonNumber createValue(BigDecimal value) {
-        return DELEGATE.createValue(value);
+        return new JsonNumberImpl(value);
     }
 
     @Override
     public JsonNumber createValue(BigInteger value) {
-        return DELEGATE.createValue(value);
+        return new JsonLongImpl(value.longValue());
     }
 
     @Override
+    public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
+        return (config == null || config.isEmpty()) ?
+                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider);
+    }
+
+    @Override
+    public JsonPatchBuilder createPatchBuilder() {
+        return new JsonPatchBuilderImpl(this);
+    }
+
+    @Override
+    public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
+        return new JsonPatchBuilderImpl(this, initialData);
+    }
+
+    @Override
+    public JsonPointer createPointer(String path) {
+        return new JsonPointerImpl(this, path);
+    }
+
     public JsonPatch createPatch(JsonArray array) {
-        return DELEGATE.createPatch(array);
+        return createPatchBuilder(array).build();
     }
 
     @Override
     public JsonPatch createDiff(JsonStructure source, JsonStructure target) {
-        return DELEGATE.createDiff(source, target);
+        return new JsonPatchDiff(this, source, target).calculateDiff();
     }
 
-    @Override
     public JsonMergePatch createMergePatch(JsonValue patch) {
-        return DELEGATE.createMergePatch(patch);
+        return new JsonMergePatchImpl(patch, bufferProvider);
     }
 
     @Override
     public JsonMergePatch createMergeDiff(JsonValue source, JsonValue target) {
-        return DELEGATE.createMergeDiff(source, target);
-    }
-
-    static class JsonProviderDelegate extends JsonProvider {
-        private final BufferStrategy.BufferProvider<char[]> bufferProvider =
-            BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
-                .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024));
-
-        private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
-        private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
-        private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
-        private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
-        private final JsonBuilderFactoryImpl builderFactory = new JsonBuilderFactoryImpl(null, bufferProvider);
-
-        @Override
-        public JsonParser createParser(final InputStream in) {
-            return parserFactory.createParser(in);
-        }
-
-        @Override
-        public JsonParser createParser(final Reader reader) {
-            return parserFactory.createParser(reader);
-        }
-
-        @Override
-        public JsonReader createReader(final InputStream in) {
-            return readerFactory.createReader(in);
-        }
-
-        @Override
-        public JsonReader createReader(final Reader reader) {
-            return readerFactory.createReader(reader);
-        }
-
-        @Override
-        public JsonParserFactory createParserFactory(final Map<String, ?> config) {
-            return (config == null || config.isEmpty()) ? parserFactory : new JsonParserFactoryImpl(config);
-        }
-
-        @Override
-        public JsonReaderFactory createReaderFactory(final Map<String, ?> config) {
-            return (config == null || config.isEmpty()) ? readerFactory : new JsonReaderFactoryImpl(config);
-        }
-
-        @Override
-        public JsonGenerator createGenerator(final Writer writer) {
-            return generatorFactory.createGenerator(writer);
-        }
-
-        @Override
-        public JsonGenerator createGenerator(final OutputStream out) {
-            return generatorFactory.createGenerator(out);
-        }
-
-        @Override
-        public JsonGeneratorFactory createGeneratorFactory(final Map<String, ?> config) {
-            return (config == null || config.isEmpty()) ? generatorFactory : new JsonGeneratorFactoryImpl(config);
-        }
-
-        @Override
-        public JsonWriter createWriter(final Writer writer) {
-            return writerFactory.createWriter(writer);
-        }
-
-        @Override
-        public JsonWriter createWriter(final OutputStream out) {
-            return writerFactory.createWriter(out);
-        }
-
-        @Override
-        public JsonWriterFactory createWriterFactory(final Map<String, ?> config) {
-            return (config == null || config.isEmpty()) ? writerFactory : new JsonWriterFactoryImpl(config);
-        }
-
-        @Override
-        public JsonObjectBuilder createObjectBuilder() {
-            return builderFactory.createObjectBuilder();
-        }
-
-        @Override
-        public JsonObjectBuilder createObjectBuilder(JsonObject jsonObject) {
-            return builderFactory.createObjectBuilder(jsonObject);
-        }
-
-        @Override
-        public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
-            return builderFactory.createObjectBuilder(initialValues);
-        }
-
-        @Override
-        public JsonArrayBuilder createArrayBuilder() {
-            return builderFactory.createArrayBuilder();
-        }
-
-        @Override
-        public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
-            return builderFactory.createArrayBuilder(initialData);
-        }
-
-        public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
-            return builderFactory.createArrayBuilder(initialData);
-        }
-
-        @Override
-        public JsonString createValue(String value) {
-            return new JsonStringImpl(value);
-        }
-
-        @Override
-        public JsonNumber createValue(int value) {
-            return new JsonLongImpl(value);
-        }
-
-        @Override
-        public JsonNumber createValue(long value) {
-            return new JsonLongImpl(value);
-        }
-
-        @Override
-        public JsonNumber createValue(double value) {
-            return new JsonDoubleImpl(value);
-        }
-
-        @Override
-        public JsonNumber createValue(BigDecimal value) {
-            return new JsonNumberImpl(value);
-        }
-
-        @Override
-        public JsonNumber createValue(BigInteger value) {
-            return new JsonLongImpl(value.longValue());
-        }
-
-        @Override
-        public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
-            return (config == null || config.isEmpty()) ?
-                    builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider);
-        }
-
-        @Override
-        public JsonPatchBuilder createPatchBuilder() {
-            return new JsonPatchBuilderImpl(this);
-        }
-
-        @Override
-        public JsonPatchBuilder createPatchBuilder(JsonArray initialData) {
-            return new JsonPatchBuilderImpl(this, initialData);
-        }
-
-        @Override
-        public JsonPointer createPointer(String path) {
-            return new JsonPointerImpl(this, path);
-        }
-
-        public JsonPatch createPatch(JsonArray array) {
-            return createPatchBuilder(array).build();
-        }
-
-        @Override
-        public JsonPatch createDiff(JsonStructure source, JsonStructure target) {
-            return new JsonPatchDiff(this, source, target).calculateDiff();
-        }
-
-        public JsonMergePatch createMergePatch(JsonValue patch) {
-            return new JsonMergePatchImpl(patch, bufferProvider);
-        }
-
-        @Override
-        public JsonMergePatch createMergeDiff(JsonValue source, JsonValue target) {
-            return new JsonMergePatchDiff(source, target, bufferProvider).calculateDiff();
-        }
+        return new JsonMergePatchDiff(source, target, bufferProvider).calculateDiff();
     }
 }
