@@ -20,6 +20,8 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
+import javax.json.Json;
+import javax.json.JsonString;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
@@ -35,20 +37,36 @@ import static org.junit.Assert.assertTrue;
 
 public class AdapterTest {
     @Test
-    public void adapt() {
-        final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new BarAdapter()));
-        final Foo foo = new Foo();
-        foo.bar = new Bar();
-        foo.bar.value = 1;
-        foo.dummy = new Dummy();
-        foo.dummy.value = 2L;
+    public void adapt() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new BarAdapter()))) {
+            final Foo foo = new Foo();
+            foo.bar = new Bar();
+            foo.bar.value = 1;
+            foo.dummy = new Dummy();
+            foo.dummy.value = 2L;
 
-        final String toString = jsonb.toJson(foo);
-        assertEquals("{\"bar\":\"1\",\"dummy\":\"2\"}", toString);
+            final String toString = jsonb.toJson(foo);
+            assertEquals("{\"bar\":\"1\",\"dummy\":\"2\"}", toString);
 
-        final Foo read = jsonb.fromJson(toString, Foo.class);
-        assertEquals(foo.bar.value, read.bar.value);
-        assertEquals(foo.dummy.value, read.dummy.value);
+            final Foo read = jsonb.fromJson(toString, Foo.class);
+            assertEquals(foo.bar.value, read.bar.value);
+            assertEquals(foo.dummy.value, read.dummy.value);
+        }
+    }
+
+    @Test
+    public void adaptJson() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new Dummy2Adapter()))) {
+            final Foo2 foo = new Foo2();
+            foo.dummy = new Dummy2();
+            foo.dummy.value = 2L;
+
+            final String toString = jsonb.toJson(foo);
+            assertEquals("{\"dummy\":\"2\"}", toString);
+
+            final Foo2 read = jsonb.fromJson(toString, Foo2.class);
+            assertEquals(foo.dummy.value, read.dummy.value);
+        }
     }
 
     @Test
@@ -115,6 +133,12 @@ public class AdapterTest {
     }
 
 
+    public static class Foo2 {
+        @JsonbTypeAdapter(Dummy2Adapter.class)
+        public Dummy2 dummy;
+    }
+
+
     public static class Foo {
         public Bar bar;
 
@@ -145,8 +169,26 @@ public class AdapterTest {
         }
     }
 
+    public static class Dummy2 {
+        public long value;
+    }
+
     public static class Dummy {
         public long value;
+    }
+
+    public static class Dummy2Adapter implements JsonbAdapter<Dummy2, JsonString> {
+        @Override
+        public Dummy2 adaptFromJson(final JsonString obj) {
+            final Dummy2 bar = new Dummy2();
+            bar.value = Long.parseLong(obj.getString());
+            return bar;
+        }
+
+        @Override
+        public JsonString adaptToJson(final Dummy2 obj) {
+            return Json.createValue(Long.toString(obj.value));
+        }
     }
 
     public static class DummyAdapter implements JsonbAdapter<Dummy, String> {

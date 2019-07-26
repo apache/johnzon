@@ -244,6 +244,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
         if (type == String.class) {
             generator.write(key, value.toString());
             handled = true;
+        } else if (JsonValue.class.isAssignableFrom(type)) {
+            generator.write(key, JsonValue.class.cast(value));
+            handled = true;
         } else if (type == long.class || type == Long.class) {
             generator.write(key, Long.class.cast(value).longValue());
             handled = true;

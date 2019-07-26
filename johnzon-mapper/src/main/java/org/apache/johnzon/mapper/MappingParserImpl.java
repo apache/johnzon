@@ -70,9 +70,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Arrays.asList;
+import static javax.json.JsonValue.ValueType.ARRAY;
 import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.NULL;
 import static javax.json.JsonValue.ValueType.NUMBER;
+import static javax.json.JsonValue.ValueType.STRING;
 import static javax.json.JsonValue.ValueType.TRUE;
 
 /**
@@ -402,7 +404,15 @@ public class MappingParserImpl implements MappingParser {
     }
 
     private Object convertTo(final Adapter converter, final JsonValue jsonValue, JsonPointerTracker jsonPointer) {
+        final AdapterKey key = getAdapterKey(converter);
+        if (JsonValue.class == key.getTo()) {
+            return converter.to(jsonValue);
+        }
+
         if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
+            if (JsonObject.class == key.getTo() || JsonStructure.class == key.getTo()) {
+                return converter.to(jsonValue.asJsonObject());
+            }
 
             //X TODO maybe we can put this into MapperConfig?
             //X      config.getAdapter(AdapterKey)
@@ -419,10 +429,15 @@ public class MappingParserImpl implements MappingParser {
             return converter.to(param);
         }
 
-        final AdapterKey key = getAdapterKey(converter);
         final JsonValue.ValueType valueType = jsonValue.getValueType();
         if (NULL.equals(valueType)) {
             return null;
+        }
+        if (STRING.equals(valueType)) {
+            if (key.getTo() == JsonString.class) {
+                return converter.to(JsonString.class.cast(jsonValue));
+            }
+            return converter.to(JsonString.class.cast(jsonValue).getString());
         }
         if (TRUE.equals(valueType) || FALSE.equals(valueType)) {
             if (key != null) {
@@ -445,8 +460,16 @@ public class MappingParserImpl implements MappingParser {
                     return converter.to(JsonNumber.class.cast(jsonValue).bigIntegerValue());
                 } else if (BigDecimal.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue).bigDecimalValue());
+                } else if (JsonNumber.class == key.getTo()) {
+                    return converter.to(JsonNumber.class.cast(jsonValue));
                 }
             }
+        }
+        if (ARRAY.equals(valueType)) {
+            if (JsonArray.class == key.getTo() || JsonStructure.class == key.getTo()) {
+                return converter.to(jsonValue.asJsonObject());
+            }
+            return buildArray(key.getTo(), jsonValue.asJsonArray(), null, null, jsonPointer, null);
         }
         return converter.to(jsonValue.toString());
 
@@ -733,9 +756,9 @@ public class MappingParserImpl implements MappingParser {
         }
 
         try {
-            return converter == null ? toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType)
-                    : jsonValue.getValueType() == JsonValue.ValueType.STRING ? converter.to(JsonString.class.cast(jsonValue).getString())
-                    : convertTo(converter, jsonValue, jsonPointer);
+            return converter == null ?
+                    toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType) :
+                    convertTo(converter, jsonValue, jsonPointer);
         } catch (Exception e) {
             if (e instanceof MapperException) {
                 throw e;
