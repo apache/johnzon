@@ -24,12 +24,14 @@ import javax.json.JsonException;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private List<JsonValue> tmpList;
@@ -216,6 +218,17 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
             add((long) value);
         } else if (value instanceof String) {
             add((String) value);
+        } else if (value instanceof Map) {
+            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider).build());
+        } else if (value instanceof Collection) {
+            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider).build());
+        } else if (value.getClass().isArray()) {
+            final int length = Array.getLength(value);
+            final Collection<Object> collection = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
+                collection.add(Array.get(value, i));
+            }
+            add(new JsonArrayBuilderImpl(collection, bufferProvider).build());
         } else {
             throw new JsonException("Illegal JSON type! type=" + value.getClass());
         }

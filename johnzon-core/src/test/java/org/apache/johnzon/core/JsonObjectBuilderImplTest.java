@@ -23,6 +23,8 @@ import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 import javax.json.Json;
@@ -34,6 +36,17 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonObjectBuilderImplTest {
+    @Test
+    public void createObjectBuilderMapSupport() {
+        final Map<String, Object> initial = new HashMap<>();
+        initial.put("a", "b");
+        initial.put("c", singletonMap("d", "e"));
+        initial.put("f", singleton("g"));
+
+        final JsonObject build = Json.createObjectBuilder(initial).build();
+        assertEquals("{\"a\":\"b\",\"c\":{\"d\":\"e\"},\"f\":[\"g\"]}", build.toString());
+    }
+
     @Test
     public void testBuild() {
         final JsonObjectBuilder builder = Json.createObjectBuilder();
