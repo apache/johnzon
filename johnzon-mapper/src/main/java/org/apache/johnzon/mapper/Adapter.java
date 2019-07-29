@@ -22,20 +22,42 @@ package org.apache.johnzon.mapper;
  * An Adapter is similar to a {@link Converter}.
  * The main difference is that a Converter always converts from/to a String.
  * An adapter might e.g. convert to a Date or any other Object which will
- * then be json-ified.
+ * then be json-ified.<p>
  *
- * @param <A>
- * @param <B>
+ * A small example which has a special Java type to internally represent dates.
+ * Let's call it {@code DateHolder}.
+ * Our {@code Mapper} should treat it as a {@code java.util.Date}.
+ * For doing so we create a {@code DateHolderAdapter} like the following example shows:
+ * <pre>
+ * public static class DateHolderAdapter implements Adapter<DateHolder, Date> {
+ *     @Override
+ *     public DateHolder to(Date date) {
+ *         DateHolder dh = new DateHolder(date.getTime());
+ *         return dh;
+ *     }
+ *
+ *     @Override
+ *     public Date from(DateHolder dateHolder) {
+ *        return new Date(dateHolder.getDate());
+ *     }
+ * }
+ * </pre>
+ *
+ * Consider a POJO has a DateHolder.
+ * When serialising the {@code Mapper} will first use the {@code DateHolderAdapter#from(DateHolder)} and from there to JSON.
+ * When reading JSON the {@code to(Date}} method will be used.
+ *
+ * @param <POJO_TYPE> The Java type in the POJO (Plain Old Java Object)
+ * @param <JSON_TYPE> The Java Type which will be used to transform to JSON.
  */
-public interface Adapter<A, B> extends MapperConverter {
+public interface Adapter<POJO_TYPE, JSON_TYPE> extends MapperConverter {
     /**
-     * Transfer B to JSON as A.
-     * A will be inserted into the JSON output
+     * Transfer JSONTYPE_TYPE from JSON to POJO as POJO_TYPE.
      */
-    A to(B b);
+    POJO_TYPE to(JSON_TYPE b);
 
     /**
-     * Take the object A from JSON an convert it to B to store in the POJO
+     * Take the POJO_TYPE object A from a POJO an convert it to JSON_TYPE which will be inserted into the JSON output.
      */
-    B from(A a);
+    JSON_TYPE from(POJO_TYPE a);
 }
