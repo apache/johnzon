@@ -53,7 +53,7 @@ import javax.json.stream.JsonGeneratorFactory;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.util.ArrayUtil;
+import org.apache.johnzon.core.util.ArrayUtil;
 
 public class Mapper implements Closeable {
 

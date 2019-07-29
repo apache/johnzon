@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper;
 import static java.util.Collections.emptyList;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
+import org.apache.johnzon.core.util.ArrayUtil;
 
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
@@ -470,7 +471,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
      * @param key either the attribute key or {@code null} if the array should be rendered without key
      */
     private void writeArray(Class<?> type, Adapter itemConverter, String key, Object arrayValue, Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
-        final int length = getArrayLength(arrayValue);
+        final int length = ArrayUtil.getArrayLength(arrayValue);
         if (length == 0 && config.isSkipEmptyArray()) {
             return;
         }
@@ -582,38 +583,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
         generator.writeEnd();
     }
 
-    private int getArrayLength(Object array) {
-        // Note: all types of multidimensional arrays are instanceof Object[]
-        if (array instanceof Object[]) {
-            return ((Object[]) array).length;
-        }
-        if (array instanceof boolean[]) {
-            return ((boolean[])array).length;
-        }
-        if (array instanceof byte[]) {
-            return ((byte[])array).length;
-        }
-        if (array instanceof char[]) {
-            return ((char[]) array).length;
-        }
-        if (array instanceof short[]) {
-            return ((short[]) array).length;
-        }
-        if (array instanceof int[]) {
-            return ((int[]) array).length;
-        }
-        if (array instanceof long[]) {
-            return ((long[]) array).length;
-        }
-        if (array instanceof float[]) {
-            return ((float[]) array).length;
-        }
-        if (array instanceof double[]) {
-            return ((double[]) array).length;
-        }
-
-        throw new IllegalArgumentException("This is not an array! " + array);
-    }
 
     private void writeItem(final Object o, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
         if (o == null) {

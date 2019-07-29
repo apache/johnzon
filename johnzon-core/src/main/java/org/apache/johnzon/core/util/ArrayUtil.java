@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.mapper.util;
+package org.apache.johnzon.core.util;
 
 import java.util.AbstractList;
 import java.util.List;
@@ -26,6 +26,40 @@ public final class ArrayUtil {
     private ArrayUtil() {
         // utility class ct
     }
+
+    public static int getArrayLength(Object array) {
+        // Note: all types of multidimensional arrays are instanceof Object[]
+        if (array instanceof Object[]) {
+            return ((Object[]) array).length;
+        }
+        if (array instanceof boolean[]) {
+            return ((boolean[])array).length;
+        }
+        if (array instanceof byte[]) {
+            return ((byte[])array).length;
+        }
+        if (array instanceof char[]) {
+            return ((char[]) array).length;
+        }
+        if (array instanceof short[]) {
+            return ((short[]) array).length;
+        }
+        if (array instanceof int[]) {
+            return ((int[]) array).length;
+        }
+        if (array instanceof long[]) {
+            return ((long[]) array).length;
+        }
+        if (array instanceof float[]) {
+            return ((float[]) array).length;
+        }
+        if (array instanceof double[]) {
+            return ((double[]) array).length;
+        }
+
+        throw new IllegalArgumentException("This is not an array! " + array);
+    }
+
 
     public static List<Integer> asList(final int[] vals) {
         return new AbstractList<Integer>() {

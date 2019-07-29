@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.johnzon.core.util.ArrayUtil;
+
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private List<JsonValue> tmpList;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -223,7 +225,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         } else if (value instanceof Collection) {
             add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider).build());
         } else if (value.getClass().isArray()) {
-            final int length = Array.getLength(value);
+            final int length = ArrayUtil.getArrayLength(value);
             final Collection<Object> collection = new ArrayList<>(length);
             for (int i = 0; i < length; i++) {
                 collection.add(Array.get(value, i));
