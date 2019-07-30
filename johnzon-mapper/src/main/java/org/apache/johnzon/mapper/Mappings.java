@@ -70,6 +70,7 @@ public class Mappings {
         public final Method mapAdder;
         public final Class<?> mapAdderType;
 
+
         private Boolean deduplicateObjects;
         private boolean deduplicationEvaluated = false;
 

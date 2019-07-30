@@ -87,7 +87,7 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
         */
 
     private static Charset getCharset(final PushbackInputStream inputStream, Charset preferredCharset) {
-        Charset charset = preferredCharset != null ? preferredCharset : Charset.forName("UTF-8");
+        Charset charset = preferredCharset != null ? preferredCharset : StandardCharsets.UTF_8;
         int bomLength=0;
         try {
             final byte[] utfBytes = readAllBytes(inputStream);

@@ -85,7 +85,6 @@ public class MappingParserImpl implements MappingParser {
     private static final JohnzonParameterizedType ANY_LIST = new JohnzonParameterizedType(List.class, Object.class);
     private static final CharacterConverter CHARACTER_CONVERTER = new CharacterConverter(); // this one is particular, share the logic
 
-    protected final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdaptersRegistry;
     protected final ConcurrentMap<Class<?>, Method> valueOfs = new ConcurrentHashMap<Class<?>, Method>();
 
     private final MapperConfig config;
@@ -107,9 +106,6 @@ public class MappingParserImpl implements MappingParser {
         this.mappings = mappings;
 
         this.jsonReader = jsonReader;
-
-        reverseAdaptersRegistry = new ConcurrentHashMap<>(config.getAdapters().size());
-
 
         this.isDeduplicateObjects = isDeduplicateObjects;
 
@@ -476,21 +472,13 @@ public class MappingParserImpl implements MappingParser {
     }
 
     private AdapterKey getAdapterKey(final Adapter converter) {
-        AdapterKey adapterKey = reverseAdaptersRegistry.get(converter);
-        if (adapterKey == null) {
-            for (final Map.Entry<AdapterKey, Adapter<?, ?>> entry : config.getAdapters().entrySet()) {
-                if (entry.getValue() == converter) {
-                    adapterKey = entry.getKey();
-                    reverseAdaptersRegistry.put(converter, adapterKey);
-                    break;
-                }
-            }
-        }
+        AdapterKey adapterKey = config.getReverseAdapters().get(converter);
+
         if (adapterKey == null) {
             if (converter instanceof TypeAwareAdapter) {
                 TypeAwareAdapter typeAwareAdapter = (TypeAwareAdapter) converter;
                 adapterKey = new AdapterKey(typeAwareAdapter.getFrom(), typeAwareAdapter.getTo());
-                reverseAdaptersRegistry.putIfAbsent(converter, adapterKey);
+                config.getReverseAdapters().putIfAbsent(converter, adapterKey);
 
             } else {
                 final Type[] types = converter.getClass().getGenericInterfaces();
@@ -502,7 +490,7 @@ public class MappingParserImpl implements MappingParser {
                     if (Adapter.class == pt.getRawType()) {
                         final Type[] actualTypeArguments = pt.getActualTypeArguments();
                         adapterKey = new AdapterKey(actualTypeArguments[0], actualTypeArguments[1]);
-                        reverseAdaptersRegistry.putIfAbsent(converter, adapterKey);
+                        config.getReverseAdapters().putIfAbsent(converter, adapterKey);
                         break;
                     }
                 }

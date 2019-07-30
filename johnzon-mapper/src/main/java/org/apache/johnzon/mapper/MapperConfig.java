@@ -29,6 +29,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -59,6 +60,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final AccessMode accessMode;
     private final Charset encoding;
     private final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
+    private final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdapters;
+
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders;
     private final Comparator<String> attributeOrder;
@@ -100,7 +103,13 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.readAttributeBeforeWrite = readAttributeBeforeWrite;
         this.accessMode = accessMode;
         this.encoding = encoding;
+
+        // handle Adapters
         this.adapters = adapters;
+        this.reverseAdapters = new ConcurrentHashMap<>(adapters.size());
+        adapters.entrySet().forEach(e -> this.reverseAdapters.put(e.getValue(), e.getKey()));
+
+
         this.attributeOrder = attributeOrder;
         this.enforceQuoteString = enforceQuoteString;
         this.failOnUnknown = failOnUnknown;
@@ -290,6 +299,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     public ConcurrentMap<AdapterKey, Adapter<?, ?>> getAdapters() {
         return adapters;
+    }
+
+    public ConcurrentMap<Adapter<?, ?>, AdapterKey> getReverseAdapters() {
+        return reverseAdapters;
     }
 
     public Map<Class<?>, ObjectConverter.Writer<?>> getObjectConverterWriters() {
