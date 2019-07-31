@@ -28,7 +28,9 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.util.AbstractList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serializable {
     private final BufferStrategy.BufferProvider<char[]> provider;
@@ -197,5 +199,35 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
 
     private Object writeReplace() throws ObjectStreamException {
         return new SerializableValue(toString());
+    }
+
+    @Override
+    public Iterator<JsonValue> iterator() {
+        return new JsonArrayIterator();
+    }
+
+    /**
+     * We don't need any range check, so we can simplify the Iterator logic.
+     * get() on an ArrayList works even faster than ArrayList#iterator!
+     */
+    private class JsonArrayIterator implements Iterator<JsonValue> {
+        int cursor = 0;
+
+        @Override
+        public boolean hasNext() {
+            return cursor != unmodifieableBackingList.size();
+        }
+
+        @Override
+        public JsonValue next() {
+            try {
+                int i = cursor;
+                JsonValue next = unmodifieableBackingList.get(i);
+                cursor = i + 1;
+                return next;
+            } catch (IndexOutOfBoundsException e) {
+                throw new NoSuchElementException();
+            }
+        }
     }
 }
