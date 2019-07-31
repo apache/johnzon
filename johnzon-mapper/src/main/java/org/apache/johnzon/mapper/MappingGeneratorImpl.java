@@ -21,11 +21,10 @@ package org.apache.johnzon.mapper;
 import static java.util.Collections.emptyList;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
-import org.apache.johnzon.core.util.ArrayUtil;
+import org.apache.johnzon.mapper.util.ArrayUtil;
 
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -591,7 +590,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             if (Collection.class.isInstance(o)) {
                 doWriteIterable(Collection.class.cast(o), ignoredProperties, jsonPointer);
             } else if (o.getClass().isArray()) {
-                final int length = Array.getLength(o);
+                final int length = ArrayUtil.getArrayLength(o);
                 if (length > 0 || !config.isSkipEmptyArray()) {
                     writeArray(o.getClass(), null, null, o, ignoredProperties, jsonPointer);
                 }

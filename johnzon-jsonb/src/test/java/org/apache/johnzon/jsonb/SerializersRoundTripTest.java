@@ -21,6 +21,7 @@ package org.apache.johnzon.jsonb;
 import static org.junit.Assert.assertEquals;
 
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -42,7 +43,7 @@ import javax.json.stream.JsonParser;
 
 import org.junit.Test;
 
-public class SeriaizersRoundTripTest {
+public class SerializersRoundTripTest {
     
     public enum Color {
         
@@ -262,6 +263,294 @@ public class SeriaizersRoundTripTest {
         public int hashCode() {
             return Objects.hash(uuid, uuid2, option, vatNumber, hello, color);
         }
+    }
+    
+    public static class ArrayContainer {
+        // native types
+        private boolean[] bboolean;
+        private byte[] bbyte;
+        private char[] bchar;
+        private short[] bshort;
+        private int[] bint;
+        private long[] blong;
+        private float[] bfloat;
+        private double[] bdouble;
+        
+        // string[]
+        private String[] bString;
+        
+        // wrapper types
+        private Boolean[] bWboolean;
+        private Byte[] bWbyte;
+        private Character[] bWchar;
+        private Short[] bWshort;
+        private Integer[] bWint;
+        private Long[] bWlong;
+        private Float[] bWfloat;
+        private Double[] bWdouble;
+
+        public boolean[] getBboolean() {
+            return bboolean;
+        }
+
+        public void setBboolean(boolean[] bboolean) {
+            this.bboolean = bboolean;
+        }
+
+        public byte[] getBbyte() {
+            return bbyte;
+        }
+
+        public void setBbyte(byte[] bbyte) {
+            this.bbyte = bbyte;
+        }
+
+        public char[] getBchar() {
+            return bchar;
+        }
+
+        public void setBchar(char[] bchar) {
+            this.bchar = bchar;
+        }
+
+        public short[] getBshort() {
+            return bshort;
+        }
+
+        public void setBshort(short[] bshort) {
+            this.bshort = bshort;
+        }
+
+        public int[] getBint() {
+            return bint;
+        }
+
+        public void setBint(int[] bint) {
+            this.bint = bint;
+        }
+
+        public long[] getBlong() {
+            return blong;
+        }
+
+        public void setBlong(long[] blong) {
+            this.blong = blong;
+        }
+
+        public float[] getBfloat() {
+            return bfloat;
+        }
+
+        public void setBfloat(float[] bfloat) {
+            this.bfloat = bfloat;
+        }
+
+        public double[] getBdouble() {
+            return bdouble;
+        }
+
+        public void setBdouble(double[] bdouble) {
+            this.bdouble = bdouble;
+        }
+
+        public String[] getbString() {
+            return bString;
+        }
+
+        public void setbString(String[] bString) {
+            this.bString = bString;
+        }
+
+        public Boolean[] getbWboolean() {
+            return bWboolean;
+        }
+
+        public void setbWboolean(Boolean[] bWboolean) {
+            this.bWboolean = bWboolean;
+        }
+
+        public Byte[] getbWbyte() {
+            return bWbyte;
+        }
+
+        public void setbWbyte(Byte[] bWbyte) {
+            this.bWbyte = bWbyte;
+        }
+
+        public Character[] getbWchar() {
+            return bWchar;
+        }
+
+        public void setbWchar(Character[] bWchar) {
+            this.bWchar = bWchar;
+        }
+
+        public Short[] getbWshort() {
+            return bWshort;
+        }
+
+        public void setbWshort(Short[] bWshort) {
+            this.bWshort = bWshort;
+        }
+
+        public Integer[] getbWint() {
+            return bWint;
+        }
+
+        public void setbWint(Integer[] bWint) {
+            this.bWint = bWint;
+        }
+
+        public Long[] getbWlong() {
+            return bWlong;
+        }
+
+        public void setbWlong(Long[] bWlong) {
+            this.bWlong = bWlong;
+        }
+
+        public Float[] getbWfloat() {
+            return bWfloat;
+        }
+
+        public void setbWfloat(Float[] bWfloat) {
+            this.bWfloat = bWfloat;
+        }
+
+        public Double[] getbWdouble() {
+            return bWdouble;
+        }
+
+        public void setbWdouble(Double[] bWdouble) {
+            this.bWdouble = bWdouble;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+
+            ArrayContainer that = (ArrayContainer) o;
+
+            if (!Arrays.equals(bboolean, that.bboolean)) {
+                return false;
+            }
+            if (!Arrays.equals(bbyte, that.bbyte)) {
+                return false;
+            }
+            if (!Arrays.equals(bchar, that.bchar)) {
+                return false;
+            }
+            if (!Arrays.equals(bshort, that.bshort)) {
+                return false;
+            }
+            if (!Arrays.equals(bint, that.bint)) {
+                return false;
+            }
+            if (!Arrays.equals(blong, that.blong)) {
+                return false;
+            }
+            if (!Arrays.equals(bfloat, that.bfloat)) {
+                return false;
+            }
+            if (!Arrays.equals(bdouble, that.bdouble)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bString, that.bString)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWboolean, that.bWboolean)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWbyte, that.bWbyte)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWchar, that.bWchar)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWshort, that.bWshort)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWint, that.bWint)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWlong, that.bWlong)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(bWfloat, that.bWfloat)) {
+                return false;
+            }
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            return Arrays.equals(bWdouble, that.bWdouble);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Arrays.hashCode(bboolean);
+            result = 31 * result + Arrays.hashCode(bbyte);
+            result = 31 * result + Arrays.hashCode(bchar);
+            result = 31 * result + Arrays.hashCode(bshort);
+            result = 31 * result + Arrays.hashCode(bint);
+            result = 31 * result + Arrays.hashCode(blong);
+            result = 31 * result + Arrays.hashCode(bfloat);
+            result = 31 * result + Arrays.hashCode(bdouble);
+            result = 31 * result + Arrays.hashCode(bString);
+            result = 31 * result + Arrays.hashCode(bWboolean);
+            result = 31 * result + Arrays.hashCode(bWbyte);
+            result = 31 * result + Arrays.hashCode(bWchar);
+            result = 31 * result + Arrays.hashCode(bWshort);
+            result = 31 * result + Arrays.hashCode(bWint);
+            result = 31 * result + Arrays.hashCode(bWlong);
+            result = 31 * result + Arrays.hashCode(bWfloat);
+            result = 31 * result + Arrays.hashCode(bWdouble);
+            return result;
+        }
+    }
+
+    @Test
+    public void testArrayRoundTrip() throws Exception {
+        ArrayContainer original = new ArrayContainer();
+        original.setBboolean(new boolean[]{true, false, true});
+        original.setbWboolean(new Boolean[]{true, false, true});
+        
+        original.setBbyte(new byte[]{0x00, 0x01, 0x02});
+        original.setbWbyte(new Byte[]{0x00, 0x01, 0x02});
+        
+        original.setBchar(new char[]{'a','b', 'c'});
+        original.setbWchar(new Character[]{'a','b', 'c'});
+
+        original.setBshort(new short[]{0, 1, 2});
+        original.setbWshort(new Short[]{0, 1, 2});
+
+        original.setBint(new int[]{0, 1, 2});
+        original.setbWint(new Integer[]{0, 1, 2});
+
+        original.setBlong(new long[]{0L, 1L, 2L});
+        original.setbWlong(new Long[]{0L, 1L, 2L});
+
+        original.setBfloat(new float[]{0f, 1f, 2f});
+        original.setbWfloat(new Float[]{0f, 1f, 2f});
+
+        original.setBdouble(new double[]{0d, 1d, 2d});
+        original.setbWdouble(new Double[]{0d, 1d, 2d});
+
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final ArrayContainer deserialized = jsonb.fromJson(jsonb.toJson(original), ArrayContainer.class);
+            assertEquals(original, deserialized);
+        }
+
     }
 
     @Test

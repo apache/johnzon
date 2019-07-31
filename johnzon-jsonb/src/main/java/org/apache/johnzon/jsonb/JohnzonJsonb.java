@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.core.util.ArrayUtil;
+import org.apache.johnzon.mapper.util.ArrayUtil;
 import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
 import org.apache.johnzon.jsonb.extension.JsonValueReader;
 import org.apache.johnzon.jsonb.extension.JsonValueWriter;
@@ -39,7 +39,6 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
@@ -258,43 +257,43 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             final int length = ArrayUtil.getArrayLength(object);
             array = new Integer[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getInt(object, i);
+                array[i] = ((int[])object)[i];
             }
         } else if (double.class == componentType) {
             final int length = ArrayUtil.getArrayLength(object);
-            array = new Integer[length];
+            array = new Double[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getDouble(object, i);
+                array[i] = ((double[])object)[i];
             }
         } else if (byte.class == componentType) {
             final int length = ArrayUtil.getArrayLength(object);
-            array = new Integer[length];
+            array = new Byte[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getByte(object, i);
+                array[i] = ((byte[])object)[i];
             }
         } else if (char.class == componentType) {
             final int length = ArrayUtil.getArrayLength(object);
-            array = new Integer[length];
+            array = new Character[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getChar(object, i);
+                array[i] = ((char[])object)[i];
             }
         } else if (float.class == componentType) {
             final int length = ArrayUtil.getArrayLength(object);
-            array = new Integer[length];
+            array = new Float[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getFloat(object, i);
+                array[i] = ((float[])object)[i];
             }
         } else if (long.class == componentType) {
             final int length = ArrayUtil.getArrayLength(object);
-            array = new Integer[length];
+            array = new Long[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getLong(object, i);
+                array[i] = ((long[])object)[i];
             }
         } else if (short.class == componentType) {
             final int length = ArrayUtil.getArrayLength(object);
-            array = new Integer[length];
+            array = new Short[length];
             for (int i = 0; i < length; i++) {
-                array[i] = Array.getShort(object, i);
+                array[i] = ((short[])object)[i];
             }
         } else {
             array = (Object[]) object;

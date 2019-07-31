@@ -14,21 +14,66 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.core.util;
+package org.apache.johnzon.mapper.util;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Type;
 import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-/**
- * Various Array utils which do not exist in Java or are performing badly.
- *
- * NOTE: we keep this here and in Mapper duplicated to not have Mapper depending on johnzon-core!
+
+/*
+The following types will be handled
+boolean
+byte
+char
+short
+int
+long
+float
+double
+Object
  */
 public final class ArrayUtil {
     private ArrayUtil() {
         // utility class ct
+    }
+
+    /**
+     * @return the length of the array given.
+     * @throws IllegalArgumentException if the given object is not an array
+     */
+    public static int getArrayLength(Object array) {
+        // Note: all types of multidimensional arrays are instanceof Object[]
+        if (array instanceof Object[]) {
+            return ((Object[]) array).length;
+        }
+        if (array instanceof boolean[]) {
+            return ((boolean[])array).length;
+        }
+        if (array instanceof byte[]) {
+            return ((byte[])array).length;
+        }
+        if (array instanceof char[]) {
+            return ((char[]) array).length;
+        }
+        if (array instanceof short[]) {
+            return ((short[]) array).length;
+        }
+        if (array instanceof int[]) {
+            return ((int[]) array).length;
+        }
+        if (array instanceof long[]) {
+            return ((long[]) array).length;
+        }
+        if (array instanceof float[]) {
+            return ((float[]) array).length;
+        }
+        if (array instanceof double[]) {
+            return ((double[]) array).length;
+        }
+
+        throw new IllegalArgumentException("This is not an array! " + array);
     }
 
 
@@ -130,77 +175,64 @@ public final class ArrayUtil {
         };
     }
 
-    public static List<Object> asList(final Object[] vals) {
-        return new AbstractList<Object>() {
-            @Override
-            public Object get(int index) {
-                return vals[index];
-            }
-
-            @Override
-            public int size() {
-                return vals.length;
-            }
-        };
-    }
 
     /**
-     * Take the given array object and fill a fresh Collection with it.
-     * @throws IllegalArgumentException if the given value this is not an array.
+     * @return the array type of a given class
      */
-    public static Collection<Object> newCollection(Object array) {
-
-        // Note: all types of multidimensional arrays are instanceof Object[]
-        if (array instanceof Object[]) {
-            return asList(((Object[])array));
+    public static Type getArrayTypeFor(Class<?> clazz) {
+        // optimisation for raw types
+        if (boolean.class == clazz) {
+            return boolean[].class;
+        }
+        if (byte.class == clazz) {
+            return byte[].class;
+        }
+        if (char.class == clazz) {
+            return char[].class;
+        }
+        if (short.class == clazz) {
+            return short[].class;
+        }
+        if (int.class == clazz) {
+            return int[].class;
+        }
+        if (long.class == clazz) {
+            return long[].class;
+        }
+        if (float.class == clazz) {
+            return float[].class;
+        }
+        if (double.class == clazz) {
+            return double[].class;
         }
 
-        ArrayList<Object> collection;
-
-        if (array instanceof boolean[]) {
-            collection = new ArrayList<>(((boolean[])array).length);
-            for (boolean o : ((boolean[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof byte[]) {
-            collection = new ArrayList<>(((byte[])array).length);
-            for (byte o : ((byte[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof char[]) {
-            collection = new ArrayList<>(((char[])array).length);
-            for (char o : ((char[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof short[]) {
-            collection = new ArrayList<>(((short[])array).length);
-            for (short o : ((short[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof int[]) {
-            collection = new ArrayList<>(((int[])array).length);
-            for (int o : ((int[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof long[]) {
-            collection = new ArrayList<>(((long[])array).length);
-            for (long o : ((long[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof float[]) {
-            collection = new ArrayList<>(((float[])array).length);
-            for (float o : ((float[]) array)) {
-                collection.add(o);
-            }
-        } else if (array instanceof double[]) {
-            collection = new ArrayList<>(((double[])array).length);
-            for (double o : ((double[]) array)) {
-                collection.add(o);
-            }
-        } else {
-            throw new IllegalArgumentException("This is not an array! " + array);
+        // and wrapper types
+        if (Boolean.class == clazz) {
+            return Boolean[].class;
+        }
+        if (Byte.class == clazz) {
+            return Byte[].class;
+        }
+        if (Character.class == clazz) {
+            return Character[].class;
+        }
+        if (Short.class == clazz) {
+            return Short[].class;
+        }
+        if (Integer.class == clazz) {
+            return Integer[].class;
+        }
+        if (Long.class == clazz) {
+            return Long[].class;
+        }
+        if (Float.class == clazz) {
+            return Float[].class;
+        }
+        if (Double.class == clazz) {
+            return Double[].class;
         }
 
-        return collection;
+        // some other class arrays
+        return Array.newInstance(clazz, 0).getClass();
     }
 }

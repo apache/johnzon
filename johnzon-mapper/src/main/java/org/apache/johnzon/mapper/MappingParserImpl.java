@@ -658,6 +658,171 @@ public class MappingParserImpl implements MappingParser {
 
     private Object buildArrayWithComponentType(final JsonArray jsonArray, final Class<?> componentType, final Adapter itemConverter,
                                                final JsonPointerTracker jsonPointer, final Type rootType) {
+
+        if (boolean.class == componentType) {
+            boolean[] array = new boolean[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (boolean) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (byte.class == componentType) {
+            byte[] array = new byte[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (byte) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (char.class == componentType) {
+            char[] array = new char[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (char) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (short.class == componentType) {
+            short[] array = new short[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (short) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (int.class == componentType) {
+            int[] array = new int[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (int) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (long.class == componentType) {
+            long[] array = new long[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (long) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (float.class == componentType) {
+            float[] array = new float[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (float) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (double.class == componentType) {
+            double[] array = new double[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (double) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+
+        // wrapper types
+        if (Boolean.class == componentType) {
+            Boolean[] array = new Boolean[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Boolean) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Byte.class == componentType) {
+            Byte[] array = new Byte[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Byte) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Character.class == componentType) {
+            Character[] array = new Character[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Character) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Short.class == componentType) {
+            Short[] array = new Short[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Short) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Integer.class == componentType) {
+            Integer[] array = new Integer[jsonArray.size()];
+            Integer i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Integer) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Long.class == componentType) {
+            Long[] array = new Long[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Long) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Float.class == componentType) {
+            Float[] array = new Float[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Float) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+        if (Double.class == componentType) {
+            Double[] array = new Double[jsonArray.size()];
+            int i = 0;
+            for (final JsonValue value : jsonArray) {
+                array[i] = (Double) toObject(null, value, componentType, itemConverter,
+                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                i++;
+            }
+            return array;
+        }
+
+        // for all the rest we have to rely on reflection :(
         final Object array = Array.newInstance(componentType, jsonArray.size());
         int i = 0;
         for (final JsonValue value : jsonArray) {

@@ -24,7 +24,6 @@ import javax.json.JsonException;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -225,11 +224,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         } else if (value instanceof Collection) {
             add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider).build());
         } else if (value.getClass().isArray()) {
-            final int length = ArrayUtil.getArrayLength(value);
-            final Collection<Object> collection = new ArrayList<>(length);
-            for (int i = 0; i < length; i++) {
-                collection.add(Array.get(value, i));
-            }
+            final Collection<Object> collection = ArrayUtil.newCollection(value);
             add(new JsonArrayBuilderImpl(collection, bufferProvider).build());
         } else {
             throw new JsonException("Illegal JSON type! type=" + value.getClass());

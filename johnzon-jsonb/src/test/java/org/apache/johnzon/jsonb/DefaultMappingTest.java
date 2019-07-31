@@ -523,6 +523,10 @@ public class DefaultMappingTest {
 
         assertEquals("[1,2,3]", JSONB.toJson(byteArray));
 
+        byte[] rbyteArray = {1, 2, 3};
+
+        assertEquals("[1,2,3]", JSONB.toJson(rbyteArray));
+
         Integer[] integerArray = {1, 2, 3};
 
         assertEquals("[1,2,3]", JSONB.toJson(integerArray));

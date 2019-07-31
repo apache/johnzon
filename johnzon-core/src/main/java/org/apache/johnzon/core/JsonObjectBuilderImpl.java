@@ -24,14 +24,14 @@ import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
 import java.io.Serializable;
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import org.apache.johnzon.core.util.ArrayUtil;
 
 class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -85,11 +85,7 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         } else if (value instanceof Collection) {
             add(name, new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider).build());
         } else if (value.getClass().isArray()) {
-            final int length = Array.getLength(value);
-            final Collection<Object> collection = new ArrayList<>(length);
-            for (int i = 0; i < length; i++) {
-                collection.add(Array.get(value, i));
-            }
+            final Collection<Object> collection = ArrayUtil.newCollection(value);
             add(name, new JsonArrayBuilderImpl(collection, bufferProvider).build());
         } else {
             throw new JsonException("Illegal JSON type! name=" + name + " type=" + value.getClass());

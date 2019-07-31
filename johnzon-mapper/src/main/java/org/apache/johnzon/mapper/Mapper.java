@@ -29,7 +29,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -53,7 +52,7 @@ import javax.json.stream.JsonGeneratorFactory;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.core.util.ArrayUtil;
+import org.apache.johnzon.mapper.util.ArrayUtil;
 
 public class Mapper implements Closeable {
 
@@ -354,7 +353,8 @@ public class Mapper implements Closeable {
     }
 
     private Object mapArray(final Class<?> clazz, final JsonReader reader) {
-        return mapObject(Array.newInstance(clazz, 0).getClass(), reader);
+
+        return mapObject(ArrayUtil.getArrayTypeFor(clazz), reader);
     }
 
 
