@@ -132,6 +132,8 @@ public class MappingParserImpl implements MappingParser {
     }
 
     private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
+        final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
+
         if (JsonStructure.class == targetType || JsonObject.class == targetType || JsonValue.class == targetType) {
             return (T) jsonValue;
         }
@@ -185,13 +187,13 @@ public class MappingParserImpl implements MappingParser {
                         isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class))));
             }
         }
-        if (JsonValue.NULL.equals(jsonValue)) {
+        if (NULL == valueType) {
             return null;
         }
-        if (jsonValue.equals(JsonValue.TRUE) && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
+        if (TRUE == valueType && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.TRUE;
         }
-        if (jsonValue.equals(JsonValue.FALSE) && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
+        if (FALSE == valueType && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.FALSE;
         }
         throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);
@@ -309,6 +311,8 @@ public class MappingParserImpl implements MappingParser {
 
         for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
             final JsonValue jsonValue = object.get(setter.getKey());
+            final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
+
             final Mappings.Setter value = setter.getValue();
             if (JsonValue.class == value.paramType) {
                 setter.getValue().writer.write(t, jsonValue);
@@ -319,7 +323,7 @@ public class MappingParserImpl implements MappingParser {
             }
 
             final AccessMode.Writer setterMethod = value.writer;
-            if (JsonValue.NULL.equals(jsonValue)) { // forced
+            if (NULL == valueType) { // forced
                 setterMethod.write(t, null);
             } else {
                 Object existingInstance = null;
@@ -400,12 +404,14 @@ public class MappingParserImpl implements MappingParser {
     }
 
     private Object convertTo(final Adapter converter, final JsonValue jsonValue, JsonPointerTracker jsonPointer) {
+        final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
+
         final AdapterKey key = getAdapterKey(converter);
         if (JsonValue.class == key.getTo()) {
             return converter.to(jsonValue);
         }
 
-        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
+        if (JsonValue.ValueType.OBJECT == valueType) {
             if (JsonObject.class == key.getTo() || JsonStructure.class == key.getTo()) {
                 return converter.to(jsonValue.asJsonObject());
             }
@@ -425,7 +431,6 @@ public class MappingParserImpl implements MappingParser {
             return converter.to(param);
         }
 
-        final JsonValue.ValueType valueType = jsonValue.getValueType();
         if (NULL.equals(valueType)) {
             return null;
         }
@@ -503,15 +508,20 @@ public class MappingParserImpl implements MappingParser {
     private Object toObject(final Object baseInstance, final JsonValue jsonValue,
                             final Type type, final Adapter itemConverter, final JsonPointerTracker jsonPointer,
                             final Type rootType) {
-        if (jsonValue == null || JsonValue.NULL.equals(jsonValue)) {
+        if (jsonValue == null) {
+            return null;
+        }
+
+        JsonValue.ValueType valueType = jsonValue.getValueType();
+        if (JsonValue.ValueType.NULL == valueType) {
             return null;
         }
 
         if (type == Boolean.class || type == boolean.class) {
-            if (jsonValue.equals(JsonValue.TRUE)) {
+            if (JsonValue.ValueType.TRUE == valueType) {
                 return true;
             }
-            if (jsonValue.equals(JsonValue.FALSE)) {
+            if (JsonValue.ValueType.FALSE == valueType) {
                 return false;
             }
             throw new MapperException("Unable to parse " + jsonValue + " to boolean");
@@ -525,10 +535,10 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (Object.class == type) { // handling specific types here to keep exception in standard handling
-            if (jsonValue.equals(JsonValue.TRUE)) {
+            if (JsonValue.ValueType.TRUE == valueType) {
                 return true;
             }
-            if (jsonValue.equals(JsonValue.FALSE)) {
+            if (JsonValue.ValueType.FALSE == valueType) {
                 return false;
             }
             if (JsonNumber.class.isInstance(jsonValue)) {

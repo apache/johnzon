@@ -126,14 +126,14 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
     public boolean getBoolean(final String name, final boolean defaultValue) {
         final Object v = value(name, JsonValue.class);
         if (v != null) {
-            return JsonValue.TRUE.equals(v) || !JsonValue.FALSE.equals(v) && defaultValue;
+            return JsonValue.TRUE == v || JsonValue.FALSE != v && defaultValue;
         }
         return defaultValue;
     }
 
     @Override
     public boolean isNull(final String name) {
-        return JsonValue.NULL.equals(valueOrExcpetion(name, JsonValue.class));
+        return JsonValue.NULL == valueOrExcpetion(name, JsonValue.class);
     }
 
     @Override

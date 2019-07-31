@@ -434,7 +434,7 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
                 if (Boolean.class != type && boolean.class != type) {
                     throw new JsonbException("TRUE and FALSE json can't be casted to " + type);
                 }
-                return (T) Boolean.valueOf(JsonValue.TRUE.equals(json));
+                return (T) Boolean.valueOf(JsonValue.ValueType.TRUE == json.getValueType());
             case NUMBER:
                 if (!Class.class.isInstance(type) || !Number.class.isAssignableFrom(Class.class.cast(type))) {
                     throw new JsonbException("NUMBER json can't be casted to " + type);

@@ -121,9 +121,9 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
     public boolean getBoolean(final int index) {
         final JsonValue val = value(index, JsonValue.class);
 
-        if (JsonValue.TRUE.equals(val)) {
+        if (JsonValue.ValueType.TRUE == val.getValueType()) {
             return true;
-        } else if (JsonValue.FALSE.equals(val)) {
+        } else if (JsonValue.ValueType.FALSE == val.getValueType()) {
             return false;
         } else {
             throw new ClassCastException();
@@ -145,13 +145,13 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
             return defaultValue;
         }
 
-        final JsonValue val = get(index);
-        return JsonValue.TRUE.equals(val) || !JsonValue.FALSE.equals(val) && defaultValue;
+        ValueType valueType = get(index).getValueType();
+        return JsonValue.ValueType.TRUE == valueType || JsonValue.ValueType.FALSE != valueType && defaultValue;
     }
 
     @Override
     public boolean isNull(final int index) {
-        return JsonValue.NULL.equals(value(index, JsonValue.class));
+        return JsonValue.ValueType.NULL == value(index, JsonValue.class).getValueType();
     }
 
     @Override

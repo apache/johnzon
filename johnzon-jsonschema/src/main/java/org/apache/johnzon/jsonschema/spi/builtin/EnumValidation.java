@@ -54,7 +54,7 @@ public class EnumValidation implements ValidationExtension {
                 return Stream.empty();
             }
             final JsonValue value = extractor.apply(root);
-            if (value != null && !JsonValue.NULL.equals(value)) {
+            if (value != null && JsonValue.ValueType.NULL != value.getValueType()) {
                 return Stream.empty();
             }
             if (valid.contains(value)) {
