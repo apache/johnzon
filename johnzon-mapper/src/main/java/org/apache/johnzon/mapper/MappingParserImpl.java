@@ -69,6 +69,10 @@ import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static javax.json.JsonValue.ValueType.ARRAY;
@@ -667,7 +671,14 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (ParameterizedType.class.isInstance(type)) {
-            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(ParameterizedType.class.cast(type), rootType);
+            final ParameterizedType genericType = ParameterizedType.class.cast(type);
+            if (Stream.class == genericType.getRawType()) {
+                return Stream.of(1).flatMap(seed -> Collection.class.cast(buildArray(
+                        new JohnzonParameterizedType(List.class, genericType.getActualTypeArguments()),
+                        jsonArray, itemConverter, objectConverter, jsonPointer, rootType)).stream());
+            }
+
+            final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(genericType, rootType);
             if (mapping != null) {
                 return mapCollection(mapping, jsonArray, itemConverter, objectConverter, jsonPointer, rootType);
             }
@@ -675,6 +686,20 @@ public class MappingParserImpl implements MappingParser {
 
         if (Object.class == type) {
             return buildArray(ANY_LIST, jsonArray, null, null, jsonPointer, rootType);
+        }
+
+        // guess we don't want to map stream impls - keep it lazy since it is the only advantage to have streams there
+        if (IntStream.class == type) {
+            return Stream.of(1).flatMapToInt(seed -> IntStream.of(int[].class.cast(
+                    buildArray(int[].class, jsonArray, null, null, jsonPointer, rootType))));
+        }
+        if (LongStream.class == type) {
+            return Stream.of(1).flatMapToLong(seed -> LongStream.of(long[].class.cast(
+                    buildArray(long[].class, jsonArray, null, null, jsonPointer, rootType))));
+        }
+        if (DoubleStream.class == type) {
+            return Stream.of(1).flatMapToDouble(seed -> DoubleStream.of(double[].class.cast(
+                    buildArray(double[].class, jsonArray, null, null, jsonPointer, rootType))));
         }
 
         throw new UnsupportedOperationException("type " + type + " not supported");

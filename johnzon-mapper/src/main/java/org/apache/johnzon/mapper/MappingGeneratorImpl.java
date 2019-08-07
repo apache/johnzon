@@ -32,7 +32,9 @@ import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.stream.BaseStream;
 
 public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
@@ -385,33 +387,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
         if ((!dynamic && array) || (dynamic && type.isArray())) {
             writeArray(type, itemConverter, key, value, ignoredProperties, jsonPointer);
-        } else if ((!dynamic && collection) || (dynamic && Collection.class.isAssignableFrom(type))) {
-            generator.writeStartArray(key);
-            int i = 0;
-            for (final Object o : Collection.class.cast(value)) {
-                String valJsonPointer = jsonPointers.get(o);
-                if (valJsonPointer != null) {
-                    // write JsonPointer instead of the original object
-                    writePrimitives(valJsonPointer);
-                } else {
-                    ObjectConverter.Writer objectConverterToUse = objectConverter;
-                    if (o != null && objectConverterToUse == null) {
-                        objectConverterToUse = config.findObjectConverterWriter(o.getClass());
-                    }
-
-                    if (objectConverterToUse != null) {
-                        final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
-                                generator::writeStartObject, generator::writeEnd, null);
-                        objectConverterToUse.writeJson(o, dynamicMappingGenerator);
-                        dynamicMappingGenerator.flushIfNeeded();
-                    } else {
-                        writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties,
-                                isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
-                    }
-                }
-                i++;
-            }
-            generator.writeEnd();
+        } else if ((!dynamic && collection) || (dynamic && Iterable.class.isAssignableFrom(type))) {
+            writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
+                    Iterable.class.cast(value).iterator());
         } else if ((!dynamic && map) || (dynamic && Map.class.isAssignableFrom(type))) {
             generator.writeStartObject(key);
             writeMapBody((Map<?, ?>) value, itemConverter);
@@ -425,6 +403,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
             } else {
                 writePrimitives(key, type, value, generator);
             }
+        } else if (BaseStream.class.isAssignableFrom(type)) {
+            writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
+                    BaseStream.class.cast(value).iterator());
+        } else if (Iterator.class.isAssignableFrom(type)) {
+            writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
+                    Iterator.class.cast(value));
         } else {
             if (objectConverter != null) {
                 final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
@@ -463,6 +447,41 @@ public class MappingGeneratorImpl implements MappingGenerator {
             doWriteObjectBody(value, ignoredProperties, jsonPointer, generator);
             generator.writeEnd();
         }
+    }
+
+    private void writeIterator(final Adapter itemConverter, final String key,
+                               final ObjectConverter.Writer objectConverter,
+                               final Collection<String> ignoredProperties,
+                               final JsonPointerTracker jsonPointer,
+                               final JsonGenerator generator,
+                               final Iterator<?> iterator) {
+        int i = 0;
+        generator.writeStartArray(key);
+        while (iterator.hasNext()) {
+            final Object o = iterator.next();
+            String valJsonPointer = jsonPointers.get(o);
+            if (valJsonPointer != null) {
+                // write JsonPointer instead of the original object
+                writePrimitives(valJsonPointer);
+            } else {
+                ObjectConverter.Writer objectConverterToUse = objectConverter;
+                if (o != null && objectConverterToUse == null) {
+                    objectConverterToUse = config.findObjectConverterWriter(o.getClass());
+                }
+
+                if (objectConverterToUse != null) {
+                    final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
+                            generator::writeStartObject, generator::writeEnd, null);
+                    objectConverterToUse.writeJson(o, dynamicMappingGenerator);
+                    dynamicMappingGenerator.flushIfNeeded();
+                } else {
+                    writeItem(itemConverter != null ? itemConverter.from(o) : o, ignoredProperties,
+                            isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null);
+                }
+            }
+            i++;
+        }
+        generator.writeEnd();
     }
 
     /**
