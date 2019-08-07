@@ -139,11 +139,6 @@ public class Mappings {
                       final int version, final String[] ignoreNested) {
             this.reader = reader;
             this.version = version;
-            this.dynamic = dynamic;
-            this.array = array;
-            this.collection = collection;
-            this.primitive = primitive;
-            this.ignoreNested = ignoreNested == null || ignoreNested.length == 0 ? null : new HashSet<>(asList(ignoreNested));
 
             Adapter theConverter = null;
             Adapter theItemConverter = null;
@@ -173,8 +168,21 @@ public class Mappings {
             this.converter = theConverter;
             this.itemConverter = theItemConverter;
             this.objectConverter = theObjectConverter;
+            this.ignoreNested = ignoreNested == null || ignoreNested.length == 0 ? null : new HashSet<>(asList(ignoreNested));
 
-            this.map = map && this.converter == null;
+            if (converter == null) {
+                this.dynamic = dynamic;
+                this.array = array;
+                this.collection = collection;
+                this.primitive = primitive;
+                this.map = map;
+            } else { // todo: likely find from/to types from the adapter and adjust these meta accordingly
+                this.dynamic = true;
+                this.array = array;
+                this.collection = collection;
+                this.primitive = primitive;
+                this.map = false;
+            }
         }
 
         @Override

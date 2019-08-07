@@ -127,7 +127,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
-            if(writePrimitives(object)) {
+            if (writePrimitives(object)) {
                 return;
             }
 
@@ -383,9 +383,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
         if (config.getSerializeValueFilter().shouldIgnore(key, value)) {
             return;
         }
-        if (array || (dynamic && type.isArray())) {
+        if ((!dynamic && array) || (dynamic && type.isArray())) {
             writeArray(type, itemConverter, key, value, ignoredProperties, jsonPointer);
-        } else if (collection || (dynamic && Collection.class.isAssignableFrom(type))) {
+        } else if ((!dynamic && collection) || (dynamic && Collection.class.isAssignableFrom(type))) {
             generator.writeStartArray(key);
             int i = 0;
             for (final Object o : Collection.class.cast(value)) {
@@ -412,11 +412,11 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 i++;
             }
             generator.writeEnd();
-        } else if (map || (dynamic && Map.class.isAssignableFrom(type))) {
+        } else if ((!dynamic && map) || (dynamic && Map.class.isAssignableFrom(type))) {
             generator.writeStartObject(key);
             writeMapBody((Map<?, ?>) value, itemConverter);
             generator.writeEnd();
-        } else if (primitive || (dynamic && Mappings.isPrimitive(type))) {
+        } else if ((!dynamic && primitive) || (dynamic && Mappings.isPrimitive(type))) {
             if (objectConverter != null) {
                 final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
                         () -> this.generator.writeStartObject(key), this.generator::writeEnd, key);
