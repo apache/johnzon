@@ -24,6 +24,7 @@ import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
+import org.apache.johnzon.mapper.number.Validator;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import javax.json.JsonArray;
@@ -140,8 +141,17 @@ public class MappingParserImpl implements MappingParser {
         if (JsonObject.class.isInstance(jsonValue)) {
             return (T) buildObject(targetType, JsonObject.class.cast(jsonValue), applyObjectConverter, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null);
         }
-        if (JsonString.class.isInstance(jsonValue) && (targetType == String.class || targetType == Object.class)) {
-            return (T) JsonString.class.cast(jsonValue).getString();
+        if (JsonString.class.isInstance(jsonValue)) {
+            if ((targetType == String.class || targetType == Object.class)) {
+                return (T) JsonString.class.cast(jsonValue).getString();
+            }
+            if (targetType == Character.class || targetType == char.class) {
+                final CharSequence string = JsonString.class.cast(jsonValue).getChars();
+                if (string.length() == 1) {
+                    return (T) Character.valueOf(string.charAt(0));
+                }
+                throw new IllegalArgumentException("Invalid Character binding"); // don't log the value (pwd case)
+            }
         }
         if (JsonNumber.class.isInstance(jsonValue)) {
             final JsonNumber number = JsonNumber.class.cast(jsonValue);
@@ -153,6 +163,17 @@ public class MappingParserImpl implements MappingParser {
             }
             if (targetType == double.class || targetType == Double.class || targetType == Object.class) {
                 return (T) Double.valueOf(number.doubleValue());
+            }
+            if (targetType == float.class || targetType == Float.class) {
+                return (T) Float.valueOf((float) number.doubleValue());
+            }
+            if (targetType == byte.class || targetType == Byte.class) {
+                final int intValue = number.intValue();
+                Validator.validateByte(intValue);
+                return (T) Byte.valueOf((byte) intValue);
+            }
+            if (targetType == short.class || targetType == Short.class) {
+                return (T) Short.valueOf((short) number.intValue());
             }
             if (targetType == BigDecimal.class) {
                 return (T) number.bigDecimalValue();
@@ -607,14 +628,7 @@ public class MappingParserImpl implements MappingParser {
             }
 
             if (type == Byte.class || type == byte.class) {
-
-                // bytes have a special handling as they are often used
-                // to transport binary. So we have to pass on the full 8 bit.
-                // TODO: ATTENTION: this is only an intermediate solution until JOHNZON-177
-                // resp https://github.com/eclipse-ee4j/jsonb-api/issues/82 is properly specced
-                if (intValue < -128 || intValue > 255) {
-                    throw new java.lang.ArithmeticException("Overflow");
-                }
+                Validator.validateByte(intValue);
                 return (byte) intValue;
             }
 
