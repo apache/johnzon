@@ -1067,10 +1067,11 @@ public class DefaultMappingTest {
         assertEquals("{\"aField\":\"aField\",\"aa\":\"aa\",\"bField\":\"bField\",\"bb\":\"bb\",\"cField\":\"cField\",\"cc\":\"cc\"}",
             JSONB.toJson(attributesOrderingWithInheritance));
 
+        // important, see OrderTest#deserializationRespectsOrderToo
         AttributesOrderingWithCounterClass attributesOrderingWithCounterClass = JSONB.fromJson("{\"second\":\"a\",\"third\":\"b\",\"first\":\"c\"}", AttributesOrderingWithCounterClass.class);
-        assertEquals("a1", attributesOrderingWithCounterClass.second);
-        assertEquals("b2", attributesOrderingWithCounterClass.third);
-        assertEquals("c0", attributesOrderingWithCounterClass.first);
+        assertEquals("a0", attributesOrderingWithCounterClass.second);
+        assertEquals("b1", attributesOrderingWithCounterClass.third);
+        assertEquals("c2", attributesOrderingWithCounterClass.first);
     }
 
     public static void toJsonNullValues() {

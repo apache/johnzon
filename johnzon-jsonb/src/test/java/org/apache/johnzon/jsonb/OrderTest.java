@@ -21,21 +21,8 @@ package org.apache.johnzon.jsonb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.Type;
-import java.util.LinkedList;
-import java.util.List;
-
 import javax.json.bind.annotation.JsonbPropertyOrder;
-import javax.json.bind.annotation.JsonbTypeDeserializer;
-import javax.json.bind.annotation.JsonbTypeSerializer;
-import javax.json.bind.serializer.DeserializationContext;
-import javax.json.bind.serializer.JsonbDeserializer;
-import javax.json.bind.serializer.JsonbSerializer;
-import javax.json.bind.serializer.SerializationContext;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParser;
 
-import org.apache.johnzon.jsonb.model.Holder;
 import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,147 +38,96 @@ public class OrderTest {
                 "\\{\\s*\"third\"\\s*:\\s*\"Third\"\\s*,\\s*\"fourth\"\\s*:\\s*\"Fourth\".*}"));
     }
 
-    @Test
-    public void typeSerializer() {
-        final HolderHolder container = new HolderHolder();
-        final StringHolder instance = new StringHolder();
-        instance.setInstance("Test String");
-        container.setInstance(instance);
+    @Test // TODO: not sure it is good to respect json and not mapping, we can challenge the spec on it
+    public void deserializationRespectsOrderToo() {
+        final String json = this.jsonb.toJson(new PartialOrder() {{ setStringInstance("Test String"); }});
+        assertEquals("{\"longInstance\":0,\"intInstance\":0,\"stringInstance\":\"Test String\",\"anIntInstance\":0,\"anotherIntInstance\":0,\"yetAnotherIntInstance\":0}", json);
+        assertTrue(json, json.contains("anotherIntInstance"));
+        assertTrue(json, json.contains("anIntInstance"));
+        assertTrue(json, json.contains("yetAnotherIntInstance"));
 
-        final String json = jsonb.toJson(container);
-        assertTrue(json, json.matches(
-                "\\{\\s*\"instance\"\\s*:\\s*\\{\\s*\"instance\"\\s*:\\s*\"Test String Serialized\"\\s*}\\s*}"));
-
-        final HolderHolder unmarshalledObject = jsonb.fromJson("{ \"instance\" : { \"instance\" : \"Test String\" } }", HolderHolder.class);
-        assertEquals("Test String Deserialized", unmarshalledObject.getInstance().getInstance());
+        final PartialOrder unmarshalledObject = jsonb.fromJson(
+                "{ \"anIntInstance\" : 100, \"yetAnotherIntInstance\":100, \"anotherIntInstance\": 100, " +
+                        "\"intInstance\" : 1, \"stringInstance\" : \"Test String\", \"longInstance\" : 0 }",
+                PartialOrder.class);
+        assertEquals(3, unmarshalledObject.getIntInstance());
+        assertEquals(100, unmarshalledObject.getAnotherIntInstance());
+        assertEquals(100, unmarshalledObject.getYetAnotherIntInstance());
+        assertEquals(100, unmarshalledObject.getAnIntInstance());
     }
 
-    @Test
-    public void arrayTypes() {
-        final ArrayHolder container = new ArrayHolder();
-        final StringHolder instance1 = new StringHolder();
-        instance1.setInstance("Test String 1");
-        final StringHolder instance2 = new StringHolder();
-        instance2.setInstance("Test String 2");
-        container.setInstance(new StringHolder[] { instance1, instance2 });
+    @JsonbPropertyOrder({ "longInstance", "intInstance", "stringInstance" })
+    public static class PartialOrder {
+        private int intInstance;
 
-        final String json = jsonb.toJson(container);
-        assertEquals("{\"instance\":[{\"instance\":\"Test String 1\"},{\"instance\":\"Test String 2\"}]}", json);
+        private String stringInstance;
 
-        final ArrayHolder unmarshalledObject = jsonb.fromJson(
-                "{ \"instance\" : [ { \"instance\" : \"Test String 1\" }, { \"instance\" : \"Test String 2\" } ] }",
-                ArrayHolder.class);
-        assertEquals("Test String 1", unmarshalledObject.getInstance()[0].getInstance());
-    }
+        private long longInstance;
 
-    public static class StringHolder implements Holder<String> {
-        private String instance = "Test";
+        private int anIntInstance;
 
-        public String getInstance() {
-            return instance;
+        private int anotherIntInstance;
+
+        private int yetAnotherIntInstance;
+
+        public int getAnIntInstance() {
+            intInstance -= 10;
+            return anIntInstance;
         }
 
-        public void setInstance(final String instance) {
-            this.instance = instance;
+        public void setAnIntInstance(int anIntInstance) {
+            intInstance -= 30;
+            this.anIntInstance = anIntInstance;
         }
-    }
 
-    public static class SimpleContainerDeserializer implements JsonbDeserializer<StringHolder> {
-        @Override
-        public StringHolder deserialize(final JsonParser parser, final DeserializationContext ctx, final Type type) {
-            final StringHolder container = new StringHolder();
+        public int getAnotherIntInstance() {
+            intInstance -= 100;
+            return anotherIntInstance;
+        }
 
-            while (parser.hasNext()) {
-                final JsonParser.Event event = parser.next();
-                if (event == JsonParser.Event.START_OBJECT) {
-                    continue;
-                }
-                if (event == JsonParser.Event.END_OBJECT) {
-                    break;
-                }
-                if (event == JsonParser.Event.KEY_NAME && "instance".equals(parser.getString())) {
-                    container.setInstance(ctx.deserialize(String.class, parser) + " Deserialized");
-                }
+        public void setAnotherIntInstance(int anotherIntInstance) {
+            intInstance -= 300;
+            this.anotherIntInstance = anotherIntInstance;
+        }
+
+        public int getYetAnotherIntInstance() {
+            intInstance -= 1000;
+            return yetAnotherIntInstance;
+        }
+
+        public void setYetAnotherIntInstance(int yetAnotherIntInstance) {
+            intInstance -= 3000;
+            this.yetAnotherIntInstance = yetAnotherIntInstance;
+        }
+
+        public String getStringInstance() {
+            return stringInstance;
+        }
+
+        public void setStringInstance(String stringInstance) {
+            this.stringInstance = stringInstance;
+            if (intInstance == 1) {
+                intInstance = 2;
             }
-
-            return container;
-        }
-    }
-
-    public static class SimpleContainerSerializer implements JsonbSerializer<StringHolder> {
-        @Override
-        public void serialize(final StringHolder container, final JsonGenerator generator,
-                              final SerializationContext ctx) {
-            generator.writeStartObject();
-            ctx.serialize("instance", container.getInstance() + " Serialized", generator);
-            generator.writeEnd();
-        }
-    }
-
-    public static class HolderHolder implements Holder<StringHolder> {
-        @JsonbTypeSerializer(SimpleContainerSerializer.class)
-        @JsonbTypeDeserializer(SimpleContainerDeserializer.class)
-        private StringHolder instance;
-
-        @Override
-        public StringHolder getInstance() {
-            return instance;
         }
 
-        @Override
-        public void setInstance(StringHolder instance) {
-            this.instance = instance;
-        }
-    }
-
-    public static class ArrayHolder implements Holder<StringHolder[]> {
-        @JsonbTypeSerializer(StringArraySerializer.class)
-        @JsonbTypeDeserializer(StringArrayDeserializer.class)
-        private StringHolder[] instance;
-
-        @Override
-        public StringHolder[] getInstance() {
-            return instance;
+        public int getIntInstance() {
+            return intInstance;
         }
 
-        @Override
-        public void setInstance(final StringHolder[] instance) {
-            this.instance = instance;
+        public void setIntInstance(int intInstance) {
+            this.intInstance = intInstance;
         }
-    }
 
-    public static class StringArraySerializer implements JsonbSerializer<StringHolder[]> {
-        @Override
-        public void serialize(final StringHolder[] containers,
-                              final JsonGenerator jsonGenerator,
-                              final SerializationContext serializationContext) {
-            jsonGenerator.writeStartArray();
-            for (final StringHolder container : containers) {
-                serializationContext.serialize(container, jsonGenerator);
+        public long getLongInstance() {
+            return longInstance;
+        }
+
+        public void setLongInstance(long longInstance) {
+            this.longInstance = longInstance;
+            if (intInstance == 2) {
+                intInstance = 3;
             }
-            jsonGenerator.writeEnd();
-        }
-    }
-
-    public static class StringArrayDeserializer implements JsonbDeserializer<StringHolder[]> {
-        @Override
-        public StringHolder[] deserialize(final JsonParser jsonParser,
-                                          final DeserializationContext deserializationContext,
-                                          final Type type) {
-            final List<StringHolder> containers = new LinkedList<>();
-
-            while (jsonParser.hasNext()) {
-                JsonParser.Event event = jsonParser.next();
-                if (event == JsonParser.Event.START_OBJECT) {
-                    containers.add(deserializationContext.deserialize(
-                            new StringHolder() {}.getClass().getGenericSuperclass(), jsonParser));
-                }
-                if (event == JsonParser.Event.END_OBJECT) {
-                    break;
-                }
-            }
-
-            return containers.toArray(new StringHolder[0]);
         }
     }
 

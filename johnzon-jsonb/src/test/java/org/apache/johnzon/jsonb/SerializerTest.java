@@ -25,6 +25,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -41,9 +42,48 @@ import javax.json.bind.serializer.SerializationContext;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
 
+import org.apache.johnzon.jsonb.model.Holder;
+import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class SerializerTest {
+    @Rule
+    public final JsonbRule jsonb = new JsonbRule();
+
+    @Test
+    public void typeSerializer() {
+        final HolderHolder container = new HolderHolder();
+        final StringHolder instance = new StringHolder();
+        instance.setInstance("Test String");
+        container.setInstance(instance);
+
+        final String json = jsonb.toJson(container);
+        assertTrue(json, json.matches(
+                "\\{\\s*\"instance\"\\s*:\\s*\\{\\s*\"instance\"\\s*:\\s*\"Test String Serialized\"\\s*}\\s*}"));
+
+        final HolderHolder unmarshalledObject = jsonb.fromJson("{ \"instance\" : { \"instance\" : \"Test String\" } }", HolderHolder.class);
+        assertEquals("Test String Deserialized", unmarshalledObject.getInstance().getInstance());
+    }
+
+    @Test
+    public void arrayTypes() {
+        final ArrayHolder container = new ArrayHolder();
+        final StringHolder instance1 = new StringHolder();
+        instance1.setInstance("Test String 1");
+        final StringHolder instance2 = new StringHolder();
+        instance2.setInstance("Test String 2");
+        container.setInstance(new StringHolder[] { instance1, instance2 });
+
+        final String json = jsonb.toJson(container);
+        assertEquals("{\"instance\":[{\"instance\":\"Test String 1\"},{\"instance\":\"Test String 2\"}]}", json);
+
+        final ArrayHolder unmarshalledObject = jsonb.fromJson(
+                "{ \"instance\" : [ { \"instance\" : \"Test String 1\" }, { \"instance\" : \"Test String 2\" } ] }",
+                ArrayHolder.class);
+        assertEquals("Test String 1", unmarshalledObject.getInstance()[0].getInstance());
+    }
+
 
     @Test
     public void roundTrip() {
@@ -131,6 +171,116 @@ public class SerializerTest {
         jsonb.close();
     }
 
+    public static class StringHolder implements Holder<String> {
+        private String instance = "Test";
+
+        public String getInstance() {
+            return instance;
+        }
+
+        public void setInstance(final String instance) {
+            this.instance = instance;
+        }
+    }
+
+    public static class SimpleContainerDeserializer implements JsonbDeserializer<StringHolder> {
+        @Override
+        public StringHolder deserialize(final JsonParser parser, final DeserializationContext ctx, final Type type) {
+            final StringHolder container = new StringHolder();
+
+            while (parser.hasNext()) {
+                final JsonParser.Event event = parser.next();
+                if (event == JsonParser.Event.START_OBJECT) {
+                    continue;
+                }
+                if (event == JsonParser.Event.END_OBJECT) {
+                    break;
+                }
+                if (event == JsonParser.Event.KEY_NAME && "instance".equals(parser.getString())) {
+                    container.setInstance(ctx.deserialize(String.class, parser) + " Deserialized");
+                }
+            }
+
+            return container;
+        }
+    }
+
+    public static class SimpleContainerSerializer implements JsonbSerializer<StringHolder> {
+        @Override
+        public void serialize(final StringHolder container, final JsonGenerator generator,
+                              final SerializationContext ctx) {
+            generator.writeStartObject();
+            ctx.serialize("instance", container.getInstance() + " Serialized", generator);
+            generator.writeEnd();
+        }
+    }
+
+    public static class HolderHolder implements Holder<StringHolder> {
+        @JsonbTypeSerializer(SimpleContainerSerializer.class)
+        @JsonbTypeDeserializer(SimpleContainerDeserializer.class)
+        private StringHolder instance;
+
+        @Override
+        public StringHolder getInstance() {
+            return instance;
+        }
+
+        @Override
+        public void setInstance(StringHolder instance) {
+            this.instance = instance;
+        }
+    }
+
+    public static class ArrayHolder implements Holder<StringHolder[]> {
+        @JsonbTypeSerializer(StringArraySerializer.class)
+        @JsonbTypeDeserializer(StringArrayDeserializer.class)
+        private StringHolder[] instance;
+
+        @Override
+        public StringHolder[] getInstance() {
+            return instance;
+        }
+
+        @Override
+        public void setInstance(final StringHolder[] instance) {
+            this.instance = instance;
+        }
+    }
+
+    public static class StringArraySerializer implements JsonbSerializer<StringHolder[]> {
+        @Override
+        public void serialize(final StringHolder[] containers,
+                              final JsonGenerator jsonGenerator,
+                              final SerializationContext serializationContext) {
+            jsonGenerator.writeStartArray();
+            for (final StringHolder container : containers) {
+                serializationContext.serialize(container, jsonGenerator);
+            }
+            jsonGenerator.writeEnd();
+        }
+    }
+
+    public static class StringArrayDeserializer implements JsonbDeserializer<StringHolder[]> {
+        @Override
+        public StringHolder[] deserialize(final JsonParser jsonParser,
+                                          final DeserializationContext deserializationContext,
+                                          final Type type) {
+            final List<StringHolder> containers = new LinkedList<>();
+
+            while (jsonParser.hasNext()) {
+                JsonParser.Event event = jsonParser.next();
+                if (event == JsonParser.Event.START_OBJECT) {
+                    containers.add(deserializationContext.deserialize(
+                            new StringHolder() {}.getClass().getGenericSuperclass(), jsonParser));
+                }
+                if (event == JsonParser.Event.END_OBJECT) {
+                    break;
+                }
+            }
+
+            return containers.toArray(new StringHolder[0]);
+        }
+    }
 
     public static class Foo {
         public String name;

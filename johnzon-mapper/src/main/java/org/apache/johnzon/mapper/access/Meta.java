@@ -27,7 +27,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 public final class Meta {
@@ -81,11 +83,23 @@ public final class Meta {
     }
 
     public static <T extends Annotation> T getAnnotation(final Class<?> clazz, final Class<T> api) {
-        final T annotation = clazz.getAnnotation(api);
-        if (annotation != null) {
-            return annotation;
+        Class<?> current = clazz;
+        final Set<Class<?>> visited = new HashSet<>();
+        while (current != null && current != Object.class) {
+            if (!visited.add(current)) {
+                return null;
+            }
+            final T annotation = current.getAnnotation(api);
+            if (annotation != null) {
+                return annotation;
+            }
+            final T meta = findMeta(clazz.getAnnotations(), api);
+            if (meta != null) {
+                return meta;
+            }
+            current = current.getSuperclass();
         }
-        return findMeta(clazz.getAnnotations(), api);
+        return null;
     }
 
     public static <T extends Annotation> T getAnnotation(final Package pck, final Class<T> api) {

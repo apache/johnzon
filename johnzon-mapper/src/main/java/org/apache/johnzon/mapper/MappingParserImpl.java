@@ -334,13 +334,17 @@ public class MappingParserImpl implements MappingParser {
             jsonPointers.put(jsonPointer.toString(), t);
         }
 
-        for (final Map.Entry<String, Mappings.Setter> setter : classMapping.setters.entrySet()) {
-            final JsonValue jsonValue = object.get(setter.getKey());
+        for (final Map.Entry<String, JsonValue> jsonEntry : object.entrySet()) {
+            final Mappings.Setter value = classMapping.setters.get(jsonEntry.getKey());
+            if (value == null) {
+                continue;
+            }
+
+            final JsonValue jsonValue = jsonEntry.getValue();
             final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
 
-            final Mappings.Setter value = setter.getValue();
             if (JsonValue.class == value.paramType) {
-                setter.getValue().writer.write(t, jsonValue);
+                value.writer.write(t, jsonValue);
                 continue;
             }
             if (jsonValue == null) {
@@ -353,7 +357,7 @@ public class MappingParserImpl implements MappingParser {
             } else {
                 Object existingInstance = null;
                 if (config.isReadAttributeBeforeWrite()) {
-                    final Mappings.Getter getter = classMapping.getters.get(setter.getKey());
+                    final Mappings.Getter getter = classMapping.getters.get(jsonEntry.getKey());
                     if (getter != null) {
                         try {
                             existingInstance = getter.reader.read(t);
@@ -365,7 +369,7 @@ public class MappingParserImpl implements MappingParser {
                 final Object convertedValue = toValue(
                         existingInstance, jsonValue, value.converter, value.itemConverter,
                         value.paramType, value.objectConverter,
-                        new JsonPointerTracker(jsonPointer, setter.getKey()), inType);
+                        new JsonPointerTracker(jsonPointer, jsonEntry.getKey()), inType);
                 if (convertedValue != null) {
                     setterMethod.write(t, convertedValue);
                 }
