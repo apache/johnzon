@@ -22,6 +22,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Type;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.json.bind.annotation.JsonbPropertyOrder;
 import javax.json.bind.annotation.JsonbTypeDeserializer;
@@ -62,6 +64,24 @@ public class OrderTest {
 
         final HolderHolder unmarshalledObject = jsonb.fromJson("{ \"instance\" : { \"instance\" : \"Test String\" } }", HolderHolder.class);
         assertEquals("Test String Deserialized", unmarshalledObject.getInstance().getInstance());
+    }
+
+    @Test
+    public void arrayTypes() {
+        final ArrayHolder container = new ArrayHolder();
+        final StringHolder instance1 = new StringHolder();
+        instance1.setInstance("Test String 1");
+        final StringHolder instance2 = new StringHolder();
+        instance2.setInstance("Test String 2");
+        container.setInstance(new StringHolder[] { instance1, instance2 });
+
+        final String json = jsonb.toJson(container);
+        assertEquals("{\"instance\":[{\"instance\":\"Test String 1\"},{\"instance\":\"Test String 2\"}]}", json);
+
+        final ArrayHolder unmarshalledObject = jsonb.fromJson(
+                "{ \"instance\" : [ { \"instance\" : \"Test String 1\" }, { \"instance\" : \"Test String 2\" } ] }",
+                ArrayHolder.class);
+        assertEquals("Test String 1", unmarshalledObject.getInstance()[0].getInstance());
     }
 
     public static class StringHolder implements Holder<String> {
@@ -121,6 +141,57 @@ public class OrderTest {
         @Override
         public void setInstance(StringHolder instance) {
             this.instance = instance;
+        }
+    }
+
+    public static class ArrayHolder implements Holder<StringHolder[]> {
+        @JsonbTypeSerializer(StringArraySerializer.class)
+        @JsonbTypeDeserializer(StringArrayDeserializer.class)
+        private StringHolder[] instance;
+
+        @Override
+        public StringHolder[] getInstance() {
+            return instance;
+        }
+
+        @Override
+        public void setInstance(final StringHolder[] instance) {
+            this.instance = instance;
+        }
+    }
+
+    public static class StringArraySerializer implements JsonbSerializer<StringHolder[]> {
+        @Override
+        public void serialize(final StringHolder[] containers,
+                              final JsonGenerator jsonGenerator,
+                              final SerializationContext serializationContext) {
+            jsonGenerator.writeStartArray();
+            for (final StringHolder container : containers) {
+                serializationContext.serialize(container, jsonGenerator);
+            }
+            jsonGenerator.writeEnd();
+        }
+    }
+
+    public static class StringArrayDeserializer implements JsonbDeserializer<StringHolder[]> {
+        @Override
+        public StringHolder[] deserialize(final JsonParser jsonParser,
+                                          final DeserializationContext deserializationContext,
+                                          final Type type) {
+            final List<StringHolder> containers = new LinkedList<>();
+
+            while (jsonParser.hasNext()) {
+                JsonParser.Event event = jsonParser.next();
+                if (event == JsonParser.Event.START_OBJECT) {
+                    containers.add(deserializationContext.deserialize(
+                            new StringHolder() {}.getClass().getGenericSuperclass(), jsonParser));
+                }
+                if (event == JsonParser.Event.END_OBJECT) {
+                    break;
+                }
+            }
+
+            return containers.toArray(new StringHolder[0]);
         }
     }
 

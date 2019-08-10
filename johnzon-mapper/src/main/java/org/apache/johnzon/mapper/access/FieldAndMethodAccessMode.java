@@ -220,8 +220,8 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         }
 
         @Override
-        public boolean isNillable() {
-            return type1.isNillable() || type2.isNillable();
+        public boolean isNillable(final boolean global) {
+            return type1.isNillable(global) || type2.isNillable(global);
         }
 
         public DecoratedType getType1() {

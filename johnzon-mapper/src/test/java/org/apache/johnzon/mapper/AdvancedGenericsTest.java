@@ -48,7 +48,7 @@ public class AdvancedGenericsTest {
 
             Assert.assertTrue("Serialized String must contain \"firstName\":\"Bruce\"", customerAsString.contains("\"firstName\":\"Bruce\""));
             Assert.assertTrue("Serialized String must contain \"lastName\":\"Wayne\"", customerAsString.contains("\"lastName\":\"Wayne\""));
-            Assert.assertFalse("Serialized String must not contain \"id\"", customerAsString.contains("\"id\""));
+            Assert.assertFalse("Serialized String must not contain \"id\": " + customerAsString, customerAsString.contains("\"id\""));
             Assert.assertFalse("Serialized String must not contain \"version\"", customerAsString.contains("\"version\""));
         }
 

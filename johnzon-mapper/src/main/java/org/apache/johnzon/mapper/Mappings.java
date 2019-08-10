@@ -686,8 +686,8 @@ public class Mappings {
         }
 
         @Override
-        public boolean isNillable() {
-            return false;
+        public boolean isNillable(final boolean globalConfig) {
+            return globalConfig;
         }
     }
 
@@ -765,8 +765,8 @@ public class Mappings {
         }
 
         @Override
-        public boolean isNillable() {
-            return false;
+        public boolean isNillable(final boolean globalConfig) {
+            return globalConfig;
         }
     }
 
@@ -842,9 +842,9 @@ public class Mappings {
         }
 
         @Override
-        public boolean isNillable() {
+        public boolean isNillable(final boolean global) {
             for (final AccessMode.Reader r : delegates) {
-                if (r.isNillable()) {
+                if (r.isNillable(global)) {
                     return true;
                 }
             }
@@ -912,9 +912,9 @@ public class Mappings {
         }
 
         @Override
-        public boolean isNillable() {
+        public boolean isNillable(final boolean global) {
             for (final AccessMode.Writer r : delegates) {
-                if (r.isNillable()) {
+                if (r.isNillable(global)) {
                     return true;
                 }
             }

@@ -75,7 +75,7 @@ public interface AccessMode {
         <T extends Annotation> T getAnnotation(Class<T> clazz);
         <T extends Annotation> T getClassOrPackageAnnotation(Class<T> clazz);
         Adapter<?, ?> findConverter();
-        boolean isNillable();
+        boolean isNillable(boolean globalConfig);
     }
 
     interface Writer extends DecoratedType {

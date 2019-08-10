@@ -329,7 +329,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             if (value == null) {
-                if (config.isSkipNull() && !getter.reader.isNillable()) {
+                if (!getter.reader.isNillable(!config.isSkipNull())) {
                     continue;
                 } else {
                     generator.writeNull(getterEntry.getKey());

@@ -58,15 +58,20 @@ public class JohnzonDeserializationContext implements DeserializationContext {
         final JsonParser.Event next = /*RewindableJsonParser.class.isInstance(parser) ?
                 RewindableJsonParser.class.cast(parser).getLast() : */ parser.next();
         switch (next) {
-            case START_OBJECT:
+            case START_OBJECT: {
                 final JsonObjectBuilder objectBuilder = builderFactory.createObjectBuilder();
-                parseObject(parser, objectBuilder);
+                parseObject(null, parser, objectBuilder);
                 return objectBuilder.build();
+            }
             case START_ARRAY:
                 final JsonArrayBuilder arrayBuilder = builderFactory.createArrayBuilder();
                 parseArray(parser, arrayBuilder);
                 return arrayBuilder.build();
-            case KEY_NAME:
+            case KEY_NAME: { // object
+                final JsonObjectBuilder objectBuilder = builderFactory.createObjectBuilder();
+                parseObject(parser.getString(), parser, objectBuilder);
+                return objectBuilder.build();
+            }
             case VALUE_STRING:
                 return jsonp.createValue(parser.getString());
             case VALUE_FALSE:
@@ -82,8 +87,8 @@ public class JohnzonDeserializationContext implements DeserializationContext {
         }
     }
 
-    private void parseObject(final JsonParser parser, final JsonObjectBuilder builder) {
-        String key = null;
+    private void parseObject(final String originalKey, final JsonParser parser, final JsonObjectBuilder builder) {
+        String key = originalKey;
         while (parser.hasNext()) {
             final JsonParser.Event next = parser.next();
             switch (next) {
@@ -97,7 +102,7 @@ public class JohnzonDeserializationContext implements DeserializationContext {
 
                 case START_OBJECT:
                     final JsonObjectBuilder subObject = builderFactory.createObjectBuilder();
-                    parseObject(parser, subObject);
+                    parseObject(null, parser, subObject);
                     builder.add(key, subObject);
                     break;
 
@@ -157,7 +162,7 @@ public class JohnzonDeserializationContext implements DeserializationContext {
 
                 case START_OBJECT:
                     final JsonObjectBuilder subObject = builderFactory.createObjectBuilder();
-                    parseObject(parser, subObject);
+                    parseObject(null, parser, subObject);
                     builder.add(subObject);
                     break;
 

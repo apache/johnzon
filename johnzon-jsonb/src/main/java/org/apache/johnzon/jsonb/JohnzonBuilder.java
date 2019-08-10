@@ -157,7 +157,13 @@ public class JohnzonBuilder implements JsonbBuilder {
         }
 
         config.getProperty(JsonbConfig.ENCODING).ifPresent(encoding -> builder.setEncoding(String.valueOf(encoding)));
-        config.getProperty(JsonbConfig.NULL_VALUES).ifPresent(serNulls -> builder.setSkipNull(!Boolean.class.cast(serNulls)));
+        final boolean isNillable = config.getProperty(JsonbConfig.NULL_VALUES)
+                .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
+                .map(serNulls -> {
+                    builder.setSkipNull(!serNulls);
+                    return serNulls;
+                })
+                .orElse(false);
 
         final Optional<Object> namingStrategyValue = config.getProperty(JsonbConfig.PROPERTY_NAMING_STRATEGY);
 
@@ -218,7 +224,8 @@ public class JohnzonBuilder implements JsonbBuilder {
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false)),
                         config.getProperty("johnzon.failOnMissingCreatorValues")
                               .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
-                              .orElse(true) /*spec 1.0 requirement*/));
+                              .orElse(true) /*spec 1.0 requirement*/,
+                        isNillable));
         builder.setAccessMode(accessMode);
 
         // user adapters

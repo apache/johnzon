@@ -139,8 +139,8 @@ public class MethodAccessMode extends BaseAccessMode {
         }
 
         @Override
-        public boolean isNillable() {
-            return false;
+        public boolean isNillable(final boolean global) {
+            return global;
         }
     }
 

@@ -139,14 +139,19 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     };
     private boolean failOnMissingCreatorValues;
     private final Types types = new Types();
+    private final boolean globalIsNillable;
 
+    // CHECKSTYLE:OFF
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
                            final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
                            final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory,
                            final JsonProvider jsonProvider, final Supplier<JsonBuilderFactory> builderFactory,
                            final Supplier<JsonParserFactory> parserFactory,
                            final AccessMode delegate,
-                           final boolean failOnMissingCreatorValues) {
+                           final boolean failOnMissingCreatorValues,
+                           final boolean globalIsNillable) {
+        // CHECKSTYLE:ON
+        this.globalIsNillable = globalIsNillable;
         this.naming = propertyNamingStrategy;
         this.order = orderValue;
         this.visibility = visibilityStrategy;
@@ -459,7 +464,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final WriterConverters writerConverters = new WriterConverters(initialReader, types);
             final JsonbProperty property = initialReader.getAnnotation(JsonbProperty.class);
             final JsonbNillable nillable = initialReader.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = nillable != null || (property != null && property.nillable());
+            final boolean isNillable = isNillable(property, nillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Reader() {
                 @Override
@@ -493,7 +498,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 }
 
                 @Override
-                public boolean isNillable() {
+                public boolean isNillable(final boolean global) {
                     return isNillable;
                 }
             }) != null) {
@@ -551,7 +556,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final ReaderConverters converters = new ReaderConverters(initialWriter);
             final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
             final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = nillable != null || (property != null && property.nillable());
+            final boolean isNillable = isNillable(property, nillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Writer() {
                 @Override
@@ -585,7 +590,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 }
 
                 @Override
-                public boolean isNillable() {
+                public boolean isNillable(final boolean global) {
                     return isNillable;
                 }
             }) != null) {
@@ -647,6 +652,16 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                     final Class<?> superclass = aClass.getSuperclass();
                     return superclass != Object.class && isReversedAdapter(payloadType, superclass, instance);
                 });
+    }
+
+    private boolean isNillable(final JsonbProperty property, final JsonbNillable nillable) {
+        if (property != null) {
+            return property.nillable();
+        }
+        if (nillable != null) {
+            return nillable.value();
+        }
+        return globalIsNillable;
     }
 
     private ParsingCacheEntry getClassEntry(final Class<?> clazz) {
@@ -937,8 +952,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         }
 
         @Override
-        public boolean isNillable() {
-            return false;
+        public boolean isNillable(final boolean global) {
+            return global;
         }
     }
 
