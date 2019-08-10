@@ -173,16 +173,16 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         for (final Constructor<?> c : clazz.getConstructors()) {
             if (c.isAnnotationPresent(JsonbCreator.class)) {
                 if (constructor != null) {
-                    throw new IllegalArgumentException("Only one constructor or method can have @JsonbCreator");
+                    throw new JsonbException("Only one constructor or method can have @JsonbCreator");
                 }
                 constructor = c;
             }
         }
         for (final Method m : clazz.getMethods()) {
             final int modifiers = m.getModifiers();
-            if (Modifier.isStatic(modifiers) && Modifier.isPublic(modifiers) && m.isAnnotationPresent(JsonbCreator.class)) {
+            if (Modifier.isPublic(modifiers) && m.isAnnotationPresent(JsonbCreator.class)) {
                 if (constructor != null || factory != null) {
-                    throw new IllegalArgumentException("Only one constructor or method can have @JsonbCreator");
+                    throw new JsonbException("Only one constructor or method can have @JsonbCreator");
                 }
                 factory = m;
             }
@@ -254,86 +254,113 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
         return constructor == null && factory == null ? delegate.findFactory(clazz) : (
                 constructor != null ?
-                        new Factory() {
-                            @Override
-                            public Object create(final Object[] params) {
-                                factoryValidator.accept(params);
-                                try {
-                                    return finalConstructor.newInstance(params);
-                                } catch (final InstantiationException | IllegalAccessException e) {
-                                    throw new IllegalStateException(e);
-                                } catch (final InvocationTargetException e) {
-                                    throw new IllegalStateException(e.getCause());
-                                }
-                            }
+                        constructorFactory(finalConstructor, factoryValidator, types, params, converters, itemConverters, objectConverters) :
+                        methodFactory(clazz, finalFactory, factoryValidator, types, params, converters, itemConverters, objectConverters));
+    }
 
-                            @Override
-                            public Type[] getParameterTypes() {
-                                return types;
-                            }
+    private Factory methodFactory(final Class<?> clazz, final Method finalFactory,
+                                  final Consumer<Object[]> factoryValidator, final Type[] types,
+                                  final String[] params, final Adapter<?, ?>[] converters,
+                                  final Adapter<?, ?>[] itemConverters, final ObjectConverter.Codec<?>[] objectConverters) {
+        final Object instance = Modifier.isStatic(finalFactory.getModifiers()) ?
+                null : tryToCreateInstance(finalFactory.getDeclaringClass());
+        return new Factory() {
+            @Override
+            public Object create(final Object[] params) {
+                factoryValidator.accept(params);
+                try {
+                    final Object invoke = finalFactory.invoke(instance, params);
+                    if (!clazz.isInstance(invoke)) {
+                        throw new IllegalArgumentException(invoke + " is not a " + clazz.getName());
+                    }
+                    return invoke;
+                } catch (final IllegalAccessException e) {
+                    throw new IllegalStateException(e);
+                } catch (final InvocationTargetException e) {
+                    throw new IllegalStateException(e.getCause());
+                }
+            }
 
-                            @Override
-                            public String[] getParameterNames() {
-                                return params;
-                            }
+            @Override
+            public Type[] getParameterTypes() {
+                return types;
+            }
 
-                            @Override
-                            public Adapter<?, ?>[] getParameterConverter() {
-                                return converters;
-                            }
+            @Override
+            public String[] getParameterNames() {
+                return params;
+            }
 
-                            @Override
-                            public Adapter<?, ?>[] getParameterItemConverter() {
-                                return itemConverters;
-                            }
+            @Override
+            public Adapter<?, ?>[] getParameterConverter() {
+                return converters;
+            }
 
-                            @Override
-                            public ObjectConverter.Codec<?>[] getObjectConverter() {
-                                return objectConverters;
-                            }
-                        } :
-                        new Factory() {
-                            @Override
-                            public Object create(final Object[] params) {
-                                factoryValidator.accept(params);
-                                try {
-                                    final Object invoke = finalFactory.invoke(null, params);
-                                    if (!clazz.isInstance(invoke)) {
-                                        throw new IllegalArgumentException(invoke + " is not a " + clazz.getName());
-                                    }
-                                    return invoke;
-                                } catch (final IllegalAccessException e) {
-                                    throw new IllegalStateException(e);
-                                } catch (final InvocationTargetException e) {
-                                    throw new IllegalStateException(e.getCause());
-                                }
-                            }
+            @Override
+            public Adapter<?, ?>[] getParameterItemConverter() {
+                return itemConverters;
+            }
 
-                            @Override
-                            public Type[] getParameterTypes() {
-                                return types;
-                            }
+            @Override
+            public ObjectConverter.Codec<?>[] getObjectConverter() {
+                return objectConverters;
+            }
+        };
+    }
 
-                            @Override
-                            public String[] getParameterNames() {
-                                return params;
-                            }
+    private Object tryToCreateInstance(final Class<?> declaringClass) {
+        try {
+            final Constructor<?> declaredConstructor = declaringClass.getDeclaredConstructor();
+            if (!declaredConstructor.isAccessible()) {
+                declaredConstructor.setAccessible(true);
+            }
+            return declaredConstructor.newInstance();
+        } catch (final Exception e) {
+            return null;
+        }
+    }
 
-                            @Override
-                            public Adapter<?, ?>[] getParameterConverter() {
-                                return converters;
-                            }
+    private Factory constructorFactory(final Constructor<?> finalConstructor, final Consumer<Object[]> factoryValidator,
+                                       final Type[] types, final String[] params, final Adapter<?, ?>[] converters,
+                                       final Adapter<?, ?>[] itemConverters, final ObjectConverter.Codec<?>[] objectConverters) {
+        return new Factory() {
+            @Override
+            public Object create(final Object[] params) {
+                factoryValidator.accept(params);
+                try {
+                    return finalConstructor.newInstance(params);
+                } catch (final InstantiationException | IllegalAccessException e) {
+                    throw new IllegalStateException(e);
+                } catch (final InvocationTargetException e) {
+                    throw new IllegalStateException(e.getCause());
+                }
+            }
 
-                            @Override
-                            public Adapter<?, ?>[] getParameterItemConverter() {
-                                return itemConverters;
-                            }
+            @Override
+            public Type[] getParameterTypes() {
+                return types;
+            }
 
-                            @Override
-                            public ObjectConverter.Codec<?>[] getObjectConverter() {
-                                return objectConverters;
-                            }
-                        });
+            @Override
+            public String[] getParameterNames() {
+                return params;
+            }
+
+            @Override
+            public Adapter<?, ?>[] getParameterConverter() {
+                return converters;
+            }
+
+            @Override
+            public Adapter<?, ?>[] getParameterItemConverter() {
+                return itemConverters;
+            }
+
+            @Override
+            public ObjectConverter.Codec<?>[] getObjectConverter() {
+                return objectConverters;
+            }
+        };
     }
 
     private void validateAnnotations(final Object parameter,
