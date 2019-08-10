@@ -219,9 +219,15 @@ public class MappingGeneratorImpl implements MappingGenerator {
             generator.write(Number.class.cast(value).intValue());
             handled = true;
         } else if (isFloat(type)) {
-            final double doubleValue = Number.class.cast(value).doubleValue();
-            if (!Double.isNaN(doubleValue)) {
-                generator.write(doubleValue);
+            if (type == Float.class || type == float.class) {
+                if (!Float.isNaN(Float.class.cast(value))) {
+                    generator.write(new BigDecimal(value.toString()));
+                }
+            } else {
+                final double doubleValue = Number.class.cast(value).doubleValue();
+                if (!Double.isNaN(doubleValue)) {
+                    generator.write(doubleValue);
+                }
             }
             handled = true;
         } else if (type == boolean.class || type == Boolean.class) {
@@ -256,9 +262,15 @@ public class MappingGeneratorImpl implements MappingGenerator {
             generator.write(key, Number.class.cast(value).intValue());
             handled = true;
         } else if (isFloat(type)) {
-            final double doubleValue = Number.class.cast(value).doubleValue();
-            if (!Double.isNaN(doubleValue)) {
-                generator.write(key, doubleValue);
+            if (type == Float.class || type == float.class) {
+                if (!Float.isNaN(Float.class.cast(value))) {
+                    generator.write(key, new BigDecimal(value.toString()));
+                }
+            } else {
+                final double doubleValue = Number.class.cast(value).doubleValue();
+                if (!Double.isNaN(doubleValue)) {
+                    generator.write(key, doubleValue);
+                }
             }
             handled = true;
         } else if (type == boolean.class || type == Boolean.class) {
