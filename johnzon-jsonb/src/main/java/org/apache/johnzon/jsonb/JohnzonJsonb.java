@@ -51,9 +51,11 @@ import java.util.OptionalLong;
 // TODO: Optional handling for lists (and arrays)?
 public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     private final Mapper delegate;
+    private final boolean ijson;
 
-    public JohnzonJsonb(final Mapper build) {
+    public JohnzonJsonb(final Mapper build, final boolean ijson) {
         this.delegate = build;
+        this.ijson = ijson;
     }
 
     @Override
@@ -242,6 +244,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
                 return delegate.writeArrayAsString(toArray(object));
             } else if (Collection.class.isInstance(object)) {
                 return delegate.writeArrayAsString(Collection.class.cast(object));
+            } else if (ijson && isNotObjectOrArray(object)) {
+                throw new JsonbException("I-JSON mode only accepts arrays and objects as root instances");
             }
             return delegate.writeObjectAsString(object);
 
@@ -308,6 +312,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             return delegate.writeArrayAsString((Object[]) object);
         } else if (isCollection(runtimeType)) {
             return delegate.writeArrayAsString(Collection.class.cast(object));
+        } else if (ijson && isNotObjectOrArray(object)) {
+            throw new JsonbException("I-JSON mode only accepts arrays and objects as root instances");
         }
         return delegate.writeObjectAsString(object);
     }
@@ -324,6 +330,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             delegate.writeArray((Object[]) object, writer);
         } else if (Collection.class.isInstance(object)) {
             delegate.writeArray(Collection.class.cast(object), writer);
+        } else if (ijson && isNotObjectOrArray(object)) {
+            throw new JsonbException("I-JSON mode only accepts arrays and objects as root instances");
         } else {
             delegate.writeObject(object, writer);
         }
@@ -341,6 +349,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             delegate.writeArray((Object[]) object, writer);
         } else if (isCollection(runtimeType)) {
             delegate.writeArray(Collection.class.cast(object), writer);
+        } else if (ijson && isNotObjectOrArray(object)) {
+            throw new JsonbException("I-JSON mode only accepts arrays and objects as root instances");
         } else {
             delegate.writeObject(object, writer);
         }
@@ -353,6 +363,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             delegate.writeArray((Object[]) object, stream);
         } else if (Collection.class.isInstance(object)) {
             delegate.writeArray(Collection.class.cast(object), stream);
+        } else if (ijson && isNotObjectOrArray(object)) {
+            throw new JsonbException("I-JSON mode only accepts arrays and objects as root instances");
         } else {
             delegate.writeObject(object, stream);
         }
@@ -365,9 +377,27 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             delegate.writeArray((Object[]) object, stream);
         } else if (isCollection(runtimeType)) {
             delegate.writeArray(Collection.class.cast(object), stream);
+        } else if (ijson && isNotObjectOrArray(object)) {
+            throw new JsonbException("I-JSON mode only accepts arrays and objects as root instances");
         } else {
             delegate.writeObject(object, stream);
         }
+    }
+
+    private boolean isNotObjectOrArray(final Object object) {
+        if (String.class.isInstance(object) || Number.class.isInstance(object) || Boolean.class.isInstance(object)) {
+            return true;
+        }
+        if (JsonValue.class.isInstance(object)) {
+            switch (JsonValue.class.cast(object).getValueType()) {
+                case ARRAY:
+                case OBJECT:
+                    return false;
+                default:
+                    return true;
+            }
+        }
+        return false;
     }
 
     private Object unwrapOptional(final Object inObject) {

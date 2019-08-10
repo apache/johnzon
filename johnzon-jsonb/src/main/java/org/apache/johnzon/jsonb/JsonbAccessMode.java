@@ -38,6 +38,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
@@ -368,8 +369,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 converter = new ConverterAdapter<>(new JsonbLocalDateConverter(dateFormat));
             } else if (ZonedDateTime.class == type) {
                 converter = new ConverterAdapter<>(new JsonbZonedDateTimeConverter(dateFormat));
-            } else {
-                throw new IllegalArgumentException(type + " not a supported date type");
+            } else { // can happen if set on the class, todo: refine the checks
+                converter = null; // todo: should we fallback on numberformat?
             }
         } else if (numberFormat != null) {  // TODO: support lists?
             converter = new ConverterAdapter<>(new JsonbNumberConverter(numberFormat));
@@ -611,7 +612,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return Stream.of(genericInterfaces).filter(ParameterizedType.class::isInstance)
                 .filter(i -> Adapter.class.isAssignableFrom(Class.class.cast(ParameterizedType.class.cast(i).getRawType())))
                 .findFirst()
-                .map(pt -> payloadType.isAssignableFrom(Class.class.cast(ParameterizedType.class.cast(pt).getActualTypeArguments()[0])))
+                .map(pt -> {
+                    final Type argument = ParameterizedType.class.cast(pt).getActualTypeArguments()[0];
+                    return Class.class.isInstance(argument) && payloadType.isAssignableFrom(Class.class.cast(argument));
+                })
                 .orElseGet(() -> {
                     final Class<?> superclass = aClass.getSuperclass();
                     return superclass != Object.class && isReversedAdapter(payloadType, superclass, instance);
@@ -666,6 +670,9 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 }
             }
             keyComparator = (o1, o2) -> {
+                if (o1 != null && o1.equals(o2)) {
+                    return 0;
+                }
                 final int i1 = indexed.indexOf(o1);
                 final int i2 = indexed.indexOf(o2);
                 if (i1 < 0) {
@@ -683,6 +690,9 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         }
                     }
                     return 1;
+                }
+                if (i2 < 0) {
+                    return -1;
                 }
                 return i1 - i2;
             };
@@ -731,10 +741,16 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         ReaderConverters(final DecoratedType annotationHolder) {
             final JsonbTypeDeserializer deserializer = annotationHolder.getAnnotation(JsonbTypeDeserializer.class);
             final JsonbTypeAdapter adapter = annotationHolder.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbDateFormat dateFormat = annotationHolder.getAnnotation(JsonbDateFormat.class);
-            final JsonbNumberFormat numberFormat = annotationHolder.getAnnotation(JsonbNumberFormat.class);
+            JsonbDateFormat dateFormat = annotationHolder.getAnnotation(JsonbDateFormat.class);
+            JsonbNumberFormat numberFormat = annotationHolder.getAnnotation(JsonbNumberFormat.class);
             final JohnzonConverter johnzonConverter = annotationHolder.getAnnotation(JohnzonConverter.class);
             validateAnnotations(annotationHolder, adapter, dateFormat, numberFormat, johnzonConverter);
+            if (dateFormat == null && isDateType(annotationHolder.getType())) {
+                dateFormat = annotationHolder.getClassOrPackageAnnotation(JsonbDateFormat.class);
+            }
+            if (numberFormat == null && isNumberType(annotationHolder.getType())) {
+                numberFormat = annotationHolder.getClassOrPackageAnnotation(JsonbNumberFormat.class);
+            }
 
             converter = adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
                     defaultConverters.get(new AdapterKey(annotationHolder.getType(), String.class)) :
@@ -814,10 +830,16 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         WriterConverters(final DecoratedType initialReader, final Types types) {
             final JsonbTypeSerializer serializer = initialReader.getAnnotation(JsonbTypeSerializer.class);
             final JsonbTypeAdapter adapter = initialReader.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbDateFormat dateFormat = initialReader.getAnnotation(JsonbDateFormat.class);
-            final JsonbNumberFormat numberFormat = initialReader.getAnnotation(JsonbNumberFormat.class);
+            JsonbDateFormat dateFormat = initialReader.getAnnotation(JsonbDateFormat.class);
+            JsonbNumberFormat numberFormat = initialReader.getAnnotation(JsonbNumberFormat.class);
             final JohnzonConverter johnzonConverter = initialReader.getAnnotation(JohnzonConverter.class);
             validateAnnotations(initialReader, adapter, dateFormat, numberFormat, johnzonConverter);
+            if (dateFormat == null && isDateType(initialReader.getType())) {
+                dateFormat = initialReader.getClassOrPackageAnnotation(JsonbDateFormat.class);
+            }
+            if (numberFormat == null && isNumberType(initialReader.getType())) {
+                numberFormat = initialReader.getClassOrPackageAnnotation(JsonbNumberFormat.class);
+            }
 
             converter = adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
                     defaultConverters.get(new AdapterKey(initialReader.getType(), String.class)) :
@@ -842,6 +864,22 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 }
             }
         }
+    }
+
+    private boolean isDateType(final Type type) {
+        if (!Class.class.isInstance(type)) {
+            return false;
+        }
+        final Class<?> clazz = Class.class.cast(type);
+        return type.getTypeName().startsWith("java.time.") || Date.class == type || Calendar.class.isAssignableFrom(clazz);
+    }
+
+    private boolean isNumberType(final Type type) {
+        if (!Class.class.isInstance(type)) {
+            return false;
+        }
+        final Class<?> clazz = Class.class.cast(type);
+        return Number.class.isAssignableFrom(clazz) || clazz.isPrimitive();
     }
 
     private static class ClassDecoratedType implements DecoratedType {

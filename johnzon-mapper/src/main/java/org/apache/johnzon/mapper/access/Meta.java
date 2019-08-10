@@ -18,28 +18,66 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import static java.util.Arrays.asList;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.util.Arrays.asList;
+import java.util.function.Supplier;
 
 public final class Meta {
     private Meta() {
         // no-op
     }
 
-    public static <T extends Annotation> T getAnnotation(final AccessibleObject holder, final Class<T> api) {
+    public static <T extends Annotation> T getAnnotation(final Method holder, final Class<T> api) {
+        return getDirectAnnotation(holder, api);
+    }
+
+    public static <T extends Annotation> T getAnnotation(final Field holder, final Class<T> api) {
+        return getDirectAnnotation(holder, api);
+    }
+
+    public static <T extends Annotation> T getClassOrPackageAnnotation(final Method holder, final Class<T> api) {
+        return getIndirectAnnotation(api, holder::getDeclaringClass, () -> holder.getDeclaringClass().getPackage());
+    }
+
+    public static <T extends Annotation> T getClassOrPackageAnnotation(final Field holder, final Class<T> api) {
+        return getIndirectAnnotation(api, holder::getDeclaringClass, () -> holder.getDeclaringClass().getPackage());
+    }
+
+    private static <T extends Annotation> T getDirectAnnotation(final AccessibleObject holder, final Class<T> api) {
         final T annotation = holder.getAnnotation(api);
         if (annotation != null) {
             return annotation;
         }
-        return findMeta(holder.getAnnotations(), api);
+        final T meta = findMeta(holder.getAnnotations(), api);
+        if (meta != null) {
+            return meta;
+        }
+        return null;
+    }
+
+    private static <T extends Annotation> T getIndirectAnnotation(final Class<T> api,
+                                                                  final Supplier<Class<?>> ownerSupplier,
+                                                                  final Supplier<Package> packageSupplier) {
+        final T ownerAnnotation = ownerSupplier.get().getAnnotation(api);
+        if (ownerAnnotation != null) {
+            return ownerAnnotation;
+        } // todo: meta?
+        final Package pck = packageSupplier.get();
+        if (pck != null) {
+            final T pckAnnotation = pck.getAnnotation(api);
+            if (pckAnnotation != null) {
+                return pckAnnotation;
+            }
+        } // todo: meta?
+        return null;
     }
 
     public static <T extends Annotation> T getAnnotation(final Class<?> clazz, final Class<T> api) {
@@ -81,18 +119,15 @@ public final class Meta {
 
     private static <T extends Annotation> T newAnnotation(final Map<String, Method> methodMapping, final Annotation user, final T johnzon) {
         return (T) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), new Class<?>[]{johnzon.annotationType()},
-                new InvocationHandler() {
-                    @Override
-                    public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-                        final Method m = methodMapping.get(method.getName());
-                        try {
-                            if (m.getDeclaringClass() == user.annotationType()) {
-                                return m.invoke(user, args);
-                            }
-                            return m.invoke(johnzon, args);
-                        } catch (final InvocationTargetException ite) {
-                            throw ite.getTargetException();
+                (proxy, method, args) -> {
+                    final Method m = methodMapping.get(method.getName());
+                    try {
+                        if (m.getDeclaringClass() == user.annotationType()) {
+                            return m.invoke(user, args);
                         }
+                        return m.invoke(johnzon, args);
+                    } catch (final InvocationTargetException ite) {
+                        throw ite.getTargetException();
                     }
                 });
     }

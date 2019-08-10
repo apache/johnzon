@@ -100,7 +100,8 @@ public class DynamicMappingGenerator implements MappingGenerator {
 
         @Override
         public JsonGenerator writeStartObject() {
-            return delegate.writeStartObject();
+            // return delegate.writeStartObject();
+            return this;
         }
 
         @Override

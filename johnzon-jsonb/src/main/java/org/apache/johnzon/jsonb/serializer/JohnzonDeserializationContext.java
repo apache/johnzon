@@ -30,7 +30,6 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParsingException;
 
 import org.apache.johnzon.mapper.MappingParser;
-import org.apache.johnzon.mapper.jsonp.RewindableJsonParser;
 
 public class JohnzonDeserializationContext implements DeserializationContext {
     private final MappingParser runtime;
@@ -56,8 +55,8 @@ public class JohnzonDeserializationContext implements DeserializationContext {
     }
 
     private JsonValue read(final JsonParser parser) {
-        final JsonParser.Event next = RewindableJsonParser.class.isInstance(parser) ?
-                RewindableJsonParser.class.cast(parser).getLast() : parser.next();
+        final JsonParser.Event next = /*RewindableJsonParser.class.isInstance(parser) ?
+                RewindableJsonParser.class.cast(parser).getLast() : */ parser.next();
         switch (next) {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = builderFactory.createObjectBuilder();
@@ -67,6 +66,7 @@ public class JohnzonDeserializationContext implements DeserializationContext {
                 final JsonArrayBuilder arrayBuilder = builderFactory.createArrayBuilder();
                 parseArray(parser, arrayBuilder);
                 return arrayBuilder.build();
+            case KEY_NAME:
             case VALUE_STRING:
                 return jsonp.createValue(parser.getString());
             case VALUE_FALSE:

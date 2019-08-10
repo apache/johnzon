@@ -139,6 +139,19 @@ public class JohnzonBuilder implements JsonbBuilder {
             config = new JsonbConfig();
         }
 
+        final boolean ijson = config.getProperty(JsonbConfig.STRICT_IJSON)
+                .map(Boolean.class::cast)
+                .filter(it -> it)
+                .map(it -> {
+                    if (!config.getProperty(JsonbConfig.BINARY_DATA_STRATEGY).isPresent()) {
+                        config.withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
+                    }
+                    if (!config.getProperty(JsonbConfig.DATE_FORMAT).isPresent()) {
+                        config.withDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'xxx", Locale.ROOT);
+                    }
+                    return it;
+                }).orElse(false);
+
         if (config.getProperty(JsonbConfig.FORMATTING).map(Boolean.class::cast).orElse(false)) {
             builder.setPretty(true);
         }
@@ -222,9 +235,6 @@ public class JohnzonBuilder implements JsonbBuilder {
             defaultConverters.put(new AdapterKey(args[0], args[1]), johnzonJsonbAdapter);
         }));
 
-        config.getProperty(JsonbConfig.STRICT_IJSON).map(Boolean.class::cast).ifPresent(ijson -> {
-            // no-op: https://tools.ietf.org/html/rfc7493 the only MUST of the spec should be fine by default
-        });
         config.getProperty("johnzon.fail-on-unknown-properties")
                 .map(v -> Boolean.class.isInstance(v) ? Boolean.class.cast(v) : Boolean.parseBoolean(String.valueOf(v)))
                 .ifPresent(builder::setFailOnUnknownProperties);
@@ -316,7 +326,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         }
         final Mapper mapper = builder.build();
 
-        return useCdi ? new JohnzonJsonb(mapper) {
+        return useCdi ? new JohnzonJsonb(mapper, ijson) {
             {
                 cdiIntegration.track(this);
             }
@@ -331,7 +341,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                     }
                 }
             }
-        } : new JohnzonJsonb(mapper);
+        } : new JohnzonJsonb(mapper, ijson);
     }
     
 
@@ -441,14 +451,15 @@ public class JohnzonBuilder implements JsonbBuilder {
         converters.put(new AdapterKey(Calendar.class, String.class), new ConverterAdapter<>(new Converter<Calendar>() {
             @Override
             public String toString(final Calendar instance) {
-                return ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC).toString();
+                return ZonedDateTime.ofInstant(instance.toInstant(), instance.getTimeZone().toZoneId()).toString();
             }
 
             @Override
             public Calendar fromString(final String text) {
+                final ZonedDateTime zonedDateTime = ZonedDateTime.parse(text);
                 final Calendar calendar = Calendar.getInstance();
-                calendar.setTimeZone(timeZoneUTC);
-                calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
+                calendar.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
+                calendar.setTimeInMillis(zonedDateTime.toInstant().toEpochMilli());
                 return calendar;
             }
         }));
@@ -460,9 +471,10 @@ public class JohnzonBuilder implements JsonbBuilder {
 
             @Override
             public GregorianCalendar fromString(final String text) {
+                final ZonedDateTime zonedDateTime = ZonedDateTime.parse(text);
                 final GregorianCalendar calendar = new GregorianCalendar();
-                calendar.setTimeZone(timeZoneUTC);
-                calendar.setTimeInMillis(ZonedDateTime.parse(text).toInstant().toEpochMilli());
+                calendar.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
+                calendar.setTimeInMillis(zonedDateTime.toInstant().toEpochMilli());
                 return calendar;
             }
         }));
@@ -687,13 +699,15 @@ public class JohnzonBuilder implements JsonbBuilder {
 
                 @Override
                 public String toString(final Calendar instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), instance.getTimeZone().toZoneId()));
                 }
 
                 @Override
                 public Calendar fromString(final String text) {
-                    Calendar instance = Calendar.getInstance();
-                    instance.setTime(Date.from(parseZonedDateTime(text, formatter, zoneIDUTC).toInstant()));
+                    final ZonedDateTime zonedDateTime = parseZonedDateTime(text, formatter, zoneIDUTC);
+                    final Calendar instance = Calendar.getInstance();
+                    instance.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
+                    instance.setTime(Date.from(zonedDateTime.toInstant()));
                     return instance;
                 }
             }));
@@ -701,13 +715,15 @@ public class JohnzonBuilder implements JsonbBuilder {
 
                 @Override
                 public String toString(final GregorianCalendar instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
+                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), instance.getTimeZone().toZoneId()));
                 }
 
                 @Override
                 public GregorianCalendar fromString(final String text) {
-                    Calendar instance = GregorianCalendar.getInstance();
-                    instance.setTime(Date.from(parseZonedDateTime(text, formatter, zoneIDUTC).toInstant()));
+                    final ZonedDateTime zonedDateTime = parseZonedDateTime(text, formatter, zoneIDUTC);
+                    final Calendar instance = GregorianCalendar.getInstance();
+                    instance.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
+                    instance.setTime(Date.from(zonedDateTime.toInstant()));
                     return GregorianCalendar.class.cast(instance);
                 }
             }));

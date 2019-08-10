@@ -109,9 +109,7 @@ public class FieldAccessMode extends BaseAccessMode {
 
         @Override
         public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
-            final Class<?> declaringClass = field.getDeclaringClass();
-            final T annotation = Meta.getAnnotation(declaringClass, clazz);
-            return annotation == null ? Meta.getAnnotation(declaringClass.getPackage(), clazz) : annotation;
+            return Meta.getClassOrPackageAnnotation(field, clazz);
         }
 
         @Override

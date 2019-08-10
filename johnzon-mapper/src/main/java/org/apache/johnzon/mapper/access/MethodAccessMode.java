@@ -116,9 +116,7 @@ public class MethodAccessMode extends BaseAccessMode {
 
         @Override
         public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
-            final Class<?> declaringClass = method.getDeclaringClass();
-            final T annotation = Meta.getAnnotation(declaringClass, clazz);
-            return annotation == null ? Meta.getAnnotation(declaringClass.getPackage(), clazz) : annotation;
+            return Meta.getClassOrPackageAnnotation(method, clazz);
         }
 
         @Override
