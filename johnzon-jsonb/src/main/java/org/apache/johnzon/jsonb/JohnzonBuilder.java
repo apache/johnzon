@@ -29,7 +29,7 @@ import static java.time.temporal.ChronoField.YEAR;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
 import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
-import static javax.json.bind.config.PropertyOrderStrategy.LEXICOGRAPHICAL;
+import static javax.json.bind.config.PropertyOrderStrategy.ANY;
 
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
@@ -168,7 +168,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         final Optional<Object> namingStrategyValue = config.getProperty(JsonbConfig.PROPERTY_NAMING_STRATEGY);
 
         final PropertyNamingStrategy propertyNamingStrategy = new PropertyNamingStrategyFactory(namingStrategyValue.orElse(IDENTITY)).create();
-        final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(LEXICOGRAPHICAL);
+        final String orderValue = config.getProperty(JsonbConfig.PROPERTY_ORDER_STRATEGY).map(String::valueOf).orElse(ANY);
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
                 .map(PropertyVisibilityStrategy.class::cast).orElse(new DefaultPropertyVisibilityStrategy());
 

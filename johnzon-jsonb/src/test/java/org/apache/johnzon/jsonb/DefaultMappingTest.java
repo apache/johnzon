@@ -1064,7 +1064,7 @@ public class DefaultMappingTest {
         attributesOrderingWithInheritance.cc = "cc";
         attributesOrderingWithInheritance.bb = "bb";
 
-        assertEquals("{\"aField\":\"aField\",\"aa\":\"aa\",\"bField\":\"bField\",\"bb\":\"bb\",\"cField\":\"cField\",\"cc\":\"cc\"}",
+        assertEquals("{\"aField\":\"aField\",\"bField\":\"bField\",\"cField\":\"cField\",\"aa\":\"aa\",\"bb\":\"bb\",\"cc\":\"cc\"}",
             JSONB.toJson(attributesOrderingWithInheritance));
 
         // important, see OrderTest#deserializationRespectsOrderToo

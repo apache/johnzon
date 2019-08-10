@@ -93,6 +93,7 @@ import org.apache.johnzon.jsonb.converter.JsonbLocalDateTimeConverter;
 import org.apache.johnzon.jsonb.converter.JsonbNumberConverter;
 import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
 import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
+import org.apache.johnzon.jsonb.order.PerHierarchyAndLexicographicalOrderFieldComparator;
 import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
@@ -746,11 +747,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                     if (i2 < 0) {
                         if (order != null) {
                             switch (order) {
+                                case PropertyOrderStrategy.ANY:
                                 case PropertyOrderStrategy.LEXICOGRAPHICAL:
                                     return o1.compareTo(o2);
                                 case PropertyOrderStrategy.REVERSE:
                                     return o2.compareTo(o1);
-                                case PropertyOrderStrategy.ANY:
                                 default:
                                     return 1;
                             }
@@ -766,7 +767,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         } else if (order != null) {
             switch (order) {
                 case PropertyOrderStrategy.ANY:
-                    keyComparator = null;
+                    keyComparator = new PerHierarchyAndLexicographicalOrderFieldComparator(clazz);
                     break;
                 case PropertyOrderStrategy.LEXICOGRAPHICAL:
                     keyComparator = String::compareTo;
@@ -774,10 +775,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 case PropertyOrderStrategy.REVERSE:
                     keyComparator = Comparator.reverseOrder();
                     break;
-                default:
+                default: // unlikely
                     keyComparator = null;
             }
-        } else {
+        } else { // unlikely
             keyComparator = null;
         }
         return keyComparator;
