@@ -18,9 +18,13 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.jsonb.model.Holder;
+import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbException;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.spi.JsonbProvider;
@@ -28,6 +32,9 @@ import javax.json.bind.spi.JsonbProvider;
 import static org.junit.Assert.assertEquals;
 
 public class JsonbTransientTest {
+    @Rule
+    public final JsonbRule jsonb = new JsonbRule();
+
     @Test
     public void roundtrip() {
         final Jsonb jsonb = JsonbProvider.provider().create().build();
@@ -37,6 +44,27 @@ public class JsonbTransientTest {
 
         book.id = 123;
         assertEquals("{\"_name\":\"test\"}", jsonb.toJson(book));
+    }
+
+    @Test(expected = JsonbException.class)
+    public void illegalConfig() {
+        jsonb.toJson(new TransientGetterWithFieldProperty());
+    }
+
+    public class TransientGetterWithFieldProperty implements Holder<String> {
+        @JsonbProperty("instance")
+        private String instance;
+
+        @Override
+        @JsonbTransient
+        public String getInstance() {
+            return instance;
+        }
+
+        @Override
+        public void setInstance(String instance) {
+            this.instance = instance;
+        }
     }
 
     public static class Book {

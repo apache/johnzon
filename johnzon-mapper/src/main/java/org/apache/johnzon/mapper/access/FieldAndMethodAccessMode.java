@@ -95,7 +95,12 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
             final Reader existing = readers.get(entry.getKey());
             if (existing == null) {
-                readers.put(entry.getKey(), entry.getValue());
+                if (f != null) { // useful to hold the Field and transient state for example, just as fallback
+                    readers.put(entry.getKey(), new CompositeReader(
+                            entry.getValue(), new FieldAccessMode.FieldReader(f, f.getType())));
+                } else {
+                    readers.put(entry.getKey(), entry.getValue());
+                }
             } else {
                 readers.put(entry.getKey(), new CompositeReader(entry.getValue(), existing));
             }
@@ -173,7 +178,12 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
             final Writer existing = writers.get(entry.getKey());
             if (existing == null) {
-                writers.put(entry.getKey(), entry.getValue());
+                if (f != null) { // useful to hold the Field and transient state for example, just as fallback
+                    writers.put(entry.getKey(), new CompositeWriter(
+                            entry.getValue(), new FieldAccessMode.FieldWriter(f, f.getType())));
+                } else {
+                    writers.put(entry.getKey(), entry.getValue());
+                }
             } else {
                 writers.put(entry.getKey(), new CompositeWriter(entry.getValue(), existing));
             }
@@ -230,6 +240,14 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
         public DecoratedType getType2() {
             return type2;
+        }
+
+        @Override
+        public String toString() {
+            return "CompositeDecoratedType{" +
+                    "type1=" + type1 +
+                    ", type2=" + type2 +
+                    '}';
         }
     }
 

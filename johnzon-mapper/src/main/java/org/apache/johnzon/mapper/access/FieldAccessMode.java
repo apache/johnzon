@@ -135,6 +135,13 @@ public class FieldAccessMode extends BaseAccessMode {
         public boolean isNillable(final boolean global) {
             return global;
         }
+
+        @Override
+        public String toString() {
+            return "FieldDecoratedType{" +
+                    "field=" + field +
+                    '}';
+        }
     }
 
     public static class FieldWriter extends FieldDecoratedType implements Writer {

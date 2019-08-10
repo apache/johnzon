@@ -28,6 +28,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -424,7 +425,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final Map<String, Reader> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Reader> entry : readers.entrySet()) {
             final Reader initialReader = entry.getValue();
-            if (isTransient(initialReader, visibility) || initialReader.getAnnotation(JohnzonAny.class) != null) {
+            if (isTransient(initialReader, visibility)) {
+                validateAnnotationsOnTransientField(initialReader);
+                continue;
+            }
+            if (initialReader.getAnnotation(JohnzonAny.class) != null) {
                 continue;
             }
 
@@ -508,6 +513,17 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return result;
     }
 
+    private void validateAnnotationsOnTransientField(final DecoratedType type) {
+        if (type.getAnnotation(JsonbProperty.class) != null
+                || type.getAnnotation(JsonbDateFormat.class) != null
+                || type.getAnnotation(JsonbNumberFormat.class) != null
+                || type.getAnnotation(JsonbTypeAdapter.class) != null
+                || type.getAnnotation(JsonbTypeSerializer.class) != null
+                || type.getAnnotation(JsonbTypeDeserializer.class) != null) {
+            throw new JsonbException("Invalid configuration for " + type + " property");
+        }
+    }
+
     @Override
     public Map<String, Writer> findWriters(final Class<?> clazz) {
         final Map<String, Writer> writers = delegate.findWriters(clazz);
@@ -517,6 +533,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         for (final Map.Entry<String, Writer> entry : writers.entrySet()) {
             Writer initialWriter = entry.getValue();
             if (isTransient(initialWriter, visibility)) {
+                validateAnnotationsOnTransientField(initialWriter);
                 continue;
             }
 
@@ -691,7 +708,15 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     private boolean isTransient(final DecoratedType t) {
-        return t.getAnnotation(JsonbTransient.class) != null;
+        if (t.getAnnotation(JsonbTransient.class) != null) {
+            return true;
+        }
+        // TODO: spec requirement, this sounds wrong since you cant customize 2 kind of serializations on the same model
+        if (FieldAccessMode.FieldDecoratedType.class.isInstance(t)) {
+            final Field field = FieldAccessMode.FieldDecoratedType.class.cast(t).getField();
+            return Modifier.isTransient(field.getModifiers());
+        }
+        return false;
     }
 
     private boolean isNotVisible(PropertyVisibilityStrategy visibility, DecoratedType t) {

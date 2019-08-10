@@ -142,6 +142,13 @@ public class MethodAccessMode extends BaseAccessMode {
         public boolean isNillable(final boolean global) {
             return global;
         }
+
+        @Override
+        public String toString() {
+            return "MethodDecoratedType{" +
+                    "method=" + method +
+                    '}';
+        }
     }
 
     public static class MethodWriter extends MethodDecoratedType implements Writer {
