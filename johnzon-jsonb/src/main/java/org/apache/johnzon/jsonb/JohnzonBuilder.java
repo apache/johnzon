@@ -245,7 +245,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             defaultConverters.put(new AdapterKey(args[0], args[1]), johnzonJsonbAdapter);
         }));
 
-        config.getProperty("johnzon.fail-on-unknown-properties")
+        ofNullable(config.getProperty("johnzon.fail-on-unknown-properties")
+                .orElseGet(() -> config.getProperty("jsonb.fail-on-unknown-properties").orElse(null)))
                 .map(v -> Boolean.class.isInstance(v) ? Boolean.class.cast(v) : Boolean.parseBoolean(String.valueOf(v)))
                 .ifPresent(builder::setFailOnUnknownProperties);
 

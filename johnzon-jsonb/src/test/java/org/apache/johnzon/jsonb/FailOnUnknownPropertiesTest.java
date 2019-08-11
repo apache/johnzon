@@ -31,8 +31,11 @@ import static org.junit.Assert.fail;
 public class FailOnUnknownPropertiesTest {
     @Test
     public void failOnUnknownProperties() {
-        final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().setProperty("johnzon.fail-on-unknown-properties", true));
+        doValidate(JsonbBuilder.create(new JsonbConfig().setProperty("johnzon.fail-on-unknown-properties", true)));
+        doValidate(JsonbBuilder.create(new JsonbConfig().setProperty("jsonb.fail-on-unknown-properties", true)));
+    }
 
+    private void doValidate(final Jsonb jsonb) {
         // valid
         assertEquals("ok", jsonb.fromJson("{\"known\":\"ok\"}", Model.class).known);
 
