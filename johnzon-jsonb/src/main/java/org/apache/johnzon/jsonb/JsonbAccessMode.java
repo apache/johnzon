@@ -83,6 +83,7 @@ import javax.json.bind.config.PropertyVisibilityStrategy;
 import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParserFactory;
 
 import org.apache.johnzon.core.Types;
@@ -102,6 +103,7 @@ import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonConverter;
 import org.apache.johnzon.mapper.MapperConverter;
+import org.apache.johnzon.mapper.MappingGenerator;
 import org.apache.johnzon.mapper.MappingParser;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.TypeAwareAdapter;
@@ -833,16 +835,23 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 final Class<?> mappedType = types.findParamType(pt, JsonbDeserializer.class);
                 toRelease.add(instance);
                 final JsonBuilderFactory builderFactoryInstance = builderFactory.get();
+                final Type[] arguments = types.findParameterizedType(value, JsonbDeserializer.class).getActualTypeArguments();
+                final boolean global = arguments.length == 1 && arguments[0] != null && arguments[0].equals(annotationHolder.getType());
                 reader = new ObjectConverter.Reader() {
                     private final ConcurrentMap<Type, BiFunction<JsonValue, MappingParser, Object>> impl =
                             new ConcurrentHashMap<>();
+
+                    @Override
+                    public boolean isGlobal() {
+                        return global;
+                    }
 
                     @Override
                     public Object fromJson(final JsonValue value,
                                            final Type targetType,
                                            final MappingParser parser) {
                         final JsonbDeserializer jsonbDeserializer = instance.getValue();
-                        if (targetType == mappedType) { // fast test and matches most cases
+                        if (global || targetType == mappedType) { // fast test and matches most cases
                             return mapItem(value, targetType, parser, jsonbDeserializer);
                         }
 
@@ -921,8 +930,21 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 final Class<? extends JsonbSerializer> value = serializer.value();
                 final JohnzonAdapterFactory.Instance<? extends JsonbSerializer> instance = newInstance(value);
                 toRelease.add(instance);
-                writer = (instance1, jsonbGenerator) ->
-                        instance.getValue().serialize(instance1, jsonbGenerator.getJsonGenerator(), new JohnzonSerializationContext(jsonbGenerator));
+                final Type[] arguments = types.findParameterizedType(value, JsonbSerializer.class).getActualTypeArguments();
+                final boolean global = arguments.length == 1 && arguments[0] != null && arguments[0].equals(reader.getType());
+                final JsonbSerializer jsonbSerializer = instance.getValue();
+                writer = new ObjectConverter.Writer() {
+                    @Override
+                    public void writeJson(final Object instance, final MappingGenerator jsonbGenerator) {
+                        final JsonGenerator generator = jsonbGenerator.getJsonGenerator();
+                        jsonbSerializer.serialize(instance, generator, new JohnzonSerializationContext(jsonbGenerator));
+                    }
+
+                    @Override
+                    public boolean isGlobal() {
+                        return global;
+                    }
+                };
             } else if (johnzonConverter != null) {
                 try {
                     MapperConverter mapperConverter = johnzonConverter.value().newInstance();

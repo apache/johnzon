@@ -28,10 +28,12 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeDeserializer;
 import javax.json.bind.annotation.JsonbTypeSerializer;
@@ -169,6 +171,288 @@ public class SerializerTest {
         wrapper.myWrapper.map = singletonMap("a", "b");
         assertEquals("{\"myWrapper\":{\"a\":\"b\"}}", jsonb.toJson(wrapper));
         jsonb.close();
+    }
+
+    @Test
+    public void fromConfig() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
+                .withSerializers(new AnimalSerializer()).withDeserializers(new AnimalDeserializer()))) {
+            final Animals animals = new Animals();
+            animals.animals.add(new Cat(5, "Garfield", 10.5f, true, true));
+            animals.animals.add(new Dog(3, "Milo", 5.5f, false, true));
+            animals.animals.add(new Animal(6, "Tweety", 0.5f, false));
+
+            final String jsonString = jsonb.toJson(animals);
+            assertEquals("{\"animals\":[" +
+                    "{\"type\":\"cat\",\"cuddly\":true,\"age\":5,\"furry\":true,\"name\":\"Garfield\",\"weight\":10.5}," +
+                    "{\"type\":\"dog\",\"barking\":true,\"age\":3,\"furry\":false,\"name\":\"Milo\",\"weight\":5.5}," +
+                    "{\"type\":\"animal\",\"age\":6,\"furry\":false,\"name\":\"Tweety\",\"weight\":0.5}]}",
+                    jsonString);
+
+            final Animals deserialized = jsonb.fromJson("{ \"animals\" : [ "
+                    + "{ \"type\" : \"cat\", \"cuddly\" : true, \"age\" : 5, \"furry\" : true, \"name\" : \"Garfield\" , \"weight\" : 10.5}, "
+                    + "{ \"type\" : \"dog\", \"barking\" : true, \"age\" : 3, \"furry\" : false, \"name\" : \"Milo\", \"weight\" : 5.5}, "
+                    + "{ \"type\" : \"animal\", \"age\" : 6, \"furry\" : false, \"name\" : \"Tweety\", \"weight\" : 0.5}"
+                    + " ] }", Animals.class);
+            assertEquals(animals.animals, deserialized.animals);
+        }
+    }
+
+    @Test
+    public void fromAnnotation() {
+        final AnimalsAnnotation animals = new AnimalsAnnotation();
+        animals.animals.add(new Cat(5, "Garfield", 10.5f, true, true));
+        animals.animals.add(new Dog(3, "Milo", 5.5f, false, true));
+        animals.animals.add(new Animal(6, "Tweety", 0.5f, false));
+
+        final String jsonString = jsonb.toJson(animals);
+        assertEquals("{\"animals\":[" +
+                "{\"type\":\"cat\",\"cuddly\":true,\"age\":5,\"furry\":true,\"name\":\"Garfield\",\"weight\":10.5}," +
+                "{\"type\":\"dog\",\"barking\":true,\"age\":3,\"furry\":false,\"name\":\"Milo\",\"weight\":5.5}," +
+                "{\"type\":\"animal\",\"age\":6,\"furry\":false,\"name\":\"Tweety\",\"weight\":0.5}]}", jsonString);
+
+        final AnimalsAnnotation deserialized = jsonb.fromJson("{ \"animals\" : [ "
+                + "{ \"type\" : \"cat\", \"cuddly\" : true, \"age\" : 5, \"furry\" : true, \"name\" : \"Garfield\" , \"weight\" : 10.5}, "
+                + "{ \"type\" : \"dog\", \"barking\" : true, \"age\" : 3, \"furry\" : false, \"name\" : \"Milo\", \"weight\" : 5.5}, "
+                + "{ \"type\" : \"animal\", \"age\" : 6, \"furry\" : false, \"name\" : \"Tweety\", \"weight\" : 0.5}"
+                + " ] }", AnimalsAnnotation.class);
+        assertEquals(animals.animals, deserialized.animals);
+    }
+
+    public static class Animal {
+        public int age;
+        public String name;
+        public float weight;
+        public boolean furry;
+
+        public Animal() {
+            // no-op
+        }
+
+        public Animal(int age, String name, float weight, boolean furry) {
+            this.age = age;
+            this.name = name;
+            this.weight = weight;
+            this.furry = furry;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final Animal animal = (Animal) o;
+            return age == animal.age &&
+                    Float.compare(animal.weight, weight) == 0 &&
+                    furry == animal.furry &&
+                    Objects.equals(name, animal.name);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(age, name, weight, furry);
+        }
+    }
+
+    public static class Dog extends Animal {
+        public boolean barking;
+
+        public Dog() {
+            // no-op
+        }
+
+        public Dog(int age, String name, float weight, boolean furry,
+                   boolean barking) {
+            super(age, name, weight, furry);
+            this.barking = barking;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            final Dog dog = (Dog) o;
+            return barking == dog.barking;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), barking);
+        }
+    }
+
+    public static class Cat extends Animal {
+        public boolean cuddly;
+
+        public Cat() {
+            // no-op
+        }
+
+        public Cat(int age, String name, float weight, boolean furry,
+                   boolean cuddly) {
+            super(age, name, weight, furry);
+            this.cuddly = cuddly;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            if (!super.equals(o)) {
+                return false;
+            }
+            final Cat cat = (Cat) o;
+            return cuddly == cat.cuddly;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(super.hashCode(), cuddly);
+        }
+    }
+
+    public static class AnimalListDeserializer implements JsonbDeserializer<List<Animal>> {
+        private final AnimalDeserializer animalDeserializer = new AnimalDeserializer();
+
+        @Override
+        public List<Animal> deserialize(final JsonParser parser,
+                                        final DeserializationContext ctx,
+                                        final Type type) {
+            final List<Animal> animals = new ArrayList<>();
+            while (parser.hasNext()) {
+                JsonParser.Event event = parser.next();
+                while (event == JsonParser.Event.START_OBJECT) {
+                    animals.add(animalDeserializer.deserialize(parser, ctx, type));
+                    event = parser.next();
+                }
+            }
+            return animals;
+        }
+    }
+
+    public static class AnimalListSerializer implements JsonbSerializer<List<Animal>> {
+        private final AnimalSerializer animalSerializer = new AnimalSerializer();
+
+        @Override
+        public void serialize(final List<Animal> animals, final JsonGenerator gen,
+                              final SerializationContext ctx) {
+            gen.writeStartArray();
+            for (final Animal animal : animals) {
+                animalSerializer.serialize(animal, gen, ctx);
+            }
+            gen.writeEnd();
+        }
+    }
+
+    public static class AnimalsAnnotation {
+        @JsonbTypeSerializer(AnimalListSerializer.class)
+        @JsonbTypeDeserializer(AnimalListDeserializer.class)
+        public List<Animal> animals = new ArrayList<>();
+    }
+
+    public static class Animals {
+        public List<Animal> animals = new ArrayList<>();
+    }
+
+    public static class AnimalDeserializer implements JsonbDeserializer<Animal> {
+        @Override
+        public Animal deserialize(final JsonParser jsonParser,
+                                  final DeserializationContext deserializationContext,
+                                  final Type type) {
+            Animal animal = null;
+            while (jsonParser.hasNext()) {
+                JsonParser.Event event = jsonParser.next();
+                if (event == JsonParser.Event.START_OBJECT) {
+                    continue;
+                }
+                if (event == JsonParser.Event.END_OBJECT) {
+                    break;
+                }
+                if (event == JsonParser.Event.KEY_NAME) {
+                    switch (jsonParser.getString()) {
+                        case "type":
+                            jsonParser.next();
+                            switch (jsonParser.getString()) {
+                                case "cat":
+                                    animal = new Cat();
+                                    break;
+                                case "dog":
+                                    animal = new Dog();
+                                    break;
+                                default:
+                                    animal = new Animal();
+                            }
+                            break;
+                        case "name":
+                            jsonParser.next();
+                            animal.name = jsonParser.getString();
+                            break;
+                        case "age":
+                            jsonParser.next();
+                            animal.age = jsonParser.getInt();
+                            break;
+                        case "furry":
+                            event = jsonParser.next();
+                            animal.furry = event == JsonParser.Event.VALUE_TRUE;
+                            break;
+                        case "weight":
+                            jsonParser.next();
+                            animal.weight = jsonParser.getBigDecimal().floatValue();
+                            break;
+                        case "cuddly":
+                            event = jsonParser.next();
+                            ((Cat) animal).cuddly = event == JsonParser.Event.VALUE_TRUE;
+                            break;
+                        case "barking":
+                            event = jsonParser.next();
+                            ((Dog) animal).barking = event == JsonParser.Event.VALUE_TRUE;
+                            break;
+                        default:
+                    }
+                }
+            }
+            return animal;
+        }
+    }
+
+    public static class AnimalSerializer implements JsonbSerializer<Animal> {
+        @Override
+        public void serialize(final Animal animal, final JsonGenerator jsonGenerator,
+                              final SerializationContext serializationContext) {
+            if (animal != null) {
+                jsonGenerator.writeStartObject();
+                if (Cat.class.isAssignableFrom(animal.getClass())) {
+                    jsonGenerator.write("type", "cat");
+                    jsonGenerator.write("cuddly", ((Cat) animal).cuddly);
+                } else if (Dog.class.isAssignableFrom(animal.getClass())) {
+                    jsonGenerator.write("type", "dog");
+                    jsonGenerator.write("barking", ((Dog) animal).barking);
+                } else {
+                    jsonGenerator.write("type", "animal");
+                }
+                jsonGenerator.write("age", animal.age);
+                jsonGenerator.write("furry", animal.furry);
+                jsonGenerator.write("name", animal.name);
+                jsonGenerator.write("weight", animal.weight);
+                jsonGenerator.writeEnd();
+            } else {
+                serializationContext.serialize(null, jsonGenerator);
+            }
+        }
     }
 
     public static class StringHolder implements Holder<String> {

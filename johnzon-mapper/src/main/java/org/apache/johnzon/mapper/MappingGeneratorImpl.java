@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toList;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.util.ArrayUtil;
@@ -33,8 +34,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.stream.BaseStream;
+import java.util.stream.StreamSupport;
 
 public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
@@ -401,7 +406,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             writeArray(type, itemConverter, key, value, ignoredProperties, jsonPointer);
         } else if ((!dynamic && collection) || (dynamic && Iterable.class.isAssignableFrom(type))) {
             writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
-                    Iterable.class.cast(value).iterator());
+                    Iterable.class.cast(value).iterator(), value);
         } else if ((!dynamic && map) || (dynamic && Map.class.isAssignableFrom(type))) {
             generator.writeStartObject(key);
             writeMapBody((Map<?, ?>) value, itemConverter);
@@ -417,10 +422,10 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
         } else if (BaseStream.class.isAssignableFrom(type)) {
             writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
-                    BaseStream.class.cast(value).iterator());
+                    BaseStream.class.cast(value).iterator(), value);
         } else if (Iterator.class.isAssignableFrom(type)) {
             writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
-                    Iterator.class.cast(value));
+                    Iterator.class.cast(value), value);
         } else {
             if (objectConverter != null) {
                 final DynamicMappingGenerator dynamicMappingGenerator = new DynamicMappingGenerator(this,
@@ -466,7 +471,18 @@ public class MappingGeneratorImpl implements MappingGenerator {
                                final Collection<String> ignoredProperties,
                                final JsonPointerTracker jsonPointer,
                                final JsonGenerator generator,
-                               final Iterator<?> iterator) {
+                               final Iterator<?> iterator,
+                               final Object originalValue) {
+        if (objectConverter != null && objectConverter.isGlobal()) {
+            final List<Object> list = List.class.isInstance(originalValue) ?
+                    List.class.cast(originalValue) :
+                    StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.IMMUTABLE), false)
+                        .collect(toList());
+            objectConverter.writeJson(list, new DynamicMappingGenerator(
+                    this, generator::writeStartArray, generator::writeEnd, key));
+            return;
+        }
+
         int i = 0;
         generator.writeStartArray(key);
         while (iterator.hasNext()) {

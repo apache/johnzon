@@ -66,14 +66,15 @@ public class DynamicMappingGenerator implements MappingGenerator {
     }
 
     public void flushIfNeeded() {
-        if (this.generator.state == WritingState.WROTE_START_OBJECT) {
+        if (this.generator.state == WritingState.WROTE_START) {
             writeEnd.run();
             this.generator.state = WritingState.NONE;
         }
     }
 
     private enum WritingState {
-        NONE, WROTE_START_OBJECT,
+        NONE,
+        WROTE_START,
         DONT_WRITE_END
     }
 
@@ -81,7 +82,8 @@ public class DynamicMappingGenerator implements MappingGenerator {
         private final JsonGenerator delegate;
         private final Runnable writeStart;
         private final String keyIfNoObject;
-        private WritingState state = WritingState.NONE;
+        private WritingState state = WritingState.NONE; // todo: we need a stack (linkedlist) here to be accurate
+        private int nested = 0;
 
         private InObjectOrPrimitiveJsonGenerator(final JsonGenerator generator, final Runnable writeStart,
                                                  final String keyName) {
@@ -91,184 +93,239 @@ public class DynamicMappingGenerator implements MappingGenerator {
         }
 
         private void ensureStart() {
-            if (state == WritingState.WROTE_START_OBJECT) {
+            if (state != WritingState.NONE) {
                 return;
             }
             writeStart.run();
-            state = WritingState.WROTE_START_OBJECT;
+            state = WritingState.WROTE_START;
         }
 
         @Override
         public JsonGenerator writeStartObject() {
-            // return delegate.writeStartObject();
+            if (state == WritingState.NONE) {
+                ensureStart();
+            } else {
+                nested++;
+                delegate.writeStartObject();
+            }
             return this;
         }
 
         @Override
         public JsonGenerator writeStartObject(final String name) {
+            if (state != WritingState.NONE) {
+                nested++;
+            }
             ensureStart();
-            return delegate.writeStartObject(name);
+            delegate.writeStartObject(name);
+            return this;
         }
 
         @Override
         public JsonGenerator writeStartArray() {
+            if (state != WritingState.NONE) {
+                nested++;
+            }
             if (keyIfNoObject != null && state == WritingState.NONE) {
                 state = WritingState.DONT_WRITE_END; // skip writeEnd since the impl will do it
                 return delegate.writeStartArray(keyIfNoObject);
+            } else if (state == WritingState.NONE) {
+                ensureStart();
+                return this;
             }
-            return delegate.writeStartArray();
+            delegate.writeStartArray();
+            return this;
         }
 
         @Override
         public JsonGenerator writeStartArray(final String name) {
+            if (state != WritingState.NONE) {
+                nested++;
+            }
             ensureStart();
-            return delegate.writeStartArray(name);
+            delegate.writeStartArray(name);
+            return this;
         }
 
         @Override
         public JsonGenerator writeKey(final String name) {
             ensureStart();
-            return delegate.writeKey(name);
+            delegate.writeKey(name);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final JsonValue value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final String value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final BigInteger value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final BigDecimal value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final int value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final long value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final double value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String name, final boolean value) {
             ensureStart();
-            return delegate.write(name, value);
+            delegate.write(name, value);
+            return this;
         }
 
         @Override
         public JsonGenerator writeNull(final String name) {
             ensureStart();
-            return delegate.writeNull(name);
+            delegate.writeNull(name);
+            return this;
         }
 
         @Override
         public JsonGenerator writeEnd() {
-            return delegate.writeEnd();
+            if (nested == 0 && state == WritingState.WROTE_START) {
+                state = WritingState.NONE;
+            }
+            if (nested > 0) {
+                nested--;
+            }
+            delegate.writeEnd();
+            return this;
         }
 
         @Override
         public JsonGenerator write(final JsonValue value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final String value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final BigDecimal value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final BigInteger value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final int value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final long value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(final double value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator write(boolean value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.write(keyIfNoObject, value);
+                delegate.write(keyIfNoObject, value);
+                return this;
             }
-            return delegate.write(value);
+            delegate.write(value);
+            return this;
         }
 
         @Override
         public JsonGenerator writeNull() {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
-                return delegate.writeNull(keyIfNoObject);
+                delegate.writeNull(keyIfNoObject);
+                return this;
             }
-            return delegate.writeNull();
+            delegate.writeNull();
+            return this;
         }
 
         private boolean isWritingPrimitive() {

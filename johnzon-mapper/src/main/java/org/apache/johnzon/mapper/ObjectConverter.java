@@ -37,12 +37,26 @@ public final class ObjectConverter {
 
     public interface Writer<T> extends MapperConverter {
         void writeJson(T instance, MappingGenerator jsonbGenerator);
+
+        // returns true if it is for containers - if any - and not each container item (ex: list)
+        default boolean isGlobal() {
+            return false;
+        }
     }
 
     public interface Reader<T> extends MapperConverter {
         T fromJson(JsonValue jsonValue, Type targetType, MappingParser parser);
+
+        // returns true if it is for containers - if any - and not each container item (ex: list)
+        default boolean isGlobal() {
+            return false;
+        }
     }
 
     public interface Codec<T> extends ObjectConverter.Writer<T>, ObjectConverter.Reader<T> {
+        @Override
+        default boolean isGlobal() {
+            return false;
+        }
     }
 }
