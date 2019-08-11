@@ -86,6 +86,10 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         customized = true;
     }
 
+    public void setUseJsRange(final boolean value) {
+        config.setProperty("johnzon.use-js-range", value);
+    }
+
     public void setOtherProperties(final String others) {
         final Properties properties = new Properties() {{
             try {

@@ -36,8 +36,6 @@ public class AdvancedGenericsTest {
         return asList("field", "method", "both", "strict-method");
     }
 
-
-
     @Test
     public void testSerializeHierarchyOne() {
         Mapper mapper = new MapperBuilder().setAccessModeName(accessMode)

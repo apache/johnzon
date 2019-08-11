@@ -51,6 +51,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     };
 
     private final int version;
+    private final boolean useJsRange;
     private final boolean close;
     private final boolean skipNull;
     private final boolean skipEmptyArray;
@@ -90,7 +91,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final SerializeValueFilter serializeValueFilter,
                         final boolean useBigDecimalForFloats,
                         final Boolean deduplicateObjects,
-                        final Map<Class<?>, Class<?>> interfaceImplementationMapping) {
+                        final Map<Class<?>, Class<?>> interfaceImplementationMapping,
+                        final boolean useJsRange) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -103,6 +105,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.readAttributeBeforeWrite = readAttributeBeforeWrite;
         this.accessMode = accessMode;
         this.encoding = encoding;
+        this.useJsRange = useJsRange;
 
         // handle Adapters
         this.adapters = adapters;
@@ -120,6 +123,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
         this.useBigDecimalForFloats = useBigDecimalForFloats;
         this.deduplicateObjects = deduplicateObjects;
+    }
+
+    public boolean isUseJsRange() {
+        return useJsRange;
     }
 
     public Map<Class<?>, Class<?>> getInterfaceImplementationMapping() {

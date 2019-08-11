@@ -218,7 +218,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
             generator.write(value.toString());
             handled = true;
         } else if (type == long.class || type == Long.class) {
-            generator.write(Long.class.cast(value).longValue());
+            final long longValue = Long.class.cast(value).longValue();
+            if (isInJsRange(longValue)) {
+                generator.write(longValue);
+            } else {
+                generator.write(value.toString());
+            }
             handled = true;
         } else if (isInt(type)) {
             generator.write(Number.class.cast(value).intValue());
@@ -261,7 +266,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
             generator.write(key, JsonValue.class.cast(value));
             handled = true;
         } else if (type == long.class || type == Long.class) {
-            generator.write(key, Long.class.cast(value).longValue());
+            final long longValue = Long.class.cast(value).longValue();
+            if (isInJsRange(longValue)) {
+                generator.write(key, longValue);
+            } else {
+                generator.write(key, value.toString());
+            }
             handled = true;
         } else if (isInt(type)) {
             generator.write(key, Number.class.cast(value).intValue());
@@ -683,4 +693,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
         return converter.from(value);
     }
 
+    private boolean isInJsRange(final Number longValue) {
+        return !config.isUseJsRange() ||
+                (longValue.longValue() <= 9007199254740991L && longValue.longValue() >= -9007199254740991L);
+    }
 }

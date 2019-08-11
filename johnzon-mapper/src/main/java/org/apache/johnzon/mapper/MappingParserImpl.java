@@ -179,7 +179,7 @@ public class MappingParserImpl implements MappingParser {
             if (targetType == short.class || targetType == Short.class) {
                 return (T) Short.valueOf((short) number.intValue());
             }
-            if (targetType == BigDecimal.class) {
+            if (targetType == BigDecimal.class || Number.class == targetType) {
                 return (T) number.bigDecimalValue();
             }
             if (targetType == BigInteger.class) {
@@ -488,7 +488,7 @@ public class MappingParserImpl implements MappingParser {
                     return converter.to(JsonNumber.class.cast(jsonValue).doubleValue());
                 } else if (BigInteger.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue).bigIntegerValue());
-                } else if (BigDecimal.class == key.getTo()) {
+                } else if (BigDecimal.class == key.getTo() ||  Number.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue).bigDecimalValue());
                 } else if (JsonNumber.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue));
@@ -618,7 +618,7 @@ public class MappingParserImpl implements MappingParser {
                 return number.bigIntegerValue();
             }
 
-            if (type == BigDecimal.class) {
+            if (type == BigDecimal.class ||  Number.class == type) {
                 return number.bigDecimalValue();
             }
 

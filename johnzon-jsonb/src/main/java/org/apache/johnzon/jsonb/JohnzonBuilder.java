@@ -188,6 +188,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("johnzon.interfaceImplementationMapping")
                 .map(Map.class::cast)
                 .ifPresent(builder::setInterfaceImplementationMapping);
+        builder.setUseJsRange(config.getProperty("johnzon.use-js-range")
+                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .orElse(true));
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 
