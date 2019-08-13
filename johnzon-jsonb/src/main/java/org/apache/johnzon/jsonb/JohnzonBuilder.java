@@ -226,7 +226,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                         factory, jsonp, builderFactorySupplier, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
                                 .map(this::toAccessMode)
-                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false)),
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, true)),
                         config.getProperty("johnzon.failOnMissingCreatorValues")
                               .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
                               .orElse(true) /*spec 1.0 requirement*/,
