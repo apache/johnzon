@@ -157,6 +157,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
+            final Mappings.ClassMapping classMapping = mappings.getClassMapping(objectClass); // don't create here!
+            if (classMapping != null && classMapping.adapter != null) {
+                final Object result = classMapping.adapter.from(object);
+                doWriteObject(result, generator, writeBody, ignoredProperties, jsonPointer);
+                return;
+            }
+
             ObjectConverter.Writer objectConverter = config.findObjectConverterWriter(objectClass);
             if (writeBody && objectConverter != null) {
                 if (!writeBody) {
@@ -336,7 +343,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             return;
         }
         if (classMapping.adapter != null) {
-            doWriteObjectBody(classMapping.adapter.to(object), ignored, jsonPointer, generator);
+            doWriteObjectBody(classMapping.adapter.from(object), ignored, jsonPointer, generator);
             return;
         }
 

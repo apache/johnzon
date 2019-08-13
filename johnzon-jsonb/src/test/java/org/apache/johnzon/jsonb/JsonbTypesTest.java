@@ -63,31 +63,15 @@ public class JsonbTypesTest {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
         final LocalTime localTime = LocalTime.of(1, 2, 3);
         final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
-        final String dateTime = localDateTime.toString();
-        final ZonedDateTime zonedDateTime = ZonedDateTime.of(localDateTime, ZoneId.of("UTC"));
-        final String expected = "{" +
-            "\"calendar\":\"" + zonedDateTime + "\"," +
-            "\"date\":\"" + localDateTime + "\"," +
-            "\"duration\":\"PT30S\"," +
-            "\"gregorianCalendar\":\"" + zonedDateTime.toString() + "\"," +
-            "\"instant\":\"" + Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay())) + "\"," +
-            "\"localDate\":\"" + localDate + "\"," +
-            "\"localDateTime\":\"" + dateTime + "\"," +
-            "\"localTime\":\"" + localTime + "\"," +
-            "\"offsetDateTime\":\"" + OffsetDateTime.of(localDateTime, ZoneOffset.UTC) + "\"," +
-            "\"offsetTime\":\"" + OffsetTime.of(localDateTime.toLocalTime(), ZoneOffset.UTC) + "\"," +
-            "\"optionalDouble\":3.4," +
-            "\"optionalInt\":1," +
-            "\"optionalLong\":2," +
-            "\"optionalString\":\"yes\"," +
-            "\"period\":\"P1M10D\"," +
-            "\"simpleTimeZone\":\"UTC\"," +
-            "\"timeZone\":\"UTC\"," +
-            "\"uri\":\"http://localhost:2222\"," +
-            "\"url\":\"http://localhost:1111\"," +
-            "\"zoneId\":\"UTC\"," +
-            "\"zoneOffset\":\"Z\"" +
-            "}";
+        final String expected = "{\"calendar\":\"2015-01-01T01:01:00Z[UTC]\",\"date\":\"2015-01-01T01:01:00Z[UTC]\"," +
+                "\"duration\":\"PT30S\",\"gregorianCalendar\":\"2015-01-01T01:01:00Z[UTC]\"," +
+                "\"instant\":\"2015-01-01T00:00:00Z\",\"localDate\":\"2015-01-01\"," +
+                "\"localDateTime\":\"2015-01-01T01:01\",\"localTime\":\"01:02:03\"," +
+                "\"offsetDateTime\":\"2015-01-01T01:01Z\",\"offsetTime\":\"01:01Z\"," +
+                "\"optionalDouble\":3.4,\"optionalInt\":1,\"optionalLong\":2,\"optionalString\":\"yes\"," +
+                "\"period\":\"P1M10D\",\"simpleTimeZone\":\"UTC\",\"timeZone\":\"UTC\"," +
+                "\"uri\":\"http://localhost:2222\",\"url\":\"http://localhost:1111\"," +
+                "\"zoneId\":\"UTC\",\"zoneOffset\":\"Z\"}";
 
         final Jsonb jsonb = newJsonb();
 

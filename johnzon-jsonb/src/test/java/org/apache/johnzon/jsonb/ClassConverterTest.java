@@ -93,16 +93,16 @@ public class ClassConverterTest {
         }
     }
 
-    public static class MyAdapter implements JsonbAdapter<Switch, Whole> {
+    public static class MyAdapter implements JsonbAdapter<Whole, Switch> {
         @Override
-        public Whole adaptToJson(final Switch obj) throws Exception {
+        public Whole adaptFromJson(final Switch obj) throws Exception {
             final Whole whole = new Whole();
             whole.name = obj.name2.replace("<", "").replace(">", "");
             return whole;
         }
 
         @Override
-        public Switch adaptFromJson(final Whole obj) throws Exception {
+        public Switch adaptToJson(final Whole obj) throws Exception {
             final Switch aSwitch = new Switch();
             aSwitch.name2 = '>' + obj.name + '<';
             return aSwitch;

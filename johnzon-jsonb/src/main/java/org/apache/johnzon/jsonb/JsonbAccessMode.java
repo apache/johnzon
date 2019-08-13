@@ -657,8 +657,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
     private boolean isReversedAdapter(final Class<?> payloadType, final Class<?> aClass, final Adapter<?, ?> instance) {
         if (TypeAwareAdapter.class.isInstance(instance)) {
-            return !payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getTo()))
-                    && payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getFrom()));
+            return payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getTo()))
+                    && !payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getFrom()));
         }
         final Type[] genericInterfaces = aClass.getGenericInterfaces();
         return Stream.of(genericInterfaces).filter(ParameterizedType.class::isInstance)

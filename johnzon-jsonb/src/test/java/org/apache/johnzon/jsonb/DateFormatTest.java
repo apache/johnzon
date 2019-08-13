@@ -19,6 +19,7 @@
 package org.apache.johnzon.jsonb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.text.SimpleDateFormat;
 import java.time.ZoneId;
@@ -26,7 +27,10 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.TimeZone;
+import java.util.stream.Stream;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
@@ -42,6 +46,46 @@ import org.junit.Test;
 public class DateFormatTest {
     @Rule
     public final JsonbRule jsonb = new JsonbRule();
+
+    @Test
+    public void dateRoundTrip() {
+        final Date date = new Date(1);
+        final String str = jsonb.toJson(date);
+        final Date date1 = jsonb.fromJson(str, Date.class);
+        final String dateReser = jsonb.toJson(date1);
+        final Date reDeser = jsonb.fromJson(dateReser, Date.class);
+        assertEquals(date.getTime(), reDeser.getTime());
+    }
+
+    @Test
+    public void calendarCanBeParsed() {
+        Stream.of("{\"instance\":\"1970-01-01T00:00+01:00[Europe/Paris]\"}",
+                "{\"instance\":\"1970-01-01\"}")
+                .forEach(json -> {
+                    final Calendar cal = jsonb.fromJson(json, CalendarHolder.class).getInstance();
+                    assertNotNull(cal);
+                    // todo: assert value, fixed bug was that it was not even parseable
+                });
+    }
+
+    @Test
+    public void dateCanBeParsed() {
+        final Date date = new Date(70, 0, 1);
+
+        final GregorianCalendar calendar = new GregorianCalendar();
+        calendar.setTime(date);
+        calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+        final DateTimeFormatter dtf = DateTimeFormatter.ISO_DATE_TIME;
+        final String value = dtf.format(calendar.toZonedDateTime()).replace("]", "\\]")
+                .replace("[", "\\[").replace("+", "\\+");
+
+        Stream.of("{\"instance\":\"" + value + "\"}")
+                .forEach(json -> {
+                    final Date unmarshalled = jsonb.fromJson(json, DateHolder.class).getInstance();
+                    assertNotNull(unmarshalled);
+                    // todo: assert value, fixed bug was that it was not even parseable
+                });
+    }
 
     @Test
     public void dateFormatMethods() {
@@ -86,6 +130,20 @@ public class DateFormatTest {
         }
     }
 
+    public static class CalendarHolder implements Holder<Calendar> {
+        private Calendar instance;
+
+        @Override
+        public Calendar getInstance() {
+            return instance;
+        }
+
+        @Override
+        public void setInstance(final Calendar instance) {
+            this.instance = instance;
+        }
+    }
+
     public static class DateHolder implements Holder<Date> {
         private Date instance;
 
@@ -97,7 +155,7 @@ public class DateFormatTest {
 
         @Override
         @JsonbDateFormat(value = "E DD MMM yyyy HH:mm:ss z", locale = "de")
-        public void setInstance(Date instance) {
+        public void setInstance(final Date instance) {
             this.instance = instance;
         }
     }

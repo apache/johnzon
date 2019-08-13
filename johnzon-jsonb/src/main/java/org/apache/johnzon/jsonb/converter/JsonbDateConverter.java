@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 import javax.json.bind.annotation.JsonbDateFormat;
@@ -32,7 +33,9 @@ public class JsonbDateConverter extends JsonbDateConverterBase<Date> {
     private static final ZoneId UTC = ZoneId.of("UTC");
 
     // TODO: cheap impl to avoid to rely on exceptions, better can be to parse format
+    //       -> rewrite it
     private volatile boolean hasTimezone = true;
+    private volatile boolean isIso = false;
 
     public JsonbDateConverter(final JsonbDateFormat dateFormat) {
         super(dateFormat);
@@ -54,35 +57,62 @@ public class JsonbDateConverter extends JsonbDateConverterBase<Date> {
 
     private Date fromStringWithFormatter(final String text) {
         final boolean hasTimezone = this.hasTimezone;
+        final boolean isIso = this.isIso;
         try {
+            if (isIso) {
+                return fromIso(text);
+            }
             if (hasTimezone) {
                 return fromZonedDateTime(text);
             }
             return fromLocalDateTime(text);
         } catch (final DateTimeException dte) {
             this.hasTimezone = !hasTimezone;
-            if (hasTimezone) {
-                return fromLocalDateTime(text);
+            try {
+                if (hasTimezone) {
+                    return fromLocalDateTime(text);
+                }
+                return fromZonedDateTime(text);
+            } catch (final DateTimeException dte2) {
+                final Date from = fromIso(text);
+                this.isIso = !isIso;
+                return from;
             }
-            return fromZonedDateTime(text);
         }
+    }
+
+    private Date fromIso(final String text) {
+        return Date.from(ZonedDateTime.parse(text, DateTimeFormatter.ISO_ZONED_DATE_TIME).toInstant());
     }
 
     private String toStringWithFormatter(final Date instance) {
         final boolean hasTimezone = this.hasTimezone;
+        final boolean isIso = this.isIso;
         final Instant instant = Instant.ofEpochMilli(instance.getTime());
         try {
+            if (isIso) {
+                return toIsoString(instant);
+            }
             if (hasTimezone) {
                 return toStringFromZonedDateTime(instant);
             }
             return toStringFromLocalDateTime(instant);
         } catch (final DateTimeException dte) {
-            this.hasTimezone = !hasTimezone;
-            if (hasTimezone) {
-                return toStringFromLocalDateTime(instant);
+            try {
+                this.hasTimezone = !hasTimezone;
+                if (hasTimezone) {
+                    return toStringFromLocalDateTime(instant);
+                }
+                return toStringFromZonedDateTime(instant);
+            } catch (final DateTimeException dte2) {
+                this.isIso = !isIso;
+                return toIsoString(instant);
             }
-            return toStringFromZonedDateTime(instant);
         }
+    }
+
+    private String toIsoString(final Instant instant) {
+        return DateTimeFormatter.ISO_ZONED_DATE_TIME.format(ZonedDateTime.ofInstant(instant, UTC));
     }
 
     private Date fromLocalDateTime(final String text) {
@@ -90,7 +120,8 @@ public class JsonbDateConverter extends JsonbDateConverterBase<Date> {
     }
 
     private Date fromZonedDateTime(final String text) {
-        return Date.from(ZonedDateTime.parse(text, formatter).toInstant());
+        final ZonedDateTime zonedDateTime = ZonedDateTime.parse(text, formatter);
+        return Date.from(zonedDateTime.toInstant());
     }
 
     private String toStringFromLocalDateTime(final Instant instant) {

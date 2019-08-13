@@ -47,6 +47,10 @@ class Strings implements JsonChars {
                 return '\\';
             case '/':
                 return '/';
+            case '[': // todo: check - needed in tck
+                return '[';
+            case ']': // todo: check - needed in tck
+                return ']';
             default:
                 if(Character.isHighSurrogate(current) || Character.isLowSurrogate(current)) {
                     return current;

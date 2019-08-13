@@ -40,12 +40,12 @@ public class OverrideDefaultAdaptersTest {
     @Test
     public void run() throws Exception {
         final ZonedDateTime zdtString = ZonedDateTime.ofInstant(new Date(0).toInstant(), ZoneId.of("UTC"));
-        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new ZonedDateTimeFallbackDateAdapter()))) {
-            final DateHolder holder = jsonb.fromJson("{\"date\":\"" + zdtString + "\"}", DateHolder.class);
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new ZonedDateTimeWithFallback()))) {
+            final DateHolder holder = jsonb.fromJson("{\"date\":\"" + zdtString + "i\"}", DateHolder.class);
             assertEquals(new Date(0).getTime(), holder.date.getTime());
         }
         try (final Jsonb jsonb = JsonbBuilder.create()) {
-            jsonb.fromJson("{\"date\":\"" + zdtString + "\"}", DateHolder.class);
+            jsonb.fromJson("{\"date\":\"" + zdtString + "i\"}", DateHolder.class);
             fail();
         } catch (final JsonbException je) {
             // expected
@@ -57,7 +57,7 @@ public class OverrideDefaultAdaptersTest {
         public Date date;
     }
 
-    public static class ZonedDateTimeFallbackDateAdapter implements JsonbAdapter<Date, String> {
+    public static class ZonedDateTimeWithFallback implements JsonbAdapter<Date, String> {
         private static final ZoneId UTC = ZoneId.of("UTC");
 
         @Override
@@ -65,7 +65,7 @@ public class OverrideDefaultAdaptersTest {
             try {
                 return Date.from(LocalDateTime.parse(obj).toInstant(ZoneOffset.UTC));
             } catch (final DateTimeParseException pe) {
-                return new Date(ZonedDateTime.parse(obj).toInstant().toEpochMilli());
+                return new Date(ZonedDateTime.parse(obj.substring(0, obj.length() - 1)).toInstant().toEpochMilli());
             }
         }
 

@@ -156,6 +156,11 @@ public class MappingParserImpl implements MappingParser {
                 }
                 throw new IllegalArgumentException("Invalid Character binding"); // don't log the value (pwd case)
             }
+
+            final Mappings.ClassMapping classMapping = mappings.getClassMapping(targetType);
+            if (classMapping != null && classMapping.adapter != null) {
+                return (T) classMapping.adapter.to(JsonString.class.cast(jsonValue).getString());
+            }
         }
         if (JsonNumber.class.isInstance(jsonValue)) {
             final JsonNumber number = JsonNumber.class.cast(jsonValue);
