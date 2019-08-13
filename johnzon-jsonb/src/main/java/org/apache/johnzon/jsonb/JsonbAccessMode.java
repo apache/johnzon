@@ -179,6 +179,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     public Factory findFactory(final Class<?> clazz) {
         Constructor<?> constructor = null;
         Method factory = null;
+        boolean invalidConstructorForDeserialization = false;
         for (final Constructor<?> c : clazz.getConstructors()) {
             if (c.isAnnotationPresent(JsonbCreator.class)) {
                 if (constructor != null) {
@@ -195,6 +196,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 }
                 factory = m;
             }
+        }
+        if (constructor == null && factory == null) {
+            invalidConstructorForDeserialization = Stream.of(clazz.getDeclaredConstructors())
+                    .anyMatch(it -> it.getParameterCount() == 0 && !Modifier.isPublic(it.getModifiers()));
         }
         final Constructor<?> finalConstructor = constructor;
         final Method finalFactory = factory;
@@ -261,10 +266,15 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             objectConverters = null;
         }
 
-        return constructor == null && factory == null ? delegate.findFactory(clazz) : (
-                constructor != null ?
-                        constructorFactory(finalConstructor, factoryValidator, types, params, converters, itemConverters, objectConverters) :
-                        methodFactory(clazz, finalFactory, factoryValidator, types, params, converters, itemConverters, objectConverters));
+        if (constructor == null && factory == null && !invalidConstructorForDeserialization) {
+            return delegate.findFactory(clazz);
+        }
+        if (constructor != null || invalidConstructorForDeserialization) {
+            return constructorFactory(finalConstructor, invalidConstructorForDeserialization ? (Consumer<Object[]>) objects -> {
+                throw new JsonbException("No available constructor");
+            } : factoryValidator, types, params, converters, itemConverters, objectConverters);
+        }
+        return methodFactory(clazz, finalFactory, factoryValidator, types, params, converters, itemConverters, objectConverters);
     }
 
     private Factory methodFactory(final Class<?> clazz, final Method finalFactory,

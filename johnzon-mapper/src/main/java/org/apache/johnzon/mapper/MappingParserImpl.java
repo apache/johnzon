@@ -329,7 +329,7 @@ public class MappingParserImpl implements MappingParser {
         }
 
         Object t;
-        if (classMapping.factory.getParameterTypes().length == 0) {
+        if (classMapping.factory.getParameterTypes() == null || classMapping.factory.getParameterTypes().length == 0) {
             t = classMapping.factory.create(null);
         } else {
             t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));

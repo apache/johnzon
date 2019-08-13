@@ -239,7 +239,7 @@ public class AdapterTest {
                 doorDTO.status);
     }
 
-    static class DoorDTO {
+    public static class DoorDTO {
         @JsonbTypeAdapter(StatusAdapter.class)
         public DoorStatus status;
     }

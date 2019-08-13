@@ -730,7 +730,7 @@ public class DefaultMappingTest {
         }
     }
 
-    private static class POJO {
+    public static class POJO {
         private Integer id;
         private String name;
 
@@ -756,7 +756,7 @@ public class DefaultMappingTest {
         //other supported attributes
     }
 
-    private static class POJOWithNestedClass {
+    public static class POJOWithNestedClass {
         private Integer id;
         private String name;
         private NestedClass nestedClass;
@@ -815,7 +815,7 @@ public class DefaultMappingTest {
         }
     }
 
-    private static class POJOWithStaticNestedClass {
+    public static class POJOWithStaticNestedClass {
         private Integer id;
         private String name;
 
@@ -865,7 +865,7 @@ public class DefaultMappingTest {
         }
     }
 
-    private static class POJOWithMixedFieldAccess {
+    public static class POJOWithMixedFieldAccess {
         public Integer id = 1;
         public String name = "pojoName";
         public Boolean active = false;
@@ -1190,7 +1190,7 @@ public class DefaultMappingTest {
         assertNull(accessorsClass.protectedField);
     }
 
-    static class AccessorsClass {
+    public static class AccessorsClass {
         private Integer privateField;
 
         protected Integer protectedField;
@@ -1230,14 +1230,14 @@ public class DefaultMappingTest {
         }
     }
 
-    static class OptionalClass {
+    public static class OptionalClass {
         public Optional<String> optionalField = Optional.empty();
 
         public OptionalClass() {
         }
     }
 
-    static class ModifiersClass {
+    public static class ModifiersClass {
         public final String finalField = "finalValue";
         public static String staticField = "staticValue";
         public transient String transientField = "transientValue";
@@ -1247,7 +1247,7 @@ public class DefaultMappingTest {
         }
     }
 
-    static class POJOWithInitialValue {
+    public static class POJOWithInitialValue {
         public Integer id = 4;
         public String name;
 
@@ -1255,7 +1255,7 @@ public class DefaultMappingTest {
         }
     }
 
-    static class AttributesOrderingClass {
+    public static class AttributesOrderingClass {
         public String aField;
         public String cField;
         public String bField;
@@ -1264,7 +1264,7 @@ public class DefaultMappingTest {
         }
     }
 
-    static class AttributesOrderingWithInheritance extends AttributesOrderingClass {
+    public static class AttributesOrderingWithInheritance extends AttributesOrderingClass {
         public String aa;
         public String cc;
         public String bb;
@@ -1273,7 +1273,7 @@ public class DefaultMappingTest {
         }
     }
 
-    static class AttributesOrderingWithCounterClass {
+    public static class AttributesOrderingWithCounterClass {
         private transient int counter = 0;
 
         private String first = "first";
