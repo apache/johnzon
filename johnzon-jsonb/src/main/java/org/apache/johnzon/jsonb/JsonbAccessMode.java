@@ -727,7 +727,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         // TODO: spec requirement, this sounds wrong since you cant customize 2 kind of serializations on the same model
         if (FieldAccessMode.FieldDecoratedType.class.isInstance(t)) {
             final Field field = FieldAccessMode.FieldDecoratedType.class.cast(t).getField();
-            return Modifier.isTransient(field.getModifiers());
+            return Modifier.isTransient(field.getModifiers()) || Modifier.isStatic(field.getModifiers());
         }
         return false;
     }
