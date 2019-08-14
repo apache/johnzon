@@ -48,11 +48,21 @@ public class MethodAccessMode extends BaseAccessMode {
         final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
         for (final PropertyDescriptor descriptor : propertyDescriptors) {
             final Method readMethod = descriptor.getReadMethod();
+            final String name = descriptor.getName();
             if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(descriptor.getName()) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
+                if (isIgnored(name) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
                     continue;
                 }
-                readers.put(extractKey(descriptor.getName(), readMethod, null), new MethodReader(readMethod, readMethod.getGenericReturnType()));
+                readers.put(extractKey(name, readMethod, null), new MethodReader(readMethod, readMethod.getGenericReturnType()));
+            } else if (readMethod == null && descriptor.getWriteMethod() != null && // isXXX, not supported by javabeans
+                    (descriptor.getPropertyType() == Boolean.class || descriptor.getPropertyType() == boolean.class)) {
+                try {
+                    final Method method = clazz.getMethod(
+                            "is" + Character.toUpperCase(name.charAt(0)) + (name.length() > 1 ? name.substring(1) : ""));
+                    readers.put(extractKey(name, method, null), new MethodReader(method, method.getGenericReturnType()));
+                } catch (final NoSuchMethodException e) {
+                    // no-op
+                }
             }
         }
         return readers;

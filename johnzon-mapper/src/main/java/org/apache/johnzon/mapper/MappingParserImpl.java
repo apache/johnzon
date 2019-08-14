@@ -437,7 +437,8 @@ public class MappingParserImpl implements MappingParser {
         }
     }
 
-    private Object convertTo(final Adapter converter, final JsonValue jsonValue, JsonPointerTracker jsonPointer) {
+    private Object convertTo(final Adapter converter, final JsonValue jsonValue, final JsonPointerTracker jsonPointer,
+                             final Type targetType) {
         final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
 
         final AdapterKey key = getAdapterKey(converter);
@@ -503,6 +504,12 @@ public class MappingParserImpl implements MappingParser {
         if (ARRAY.equals(valueType)) {
             if (JsonArray.class == key.getTo() || JsonStructure.class == key.getTo()) {
                 return converter.to(jsonValue.asJsonObject());
+            }
+            if (TypeAwareAdapter.class.isInstance(converter)) {
+                final TypeAwareAdapter adapter = TypeAwareAdapter.class.cast(converter);
+                if (adapter.getFrom().equals(targetType)) {
+                    return converter.to(readObject(jsonValue, adapter.getTo()));
+                }
             }
             return buildArray(key.getTo(), jsonValue.asJsonArray(), null, null, jsonPointer, null);
         }
@@ -969,7 +976,7 @@ public class MappingParserImpl implements MappingParser {
         try {
             return converter == null ?
                     toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType) :
-                    convertTo(converter, jsonValue, jsonPointer);
+                    convertTo(converter, jsonValue, jsonPointer, type);
         } catch (Exception e) {
             if (e instanceof MapperException) {
                 throw e;

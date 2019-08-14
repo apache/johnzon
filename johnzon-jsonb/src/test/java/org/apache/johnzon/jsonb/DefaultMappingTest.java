@@ -669,7 +669,7 @@ public class DefaultMappingTest {
 
         POJOWithMixedFieldAccess pojoWithMixedFieldAccess = new POJOWithMixedFieldAccess();
 
-        assertEquals("{\"active\":true,\"id\":2,\"name\":\"pojoName\"}"/*,\"valid\":false}"*/, JSONB.toJson(pojoWithMixedFieldAccess));
+        assertEquals("{\"active\":true,\"id\":2,\"name\":\"pojoName\",\"valid\":false}", JSONB.toJson(pojoWithMixedFieldAccess));
 
         //composite class
         CompositePOJO compositePOJO = new CompositePOJO();
