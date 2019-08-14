@@ -585,6 +585,9 @@ public class MappingParserImpl implements MappingParser {
             if (JsonNumber.class.isInstance(jsonValue)) {
                 return toNumberValue(JsonNumber.class.cast(jsonValue));
             }
+            if (JsonString.class.isInstance(jsonValue)) {
+                return JsonString.class.cast(jsonValue).getString();
+            }
         }
 
         if (type == Character.class || type == char.class) {
