@@ -273,7 +273,7 @@ public class MappingParserImpl implements MappingParser {
                     } else if (EnumMap.class.isAssignableFrom(raw)) {
                         map = new EnumMap(Class.class.cast(fieldArgTypes[0]));
                     } else if (Map.class.isAssignableFrom(raw)) {
-                        map = new HashMap(object.size());
+                        map = new LinkedHashMap(object.size()); // todo: configurable from config.getNewDefaultMap()?
                     } else {
                         map = null;
                     }
@@ -291,7 +291,8 @@ public class MappingParserImpl implements MappingParser {
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                             final JsonValue jsonValue = value.getValue();
                             if (JsonNumber.class.isInstance(jsonValue) && any) {
-                                map.put(value.getKey(), toNumberValue(JsonNumber.class.cast(jsonValue)));
+                                map.put(value.getKey(), config.isUseBigDecimalForObjectNumbers() ?
+                                        JsonNumber.class.cast(jsonValue).bigDecimalValue() : toNumberValue(JsonNumber.class.cast(jsonValue)));
                             } else if (JsonString.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
                             } else {

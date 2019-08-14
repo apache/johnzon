@@ -144,6 +144,7 @@ public class MapperBuilder {
     private boolean useBigDecimalForFloats;
     private Boolean deduplicateObjects = null;
     private boolean useJsRange;
+    private boolean useBigDecimalForObjectNumbers;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -255,7 +256,7 @@ public class MapperBuilder {
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
-                        interfaceImplementationMapping, useJsRange),
+                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers),
                 closeables);
     }
 
@@ -520,6 +521,11 @@ public class MapperBuilder {
 
     public MapperBuilder setUseJsRange(boolean value) {
         this.useJsRange = value;
+        return this;
+    }
+
+    public MapperBuilder setUseBigDecimalForObjectNumbers(final boolean value) {
+        this.useBigDecimalForObjectNumbers = value;
         return this;
     }
 }

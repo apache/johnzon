@@ -72,6 +72,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final boolean useBigDecimalForFloats;
     private final Boolean deduplicateObjects;
     private final Map<Class<?>, Class<?>> interfaceImplementationMapping;
+    private final boolean useBigDecimalForObjectNumbers;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -92,7 +93,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean useBigDecimalForFloats,
                         final Boolean deduplicateObjects,
                         final Map<Class<?>, Class<?>> interfaceImplementationMapping,
-                        final boolean useJsRange) {
+                        final boolean useJsRange,
+                        final boolean useBigDecimalForObjectNumbers) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -106,6 +108,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.accessMode = accessMode;
         this.encoding = encoding;
         this.useJsRange = useJsRange;
+        this.useBigDecimalForObjectNumbers = useBigDecimalForObjectNumbers;
 
         // handle Adapters
         this.adapters = adapters;
@@ -123,6 +126,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
         this.useBigDecimalForFloats = useBigDecimalForFloats;
         this.deduplicateObjects = deduplicateObjects;
+    }
+
+    public boolean isUseBigDecimalForObjectNumbers() {
+        return useBigDecimalForObjectNumbers;
     }
 
     public boolean isUseJsRange() {

@@ -110,6 +110,10 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         builder.setUseJsRange(value);
     }
 
+    public void setUseBigDecimalForObjectNumbers(final boolean value) {
+        builder.setUseBigDecimalForObjectNumbers(value);
+    }
+
     // type=a,b,c|type2=d,e
     public void setIgnoreFieldsForType(final String mapping) {
         for (final String config : mapping.split(" *| *")) {

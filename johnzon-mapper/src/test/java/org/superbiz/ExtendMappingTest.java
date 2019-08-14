@@ -66,7 +66,7 @@ public class ExtendMappingTest {
                     -1, true, true, true, false, false, false,
                     new FieldAccessMode(false, false),
                     Charset.forName("UTF-8"), String::compareTo, false, false, null, false, false,
-                    emptyMap(), true));
+                    emptyMap(), true, false));
         }
 
         @Override

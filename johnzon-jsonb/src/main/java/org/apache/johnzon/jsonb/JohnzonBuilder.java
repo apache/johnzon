@@ -141,6 +141,9 @@ public class JohnzonBuilder implements JsonbBuilder {
             config = new JsonbConfig();
         }
 
+        builder.setUseBigDecimalForObjectNumbers(
+                config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
+
         final boolean ijson = config.getProperty(JsonbConfig.STRICT_IJSON)
                 .map(Boolean.class::cast)
                 .filter(it -> it)
@@ -176,22 +179,22 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
         config.getProperty("johnzon.enforceQuoteString")
-                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .map(this::toBool)
                 .ifPresent(builder::setEnforceQuoteString);
         config.getProperty("johnzon.primitiveConverters")
-                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .map(this::toBool)
                 .ifPresent(builder::setPrimitiveConverters);
         config.getProperty("johnzon.useBigDecimalForFloats")
-                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .map(this::toBool)
                 .ifPresent(builder::setUseBigDecimalForFloats);
         config.getProperty("johnzon.deduplicateObjects")
-                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .map(this::toBool)
                 .ifPresent(builder::setDeduplicateObjects);
         config.getProperty("johnzon.interfaceImplementationMapping")
                 .map(Map.class::cast)
                 .ifPresent(builder::setInterfaceImplementationMapping);
         builder.setUseJsRange(config.getProperty("johnzon.use-js-range")
-                .map(v -> !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v))
+                .map(this::toBool)
                 .orElse(true));
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
@@ -356,7 +359,10 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
         } : new JohnzonJsonb(mapper, ijson);
     }
-    
+
+    private Boolean toBool(final Object v) {
+        return !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v);
+    }
 
     private AccessMode toAccessMode(final Object s) {
         if (String.class.isInstance(s)) {
