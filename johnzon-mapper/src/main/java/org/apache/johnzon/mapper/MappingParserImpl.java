@@ -195,10 +195,16 @@ public class MappingParserImpl implements MappingParser {
 
             JsonArray jsonArray = (JsonArray) jsonValue;
 
-            if (Class.class.isInstance(targetType) && ((Class) targetType).isArray()) {
-                final Class componentType = ((Class) targetType).getComponentType();
-                return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType),
-                        isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
+            if (Class.class.isInstance(targetType)) {
+                final Class<?> asClass = (Class) targetType;
+                if (asClass.isArray()) {
+                    final Class componentType = asClass.getComponentType();
+                    return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType),
+                            isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
+                }
+                if (Collection.class.isAssignableFrom(asClass)) {
+                    return readObject(jsonValue, new JohnzonParameterizedType(asClass, Object.class), applyObjectConverter);
+                }
             }
             if (ParameterizedType.class.isInstance(targetType)) {
 
