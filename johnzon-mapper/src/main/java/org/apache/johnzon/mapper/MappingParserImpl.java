@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -264,13 +265,15 @@ public class MappingParserImpl implements MappingParser {
                     final Class<?> raw = Class.class.cast(aType.getRawType());
 
                     final Map map;
-                    if (LinkedHashMap.class == raw) {
-                        map = new LinkedHashMap();
-                    } else if (SortedMap.class.isAssignableFrom(raw) || NavigableMap.class == raw || TreeMap.class == raw) {
+                    if (SortedMap.class.isAssignableFrom(raw) || NavigableMap.class == raw || TreeMap.class == raw) {
                         map = config.getAttributeOrder() == null ? new TreeMap() : new TreeMap(config.getAttributeOrder());
                     } else if (ConcurrentMap.class.isAssignableFrom(raw)) {
                         map = new ConcurrentHashMap(object.size());
                     } else if (EnumMap.class.isAssignableFrom(raw)) {
+                        if (!config.isSupportEnumContainerDeserialization()) {
+                            throw new MapperException("JSON-B forbids EnumMap deserialization, " +
+                                    "set supportEnumMapDeserialization=true to disable that arbitrary limitation");
+                        }
                         map = new EnumMap(Class.class.cast(fieldArgTypes[0]));
                     } else if (Map.class.isAssignableFrom(raw)) {
                         map = new LinkedHashMap(object.size()); // todo: configurable from config.getNewDefaultMap()?
@@ -303,7 +306,7 @@ public class MappingParserImpl implements MappingParser {
                     }
                 }
             } else if (Map.class == type || HashMap.class == type || LinkedHashMap.class == type) {
-                final LinkedHashMap<String, Object> map = new LinkedHashMap<String, Object>();
+                final Map<String, Object> map = new LinkedHashMap<String, Object>();
                 for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                     map.put(value.getKey(), toObject(null, value.getValue(), Object.class, null, jsonPointer, Object.class));
                 }
@@ -923,9 +926,11 @@ public class MappingParserImpl implements MappingParser {
             collection = new ArrayList<T>(jsonArray.size());
         } else if (LinkedHashSet.class == mapping.raw) {
             collection = new LinkedHashSet<T>(jsonArray.size());
+        } else if (LinkedList.class == mapping.raw) {
+            collection = new LinkedList<T>();
         } else if (Deque.class == mapping.raw || ArrayDeque.class == mapping.raw) {
             collection = new ArrayDeque(jsonArray.size());
-        } else if (Queue.class == mapping.raw || PriorityQueue.class == mapping.raw) {
+        } else if (PriorityQueue.class == mapping.raw) {
             collection = new PriorityQueue(jsonArray.size());
         } else {
             throw new IllegalStateException("not supported collection type: " + mapping.raw.getName());
@@ -941,6 +946,10 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (EnumSet.class == mapping.raw) {
+            if (!config.isSupportEnumContainerDeserialization()) {
+                throw new MapperException("Enum container deserialization disabled, " +
+                        "set supportEnumContainerDeserialization=true to enable it");
+            }
             if (collection.isEmpty()) {
                 return EnumSet.noneOf(Class.class.cast(mapping.arg));
             } else if (collection.size() == 1) {

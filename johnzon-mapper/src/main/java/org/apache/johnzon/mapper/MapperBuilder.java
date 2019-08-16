@@ -145,6 +145,7 @@ public class MapperBuilder {
     private Boolean deduplicateObjects = null;
     private boolean useJsRange;
     private boolean useBigDecimalForObjectNumbers;
+    private boolean supportEnumContainerDeserialization = true;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -256,7 +257,8 @@ public class MapperBuilder {
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
-                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers),
+                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
+                        supportEnumContainerDeserialization),
                 closeables);
     }
 
@@ -526,6 +528,11 @@ public class MapperBuilder {
 
     public MapperBuilder setUseBigDecimalForObjectNumbers(final boolean value) {
         this.useBigDecimalForObjectNumbers = value;
+        return this;
+    }
+
+    public MapperBuilder setSupportEnumContainerDeserialization(final boolean supportEnumContainerDeserialization) {
+        this.supportEnumContainerDeserialization = supportEnumContainerDeserialization;
         return this;
     }
 }

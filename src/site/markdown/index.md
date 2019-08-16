@@ -306,6 +306,15 @@ However it supports some specific properties to wire to the native johnzon confi
 One example is `johnzon.interfaceImplementationMapping` which will support a `Map<Class,Class>` to map interfaces to implementations
 to use for deserialization.
 
+JsonbConfig specific properties:
+
+* johnzon.use-big-decimal-for-object: true to use BigDecimal for numbers not typed (Object), false to adjust the type to the number size, true by default.
+* johnzon.support-enum-container-deserialization: prevent EnumMap/EnumSet instantiation, true by default.
+* johnzon.attributeOrder: Comparator instance to sort properties by name.
+* johnzon.deduplicateObjects: should instances be deduplicated.
+
+TIP: more in JohnzonBuilder class.
+
 #### Integration with `JsonValue`
 
 You can use some optimization to map a `JsonObject` to a POJO using Johnzon `JsonValueReader` and `JsonValueWriter`:

@@ -141,8 +141,12 @@ public class JohnzonBuilder implements JsonbBuilder {
             config = new JsonbConfig();
         }
 
+        // todo: global spec toggle to disable all these ones at once?
         builder.setUseBigDecimalForObjectNumbers(
                 config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
+        builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
+                config.getProperty("johnzon.support-enum-container-deserialization")
+                        .map(this::toBool).orElse(false));
 
         final boolean ijson = config.getProperty(JsonbConfig.STRICT_IJSON)
                 .map(Boolean.class::cast)

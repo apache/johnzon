@@ -58,6 +58,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final boolean treatByteArrayAsBase64;
     private final boolean treatByteArrayAsBase64URL;
     private final boolean readAttributeBeforeWrite;
+    private final boolean supportEnumMapDeserialization; // for tck
     private final AccessMode accessMode;
     private final Charset encoding;
     private final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
@@ -94,7 +95,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final Boolean deduplicateObjects,
                         final Map<Class<?>, Class<?>> interfaceImplementationMapping,
                         final boolean useJsRange,
-                        final boolean useBigDecimalForObjectNumbers) {
+                        final boolean useBigDecimalForObjectNumbers,
+                        final boolean supportEnumMapDeserialization) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -109,6 +111,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.encoding = encoding;
         this.useJsRange = useJsRange;
         this.useBigDecimalForObjectNumbers = useBigDecimalForObjectNumbers;
+        this.supportEnumMapDeserialization = supportEnumMapDeserialization;
 
         // handle Adapters
         this.adapters = adapters;
@@ -341,5 +344,9 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     public Boolean isDeduplicateObjects() {
         return deduplicateObjects;
+    }
+
+    public boolean isSupportEnumContainerDeserialization() {
+        return supportEnumMapDeserialization;
     }
 }

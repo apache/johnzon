@@ -42,13 +42,16 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -295,7 +298,15 @@ public class Mappings {
         if (fieldArgTypes.length == 1 && Class.class.isInstance(raw)) {
             final Class<?> r = Class.class.cast(raw);
             final Class<?> collectionType;
-            if (List.class.isAssignableFrom(r)) {
+            if (PriorityQueue.class.isAssignableFrom(r)) {
+                collectionType = PriorityQueue.class;
+            } else if (LinkedHashSet.class.isAssignableFrom(r)) {
+                collectionType = LinkedHashSet.class;
+            } else if (LinkedList.class.isAssignableFrom(r)) {
+                collectionType = LinkedList.class;
+            } else if (TreeSet.class.isAssignableFrom(r)) {
+                collectionType = TreeSet.class;
+            } else if (List.class.isAssignableFrom(r)) {
                 collectionType = List.class;
             } else if (SortedSet.class.isAssignableFrom(r)) {
                 collectionType = SortedSet.class;
