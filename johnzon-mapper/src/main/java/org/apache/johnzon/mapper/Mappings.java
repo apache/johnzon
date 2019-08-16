@@ -18,14 +18,10 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.access.MethodAccessMode;
-import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
-import org.apache.johnzon.mapper.converter.EnumConverter;
-import org.apache.johnzon.mapper.internal.AdapterKey;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
-import org.apache.johnzon.mapper.reflection.Generics;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -33,6 +29,7 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
@@ -56,9 +53,14 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import static java.util.Arrays.asList;
-import static org.apache.johnzon.mapper.reflection.Converters.matches;
-import static org.apache.johnzon.mapper.reflection.Generics.resolve;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
+import org.apache.johnzon.mapper.converter.EnumConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.reflection.Generics;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 public class Mappings {
     public static class ClassMapping {
@@ -363,8 +365,17 @@ public class Mappings {
     }
 
     public ClassMapping findOrCreateClassMapping(final Type clazz) {
+        return doFindOrCreateClassMapping(clazz, emptyMap());
+    }
+
+    private ClassMapping doFindOrCreateClassMapping(final Type clazz, final Map<Type, Type> args) {
         ClassMapping classMapping = classes.get(clazz);
         if (classMapping == null) {
+            if (ParameterizedType.class.isInstance(clazz)) {
+                final ParameterizedType pt = ParameterizedType.class.cast(clazz);
+                final ClassMapping mapping = doFindOrCreateClassMapping(pt.getRawType(), toResolvedTypes(pt));
+                return putOrGetClassMapping(clazz, mapping);
+            }
             if (!Class.class.isInstance(clazz)) {
                 return null;
             }
@@ -372,24 +383,52 @@ public class Mappings {
             if (Map.class.isAssignableFrom(asClass) || asClass.isInterface()) {
                 final Class<?> mapping = config.getInterfaceImplementationMapping().get(clazz);
                 if (mapping != null) {
-                    classMapping = createClassMapping(mapping);
+                    classMapping = createClassMapping(mapping, args);
                 } else if (asClass.getName().startsWith("java.")) { // we'll not be able to map it with pojo rules
                     return null;
                 } else { // assume that it can be written with pojo rules but not deserialized
-                    classMapping = createClassMapping(asClass);
+                    classMapping = createClassMapping(asClass, args);
                 }
             } else {
-                classMapping = createClassMapping(asClass);
+                classMapping = createClassMapping(asClass, args);
             }
-            final ClassMapping existing = classes.putIfAbsent(clazz, classMapping);
-            if (existing != null) {
-                classMapping = existing;
-            }
+            classMapping = putOrGetClassMapping(clazz, classMapping);
         }
         return classMapping;
     }
 
-    protected ClassMapping createClassMapping(final Class<?> inClazz) {
+    private Map<Type, Type> toResolvedTypes(final Type clazz) {
+        if (ParameterizedType.class.isInstance(clazz)) {
+            final ParameterizedType parameterizedType = ParameterizedType.class.cast(clazz);
+            if (!Class.class.isInstance(parameterizedType.getRawType())) {
+                return emptyMap(); // not yet supported
+            }
+            final Class<?> raw = Class.class.cast(parameterizedType.getRawType());
+            final Type[] arguments = parameterizedType.getActualTypeArguments();
+            if (arguments.length > 0) {
+                final TypeVariable<? extends Class<?>>[] parameters = raw.getTypeParameters();
+                final Map<Type, Type> map = new HashMap<>(parameters.length);
+                for (int i = 0; i < parameters.length && i < arguments.length; i++) {
+                    map.put(parameters[i], arguments[i]);
+                }
+                return map;
+            }
+        }
+        return emptyMap();
+    }
+
+    private ClassMapping putOrGetClassMapping(final Type clazz, final ClassMapping classMapping) {
+        if (classMapping == null) {
+            return null;
+        }
+        final ClassMapping existing = classes.putIfAbsent(clazz, classMapping);
+        if (existing != null) {
+            return existing;
+        }
+        return classMapping;
+    }
+
+    protected ClassMapping createClassMapping(final Class<?> inClazz, final Map<Type, Type> resolvedTypes) {
         boolean copyDate = false;
         for (final Class<?> itf : inClazz.getInterfaces()) {
             if ("org.apache.openjpa.enhance.PersistenceCapable".equals(itf.getName())) {
@@ -430,7 +469,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, clazz);
+            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, resolvedTypes);
         }
 
         for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
@@ -438,7 +477,7 @@ public class Mappings {
             if (virtualFields.contains(key)) {
                 continue;
             }
-            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz);
+            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz, resolvedTypes);
         }
 
         final Method anyGetter = accessMode.findAnyGetter(clazz);
@@ -473,20 +512,21 @@ public class Mappings {
     }
 
     private <T> Map<String, T> newOrderedMap(final Class<T> value) {
-        return config.getAttributeOrder() != null ? new TreeMap<String, T>(config.getAttributeOrder()) : new HashMap<String, T>();
+        return config.getAttributeOrder() != null ? new TreeMap<>(config.getAttributeOrder()) : new HashMap<>();
     }
 
     private void addSetterIfNeeded(final Map<String, Setter> setters,
                                    final String key,
                                    final AccessMode.Writer value,
                                    final boolean copyDate,
-                                   final Class<?> rootClass) {
+                                   final Class<?> rootClass,
+                                   final Map<Type, Type> resolvedTypes) {
         final JohnzonIgnore writeIgnore = value.getAnnotation(JohnzonIgnore.class);
         if (writeIgnore == null || writeIgnore.minVersion() >= 0) {
             if (key.equals("metaClass")) {
                 return;
             }
-            final Type param = value.getType();
+            final Type param = resolvedTypes.getOrDefault(value.getType(), value.getType());
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
                     value, isPrimitive(param),
@@ -502,14 +542,15 @@ public class Mappings {
                                    final String key,
                                    final AccessMode.Reader value,
                                    final boolean copyDate,
-                                   final Class<?> rootClass) {
+                                   final Map<Type, Type> resolvedTypes) {
         final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
         final JohnzonIgnoreNested ignoreNested = value.getAnnotation(JohnzonIgnoreNested.class);
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
-            final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
-            final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
+            final Type type = resolvedTypes.getOrDefault(value.getType(), value.getType());
+            final Class<?> returnType = Class.class.isInstance(type) ? Class.class.cast(type) : null;
+            final ParameterizedType pt = ParameterizedType.class.isInstance(type) ? ParameterizedType.class.cast(type) : null;
             final Getter getter = new Getter(value, returnType == Object.class, isPrimitive(returnType),
-                    (returnType != null && returnType.isArray()) || GenericArrayType.class.isInstance(value.getType()),
+                    (returnType != null && returnType.isArray()) || GenericArrayType.class.isInstance(type),
                     (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Collection.class.isAssignableFrom(returnType)),
                     (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
@@ -549,13 +590,13 @@ public class Mappings {
             if (f.read()) {
                 final AccessMode.Reader reader = readers.get(name);
                 if (reader != null) {
-                    addGetterIfNeeded(objectGetters, name, reader, copyDate, rootClazz);
+                    addGetterIfNeeded(objectGetters, name, reader, copyDate, emptyMap());
                 }
             }
             if (f.write()) {
                 final AccessMode.Writer writer = writers.get(name);
                 if (writer != null) {
-                    addSetterIfNeeded(objectSetters, name, writer, copyDate, rootClazz);
+                    addSetterIfNeeded(objectSetters, name, writer, copyDate, rootClazz, emptyMap());
                 }
             }
         }
