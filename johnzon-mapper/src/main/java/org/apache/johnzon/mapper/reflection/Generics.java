@@ -19,16 +19,41 @@
 package org.apache.johnzon.mapper.reflection;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Stream;
 
 public final class Generics {
     private Generics() {
         // no-op
+    }
+
+    public static Map<Type, Type> toResolvedTypes(final Type clazz) {
+        if (ParameterizedType.class.isInstance(clazz)) {
+            final ParameterizedType parameterizedType = ParameterizedType.class.cast(clazz);
+            if (!Class.class.isInstance(parameterizedType.getRawType())) {
+                return emptyMap(); // not yet supported
+            }
+            final Class<?> raw = Class.class.cast(parameterizedType.getRawType());
+            final Type[] arguments = parameterizedType.getActualTypeArguments();
+            if (arguments.length > 0) {
+                final TypeVariable<? extends Class<?>>[] parameters = raw.getTypeParameters();
+                final Map<Type, Type> map = new HashMap<>(parameters.length);
+                for (int i = 0; i < parameters.length && i < arguments.length; i++) {
+                    map.put(parameters[i], arguments[i]);
+                }
+                return map;
+            }
+        }
+        return emptyMap();
     }
 
     // todo: this piece of code needs to be enhanced a lot:
@@ -36,17 +61,29 @@ public final class Generics {
     // - wildcard support?
     // - cycle handling (Foo<Foo>)
     // - ....
-    public static Type resolve(final Type value, final Class<?> rootClass) {
+    public static Type resolve(final Type value, final Type rootClass) {
         if (TypeVariable.class.isInstance(value)) {
             return resolveTypeVariable(value, rootClass);
         }
         if (ParameterizedType.class.isInstance(value)) {
             return resolveParameterizedType(value, rootClass);
         }
+        if (WildcardType.class.isInstance(value)) {
+            return resolveWildcardType(value);
+        }
         return value;
     }
 
-    private static Type resolveParameterizedType(final Type value, final Class<?> rootClass) {
+    private static Type resolveWildcardType(final Type value) {
+        final WildcardType wildcardType = WildcardType.class.cast(value);
+        if (Stream.of(wildcardType.getUpperBounds()).anyMatch(it -> it == Object.class) &&
+                wildcardType.getLowerBounds().length == 0) {
+            return Object.class;
+        } // else todo
+        return value;
+    }
+
+    private static Type resolveParameterizedType(final Type value, final Type rootClass) {
         Collection<Type> args = null;
         final ParameterizedType parameterizedType = ParameterizedType.class.cast(value);
         int index = 0;
@@ -72,9 +109,9 @@ public final class Generics {
     }
 
     // for now the level is hardcoded to 2 with generic > concrete
-    private static Type resolveTypeVariable(final Type value, final Class<?> rootClass) {
+    private static Type resolveTypeVariable(final Type value, final Type rootClass) {
         final TypeVariable<?> tv = TypeVariable.class.cast(value);
-        Type parent = rootClass == null ? null : rootClass.getGenericSuperclass();
+        Type parent = rootClass;
         while (Class.class.isInstance(parent)) {
             parent = Class.class.cast(parent).getGenericSuperclass();
         }
@@ -91,6 +128,9 @@ public final class Generics {
                 }
                 return type;
             }
+        }
+        if (Class.class.isInstance(rootClass)) {
+            return Object.class; // prefer a default over
         }
         return value;
     }

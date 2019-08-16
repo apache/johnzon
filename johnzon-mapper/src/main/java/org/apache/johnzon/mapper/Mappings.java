@@ -29,7 +29,6 @@ import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.lang.reflect.TypeVariable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
@@ -328,7 +327,7 @@ public class Mappings {
             }
 
             final CollectionMapping mapping = new CollectionMapping(isPrimitive(fieldArgTypes[0]), collectionType,
-                    Generics.resolve(fieldArgTypes[0], Class.class.isInstance(root) ? Class.class.cast(root) : null));
+                    Generics.resolve(fieldArgTypes[0], root));
             collections.putIfAbsent(aType, mapping);
             return mapping;
         }
@@ -373,7 +372,7 @@ public class Mappings {
         if (classMapping == null) {
             if (ParameterizedType.class.isInstance(clazz)) {
                 final ParameterizedType pt = ParameterizedType.class.cast(clazz);
-                final ClassMapping mapping = doFindOrCreateClassMapping(pt.getRawType(), toResolvedTypes(pt));
+                final ClassMapping mapping = doFindOrCreateClassMapping(pt.getRawType(), Generics.toResolvedTypes(pt));
                 return putOrGetClassMapping(clazz, mapping);
             }
             if (!Class.class.isInstance(clazz)) {
@@ -395,26 +394,6 @@ public class Mappings {
             classMapping = putOrGetClassMapping(clazz, classMapping);
         }
         return classMapping;
-    }
-
-    private Map<Type, Type> toResolvedTypes(final Type clazz) {
-        if (ParameterizedType.class.isInstance(clazz)) {
-            final ParameterizedType parameterizedType = ParameterizedType.class.cast(clazz);
-            if (!Class.class.isInstance(parameterizedType.getRawType())) {
-                return emptyMap(); // not yet supported
-            }
-            final Class<?> raw = Class.class.cast(parameterizedType.getRawType());
-            final Type[] arguments = parameterizedType.getActualTypeArguments();
-            if (arguments.length > 0) {
-                final TypeVariable<? extends Class<?>>[] parameters = raw.getTypeParameters();
-                final Map<Type, Type> map = new HashMap<>(parameters.length);
-                for (int i = 0; i < parameters.length && i < arguments.length; i++) {
-                    map.put(parameters[i], arguments[i]);
-                }
-                return map;
-            }
-        }
-        return emptyMap();
     }
 
     private ClassMapping putOrGetClassMapping(final Type clazz, final ClassMapping classMapping) {
@@ -526,7 +505,7 @@ public class Mappings {
             if (key.equals("metaClass")) {
                 return;
             }
-            final Type param = resolvedTypes.getOrDefault(value.getType(), value.getType());
+            final Type param = lookupType(value, resolvedTypes);
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
                     value, isPrimitive(param),
@@ -538,6 +517,10 @@ public class Mappings {
         }
     }
 
+    private Type lookupType(final AccessMode.DecoratedType value, final Map<Type, Type> resolvedTypes) {
+        return resolvedTypes.getOrDefault(value.getType(), value.getType());
+    }
+
     private void addGetterIfNeeded(final Map<String, Getter> getters,
                                    final String key,
                                    final AccessMode.Reader value,
@@ -546,7 +529,7 @@ public class Mappings {
         final JohnzonIgnore readIgnore = value.getAnnotation(JohnzonIgnore.class);
         final JohnzonIgnoreNested ignoreNested = value.getAnnotation(JohnzonIgnoreNested.class);
         if (readIgnore == null || readIgnore.minVersion() >= 0) {
-            final Type type = resolvedTypes.getOrDefault(value.getType(), value.getType());
+            final Type type = lookupType(value, resolvedTypes);
             final Class<?> returnType = Class.class.isInstance(type) ? Class.class.cast(type) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(type) ? ParameterizedType.class.cast(type) : null;
             final Getter getter = new Getter(value, returnType == Object.class, isPrimitive(returnType),

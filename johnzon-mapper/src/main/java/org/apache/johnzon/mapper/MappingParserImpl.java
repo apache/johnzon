@@ -698,6 +698,13 @@ public class MappingParserImpl implements MappingParser {
                 final Class<?> componentType = clazz.getComponentType();
                 return buildArrayWithComponentType(jsonArray, componentType, itemConverter, jsonPointer, rootType);
             }
+            if (Collection.class.isAssignableFrom(clazz)) {
+                final Mappings.CollectionMapping mapping = mappings.findCollectionMapping(
+                        new JohnzonParameterizedType(clazz, Object.class), rootType);
+                if (mapping != null) {
+                    return mapCollection(mapping, jsonArray, itemConverter, objectConverter, jsonPointer, rootType);
+                }
+            }
         }
 
         if (ParameterizedType.class.isInstance(type)) {
