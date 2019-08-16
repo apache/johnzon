@@ -342,9 +342,9 @@ public class DefaultMappingTest {
 
         //mapping for number  -> Integer, Long, Double
         Map<String, Object> mapWithBigDecimal = (Map<String, Object>) JSONB.fromJson("{\"intValue\":5,\"longValue\":17179869184,\"doubleValue\":1.2}", Object.class);
-        assertTrue(mapWithBigDecimal.get("intValue") instanceof Integer);
-        assertTrue(mapWithBigDecimal.get("longValue") instanceof Long);
-        assertTrue(mapWithBigDecimal.get("doubleValue") instanceof Double);
+        assertTrue(mapWithBigDecimal.get("intValue") instanceof BigDecimal);
+        assertTrue(mapWithBigDecimal.get("longValue") instanceof BigDecimal);
+        assertTrue(mapWithBigDecimal.get("doubleValue") instanceof BigDecimal);
 
         //Collection
         /* why collection and not array or sthg else?
