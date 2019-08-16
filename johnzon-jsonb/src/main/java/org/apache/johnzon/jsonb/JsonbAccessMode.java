@@ -201,7 +201,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         }
         if (constructor == null && factory == null) {
             invalidConstructorForDeserialization = Stream.of(clazz.getDeclaredConstructors())
-                    .anyMatch(it -> it.getParameterCount() == 0 && !Modifier.isPublic(it.getModifiers()));
+                    .anyMatch(it -> it.getParameterCount() == 0 &&
+                            !(Modifier.isPublic(it.getModifiers()) || Modifier.isProtected(it.getModifiers())));
         }
         final Constructor<?> finalConstructor = constructor;
         final Method finalFactory = factory;
