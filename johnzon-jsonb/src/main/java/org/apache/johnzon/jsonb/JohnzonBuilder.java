@@ -629,7 +629,6 @@ public class JohnzonBuilder implements JsonbBuilder {
         }));
         addDateFormatConfigConverters(converters, zoneIDUTC);
 
-
         converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
         return converters;
     }

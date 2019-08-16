@@ -36,6 +36,7 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -713,6 +714,16 @@ public class MappingParserImpl implements MappingParser {
             }
         }
 
+        if (GenericArrayType.class.isInstance(type)) {
+            Type genericComponentType = GenericArrayType.class.cast(type).getGenericComponentType();
+            while (ParameterizedType.class.isInstance(genericComponentType)) {
+                genericComponentType = ParameterizedType.class.cast(genericComponentType).getRawType();
+            }
+            if (Class.class.isInstance(genericComponentType)) {
+                return buildArrayWithComponentType(jsonArray, Class.class.cast(genericComponentType), itemConverter, jsonPointer, rootType);
+            } // else: fail for now
+        }
+
         if (Object.class == type) {
             return buildArray(ANY_LIST, jsonArray, null, null, jsonPointer, rootType);
         }
@@ -861,7 +872,7 @@ public class MappingParserImpl implements MappingParser {
         }
         if (Integer.class == componentType) {
             Integer[] array = new Integer[jsonArray.size()];
-            Integer i = 0;
+            int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Integer) toObject(null, value, componentType, itemConverter,
                         isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);

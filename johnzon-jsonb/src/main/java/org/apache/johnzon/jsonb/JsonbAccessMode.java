@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -95,6 +96,7 @@ import org.apache.johnzon.jsonb.converter.JsonbNumberConverter;
 import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
 import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
 import org.apache.johnzon.jsonb.order.PerHierarchyAndLexicographicalOrderFieldComparator;
+import org.apache.johnzon.jsonb.reflect.GenericArrayTypeImpl;
 import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
@@ -462,20 +464,41 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             // handle optionals since mapper is still only java 7
             final Type type;
             final Function<Object, Object> reader;
-            if (isOptional(finalReader)) {
-                type = ParameterizedType.class.cast(finalReader.getType()).getActualTypeArguments()[0];
+            final Type readerType = finalReader.getType();
+            if (isOptional(readerType)) {
+                type = ParameterizedType.class.cast(readerType).getActualTypeArguments()[0];
                 reader = i -> ofNullable(finalReader.read(i)).map(o -> Optional.class.cast(o).orElse(null)).orElse(null);
-            } else if (OptionalInt.class == finalReader.getType()) {
-                type = int.class;
-                reader = i -> OptionalInt.class.cast(finalReader.read(i)).orElse(0);
-            } else if (OptionalLong.class == finalReader.getType()) {
-                type = long.class;
-                reader = i -> OptionalLong.class.cast(finalReader.read(i)).orElse(0);
-            } else if (OptionalDouble.class == finalReader.getType()) {
-                type = double.class;
-                reader = i -> OptionalDouble.class.cast(finalReader.read(i)).orElse(0);
+            } else if (OptionalInt.class == readerType) {
+                type = Integer.class;
+                reader = i -> {
+                    final OptionalInt optionalInt = OptionalInt.class.cast(finalReader.read(i));
+                    return optionalInt == null || !optionalInt.isPresent() ? null : optionalInt.getAsInt();
+                };
+            } else if (OptionalLong.class == readerType) {
+                type = Long.class;
+                reader = i -> {
+                    final OptionalLong optionalLong = OptionalLong.class.cast(finalReader.read(i));
+                    return optionalLong == null || !optionalLong.isPresent() ? null : optionalLong.getAsLong();
+                };
+            } else if (OptionalDouble.class == readerType) {
+                type = Double.class;
+                reader = i -> {
+                    final OptionalDouble optionalDouble = OptionalDouble.class.cast(finalReader.read(i));
+                    return optionalDouble == null || !optionalDouble.isPresent() ? null : optionalDouble.getAsDouble();
+                };
+            } else if (isOptionalArray(finalReader)) {
+                final Type optionalUnwrappedType = findOptionalType(GenericArrayType.class.cast(readerType).getGenericComponentType());
+                type = new GenericArrayTypeImpl(optionalUnwrappedType);
+                reader = i -> {
+                    final Object[] optionals = Object[].class.cast(finalReader.read(i));
+                    return optionals == null ?
+                            null : Stream.of(optionals)
+                                .map(Optional.class::cast)
+                                .map(o -> o.orElse(null))
+                                .toArray();
+                };
             } else {
-                type = finalReader.getType();
+                type = readerType;
                 reader = finalReader::read;
             }
 
@@ -566,20 +589,34 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             // handle optionals since mapper is still only java 7
             final Type type;
             final BiConsumer<Object, Object> writer;
-            if (isOptional(initialWriter)) {
-                type = ParameterizedType.class.cast(initialWriter.getType()).getActualTypeArguments()[0];
+            final Type writerType = initialWriter.getType();
+            if (isOptional(writerType)) {
+                type = findOptionalType(writerType);
                 writer = (i, val) -> finalWriter.write(i, Optional.ofNullable(val));
-            } else if (OptionalInt.class == initialWriter.getType()) {
-                type = int.class;
-                writer = (i, val) -> finalWriter.write(i, OptionalInt.of(Number.class.cast(val).intValue()));
-            } else if (OptionalLong.class == initialWriter.getType()) {
-                type = long.class;
-                writer = (i, val) -> finalWriter.write(i, OptionalLong.of(Number.class.cast(val).longValue()));
-            } else if (OptionalDouble.class == initialWriter.getType()) {
-                type = double.class;
-                writer = (i, val) -> finalWriter.write(i, OptionalDouble.of(Number.class.cast(val).doubleValue()));
+            } else if (OptionalInt.class == writerType) {
+                type = Integer.class;
+                writer = (i, value) -> finalWriter.write(i, value == null ?
+                        OptionalInt.empty() : OptionalInt.of(Number.class.cast(value).intValue()));
+            } else if (OptionalLong.class == writerType) {
+                type = Long.class;
+                writer = (i, value) -> finalWriter.write(i, value == null ?
+                        OptionalLong.empty() : OptionalLong.of(Number.class.cast(value).longValue()));
+            } else if (OptionalDouble.class == writerType) {
+                type = Double.class;
+                writer = (i, value) -> finalWriter.write(i, value == null ?
+                        OptionalDouble.empty() : OptionalDouble.of(Number.class.cast(value).doubleValue()));
+            } else if (isOptionalArray(initialWriter)) {
+                final Type optionalUnwrappedType = findOptionalType(GenericArrayType.class.cast(writerType).getGenericComponentType());
+                type = new GenericArrayTypeImpl(optionalUnwrappedType);
+                writer = (i, value) -> {
+                    if (value != null) {
+                        finalWriter.write(i, Stream.of(Object[].class.cast(value))
+                            .map(Optional::ofNullable)
+                            .toArray(Optional[]::new));
+                    }
+                };
             } else {
-                type = initialWriter.getType();
+                type = writerType;
                 writer = finalWriter::write;
             }
 
@@ -703,8 +740,17 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return cache;
     }
 
-    private boolean isOptional(final DecoratedType value) {
-        return ParameterizedType.class.isInstance(value.getType()) && Optional.class == ParameterizedType.class.cast(value.getType()).getRawType();
+    private Type findOptionalType(final Type writerType) {
+        return ParameterizedType.class.cast(writerType).getActualTypeArguments()[0];
+    }
+
+    private boolean isOptional(final Type type) {
+        return ParameterizedType.class.isInstance(type) && Optional.class == ParameterizedType.class.cast(type).getRawType();
+    }
+
+    private boolean isOptionalArray(final DecoratedType value) {
+        return GenericArrayType.class.isInstance(value.getType()) &&
+                isOptional(GenericArrayType.class.cast(value.getType()).getGenericComponentType());
     }
 
     private boolean isTransient(final DecoratedType dt, final PropertyVisibilityStrategy visibility) {

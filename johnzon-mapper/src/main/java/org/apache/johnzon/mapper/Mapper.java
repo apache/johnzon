@@ -228,7 +228,7 @@ public class Mapper implements Closeable {
     }
 
     private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
-        MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings, jsonPointer != null);
+        final MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings, jsonPointer != null);
         mappingGenerator.doWriteObject(object, generator, true, ignored, jsonPointer);
     }
 

@@ -29,6 +29,7 @@ import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -488,7 +489,9 @@ public class Mappings {
             final Type param = value.getType();
             final Class<?> returnType = Class.class.isInstance(param) ? Class.class.cast(param) : null;
             final Setter setter = new Setter(
-                    value, isPrimitive(param), returnType != null && returnType.isArray(), resolve(param, rootClass),
+                    value, isPrimitive(param),
+                    (returnType != null && returnType.isArray()) || GenericArrayType.class.isInstance(value.getType()),
+                    resolve(param, rootClass),
                     findConverter(copyDate, value), value.findObjectConverterReader(),
                     writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
@@ -506,7 +509,7 @@ public class Mappings {
             final Class<?> returnType = Class.class.isInstance(value.getType()) ? Class.class.cast(value.getType()) : null;
             final ParameterizedType pt = ParameterizedType.class.isInstance(value.getType()) ? ParameterizedType.class.cast(value.getType()) : null;
             final Getter getter = new Getter(value, returnType == Object.class, isPrimitive(returnType),
-                    returnType != null && returnType.isArray(),
+                    (returnType != null && returnType.isArray()) || GenericArrayType.class.isInstance(value.getType()),
                     (pt != null && Collection.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
                             || (returnType != null && Collection.class.isAssignableFrom(returnType)),
                     (pt != null && Map.class.isAssignableFrom(Class.class.cast(pt.getRawType())))
@@ -710,13 +713,26 @@ public class Mappings {
         public MapUnwrapperWriter(final Map<String, Setter> writers, final String[] paths) {
             this.writers = writers;
             this.paths = paths;
-            this.componentTypes = new HashMap<String, Class<?>>();
+            this.componentTypes = new HashMap<>();
 
             for (final Map.Entry<String, Setter> setter : writers.entrySet()) {
                 if (setter.getValue().array) {
-                    componentTypes.put(setter.getKey(), Class.class.cast(setter.getValue().paramType).getComponentType());
+                    componentTypes.put(setter.getKey(),
+                            Class.class.isInstance(setter.getValue().paramType) ?
+                                    Class.class.cast(setter.getValue().paramType).getComponentType() :
+                                    cast(GenericArrayType.class.cast(setter.getValue().paramType).getGenericComponentType()));
                 }
             }
+        }
+
+        private Class<?> cast(final Type genericComponentType) {
+            if (Class.class.isInstance(genericComponentType)) {
+                return Class.class.cast(genericComponentType);
+            }
+            if (ParameterizedType.class.isInstance(genericComponentType)) {
+                return cast(ParameterizedType.class.cast(genericComponentType).getRawType());
+            }
+            throw new UnsupportedOperationException("Unsupported type: " + genericComponentType);
         }
 
         @Override
