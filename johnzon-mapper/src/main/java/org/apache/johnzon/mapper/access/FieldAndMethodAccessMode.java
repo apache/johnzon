@@ -47,6 +47,12 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         this.alwaysPreferMethodVisibility = alwaysPreferMethodVisibility;
     }
 
+    // backward compatibility, don't delete since it can be used from user code in jsonb delegate access mode property
+    public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor,
+                                    final boolean useGettersAsWriter) {
+        this(useConstructor, acceptHiddenConstructor, useGettersAsWriter, true);
+    }
+
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> fieldsReaders = this.fields.findReaders(clazz);
