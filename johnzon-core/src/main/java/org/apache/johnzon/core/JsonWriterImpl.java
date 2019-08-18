@@ -18,16 +18,18 @@
  */
 package org.apache.johnzon.core;
 
+import java.io.Serializable;
+
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.stream.JsonGenerator;
-import java.io.Serializable;
 
 class JsonWriterImpl implements JsonWriter, Serializable {
     private final JsonGenerator generator;
+    private boolean called = false;
     private boolean closed = false;
 
     JsonWriterImpl(final JsonGenerator generator) {
@@ -36,55 +38,47 @@ class JsonWriterImpl implements JsonWriter, Serializable {
 
     @Override
     public void writeArray(final JsonArray array) {
-        checkClosed();
-        try {
-            generator.write(array);
-        } finally {
-            close();
-        }
+        checkState();
+        generator.write(array);
+        markCalled();
     }
 
     @Override
     public void writeObject(final JsonObject object) {
-        checkClosed();
-        try {
-            generator.write(object);
-        } finally {
-            close();
-        }
+        checkState();
+        generator.write(object);
+        markCalled();
     }
 
     @Override
     public void write(final JsonValue value) {
-        checkClosed();
-        try {
-            generator.write(value);
-        } finally {
-            close();
-        }
+        checkState();
+        generator.write(value);
+        markCalled();
     }
 
     @Override
     public void write(final JsonStructure value) {
-        checkClosed();
-        try {
-            generator.write(value);
-        } finally {
-            close();
-        }
+        checkState();
+        generator.write(value);
+        markCalled();
     }
 
     @Override
     public void close() {
-
         if (!closed) {
             closed = true;
             generator.close();
         }
     }
 
-    private void checkClosed() {
-        if (closed) {
+    private void markCalled() {
+        generator.flush();
+        called = true;
+    }
+
+    private void checkState() {
+        if (closed || called) {
             throw new IllegalStateException("writeArray(), writeObject(), write() or close() method was already called");
         }
 

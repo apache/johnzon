@@ -461,21 +461,27 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         if (closed) {
             return;
         }
+        JsonGenerationException ex = null;
+        final GeneratorState state = currentState();
+        if (state != GeneratorState.END && state != GeneratorState.ROOT_VALUE) {
+            ex = new JsonGenerationException("Invalid json");
+        }
         try {
-            final GeneratorState state = currentState();
-            if (state != GeneratorState.END && state != GeneratorState.ROOT_VALUE) {
-                throw new JsonGenerationException("Invalid json");
+            if (ex == null) {
+                flushBuffer();
             }
+            writer.close();
+        } catch (final IOException e) {
+            if (ex != null) {
+                throw ex;
+            }
+            throw new JsonException(e.getMessage(), e);
         } finally {
-            flushBuffer();
-            try {
-                writer.close();
-            } catch (final IOException e) {
-                throw new JsonException(e.getMessage(), e);
-            } finally {
-                closed = true;
-                bufferProvider.release(buffer);
-            }
+            closed = true;
+            bufferProvider.release(buffer);
+        }
+        if (ex != null) {
+            throw ex;
         }
     }
 

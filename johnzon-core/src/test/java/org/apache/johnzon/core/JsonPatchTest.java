@@ -29,10 +29,12 @@ import javax.json.JsonObject;
 import javax.json.JsonPatch;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
+import javax.json.JsonWriter;
 import javax.json.spi.JsonProvider;
 
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -998,8 +1000,10 @@ public class JsonPatchTest {
 
 
     private static String toJsonString(JsonStructure value) {
-        StringWriter writer = new StringWriter();
-        Json.createWriter(writer).write(value);
+        final Writer writer = new StringWriter();
+        try (final JsonWriter jsonWriter = Json.createWriter(writer)) {
+            jsonWriter.write(value);
+        }
         return writer.toString();
     }
 

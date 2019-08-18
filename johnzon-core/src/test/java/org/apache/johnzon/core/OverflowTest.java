@@ -76,6 +76,7 @@ public class OverflowTest {
             arrayBuilder.add("0123456789012345-" + i);
         }
         writer.writeArray(arrayBuilder.build());
+        writer.close();
 
         String json = sw.toString();
         System.out.println("Created a JSON of size " + json.length() + " bytes");
