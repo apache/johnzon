@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Objects.requireNonNull;
+
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonException;
 import javax.json.JsonObject;
@@ -166,7 +168,7 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     @Override
     public JsonObjectBuilder remove(String name) {
-        attributeMap.remove(name);
+        attributeMap.remove(requireNonNull(name));
         return this;
     }
 

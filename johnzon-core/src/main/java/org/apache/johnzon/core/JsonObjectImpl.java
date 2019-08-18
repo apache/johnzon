@@ -173,6 +173,16 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
         return unmodifieableBackingMap.entrySet();
     }
 
+    @Override
+    public void clear() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public JsonValue remove(final Object key) {
+        throw new UnsupportedOperationException();
+    }
+
     private Object writeReplace() throws ObjectStreamException {
         return new SerializableValue(toString());
     }
