@@ -233,15 +233,6 @@ public class JsonPointerTest {
         jsonPointer.add((JsonStructure) null, new JsonStringImpl("qux"));
     }
 
-    @Test(expected = JsonException.class)
-    public void testAddJsonStructureWithTypeValueNotTypeTarget() {
-        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "");
-        JsonObject target = Json.createObjectBuilder().build();
-        JsonArray value = Json.createArrayBuilder().build();
-
-        jsonPointer.add((JsonStructure) target, value);
-    }
-
     @Test
     public void testAddJsonStructureWithEmptyJsonPointer() {
         JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "");

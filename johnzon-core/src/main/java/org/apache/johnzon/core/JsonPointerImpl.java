@@ -159,9 +159,6 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonStructure add(JsonStructure target, JsonValue value) {
         validateAdd(target);
         if (isEmptyJsonPointer()) {
-            if (value.getClass() != target.getClass()) {
-                throw new JsonException("The value must have the same type as the target");
-            }
             return (JsonStructure) value;
         }
 
