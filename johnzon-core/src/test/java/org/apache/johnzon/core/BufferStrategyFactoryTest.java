@@ -77,7 +77,7 @@ public class BufferStrategyFactoryTest {
     }
 
     public static final class DummyBufferStrategy implements BufferStrategy {
-        static AtomicInteger counter = new AtomicInteger(0);
+        private static AtomicInteger counter = new AtomicInteger(0);
         private BufferStrategy delegate = BufferStrategyFactory.valueOf("BY_INSTANCE");
 
         @Override

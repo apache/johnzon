@@ -281,6 +281,11 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
     }
 
     @Override
+    public boolean isFitLong() {
+        return JsonLongImpl.class.isInstance(currentValue);
+    }
+
+    @Override
     public BigDecimal getBigDecimal() {
         if (currentEvent != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getBigDecimal is for numbers");

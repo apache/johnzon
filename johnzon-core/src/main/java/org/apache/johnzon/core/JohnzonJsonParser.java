@@ -30,6 +30,7 @@ import javax.json.stream.JsonParser;
  * JsonParser with extended functionality
  */
 public interface JohnzonJsonParser extends JsonParser {
+    boolean isFitLong();
 
     boolean isNotTooLong();
 
@@ -47,6 +48,12 @@ public interface JohnzonJsonParser extends JsonParser {
 
         public JohnzonJsonParserWrapper(JsonParser jsonParser) {
             this.jsonParser = jsonParser;
+        }
+
+        @Override
+        public boolean isFitLong() {
+            return JohnzonJsonParser.class.isInstance(jsonParser) ?
+                    JohnzonJsonParser.class.cast(jsonParser).isFitLong() : false;
         }
 
         @Override

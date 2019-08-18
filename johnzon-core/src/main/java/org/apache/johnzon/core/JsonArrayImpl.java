@@ -211,7 +211,7 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
      * get() on an ArrayList works even faster than ArrayList#iterator!
      */
     private class JsonArrayIterator implements Iterator<JsonValue> {
-        int cursor = 0;
+        private int cursor = 0;
 
         @Override
         public boolean hasNext() {

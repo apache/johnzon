@@ -947,6 +947,14 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     }
 
     @Override
+    public boolean isFitLong() { // not exact but good enough for most cases
+        // no buffer overflow - assumes a buffer can hold a long
+        // + length <= since max long is 9223372036854775807 and min is -9223372036854775808
+        final int len = endOfValueInBuffer - startOfValueInBuffer;
+        return fallBackCopyBufferLength <= 0 && len > 0 && len <= 18;
+    }
+
+    @Override
     public BigDecimal getBigDecimal() {
         if (previousEvent != VALUE_NUMBER) {
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getBigDecimal()");
@@ -954,23 +962,10 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             //            return currentBigDecimalNumber;
         } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return new BigDecimal(currentIntegralNumber);
-        } else if (isCurrentNumberIntegral) {
-            //if there a content in the value buffer read from them, if not use main buffer
-            final Long retVal = fallBackCopyBufferLength > 0 ? parseLongFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
-                    : parseLongFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
-            if (retVal == null) {
-                return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
-                        fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer,
-                        (endOfValueInBuffer - startOfValueInBuffer)));
-            } else {
-                return (/*currentBigDecimalNumber = */new BigDecimal(retVal.longValue()));
-            }
-        } else {
-            //if there a content in the value buffer read from them, if not use main buffer
-            return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
-                    fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer)));
         }
-
+        //if there a content in the value buffer read from them, if not use main buffer
+        return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
+                fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer)));
     }
 
     @Override

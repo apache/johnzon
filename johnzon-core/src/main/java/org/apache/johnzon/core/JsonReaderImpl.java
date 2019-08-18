@@ -248,7 +248,7 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case VALUE_NUMBER:
-                    if (parser.isIntegralNumber()) {
+                    if (parser.isFitLong()) {
                         builder.add(new JsonLongImpl(parser.getLong()));
                     } else {
                         builder.add(new JsonNumberImpl(parser.getBigDecimal()));
