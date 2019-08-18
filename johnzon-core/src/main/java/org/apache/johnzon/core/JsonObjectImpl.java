@@ -154,8 +154,9 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonObjectImpl.class.isInstance(obj)
-                && unmodifieableBackingMap.equals(JsonObjectImpl.class.cast(obj).unmodifieableBackingMap);
+        return (JsonObjectImpl.class.isInstance(obj)
+                && unmodifieableBackingMap.equals(JsonObjectImpl.class.cast(obj).unmodifieableBackingMap))
+                || (Map.class.isInstance(obj) && unmodifieableBackingMap.equals(Map.class.cast(obj)));
     }
 
     @Override
