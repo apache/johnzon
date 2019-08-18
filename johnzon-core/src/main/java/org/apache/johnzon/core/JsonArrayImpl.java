@@ -174,7 +174,7 @@ class JsonArrayImpl extends AbstractList<JsonValue> implements JsonArray, Serial
 
     @Override
     public boolean equals(final Object obj) {
-        return JsonArray.class.isInstance(obj) && super.equals(obj);
+        return List.class.isInstance(obj) && super.equals(obj);
     }
 
     @Override
