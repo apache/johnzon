@@ -948,6 +948,10 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     @Override
     public boolean isFitLong() { // not exact but good enough for most cases
+        if (!isCurrentNumberIntegral) {
+            return false;
+        }
+
         // no buffer overflow - assumes a buffer can hold a long
         // + length <= since max long is 9223372036854775807 and min is -9223372036854775808
         final int len = endOfValueInBuffer - startOfValueInBuffer;
