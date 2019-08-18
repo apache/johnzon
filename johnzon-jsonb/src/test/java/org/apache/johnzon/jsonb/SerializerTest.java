@@ -37,6 +37,7 @@ import javax.json.bind.JsonbConfig;
 import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbTypeDeserializer;
 import javax.json.bind.annotation.JsonbTypeSerializer;
+import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.serializer.DeserializationContext;
 import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
@@ -51,7 +52,21 @@ import org.junit.Test;
 
 public class SerializerTest {
     @Rule
-    public final JsonbRule jsonb = new JsonbRule();
+    public final JsonbRule jsonb = new JsonbRule()
+            .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL);
+
+    @Test
+    public void passthroughSerializer() {
+        final NameHolder nameHolder = new NameHolder();
+        nameHolder.name = new Named();
+        nameHolder.name.name = "Test String";
+        nameHolder.name.detailName = new DetailName();
+        nameHolder.name.detailName.name = "Another Test String";
+        assertEquals(
+                "{\"detailName\":{\"name\":\"Another Test String\",\"detail\":true},\"name\":{\"name\":\"Test String\"}}",
+                jsonb.toJson(nameHolder));
+
+    }
 
     @Test
     public void typeSerializer() {
@@ -452,6 +467,39 @@ public class SerializerTest {
             } else {
                 serializationContext.serialize(null, jsonGenerator);
             }
+        }
+    }
+
+    public static class NameHolder {
+        @JsonbTypeSerializer(FooPassthroughSerializer.class)
+        public Named name;
+    }
+
+    public static class Named {
+        public String name;
+
+        @JsonbTypeSerializer(DetailNameSerializer.class)
+        public DetailName detailName;
+    }
+
+    public static class DetailName {
+        public String name;
+    }
+
+    public static class DetailNameSerializer implements JsonbSerializer<DetailName> {
+        @Override
+        public void serialize(final DetailName foo, final JsonGenerator jsonGenerator,
+                              final SerializationContext serializationContext) {
+            serializationContext.serialize(foo, jsonGenerator);
+            jsonGenerator.write("detail", true);
+        }
+    }
+
+    public static class FooPassthroughSerializer implements JsonbSerializer<Named> {
+        @Override
+        public void serialize(final Named foo, final JsonGenerator jsonGenerator,
+                              final SerializationContext serializationContext) {
+            serializationContext.serialize(foo, jsonGenerator);
         }
     }
 

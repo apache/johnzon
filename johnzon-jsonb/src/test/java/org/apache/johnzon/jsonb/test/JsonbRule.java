@@ -27,6 +27,7 @@ import java.lang.reflect.Type;
 import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
 
 import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
@@ -37,12 +38,19 @@ import org.junit.runners.model.Statement;
 public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
     private Jsonb jsonb;
 
+    private final JsonbConfig config = new JsonbConfig();
+
+    public JsonbRule withPropertyOrderStrategy(final String propertyOrderStrategy) {
+        config.withPropertyOrderStrategy(propertyOrderStrategy);
+        return this;
+    }
+
     @Override
-    public Statement apply(Statement statement, Description description) {
+    public Statement apply(final Statement statement, final Description description) {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                try (final Jsonb jsonb = JsonbBuilder.create()) {
+                try (final Jsonb jsonb = JsonbBuilder.create(config)) {
                     JsonbRule.this.jsonb = jsonb;
                     statement.evaluate();
                 } finally {

@@ -113,10 +113,10 @@ public class DynamicMappingGenerator implements MappingGenerator {
 
         @Override
         public JsonGenerator writeStartObject(final String name) {
-            if (state != WritingState.NONE) {
-                nested++;
+            if (state == WritingState.NONE) {
+                ensureStart();
             }
-            ensureStart();
+            nested++;
             delegate.writeStartObject(name);
             return this;
         }
