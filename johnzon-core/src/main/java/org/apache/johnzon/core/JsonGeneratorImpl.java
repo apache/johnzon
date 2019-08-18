@@ -355,7 +355,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     @Override
     public JsonGenerator writeEnd() {
         final GeneratorState last = state.pop();
-        if (last == null || !last.endable) {
+        if (last == null || !last.endable || last == GeneratorState.ROOT_VALUE) {
             throw new JsonGenerationException("Can't end current context: " + last);
         }
         depth--;

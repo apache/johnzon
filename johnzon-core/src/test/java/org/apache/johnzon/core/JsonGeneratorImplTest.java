@@ -42,6 +42,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonGeneratorImplTest {
+    @Test(expected = JsonGenerationException.class)
+    public void unexpectedWriteEnd() {
+        final JsonGenerator generator = Json.createGenerator(new StringWriter());
+        generator.writeStartObject()
+                .writeEnd()
+                .writeEnd();
+    }
+
     @Test
     public void writeKeyWrite() {
         final StringWriter writer = new StringWriter();
@@ -473,29 +481,15 @@ public class JsonGeneratorImplTest {
 
     @Test
     public void writeNumber() {
-        {
-            final StringWriter writer = new StringWriter();
-            Json.createGenerator(writer).write(1).writeEnd().close();
-            assertEquals("1", writer.toString());
-        }
-        {
-            final StringWriter writer = new StringWriter();
-            Json.createGenerator(writer).write(1).close();
-            assertEquals("1", writer.toString());
-        }
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer).write(1).close();
+        assertEquals("1", writer.toString());
     }
 
     @Test
     public void writeBoolean() {
-        {
-            final StringWriter writer = new StringWriter();
-            Json.createGenerator(writer).write(true).writeEnd().close();
-            assertEquals("true", writer.toString());
-        }
-        {
-            final StringWriter writer = new StringWriter();
-            Json.createGenerator(writer).write(true).close();
-            assertEquals("true", writer.toString());
-        }
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer).write(true).close();
+        assertEquals("true", writer.toString());
     }
 }
