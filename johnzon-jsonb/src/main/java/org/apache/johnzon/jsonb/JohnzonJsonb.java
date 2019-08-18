@@ -47,15 +47,18 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.function.Consumer;
 
 // TODO: Optional handling for lists (and arrays)?
 public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     private final Mapper delegate;
     private final boolean ijson;
+    private final Consumer<JohnzonJsonb> onClose;
 
-    public JohnzonJsonb(final Mapper build, final boolean ijson) {
+    public JohnzonJsonb(final Mapper build, final boolean ijson, final Consumer<JohnzonJsonb> onClose) {
         this.delegate = build;
         this.ijson = ijson;
+        this.onClose = onClose;
     }
 
     @Override
@@ -433,7 +436,13 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
 
     @Override
     public void close() {
-        delegate.close();
+        try {
+            delegate.close();
+        } finally {
+            if (onClose != null) {
+                onClose.accept(this);
+            }
+        }
     }
 
     @Override

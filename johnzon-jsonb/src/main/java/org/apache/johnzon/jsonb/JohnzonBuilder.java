@@ -346,22 +346,16 @@ public class JohnzonBuilder implements JsonbBuilder {
         }
         final Mapper mapper = builder.build();
 
-        return useCdi ? new JohnzonJsonb(mapper, ijson) {
-            {
-                cdiIntegration.track(this);
-            }
-
-            @Override
-            public void close() {
-                try {
-                    super.close();
-                } finally {
-                    if (cdiIntegration.isCanWrite()) {
-                        cdiIntegration.untrack(this);
-                    }
+        if (useCdi) {
+            final JohnzonJsonb jsonb = new JohnzonJsonb(mapper, ijson, i -> {
+                if (cdiIntegration.isCanWrite()) {
+                    cdiIntegration.untrack(i);
                 }
-            }
-        } : new JohnzonJsonb(mapper, ijson);
+            });
+            cdiIntegration.track(jsonb);
+            return jsonb;
+        }
+        return new JohnzonJsonb(mapper, ijson, null);
     }
 
     private Boolean toBool(final Object v) {
