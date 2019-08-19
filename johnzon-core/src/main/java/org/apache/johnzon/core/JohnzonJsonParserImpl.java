@@ -77,11 +77,10 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             case KEY_NAME:
                 return new JsonStringImpl(getString());
             case VALUE_NUMBER:
-                if (isIntegralNumber()) {
+                if (isFitLong()) {
                     return new JsonLongImpl(getLong());
-                } else {
-                    return new JsonNumberImpl(getBigDecimal());
                 }
+                return new JsonNumberImpl(getBigDecimal());
             default:
                 throw new IllegalStateException(current + " doesn't support getValue()");
         }
