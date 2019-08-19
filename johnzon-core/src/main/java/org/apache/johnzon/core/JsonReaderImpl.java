@@ -138,7 +138,12 @@ public class JsonReaderImpl implements JsonReader {
                 }
                 return JsonValue.NULL;
             case VALUE_NUMBER:
-                final JsonNumber number = new JsonNumberImpl(parser.getBigDecimal());
+                final JsonNumber number;
+                if (parser.isFitLong()) {
+                    number = new JsonLongImpl(parser.getLong());
+                } else {
+                    number = new JsonNumberImpl(parser.getBigDecimal());
+                }
                 if (!subStreamReader) {
                     if (parser.hasNext()) {
                         throw new JsonParsingException("Expected end of file", parser.getLocation());

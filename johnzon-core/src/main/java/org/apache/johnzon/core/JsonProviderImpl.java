@@ -155,33 +155,33 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     }
 
     @Override
-    public JsonString createValue(String value) {
+    public JsonString createValue(final String value) {
         return new JsonStringImpl(value);
     }
 
     @Override
-    public JsonNumber createValue(int value) {
+    public JsonNumber createValue(final int value) {
         return new JsonLongImpl(value);
     }
 
     @Override
-    public JsonNumber createValue(long value) {
+    public JsonNumber createValue(final long value) {
         return new JsonLongImpl(value);
     }
 
     @Override
-    public JsonNumber createValue(double value) {
+    public JsonNumber createValue(final double value) {
         return new JsonDoubleImpl(value);
     }
 
     @Override
-    public JsonNumber createValue(BigDecimal value) {
+    public JsonNumber createValue(final BigDecimal value) {
         return new JsonNumberImpl(value);
     }
 
     @Override
-    public JsonNumber createValue(BigInteger value) {
-        return new JsonLongImpl(value.longValue());
+    public JsonNumber createValue(final BigInteger value) {
+        return new JsonNumberImpl(new BigDecimal(value.toString()));
     }
 
     @Override

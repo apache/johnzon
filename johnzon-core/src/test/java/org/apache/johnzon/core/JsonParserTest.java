@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,6 +68,14 @@ public class JsonParserTest {
         if (!Charset.defaultCharset().equals(Charset.forName("UTF-8"))) {
             System.err.println("Default charset is " + Charset.defaultCharset() + ", must must be UTF-8");
         }
+    }
+
+    @Test
+    public void bigInteger() {
+        final BigInteger integer = new BigInteger("123456789012345678901234567890");
+        final JsonParser parser = Json.createParser(new StringReader(Json.createValue(integer).toString()));
+        parser.next();
+        assertEquals(integer, parser.getBigDecimal().toBigInteger());
     }
 
     @Test
