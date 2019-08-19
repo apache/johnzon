@@ -259,7 +259,11 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                 break;
             case NUMBER:
                 final JsonNumber number = JsonNumber.class.cast(value);
-                write(number.bigDecimalValue());
+                if (number instanceof JsonLongImpl) {
+                    write(number.longValueExact());
+                } else {
+                    write(number.bigDecimalValue());
+                }
                 break;
             case TRUE:
                 write(true);
