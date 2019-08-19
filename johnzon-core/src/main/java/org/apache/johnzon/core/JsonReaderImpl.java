@@ -76,7 +76,7 @@ public class JsonReaderImpl implements JsonReader {
         }
 
 
-        JsonParser.Event next;
+        final JsonParser.Event next;
         if (subStreamReader) {
             next = parser.current();
         } else {
@@ -87,54 +87,36 @@ public class JsonReaderImpl implements JsonReader {
             case START_OBJECT:
                 final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
                 parseObject(objectBuilder);
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return objectBuilder.build();
             case START_ARRAY:
                 final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl(emptyList(), bufferProvider);
                 parseArray(arrayBuilder);
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return arrayBuilder.build();
             case VALUE_STRING:
                 final JsonStringImpl string = new JsonStringImpl(parser.getString());
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return string;
             case VALUE_FALSE:
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return JsonValue.FALSE;
             case VALUE_TRUE:
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return JsonValue.TRUE;
             case VALUE_NULL:
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return JsonValue.NULL;
             case VALUE_NUMBER:
@@ -144,11 +126,8 @@ public class JsonReaderImpl implements JsonReader {
                 } else {
                     number = new JsonNumberImpl(parser.getBigDecimal());
                 }
-                if (!subStreamReader) {
-                    if (parser.hasNext()) {
-                        throw new JsonParsingException("Expected end of file", parser.getLocation());
-                    }
-                    close();
+                if (!subStreamReader && parser.hasNext()) {
+                    throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return number;
             default:
@@ -179,12 +158,10 @@ public class JsonReaderImpl implements JsonReader {
 
     @Override
     public void close() {
-
         if (!closed) {
             closed = true;
             parser.close();
         }
-
     }
 
     private void parseObject(final JsonObjectBuilder builder) {
