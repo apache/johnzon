@@ -258,13 +258,8 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
                 write(JsonString.class.cast(value).getString());
                 break;
             case NUMBER:
-                //TODO optimize
                 final JsonNumber number = JsonNumber.class.cast(value);
-                if (number.isIntegral()) {
-                    write(number.longValueExact());
-                } else {
-                    write(number.bigDecimalValue());
-                }
+                write(number.bigDecimalValue());
                 break;
             case TRUE:
                 write(true);
@@ -389,14 +384,14 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     @Override
     public JsonGenerator write(final BigDecimal value) {
         checkArrayOrValue();
-        writeValue(String.valueOf(value));
+        writeValue(value.toString());
         return this;
     }
 
     @Override
     public JsonGenerator write(final BigInteger value) {
         checkArrayOrValue();
-        writeValue(String.valueOf(value));
+        writeValue(value.toString());
         return this;
     }
 
@@ -695,7 +690,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         if (peek == GeneratorState.START_ARRAY || peek == GeneratorState.IN_ARRAY) {
             writeIndent();
         }
-        justWrite(String.valueOf(value));
+        justWrite(value);
         alignState();
     }
 

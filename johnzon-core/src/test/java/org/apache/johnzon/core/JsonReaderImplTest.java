@@ -92,6 +92,28 @@ public class JsonReaderImplTest {
         reader.close();
     }
 
+    /**
+     * Test came up during the TCK adoption.
+     */
+    @Test
+    public void parseBigDecimal() {
+        String json = "123456789012345678901234567890";
+        JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
+        String newJson = jsonValue.toString();
+        assertEquals(json, newJson);
+    }
+
+    /**
+     * Test came up during the TCK adoption.
+     */
+    @Test
+    public void parseBigDecimalArray() {
+        String json = "[123456789012345678901234567890]";
+        JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
+        String newJson = jsonValue.toString();
+        assertEquals(json, newJson);
+    }
+
     @Test
     public void unicode() {
         final JsonReader reader = Json.createReaderFactory(getFactoryConfig()).createReader(
