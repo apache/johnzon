@@ -95,6 +95,9 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
                 return StandardCharsets.UTF_8; // empty file -> doesn't matter anyway
             }
             if (utfBytes.length == 1) {
+                if (utfBytes[0] == 0) { // TCK shortcut since behavior is doubious
+                    throw new JsonException("Unknown encoding");
+                }
                 inputStream.unread(utfBytes);
                 return StandardCharsets.UTF_8; // almost empty file -> doesn't matter neither
             }
