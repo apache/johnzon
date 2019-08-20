@@ -43,7 +43,7 @@ public interface JohnzonJsonParser extends JsonParser {
     }
 
 
-    public static class JohnzonJsonParserWrapper implements JohnzonJsonParser {
+    class JohnzonJsonParserWrapper implements JohnzonJsonParser {
         private final JsonParser jsonParser;
 
         public JohnzonJsonParserWrapper(JsonParser jsonParser) {

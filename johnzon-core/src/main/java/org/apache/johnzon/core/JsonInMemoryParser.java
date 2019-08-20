@@ -39,6 +39,7 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
     private Event currentEvent;
     private JsonValue currentValue;
     private int arrayDepth = 0;
+    private int objectDepth = 0;
 
     private class ArrayIterator implements Iterator<Event> {
 
@@ -175,7 +176,7 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
     @Override
     public Event current() {
         if (currentEvent == null && hasNext()) {
-            next();
+            internalNext();
         }
         return currentEvent;
     }
@@ -183,6 +184,11 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
     @Override
     protected boolean isInArray() {
         return arrayDepth > 0;
+    }
+
+    @Override
+    protected boolean isInObject() {
+        return objectDepth > 0;
     }
 
     @Override
@@ -226,7 +232,7 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
     }
 
     @Override
-    public Event next() {
+    protected Event internalNext() {
 
         if (!hasNext()) {
             throw new NoSuchElementException();
@@ -238,6 +244,11 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
             arrayDepth++;
         } else if (currentEvent == Event.END_ARRAY) {
             arrayDepth--;
+        }
+        if (currentEvent == Event.START_OBJECT) {
+            objectDepth++;
+        } else if (currentEvent == Event.END_OBJECT) {
+            objectDepth--;
         }
 
         return currentEvent;

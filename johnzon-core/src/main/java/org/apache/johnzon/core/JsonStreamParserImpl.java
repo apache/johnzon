@@ -94,6 +94,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     private StructureElement currentStructureElement = null;
 
     private int arrayDepth = 0;
+    private int objectDepth = 0;
 
     private boolean closed;
 
@@ -351,7 +352,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     @Override
     public Event current() {
         if (previousEvent < 0 && hasNext()) {
-            next();
+            internalNext();
         }
         return previousEvent >= 0 && previousEvent < Event.values().length
                 ? Event.values()[previousEvent]
@@ -359,7 +360,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     }
 
     @Override
-    public final Event next() {
+    protected final Event internalNext() {
         //main entry, make decision how to handle the current character in the stream
 
         if (!hasNext()) {
@@ -386,7 +387,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             }
 
             previousEvent = COMMA_EVENT;
-            return next();
+            return internalNext();
 
         }
 
@@ -397,7 +398,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             }
 
             previousEvent = KEY_SEPARATOR_EVENT;
-            return next();
+            return internalNext();
 
         }
 
@@ -488,6 +489,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             currentStructureElement = localStructureElement;
         }
 
+        objectDepth++;
+
         return EVT_MAP[previousEvent = START_OBJECT];
 
     }
@@ -506,6 +509,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         //pop from stack
         currentStructureElement = currentStructureElement.previous;
+
+        objectDepth--;
 
         return EVT_MAP[previousEvent = END_OBJECT];
     }
@@ -556,6 +561,12 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     @Override
     protected boolean isInArray() {
         return arrayDepth > 0;
+    }
+
+
+    @Override
+    protected boolean isInObject() {
+        return objectDepth > 0;
     }
 
     @Override
@@ -651,33 +662,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     }
 
-    //maybe we want to check invalid utf encoding
-    //not clear yet if the InputStreamReader is doing that
-
-    /*
-    private char checkSurrogates(char n, char highSurrogate) {
-        //check for invalid surrogates
-        //high followed by low       
-        if (Character.isHighSurrogate(n)) {
-
-            if (highSurrogate != 0) {
-                throw uexc("Unexpected high surrogate");
-            }
-            return n;
-        } else if (Character.isLowSurrogate(n)) {
-
-            if (highSurrogate == 0) {
-                throw uexc("Unexpected low surrogate");
-            } else if (!Character.isSurrogatePair(highSurrogate, n)) {
-                throw uexc("Invalid surrogate pair");
-            }
-            return 0;
-        } else if (highSurrogate != 0 && !Character.isLowSurrogate(n)) {
-            throw uexc("Expected low surrogate");
-        }
-        
-        return highSurrogate;
-    }*/
 
     //read the next four chars, check them and treat them as an single unicode char
     private char parseUnicodeHexChars() {

@@ -17,6 +17,7 @@
 package org.apache.johnzon.core;
 
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -34,7 +35,22 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
      * @return {@code true} if we are currently inside an array
      */
     protected abstract boolean isInArray();
+    /**
+     * @return {@code true} if we are currently inside an object
+     */
+    protected abstract boolean isInObject();
+
     protected abstract BufferStrategy.BufferProvider<char[]> getCharArrayProvider();
+
+    private boolean manualNext = false;
+
+    @Override
+    public Event next() {
+        manualNext = true;
+        return internalNext();
+    }
+
+    protected abstract Event internalNext();
 
     @Override
     public JsonObject getObject() {
@@ -88,15 +104,17 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
     @Override
     public void skipObject() {
-        int level = 1;
-        do {
-            Event event = next();
-            if (event == Event.START_OBJECT) {
-                level++;
-            } else if (event == Event.END_OBJECT) {
-                level --;
-            }
-        } while (level > 0 && hasNext());
+        if (isInObject()) {
+            int level = 1;
+            do {
+                Event event = internalNext();
+                if (event == Event.START_OBJECT) {
+                    level++;
+                } else if (event == Event.END_OBJECT) {
+                    level--;
+                }
+            } while (level > 0 && hasNext());
+        }
     }
 
     @Override
@@ -104,7 +122,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         if (isInArray()) {
             int level = 1;
             do {
-                Event event = next();
+                Event event = internalNext();
                 if (event == Event.START_ARRAY) {
                     level++;
                 } else if (event == Event.END_ARRAY) {
@@ -132,16 +150,22 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
     @Override
     public Stream<JsonValue> getValueStream() {
-        //X TODO this implementation is very simplistic
-        //X I find it unintuitive what the spec intends here
-        //X we probably need to improve this
-        Event current = current();
-        if (current  == Event.START_ARRAY) {
-            return getArrayStream();
+        if (manualNext) {
+            throw new IllegalStateException("JsonStream already got propagated manually");
         }
-        if (current  == Event.START_OBJECT) {
-            return getObject().values().stream();
+
+        Event event = internalNext();
+        switch (event) {
+            case START_ARRAY:
+            case START_OBJECT:
+            case VALUE_STRING:
+            case VALUE_NUMBER:
+            case VALUE_TRUE:
+            case VALUE_FALSE:
+            case VALUE_NULL:
+                    return Collections.singletonList(getValue()).stream();
+            default:
+                throw new IllegalStateException(event + " doesn't support getValueStream");
         }
-        throw new IllegalStateException(current + " doesn't support getValueStream");
     }
 }
