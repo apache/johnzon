@@ -49,7 +49,7 @@ public final class Polymorphic {
     private static String getId(final Class<?> type) {
         final JsonId mapping = type.getAnnotation(JsonId.class);
         if (mapping == null) {
-            throw new IllegalArgumentException("No @Id on " + type);
+            throw new IllegalArgumentException("No @JsonId on " + type);
         }
         final String id = mapping.value();
         return id.isEmpty() ? type.getSimpleName() : id;
@@ -126,7 +126,7 @@ public final class Polymorphic {
 
             final JsonChildren classes = from.getAnnotation(JsonChildren.class);
             if (classes == null) {
-                throw new IllegalArgumentException("No @Classes on " + from);
+                throw new IllegalArgumentException("No @JsonChildren on " + from);
             }
 
             classMapping.putAll(Stream.of(classes.value())
