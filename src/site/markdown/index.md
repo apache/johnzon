@@ -480,6 +480,8 @@ bind the corresponding serializer and/or deserializer:
         public List<Root> roots;
     }
 
+Binding the polymophic serializer and/or deserializer *must not* be done using `JsonbConfig.withSerializers` / `JsonbConfig.withDeserializers`, as it is designed to work *only* with binding performed *using annotations*.
+
 
 ### JSON Schema
 
