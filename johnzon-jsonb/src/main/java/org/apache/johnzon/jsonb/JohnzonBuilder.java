@@ -145,8 +145,8 @@ public class JohnzonBuilder implements JsonbBuilder {
         builder.setUseBigDecimalForObjectNumbers(
                 config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
         builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
-                config.getProperty("johnzon.support-enum-container-deserialization")
-                        .map(this::toBool).orElse(false));
+                toBool(System.getProperty("johnzon.support-enum-container-deserialization", config.getProperty("johnzon.support-enum-container-deserialization")
+                        .map(String::valueOf).orElse("true"))));
 
         final boolean ijson = config.getProperty(JsonbConfig.STRICT_IJSON)
                 .map(Boolean.class::cast)

@@ -48,6 +48,7 @@
     </plugins>
   </build>
 
+<!-- avoid warnings at build time + this is not sufficient to run anyway (edit ts.jte)
   <profiles>
     <profile>
       <id>jakartaee-tck</id>
@@ -70,4 +71,5 @@
       </dependencies>
     </profile>
   </profiles>
+-->
 </project>
