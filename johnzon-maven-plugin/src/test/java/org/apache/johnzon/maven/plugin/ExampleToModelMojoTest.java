@@ -112,6 +112,6 @@ public class ExampleToModelMojoTest {
         assertTrue(output.isFile());
         assertEquals(
             new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"))),
-            new String(IOUtil.toByteArray(new FileReader(output))));
+            new String(IOUtil.toByteArray(new FileReader(output))).replace(File.separatorChar, '/'));
     }
 }

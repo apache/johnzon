@@ -197,9 +197,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("johnzon.interfaceImplementationMapping")
                 .map(Map.class::cast)
                 .ifPresent(builder::setInterfaceImplementationMapping);
-        builder.setUseJsRange(config.getProperty("johnzon.use-js-range")
-                .map(this::toBool)
-                .orElse(true));
+        builder.setUseJsRange(toBool( // https://github.com/eclipse-ee4j/jsonb-api/issues/180
+                System.getProperty("johnzon.use-js-range", config.getProperty("johnzon.use-js-range")
+                .map(String::valueOf).orElse("false"))));
 
         final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
 
