@@ -39,7 +39,6 @@ public class JsonPointerImpl implements JsonPointer {
     private final JsonProvider provider;
     private final String jsonPointer;
     private final List<String> referenceTokens = new ArrayList<>();
-    private final String lastReferenceToken;
     private static final Pattern IS_NUMBER = Pattern.compile("\\d+");
 
     /**
@@ -64,7 +63,6 @@ public class JsonPointerImpl implements JsonPointer {
         for (String encodedReferenceToken : encodedReferenceTokens) {
             referenceTokens.add(JsonPointerUtil.decode(encodedReferenceToken));
         }
-        lastReferenceToken = referenceTokens.get(referenceTokens.size() - 1);
     }
 
     /**
@@ -262,11 +260,10 @@ public class JsonPointerImpl implements JsonPointer {
      *                              or if the reference is the target.
      */
     public JsonStructure remove(JsonStructure target) {
-        if (target instanceof JsonObject) {
-            return remove((JsonObject) target);
-        } else {
-            return remove((JsonArray) target);
+        if (target.getValueType() == JsonValue.ValueType.OBJECT) {
+            return remove(target.asJsonObject());
         }
+        return remove(target.asJsonArray());
     }
 
     /**
@@ -282,7 +279,7 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonObject remove(JsonObject target) {
         validateRemove(target);
 
-        return (JsonObject) remove(target, 1, referenceTokens.size() - 1);
+        return remove(target, 1).asJsonObject();
     }
 
     /**
@@ -298,11 +295,19 @@ public class JsonPointerImpl implements JsonPointer {
     public JsonArray remove(JsonArray target) {
         validateRemove(target);
 
-        return (JsonArray) remove(target, 1, referenceTokens.size() - 1);
+        return remove(target, 1).asJsonArray();
     }
 
     String getJsonPointer() {
         return jsonPointer;
+    }
+
+    @Override
+    public String toString() {
+        return "JsonPointerImpl{" +
+                "jsonPointer='" + jsonPointer + '\'' +
+                ", referenceTokens=" + referenceTokens +
+                '}';
     }
 
     private void validateAdd(JsonValue target) {
@@ -356,12 +361,12 @@ public class JsonPointerImpl implements JsonPointer {
     }
 
     private JsonValue addInternal(JsonValue jsonValue, JsonValue newValue, List<String> currentPath) {
-        if (jsonValue instanceof JsonObject) {
+        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
             JsonObject jsonObject = (JsonObject) jsonValue;
             JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
 
             if (jsonObject.isEmpty() && isPositionToAdd(currentPath)) {
-                objectBuilder.add(lastReferenceToken, newValue);
+                objectBuilder.add(referenceTokens.get(referenceTokens.size() - 1), newValue);
             } else {
                 for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
 
@@ -370,18 +375,18 @@ public class JsonPointerImpl implements JsonPointer {
                     currentPath.remove(entry.getKey());
 
                     if (isPositionToAdd(currentPath)) {
-                        objectBuilder.add(lastReferenceToken, newValue);
+                        objectBuilder.add(referenceTokens.get(referenceTokens.size() - 1), newValue);
                     }
                 }
             }
             return objectBuilder.build();
-        } else if (jsonValue instanceof JsonArray) {
+        } else if (jsonValue.getValueType() == JsonValue.ValueType.ARRAY) {
             JsonArray jsonArray = (JsonArray) jsonValue;
             JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
 
             int arrayIndex = -1;
             if (isPositionToAdd(currentPath)) {
-                arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, true);
+                arrayIndex = getArrayIndex(referenceTokens.get(referenceTokens.size() - 1), jsonArray, true);
             }
 
             int jsonArraySize = jsonArray.size();
@@ -408,36 +413,46 @@ public class JsonPointerImpl implements JsonPointer {
                 currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2));
     }
 
-    private JsonValue remove(JsonValue jsonValue, int currentPosition, int referencePosition) {
-        if (jsonValue instanceof JsonObject) {
-            JsonObject jsonObject = (JsonObject) jsonValue;
-            JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
+    private JsonValue remove(final JsonValue jsonValue, final int currentPosition) {
+        if (referenceTokens.size() <= currentPosition) { // unlikely
+            return jsonValue;
+        }
 
-            for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
-                if (currentPosition == referencePosition
-                        && lastReferenceToken.equals(entry.getKey())) {
+        final String token = referenceTokens.get(currentPosition);
+        if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
+            final JsonObject jsonObject = jsonValue.asJsonObject();
+            final JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
+            for (final Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
+                final boolean matchesToken = token.equals(entry.getKey());
+                if (matchesToken && currentPosition == referenceTokens.size() - 1) {
                     continue;
                 }
-                objectBuilder.add(entry.getKey(), remove(entry.getValue(), currentPosition + 1, referencePosition));
+                if (matchesToken) {
+                    objectBuilder.add(
+                            entry.getKey(),
+                            remove(entry.getValue(), currentPosition + 1));
+                } else {
+                    objectBuilder.add(entry.getKey(), entry.getValue());
+                }
             }
             return objectBuilder.build();
-        } else if (jsonValue instanceof JsonArray) {
-            JsonArray jsonArray = (JsonArray) jsonValue;
-            JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
-
-            int arrayIndex = -1;
-            if (currentPosition == referencePosition && IS_NUMBER.matcher(lastReferenceToken).matches()) {
-                arrayIndex = getArrayIndex(lastReferenceToken, jsonArray, false);
-            }
-
-            int jsonArraySize = jsonArray.size();
-            for (int i = 0; i < jsonArraySize; i++) {
-                if (i == arrayIndex) {
-                    continue;
+        } else if (jsonValue.getValueType() == JsonValue.ValueType.ARRAY) {
+            final JsonArray jsonArray = jsonValue.asJsonArray();
+            if (IS_NUMBER.matcher(token).matches()) {
+                final JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
+                final int arrayIndex = getArrayIndex(token, jsonArray, false);
+                final int jsonArraySize = jsonArray.size();
+                for (int i = 0; i < jsonArraySize; i++) {
+                    final boolean matchesIndex = i == arrayIndex;
+                    if (matchesIndex && currentPosition != referenceTokens.size() - 1) {
+                        arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1));
+                    } else if (!matchesIndex) {
+                        arrayBuilder.add(jsonArray.get(i));
+                    }
                 }
-                arrayBuilder.add(remove(jsonArray.get(i), currentPosition + 1, referencePosition));
-            }
-            return arrayBuilder.build();
+                return arrayBuilder.build();
+            } // else?
+            return jsonArray;
         }
         return jsonValue;
     }

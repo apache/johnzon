@@ -29,12 +29,9 @@ import javax.json.JsonObject;
 import javax.json.JsonPatch;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
-import javax.json.JsonWriter;
 import javax.json.spi.JsonProvider;
 
 import java.io.StringReader;
-import java.io.StringWriter;
-import java.io.Writer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -998,15 +995,60 @@ public class JsonPatchTest {
         Assert.assertNotNull(patchedJsonObject);
     }
 
-
-    private static String toJsonString(JsonStructure value) {
-        final Writer writer = new StringWriter();
-        try (final JsonWriter jsonWriter = Json.createWriter(writer)) {
-            jsonWriter.write(value);
+    @Test
+    public void testReplacingObjectAttribute() {
+        final JsonObject object = Json.createObjectBuilder()
+            .add("foo", Json.createObjectBuilder()
+                    .add("baz", Json.createValue("1")))
+            .add("bar", Json.createObjectBuilder()
+                    .add("baz", Json.createValue("2")))
+            .build();
+        final JsonPatchImpl patch = new JsonPatchImpl(
+            PROVIDER, new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.REPLACE,
+                "/bar/baz",
+                null,
+                Json.createValue("3")));
+        final JsonObject patched = patch.apply(object);
+        assertNotNull(patched);
+        assertNotSame(object, patched);
+        {
+            final JsonObject o = patched.getJsonObject("foo");
+            assertNotNull(o);
+            assertEquals(Json.createValue("1"), o.getJsonString("baz"));
         }
-        return writer.toString();
+        {
+            final JsonObject o = patched.getJsonObject("bar");
+            assertNotNull(o);
+            assertEquals(Json.createValue("3"), o.getJsonString("baz"));
+            assertEquals("{\"foo\":{\"baz\":\"1\"},\"bar\":{\"baz\":\"3\"}}", toJsonString(patched));
+        }
+    }
+
+    @Test
+    public void testReplacingArrayElementAttribute() {
+        final JsonObject object = Json.createObjectBuilder()
+            .add("foo", Json.createArrayBuilder()
+                    .add(Json.createObjectBuilder().add("bar", Json.createValue("1")))
+                    .add(Json.createObjectBuilder().add("bar", Json.createValue("2"))))
+            .build();
+        final JsonPatchImpl patch = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.REPLACE,
+            "/foo/1/bar",
+            null,
+            Json.createValue("3")));
+        final JsonObject patched = patch.apply(object);
+        assertNotNull(patched);
+        assertNotSame(object, patched);
+        final JsonArray array = patched.getJsonArray("foo");
+        assertNotNull(array);
+        assertNotSame(object.getJsonArray("foo"), array);
+        assertEquals(2, array.size());
+        assertEquals(Json.createValue("3"), array.getJsonObject(1).getJsonString("bar"));
+        assertEquals(Json.createValue("1"), array.getJsonObject(0).getJsonString("bar"));
+        assertEquals("{\"foo\":[{\"bar\":\"1\"},{\"bar\":\"3\"}]}", toJsonString(patched));
     }
 
 
-
+    private static String toJsonString(final JsonStructure value) {
+        return value.toString();
+    }
 }
