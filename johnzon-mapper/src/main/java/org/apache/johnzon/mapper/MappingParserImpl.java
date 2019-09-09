@@ -453,7 +453,7 @@ public class MappingParserImpl implements MappingParser {
         final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
 
         final AdapterKey key = getAdapterKey(converter);
-        if (JsonValue.class == key.getTo()) {
+        if (key != null && JsonValue.class == key.getTo()) {
             return converter.to(jsonValue);
         }
 
@@ -538,18 +538,22 @@ public class MappingParserImpl implements MappingParser {
                 config.getReverseAdapters().putIfAbsent(converter, adapterKey);
 
             } else {
-                final Type[] types = converter.getClass().getGenericInterfaces();
-                for (final Type t : types) {
-                    if (!ParameterizedType.class.isInstance(t)) {
-                        continue;
+                Class<?> current = converter.getClass();
+                while (current != null && current != Object.class) {
+                    final Type[] types = current.getGenericInterfaces();
+                    for (final Type t : types) {
+                        if (!ParameterizedType.class.isInstance(t)) {
+                            continue;
+                        }
+                        final ParameterizedType pt = ParameterizedType.class.cast(t);
+                        if (Adapter.class == pt.getRawType()) {
+                            final Type[] actualTypeArguments = pt.getActualTypeArguments();
+                            adapterKey = new AdapterKey(actualTypeArguments[0], actualTypeArguments[1]);
+                            config.getReverseAdapters().putIfAbsent(converter, adapterKey);
+                            return adapterKey;
+                        }
                     }
-                    final ParameterizedType pt = ParameterizedType.class.cast(t);
-                    if (Adapter.class == pt.getRawType()) {
-                        final Type[] actualTypeArguments = pt.getActualTypeArguments();
-                        adapterKey = new AdapterKey(actualTypeArguments[0], actualTypeArguments[1]);
-                        config.getReverseAdapters().putIfAbsent(converter, adapterKey);
-                        break;
-                    }
+                    current = current.getSuperclass();
                 }
             }
         }
