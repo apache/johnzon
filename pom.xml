@@ -65,17 +65,22 @@
     <module>johnzon-jsonschema</module>
   </modules>
 
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+        <version>${geronimo-jsonb.version}</version>
+        <scope>provided</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-json_1.1_spec</artifactId>
       <version>${geronimo-jsonp.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-      <version>${geronimo-jsonb.version}</version>
       <scope>provided</scope>
     </dependency>
 
