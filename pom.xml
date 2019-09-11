@@ -37,6 +37,7 @@
 
   <properties>
     <geronimo-jsonp.version>1.2</geronimo-jsonp.version>
+    <geronimo-jsonb.version>1.2</geronimo-jsonb.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
@@ -69,6 +70,12 @@
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-json_1.1_spec</artifactId>
       <version>${geronimo-jsonp.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+      <version>${geronimo-jsonb.version}</version>
       <scope>provided</scope>
     </dependency>
 

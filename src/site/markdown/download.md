@@ -87,7 +87,7 @@ Should you want to build any of the above binaries, this source bundle is the ri
     <dependency>
         <groupId>org.apache.geronimo.specs</groupId>
         <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-        <version>1.0</version>
+        <version>1.2</version>
     </dependency>
 
 #### APIs for Johnzon-1.0.x (JavaEE 7)
