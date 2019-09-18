@@ -40,14 +40,14 @@ public class DefaultPropertyVisibilityStrategy implements javax.json.bind.config
         }
         final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(
                 field.getDeclaringClass(), this::visibilityStrategy);
-        return strategy == this ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
+        return this.equals(strategy) ? Modifier.isPublic(field.getModifiers()) : strategy.isVisible(field);
     }
 
     @Override
     public boolean isVisible(final Method method) {
         final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(
                 method.getDeclaringClass(), this::visibilityStrategy);
-        return strategy == this ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
+        return this.equals(strategy) ? Modifier.isPublic(method.getModifiers()) : strategy.isVisible(method);
     }
 
     private PropertyVisibilityStrategy visibilityStrategy(final Class<?> type) { // can be cached
@@ -86,5 +86,10 @@ public class DefaultPropertyVisibilityStrategy implements javax.json.bind.config
             }
         }
         return this;
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        return o instanceof DefaultPropertyVisibilityStrategy;
     }
 }
