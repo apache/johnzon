@@ -63,6 +63,10 @@ public class JohnzonDeserializationContext implements DeserializationContext {
                 parseObject(null, parser, objectBuilder);
                 return objectBuilder.build();
             }
+            case END_OBJECT:
+                return JsonValue.EMPTY_JSON_OBJECT;
+            case END_ARRAY:
+                return JsonValue.EMPTY_JSON_ARRAY;
             case START_ARRAY:
                 final JsonArrayBuilder arrayBuilder = builderFactory.createArrayBuilder();
                 parseArray(parser, arrayBuilder);
