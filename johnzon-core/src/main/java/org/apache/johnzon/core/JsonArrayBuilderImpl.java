@@ -298,7 +298,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         addValue(builder.build());
         return this;
     }
-    
+
     private void setValue(int idx, JsonValue value) {
         if (value == null || tmpList == null) {
             throw npe();
@@ -333,7 +333,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     @Override
     public JsonArray build() {
         if(tmpList == null) {
-            return new JsonArrayImpl(Collections.emptyList(), bufferProvider);
+            return JsonValue.EMPTY_JSON_ARRAY;
         }
         return new JsonArrayImpl(Collections.unmodifiableList(tmpList), bufferProvider);
     }
