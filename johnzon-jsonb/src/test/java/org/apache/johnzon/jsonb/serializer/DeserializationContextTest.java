@@ -50,7 +50,7 @@ public class DeserializationContextTest {
             final Foo foo = jsonb.fromJson("{\"bar\":{},\"bars\":[]}", Foo.class);
             assertNotNull(foo);
             assertNotNull(foo.bar);
-            // assertNotNull(foo.bars); <- There seems to be a nother bug as this one fails even without custom deserialization!
+            assertNotNull(foo.bars);
         }
 
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withDeserializers(new CustomDeserializer()))) {
