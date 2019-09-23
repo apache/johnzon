@@ -3,6 +3,6 @@ sudo: false
 
 jdk:
   - openjdk8
-before_install: mvn clean install -DskipTests=true
+before_install: mvn -q clean install -DskipTests=true
 after_success:
-  - mvn clean cobertura:cobertura coveralls:report
+  - mvn -q clean cobertura:cobertura coveralls:report
