@@ -111,7 +111,7 @@ public class ExampleToModelMojoTest {
         final File output = new File(targetFolder, "org/test/apache/johnzon/mojo/SomeValue.java");
         assertTrue(output.isFile());
         assertEquals(
-            new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"))),
+            new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"))).replace("\r\n", "\n"),
             new String(IOUtil.toByteArray(new FileReader(output))).replace(File.separatorChar, '/'));
     }
 }
