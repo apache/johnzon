@@ -41,23 +41,23 @@ public class ExampleToModelMojoTest {
             target = targetFolder;
             packageBase = "org.test.apache.johnzon.mojo";
             header =
-                "/*\n" +
-                " * Licensed to the Apache Software Foundation (ASF) under one\n" +
-                " * or more contributor license agreements. See the NOTICE file\n" +
-                " * distributed with this work for additional information\n" +
-                " * regarding copyright ownership. The ASF licenses this file\n" +
-                " * to you under the Apache License, Version 2.0 (the\n" +
-                " * \"License\"); you may not use this file except in compliance\n" +
-                " * with the License. You may obtain a copy of the License at\n" +
-                " *\n" +
-                " * http://www.apache.org/licenses/LICENSE-2.0\n" +
-                " *\n" +
-                " * Unless required by applicable law or agreed to in writing,\n" +
-                " * software distributed under the License is distributed on an\n" +
-                " * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n" +
-                " * KIND, either express or implied. See the License for the\n" +
-                " * specific language governing permissions and limitations\n" +
-                " * under the License.\n" +
+                "/*%n" +
+                " * Licensed to the Apache Software Foundation (ASF) under one%n" +
+                " * or more contributor license agreements. See the NOTICE file%n" +
+                " * distributed with this work for additional information%n" +
+                " * regarding copyright ownership. The ASF licenses this file%n" +
+                " * to you under the Apache License, Version 2.0 (the%n" +
+                " * \"License\"); you may not use this file except in compliance%n" +
+                " * with the License. You may obtain a copy of the License at%n" +
+                " *%n" +
+                " * http://www.apache.org/licenses/LICENSE-2.0%n" +
+                " *%n" +
+                " * Unless required by applicable law or agreed to in writing,%n" +
+                " * software distributed under the License is distributed on an%n" +
+                " * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY%n" +
+                " * KIND, either express or implied. See the License for the%n" +
+                " * specific language governing permissions and limitations%n" +
+                " * under the License.%n" +
                 " */";
         }};
 
@@ -111,7 +111,7 @@ public class ExampleToModelMojoTest {
         final File output = new File(targetFolder, "org/test/apache/johnzon/mojo/SomeValue.java");
         assertTrue(output.isFile());
         assertEquals(
-            new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"))).replace("\r\n", "\n"),
+            new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"))),
             new String(IOUtil.toByteArray(new FileReader(output))).replace(File.separatorChar, '/'));
     }
 }

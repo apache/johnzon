@@ -35,11 +35,10 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -99,7 +98,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     }
 
     // TODO: unicity of field name, better nested array/object handling
-    private void generate(final JsonReaderFactory readerFactory, final File source, final Writer writer, final String javaName) throws MojoExecutionException {
+    private void generate(final JsonReaderFactory readerFactory, final File source, final PrintWriter writer, final String javaName) throws MojoExecutionException {
         JsonReader reader = null;
         try {
             reader = readerFactory.createReader(new FileReader(source));
@@ -113,25 +112,25 @@ public class ExampleToModelMojo extends AbstractMojo {
 
             // while we browse the example tree just store imports as well, avoids a 2 passes processing duplicating imports logic
             final StringWriter memBuffer = new StringWriter();
-            generateFieldsAndMethods(memBuffer, object, "    ", imports);
+            generateFieldsAndMethods(new PrintWriter(memBuffer), object, "    ", imports);
 
             if (header != null) {
-                writer.write(header);
-                writer.write('\n');
+                writer.printf(header).println();
             }
 
-            writer.write("package " + packageBase + ";\n\n");
+            writer.println("package " + packageBase + ";");
+            writer.println();
 
             if (!imports.isEmpty()) {
                 for (final String imp : imports) {
-                    writer.write("import " + imp + ";\n");
+                    writer.println("import " + imp + ";");
                 }
-                writer.write('\n');
+                writer.println();
             }
 
-            writer.write("public class " + javaName + " {\n");
+            writer.println("public class " + javaName + " {");
             writer.write(memBuffer.toString());
-            writer.write("}\n");
+            writer.println("}");
         } catch (final IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {
@@ -141,7 +140,7 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
     }
 
-    private void generateFieldsAndMethods(final Writer writer, final JsonObject object, final String prefix,
+    private void generateFieldsAndMethods(final PrintWriter writer, final JsonObject object, final String prefix,
                                           final Collection<String> imports) throws IOException {
         final Map<String, JsonObject> nestedTypes = new TreeMap<String, JsonObject>();
         {
@@ -175,28 +174,28 @@ public class ExampleToModelMojo extends AbstractMojo {
                         throw new UnsupportedOperationException("Unsupported " + entry.getValue() + ".");
                 }
                 if (iterator.hasNext()) {
-                    writer.write("\n");
+                    writer.println();
                 }
             }
         }
 
         if (!object.isEmpty() && !nestedTypes.isEmpty()) {
-            writer.write("\n");
+            writer.println();
         }
 
         final Iterator<Map.Entry<String, JsonObject>> entries = nestedTypes.entrySet().iterator();
         while (entries.hasNext()) {
             final Map.Entry<String, JsonObject> entry = entries.next();
-            writer.write(prefix + "public static class " + entry.getKey() + " {\n");
+            writer.println(prefix + "public static class " + entry.getKey() + " {");
             generateFieldsAndMethods(writer, entry.getValue(), "    " + prefix, imports);
-            writer.write(prefix + "}\n");
+            writer.println(prefix + "}");
             if (entries.hasNext()) {
-                writer.write("\n");
+                writer.println();
             }
         }
     }
 
-    private void handleArray(final Writer writer, final String prefix,
+    private void handleArray(final PrintWriter writer, final String prefix,
                              final Map<String, JsonObject> nestedTypes,
                              final JsonValue value,
                              final String jsonField,final String fieldName,
@@ -233,7 +232,7 @@ public class ExampleToModelMojo extends AbstractMojo {
         }
     }
 
-    private void fieldGetSetMethods(final Writer writer,
+    private void fieldGetSetMethods(final PrintWriter writer,
                                     final String jsonField, final String field,
                                     final String type, final String prefix, final int arrayLevel,
                                     final Collection<String> imports) throws IOException {
@@ -243,16 +242,16 @@ public class ExampleToModelMojo extends AbstractMojo {
 
         if (!jsonField.equals(field)) { // TODO: add it to imports in eager visitor
             imports.add("org.apache.johnzon.mapper.JohnzonProperty");
-            writer.append(prefix).append("@JohnzonProperty(\"").append(jsonField).append("\")\n");
+            writer.append(prefix).append("@JohnzonProperty(\"").append(jsonField).println("\")");
         }
 
-        writer.append(prefix).append("private ").append(actualType).append(" ").append(actualField).append(";\n");
-        writer.append(prefix).append("public ").append(actualType).append(" get").append(methodName).append("() {\n");
-        writer.append(prefix).append("    return ").append(actualField).append(";\n");
-        writer.append(prefix).append("}\n");
-        writer.append(prefix).append("public void set").append(methodName).append("(final ").append(actualType).append(" newValue) {\n");
-        writer.append(prefix).append("    this.").append(actualField).append(" = newValue;\n");
-        writer.append(prefix).append("}\n");
+        writer.append(prefix).append("private ").append(actualType).append(" ").append(actualField).println(";");
+        writer.append(prefix).append("public ").append(actualType).append(" get").append(methodName).println("() {");
+        writer.append(prefix).append("    return ").append(actualField).println(";");
+        writer.append(prefix).println("}");
+        writer.append(prefix).append("public void set").append(methodName).append("(final ").append(actualType).println(" newValue) {");
+        writer.append(prefix).append("    this.").append(actualField).println(" = newValue;");
+        writer.append(prefix).println("}");
     }
 
     private String buildArrayType(final int arrayLevel, final String type) {
@@ -287,19 +286,15 @@ public class ExampleToModelMojo extends AbstractMojo {
         final File outputFile = new File(target, jsonToClass.replace('.', '/') + ".java");
 
         outputFile.getParentFile().mkdirs();
-        FileWriter writer = null;
+        PrintWriter writer = null;
         try {
-            writer = new FileWriter(outputFile);
+            writer = new PrintWriter(outputFile);
             generate(readerFactory, source, writer, javaName);
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {
-            try {
-                if (writer != null) {
-                    writer.close();
-                }
-            } catch (final IOException e) {
-                // no-op
+            if (writer != null) {
+                writer.close();
             }
         }
     }
