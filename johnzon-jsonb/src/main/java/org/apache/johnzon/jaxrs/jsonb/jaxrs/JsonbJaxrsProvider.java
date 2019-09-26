@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NoContentException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -37,6 +38,7 @@ import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.Writer;
@@ -187,7 +189,23 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     @Override
     public T readFrom(final Class<T> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws WebApplicationException {
+            final MultivaluedMap<String, String> httpHeaders, InputStream entityStream) throws IOException, WebApplicationException {
+        if (entityStream.markSupported()) {
+            entityStream.mark(1);
+            if (entityStream.read() == -1) {
+                throw new NoContentException("Johnzon cannot parse empty input stream");
+            }
+            entityStream.reset();
+        } else {
+            final PushbackInputStream buffer = new PushbackInputStream(entityStream);
+            int firstByte = buffer.read();
+            if (firstByte == -1) {
+                throw new NoContentException("Johnzon cannot parse empty input stream");
+            }
+            buffer.unread(firstByte);
+            entityStream = buffer;
+        }
+
         return getJsonb(type).fromJson(entityStream, genericType);
     }
 
