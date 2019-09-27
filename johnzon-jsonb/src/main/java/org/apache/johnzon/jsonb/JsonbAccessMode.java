@@ -1047,7 +1047,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         } else if (Class.class.isInstance(type)) {
             return Class.class.cast(type);
         } else /*if (ParameterizedType.class.isInstance(type))*/ {
-            return getRawType(ParameterizedType.class.cast(type).getRawType());
+            return Class.class.cast(ParameterizedType.class.cast(type).getRawType());
         }
     }
 
