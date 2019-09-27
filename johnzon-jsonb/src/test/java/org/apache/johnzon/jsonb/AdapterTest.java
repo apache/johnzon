@@ -19,7 +19,6 @@ package org.apache.johnzon.jsonb;
  */
 
 
-import static org.hamcrest.CoreMatchers.*;
 import org.junit.Test;
 
 import javax.json.Json;
@@ -34,6 +33,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -62,6 +64,17 @@ public class AdapterTest {
             assertEquals(foo.bar.value, read.bar.value);
             assertEquals(foo.dummy.value, read.dummy.value);
             assertEquals(foo.baz.value, read.baz.value);
+        }
+    }
+
+    @Test
+    public void adaptValue() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final Baz baz = new Baz();
+            baz.value = "test";
+            
+            final String toString = jsonb.toJson(baz);
+            assertEquals("\"test\"", toString);
         }
     }
 
