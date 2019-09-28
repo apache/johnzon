@@ -41,14 +41,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
-import javax.ws.rs.ext.Provider;
 
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 
-@Provider
+// @Provider // don't let it be scanned, it would conflict with JohnzonProvider
 @Produces("application/json")
 @Consumes("application/json")
 public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, MessageBodyReader<T> {

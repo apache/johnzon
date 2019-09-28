@@ -31,7 +31,7 @@ import java.util.Collection;
 @Consumes("application/json")
 public class JohnzonProvider<T> extends DelegateProvider<T> {
     public JohnzonProvider(final Mapper mapper, final Collection<String> ignores) {
-        super(new JohnzonMessageBodyReader<T>(mapper, ignores), new JohnzonMessageBodyWriter<T>(mapper, ignores));
+        super(new JohnzonMessageBodyReader<>(mapper, ignores), new JohnzonMessageBodyWriter<>(mapper, ignores));
     }
 
     public JohnzonProvider() {
