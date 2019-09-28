@@ -1038,17 +1038,17 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     private boolean hasRawType(final Type type) {
-        return Class.class.isInstance(type) || ParameterizedType.class.isInstance(type);
+        return Class.class.isInstance(type) ||
+            (ParameterizedType.class.isInstance(type) &&
+                    Class.class.isInstance(ParameterizedType.class.cast(type).getRawType()));
     }
 
-    private Class<?> getRawType(final Type type) {
-        if (!Class.class.isInstance(type) && !ParameterizedType.class.isInstance(type)) {
-            throw new IllegalStateException("Unsupported generic type " + type.getClass().getName());
-        } else if (Class.class.isInstance(type)) {
+    private Class<?> getRawType(final Type type) { // only intended to be used after hasRawType check
+        if (Class.class.isInstance(type)) {
             return Class.class.cast(type);
-        } else /*if (ParameterizedType.class.isInstance(type))*/ {
-            return Class.class.cast(ParameterizedType.class.cast(type).getRawType());
         }
+        // ParameterizedType + Class raw type
+        return Class.class.cast(ParameterizedType.class.cast(type).getRawType());
     }
 
     private static class ClassDecoratedType implements DecoratedType {
