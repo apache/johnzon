@@ -25,10 +25,12 @@ import javax.json.JsonStructure;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NoContentException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.MessageBodyReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
@@ -68,7 +70,23 @@ public class JohnzonMessageBodyReader<T> extends IgnorableTypes implements Messa
     public T readFrom(final Class<T> rawType, final Type genericType,
                       final Annotation[] annotations, final MediaType mediaType,
                       final MultivaluedMap<String, String> httpHeaders,
-                      final InputStream entityStream) throws IOException {
+                      InputStream entityStream) throws IOException {
+        if (entityStream.markSupported()) {
+            entityStream.mark(1);
+            if (entityStream.read() == -1) {
+                throw new NoContentException("Johnzon cannot parse empty input stream");
+            }
+            entityStream.reset();
+        } else {
+            final PushbackInputStream buffer = new PushbackInputStream(entityStream);
+            int firstByte = buffer.read();
+            if (firstByte == -1) {
+                throw new NoContentException("Johnzon cannot parse empty input stream");
+            }
+            buffer.unread(firstByte);
+            entityStream = buffer;
+        }
+
         if (rawType.isArray()) {
             return (T) mapper.readArray(entityStream, rawType.getComponentType());
         } else if (Collection.class.isAssignableFrom(rawType) && ParameterizedType.class.isInstance(genericType)) {
