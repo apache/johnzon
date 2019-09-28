@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jaxrs;
 
+import org.apache.johnzon.core.JsonReaderImpl.NothingToRead;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 
@@ -30,7 +31,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.MessageBodyReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.ParameterizedType;
@@ -38,6 +38,10 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 // @Provider // don't let it be scanned, it would conflict with JohnzonProvider
+/**
+ * JAX-RS Compliance Warning: This MBR is only compliant with JAX-RS 2.1 as long as it runs on Johnzon JSON-P. Using other
+ * JSON-P implementations will result in <em>not</em> throwing {@link NoContentException} for empty input streams.
+ */
 @Consumes({
     "application/json", "*/json",
     "*/*+json", "*/x-json",
@@ -71,27 +75,15 @@ public class JohnzonMessageBodyReader<T> extends IgnorableTypes implements Messa
                       final Annotation[] annotations, final MediaType mediaType,
                       final MultivaluedMap<String, String> httpHeaders,
                       InputStream entityStream) throws IOException {
-        if (entityStream.markSupported()) {
-            entityStream.mark(1);
-            if (entityStream.read() == -1) {
-                throw new NoContentException("Johnzon cannot parse empty input stream");
+        try {
+            if (rawType.isArray()) {
+                return (T) mapper.readArray(entityStream, rawType.getComponentType());
+            } else if (Collection.class.isAssignableFrom(rawType) && ParameterizedType.class.isInstance(genericType)) {
+                return (T) mapper.readCollection(entityStream, ParameterizedType.class.cast(genericType));
             }
-            entityStream.reset();
-        } else {
-            final PushbackInputStream buffer = new PushbackInputStream(entityStream);
-            int firstByte = buffer.read();
-            if (firstByte == -1) {
-                throw new NoContentException("Johnzon cannot parse empty input stream");
-            }
-            buffer.unread(firstByte);
-            entityStream = buffer;
+            return mapper.readObject(entityStream, genericType);
+        } catch (final NothingToRead e) {
+            throw new NoContentException(e);
         }
-
-        if (rawType.isArray()) {
-            return (T) mapper.readArray(entityStream, rawType.getComponentType());
-        } else if (Collection.class.isAssignableFrom(rawType) && ParameterizedType.class.isInstance(genericType)) {
-            return (T) mapper.readCollection(entityStream, ParameterizedType.class.cast(genericType));
-        }
-        return mapper.readObject(entityStream, genericType);
     }
 }

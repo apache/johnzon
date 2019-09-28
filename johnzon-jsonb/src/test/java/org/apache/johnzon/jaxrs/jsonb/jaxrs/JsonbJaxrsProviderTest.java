@@ -23,15 +23,21 @@ import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.NoContentException;
+import javax.ws.rs.ext.ContextResolver;
+import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.MessageBodyReader;
+import javax.ws.rs.ext.MessageBodyWriter;
+import javax.ws.rs.ext.Providers;
 
 import org.junit.Test;
 
@@ -40,7 +46,9 @@ public final class JsonbJaxrsProviderTest {
     @Test(expected = NoContentException.class)
     public final void shouldThrowNoContentException() throws IOException {
         // given
-        final MessageBodyReader<Foo> mbr = new JsonbJaxrsProvider<>();
+        final Providers providers = new EmptyProviders();
+        final JsonbJaxrsProvider<Foo> mbr = new JsonbJaxrsProvider<>();
+        mbr.setProviders(providers);
 
         // when
         mbr.readFrom(Foo.class, Foo.class, new Annotation[0], APPLICATION_JSON_TYPE,
@@ -52,6 +60,32 @@ public final class JsonbJaxrsProviderTest {
 
     private static final class Foo {
         // no members
+    }
+
+    private static final class EmptyProviders implements Providers {
+
+        @Override
+        public final <T> MessageBodyReader<T> getMessageBodyReader(final Class<T> type, final Type genericType,
+                final Annotation[] annotations, final MediaType mediaType) {
+            return null;
+        }
+
+        @Override
+        public final <T> MessageBodyWriter<T> getMessageBodyWriter(final Class<T> type, final Type genericType,
+                final Annotation[] annotations, final MediaType mediaType) {
+            return null;
+        }
+
+        @Override
+        public final <T extends Throwable> ExceptionMapper<T> getExceptionMapper(final Class<T> type) {
+            return null;
+        }
+
+        @Override
+        public final <T> ContextResolver<T> getContextResolver(final Class<T> contextType, final MediaType mediaType) {
+            return null;
+        }
+
     }
 
     private static final class EmptyMultivaluedMap<K, V> implements MultivaluedMap<K, V> {
