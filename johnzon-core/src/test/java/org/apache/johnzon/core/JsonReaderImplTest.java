@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -423,6 +424,13 @@ public class JsonReaderImplTest {
         assertEquals(1, array.getInt(0));
         assertEquals(-2, array.getInt(1));
         reader.close();
+    }
+
+    @Test(expected = JsonReaderImpl.NothingToRead.class)
+    public void emptyStream() {
+        Json.createReaderFactory(emptyMap())
+                .createReader(new ByteArrayInputStream(new byte[0]), utf8Charset)
+                .readObject();
     }
 
     @Test(expected = IllegalArgumentException.class)
