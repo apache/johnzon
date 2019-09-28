@@ -21,8 +21,9 @@ package org.apache.johnzon.jaxrs;
 import javax.json.JsonStructure;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
+import javax.ws.rs.ext.Provider;
 
-// @Provider // don't let it be scanned, it would conflict with JohnzonProvider
+@Provider
 @Produces("application/json")
 @Consumes("application/json")
 public class JsrProvider extends DelegateProvider<JsonStructure> {
