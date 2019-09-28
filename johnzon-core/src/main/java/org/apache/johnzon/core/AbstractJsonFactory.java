@@ -78,4 +78,14 @@ public abstract class AbstractJsonFactory implements Serializable {
         return Boolean.parseBoolean(boolValue.toString());
     }
 
+    protected String getString(final String key, final String defaultValue) {
+        final Object value = internalConfig.get(key);
+        if (value == null) {
+            return defaultValue;
+        } else if (String.class.isInstance(value)) {
+            return String.class.cast(value);
+        }
+        return value.toString();
+    }
+
 }

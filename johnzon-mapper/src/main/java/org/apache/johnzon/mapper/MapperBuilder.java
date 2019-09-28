@@ -22,7 +22,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static java.util.Locale.ROOT;
 
-import org.apache.johnzon.core.JsonParserFactoryImpl;
+// import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -158,7 +158,7 @@ public class MapperBuilder {
             }
             final Map<String, Object> config = new HashMap<String, Object>();
             if (bufferStrategy != null) {
-                config.put(JsonParserFactoryImpl.BUFFER_STRATEGY, bufferStrategy);
+                config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
             }
             if (pretty) {
                 config.put(JsonGenerator.PRETTY_PRINTING, true);
@@ -170,16 +170,19 @@ public class MapperBuilder {
 
             config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
             if (supportsComments) {
-                config.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, "true");
+                config.put("org.apache.johnzon.supports-comments", "true");
             }
             if (maxSize > 0) {
-                config.put(JsonParserFactoryImpl.MAX_STRING_LENGTH, maxSize);
+                config.put("org.apache.johnzon.max-string-length", maxSize);
             }
             if (bufferSize > 0) {
-                config.put(JsonParserFactoryImpl.BUFFER_LENGTH, bufferSize);
+                config.put("org.apache.johnzon.default-char-buffer", bufferSize);
             }
             if (autoAdjustStringBuffers) {
                 config.put("org.apache.johnzon.auto-adjust-buffer", true);
+            }
+            if (encoding != null) {
+                config.put("org.apache.johnzon.encoding", encoding.name());
             }
             if (readerFactory == null) {
                 readerFactory = provider.createReaderFactory(config);
@@ -436,7 +439,7 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setEncoding(final String encoding) {
-        this.encoding = Charset.forName(encoding);
+        this.encoding = encoding == null ? null : Charset.forName(encoding);
         return this;
     }
 

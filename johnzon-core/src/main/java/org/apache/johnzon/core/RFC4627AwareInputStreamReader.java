@@ -29,15 +29,12 @@ import javax.json.JsonException;
 
 final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
-    /**
-     * @param preferredCharset the Charset to use if no BOM is used. If {@code null} use UTF-8
-     */
-    RFC4627AwareInputStreamReader(final InputStream in, Charset preferredCharset) {
-        this(new PushbackInputStream(in,4), preferredCharset);
+    RFC4627AwareInputStreamReader(final InputStream in) {
+        this(new PushbackInputStream(in,4));
     }
 
-    private RFC4627AwareInputStreamReader(final PushbackInputStream in, Charset preferredCharset) {
-        super(in, getCharset(in, preferredCharset).newDecoder());
+    private RFC4627AwareInputStreamReader(final PushbackInputStream in) {
+        super(in, getCharset(in).newDecoder());
     }
 
     /**
@@ -86,8 +83,8 @@ final class RFC4627AwareInputStreamReader extends InputStreamReader {
 
         */
 
-    private static Charset getCharset(final PushbackInputStream inputStream, Charset preferredCharset) {
-        Charset charset = preferredCharset != null ? preferredCharset : StandardCharsets.UTF_8;
+    private static Charset getCharset(final PushbackInputStream inputStream) {
+        Charset charset = StandardCharsets.UTF_8;
         int bomLength=0;
         try {
             final byte[] utfBytes = readAllBytes(inputStream);
