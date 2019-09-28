@@ -1,3 +1,4 @@
+package org.apache.johnzon.jsonb;
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements. See the NOTICE file
@@ -16,7 +17,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.jsonb;
+
 
 import org.junit.Test;
 
@@ -32,7 +33,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.endsWith;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class AdapterTest {
@@ -44,13 +49,32 @@ public class AdapterTest {
             foo.bar.value = 1;
             foo.dummy = new Dummy();
             foo.dummy.value = 2L;
+            foo.baz = new Baz();
+            foo.baz.value = "3";
 
             final String toString = jsonb.toJson(foo);
-            assertEquals("{\"bar\":\"1\",\"dummy\":\"2\"}", toString);
+            assertThat(toString, startsWith("{"));
+            assertThat(toString, containsString("\"bar\":\"1\""));
+            assertThat(toString, containsString("\"dummy\":\"2\""));
+            assertThat(toString, containsString("\"baz\":\"3\""));
+            assertThat(toString, endsWith("}"));
+            assertEquals("{\"bar\":\"1\",\"dummy\":\"2\",\"baz\":\"3\"}".length(), toString.length());
 
             final Foo read = jsonb.fromJson(toString, Foo.class);
             assertEquals(foo.bar.value, read.bar.value);
             assertEquals(foo.dummy.value, read.dummy.value);
+            assertEquals(foo.baz.value, read.baz.value);
+        }
+    }
+
+    @Test
+    public void adaptValue() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final Baz baz = new Baz();
+            baz.value = "test";
+            
+            final String toString = jsonb.toJson(baz);
+            assertEquals("\"test\"", toString);
         }
     }
 
@@ -144,6 +168,8 @@ public class AdapterTest {
 
         @JsonbTypeAdapter(DummyAdapter.class)
         public Dummy dummy;
+        
+        public Baz baz;
     }
 
     public static class Bar2 extends Bar {
@@ -167,6 +193,27 @@ public class AdapterTest {
             typeInstance.value = obj;
             return typeInstance;
         }
+    }
+
+    @JsonbTypeAdapter(BazAdapter.class)
+    public static class Baz {
+        public String value;
+    }
+
+    public static class BazAdapter implements JsonbAdapter<Baz, String> {
+
+        @Override
+        public String adaptToJson(Baz obj) throws Exception {
+            return obj.value;
+        }
+
+        @Override
+        public Baz adaptFromJson(String obj) throws Exception {
+            Baz baz = new Baz();
+            baz.value = obj;
+            return baz;
+        }
+
     }
 
     public static class Dummy2 {
