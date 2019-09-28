@@ -29,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NoContentException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -53,7 +54,13 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Providers;
 
+import org.apache.johnzon.core.JsonReaderImpl.NothingToRead;
+
 // here while we dont compile in java 8 jaxrs module, when migrated we'll merge it with IgnorableTypes hierarchy at least
+/**
+ * JAX-RS Compliance Warning: This MBR is only compliant with JAX-RS 2.1 as long as it runs on Johnzon JSON-P. Using other
+ * JSON-P implementations will result in <em>not</em> throwing {@link NoContentException} for empty input streams.
+ */
 @Provider
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -78,6 +85,11 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     private boolean isIgnored(final Class<?> type) {
         return ignores != null && ignores.contains(type.getName());
+    }
+
+    // simplifies testing without mocking content injection
+    void setProviders(final Providers providers) {
+        this.providers = providers;
     }
 
     // config - main containers support the configuration of providers this way
@@ -187,8 +199,12 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     @Override
     public T readFrom(final Class<T> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws WebApplicationException {
-        return getJsonb(type).fromJson(entityStream, genericType);
+            final MultivaluedMap<String, String> httpHeaders, InputStream entityStream) throws IOException, WebApplicationException {
+        try {
+            return getJsonb(type).fromJson(entityStream, genericType);
+        } catch (final NothingToRead e) {
+            throw new NoContentException(e);
+        }
     }
 
     @Override
