@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jaxrs;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON_PATCH_JSON_TYPE;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public final class JohnzonMessageBodyReaderTest {
         final MessageBodyReader<Foo> mbr = new JohnzonMessageBodyReader<>();
 
         // when
-        mbr.readFrom(Foo.class, Foo.class, new Annotation[0], APPLICATION_JSON_PATCH_JSON_TYPE,
+        mbr.readFrom(Foo.class, Foo.class, new Annotation[0], APPLICATION_JSON_TYPE,
                 new EmptyMultivaluedMap<String, String>(), new ByteArrayInputStream(new byte[0]));
 
         // then
