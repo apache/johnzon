@@ -18,9 +18,16 @@
  */
 package org.apache.johnzon.jaxrs;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+
 import javax.json.JsonStructure;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 
 @Provider
@@ -29,5 +36,17 @@ import javax.ws.rs.ext.Provider;
 public class JsrProvider extends DelegateProvider<JsonStructure> {
     public JsrProvider() {
         super(new JsrMessageBodyReader(), new JsrMessageBodyWriter());
+    }
+
+    @Override
+    public JsonStructure readFrom(final Class<JsonStructure> rawType, final Type genericType,
+                                  final Annotation[] annotations, final MediaType mediaType,
+                                  final MultivaluedMap<String, String> httpHeaders,
+                                  final InputStream entityStream) throws IOException {
+        return super.readFrom(rawType, genericType, annotations, mediaType, httpHeaders, entityStream);
+    }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return Boolean.getBoolean("johnzon.jaxrs.jsr.throwNoContentExceptionOnEmptyStreams");
     }
 }

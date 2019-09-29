@@ -37,4 +37,8 @@ public class JohnzonProvider<T> extends DelegateProvider<T> {
     public JohnzonProvider() {
         this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
     }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return Boolean.getBoolean("johnzon.jaxrs.johnzon.throwNoContentExceptionOnEmptyStreams");
+    }
 }

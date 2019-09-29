@@ -45,4 +45,8 @@ public class WildcardJohnzonProvider<T> extends DelegateProvider<T> {
     public WildcardJohnzonProvider() {
         this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
     }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return Boolean.getBoolean("johnzon.jaxrs.johnzon.wildcard.throwNoContentExceptionOnEmptyStreams");
+    }
 }

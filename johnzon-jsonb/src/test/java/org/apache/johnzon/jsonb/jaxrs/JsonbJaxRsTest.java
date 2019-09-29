@@ -168,7 +168,7 @@ public class JsonbJaxRsTest {
                 return null;
             }
         };
-        final List<Johnzon> johnzons = client().path("johnzon/all2").get(new GenericType<List<Johnzon>>(list));
+        final List<Johnzon> johnzons = client().path("johnzon/all2").get(new GenericType<List<Johnzon>>(list) {});
         assertEquals(2, johnzons.size());
         int i = 1;
         for (final Johnzon f : johnzons) {

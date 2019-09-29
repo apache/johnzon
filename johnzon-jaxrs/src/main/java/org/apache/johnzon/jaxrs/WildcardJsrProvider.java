@@ -37,4 +37,8 @@ public class WildcardJsrProvider extends DelegateProvider<JsonStructure> {
     public WildcardJsrProvider() {
         super(new JsrMessageBodyReader(), new JsrMessageBodyWriter());
     }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return Boolean.getBoolean("johnzon.jaxrs.jsr.wildcard.throwNoContentExceptionOnEmptyStreams");
+    }
 }
