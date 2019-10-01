@@ -26,7 +26,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.ext.Provider;
 import java.util.Collection;
 
-@Provider
+@Provider // this is scanned cause does not overlap with JohnzonProvider in terms of mime types
 @Produces({
     "*/json",
     "*/*+json", "*/x-json",
@@ -44,5 +44,9 @@ public class WildcardJohnzonProvider<T> extends DelegateProvider<T> {
 
     public WildcardJohnzonProvider() {
         this(new MapperBuilder().setDoCloseOnStreams(false).build(), null);
+    }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return Boolean.getBoolean("johnzon.jaxrs.johnzon.wildcard.throwNoContentExceptionOnEmptyStreams");
     }
 }

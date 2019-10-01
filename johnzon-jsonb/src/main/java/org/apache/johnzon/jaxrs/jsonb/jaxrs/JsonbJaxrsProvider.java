@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jaxrs.jsonb.jaxrs;
 
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 
 import javax.json.JsonStructure;
@@ -29,6 +30,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.NoContentException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -63,7 +65,9 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
     protected final Collection<String> ignores;
     protected final JsonbConfig config = new JsonbConfig();
     protected volatile Function<Class<?>, Jsonb> delegate = null;
+    protected volatile ReadImpl readImpl = null;
     private boolean customized;
+    private Boolean throwNoContentExceptionOnEmptyStreams;
 
     @Context
     private Providers providers;
@@ -78,6 +82,11 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     private boolean isIgnored(final Class<?> type) {
         return ignores != null && ignores.contains(type.getName());
+    }
+
+    public void setThrowNoContentExceptionOnEmptyStreams(final boolean throwNoContentExceptionOnEmptyStreams) {
+        this.throwNoContentExceptionOnEmptyStreams = throwNoContentExceptionOnEmptyStreams;
+        // customized = false since it is not a jsonb customization but a MBR one
     }
 
     // config - main containers support the configuration of providers this way
@@ -187,13 +196,14 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
 
     @Override
     public T readFrom(final Class<T> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws IOException, WebApplicationException {
-        return getJsonb(type).fromJson(entityStream, genericType);
+            final MultivaluedMap<String, String> httpHeaders, final InputStream entityStream) throws WebApplicationException, IOException {
+        final Jsonb jsonb = getJsonb(type);
+        return (T) readImpl.doRead(jsonb, genericType, entityStream);
     }
 
     @Override
     public void writeTo(final T t, final Class<?> type, final Type genericType, final Annotation[] annotations, final MediaType mediaType,
-            final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws IOException, WebApplicationException {
+            final MultivaluedMap<String, Object> httpHeaders, final OutputStream entityStream) throws WebApplicationException {
         getJsonb(type).toJson(t, entityStream);
     }
 
@@ -205,20 +215,61 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         if (delegate == null){
             synchronized (this) {
                 if (delegate == null) {
+                    if (throwNoContentExceptionOnEmptyStreams == null) {
+                        throwNoContentExceptionOnEmptyStreams = initThrowNoContentExceptionOnEmptyStreams();
+                    }
                     final ContextResolver<Jsonb> contextResolver = providers.getContextResolver(Jsonb.class, MediaType.APPLICATION_JSON_TYPE);
                     if (contextResolver != null) {
                         if (customized) {
-                            Logger.getLogger(JsonbJaxrsProvider.class.getName())
-                                  .warning("Customizations done on the Jsonb instance will be ignored because a ContextResolver<Jsonb> was found");
+                            logger().warning("Customizations done on the Jsonb instance will be ignored because a ContextResolver<Jsonb> was found");
+                        }
+                        if (throwNoContentExceptionOnEmptyStreams) {
+                            logger().warning("Using a ContextResolver<Jsonb>, NoContentException will not be thrown for empty streams");
                         }
                         delegate = new DynamicInstance(contextResolver); // faster than contextResolver::getContext
                     } else {
-                        delegate = new ProvidedInstance(createJsonb()); // don't recreate it
+                        // don't recreate it for perfs
+                        delegate = new ProvidedInstance(createJsonb());
                     }
                 }
+                readImpl = throwNoContentExceptionOnEmptyStreams ?
+                        this::doReadWithNoContentException :
+                        this::doRead;
             }
         }
         return delegate.apply(type);
+    }
+
+    private boolean initThrowNoContentExceptionOnEmptyStreams() {
+        try {
+            ofNullable(Thread.currentThread().getContextClassLoader())
+                    .orElseGet(ClassLoader::getSystemClassLoader)
+                    .loadClass("javax.ws.rs.core.Feature");
+            return true;
+        } catch (final NoClassDefFoundError | ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    private Object doRead(final Jsonb jsonb, final Type t, final InputStream stream) {
+        return jsonb.fromJson(stream, t);
+    }
+
+    private Object doReadWithNoContentException(final Jsonb jsonb, final Type t, final InputStream stream) throws NoContentException {
+        try {
+            return doRead(jsonb, t, stream);
+        } catch (final IllegalStateException ise) {
+            if (ise.getClass().getName()
+                    .equals("org.apache.johnzon.core.JsonReaderImpl$NothingToRead")) {
+                // spec enables to return an empty java object but it does not mean anything in JSON context so just fail
+                throw new NoContentException(ise);
+            }
+            throw ise;
+        }
+    }
+
+    private Logger logger() {
+        return Logger.getLogger(JsonbJaxrsProvider.class.getName());
     }
 
     @Override
@@ -226,6 +277,10 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         if (AutoCloseable.class.isInstance(delegate)) {
             AutoCloseable.class.cast(delegate).close();
         }
+    }
+
+    private interface ReadImpl {
+        Object doRead(Jsonb jsonb, Type type, InputStream entityStream) throws IOException;
     }
 
     private static final class DynamicInstance implements Function<Class<?>, Jsonb> {

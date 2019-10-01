@@ -21,9 +21,8 @@ package org.apache.johnzon.jaxrs;
 import javax.json.JsonStructure;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.Produces;
-import javax.ws.rs.ext.Provider;
 
-@Provider
+// @Provider // don't let it be scanned, it would conflict with JsrProvider
 @Produces({
     "*/json",
     "*/*+json", "*/x-json",
@@ -37,5 +36,9 @@ import javax.ws.rs.ext.Provider;
 public class WildcardJsrProvider extends DelegateProvider<JsonStructure> {
     public WildcardJsrProvider() {
         super(new JsrMessageBodyReader(), new JsrMessageBodyWriter());
+    }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return Boolean.getBoolean("johnzon.jaxrs.jsr.wildcard.throwNoContentExceptionOnEmptyStreams");
     }
 }

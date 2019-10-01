@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.jaxrs;
 
+import static java.util.Optional.ofNullable;
+
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -33,7 +35,8 @@ public abstract class DelegateProvider<T> implements MessageBodyWriter<T>, Messa
     private final MessageBodyWriter<T> writer;
 
     protected DelegateProvider(final MessageBodyReader<T> reader, final MessageBodyWriter<T> writer) {
-        this.reader = reader;
+        this.reader = shouldThrowNoContentExceptionOnEmptyStreams() && isJaxRs2() ?
+                new NoContentExceptionHandlerReader<>(reader) : reader;
         this.writer = writer;
     }
 
@@ -69,5 +72,20 @@ public abstract class DelegateProvider<T> implements MessageBodyWriter<T>, Messa
                         final MultivaluedMap<String, Object> httpHeaders,
                         final OutputStream entityStream) throws IOException {
         writer.writeTo(t, rawType, genericType, annotations, mediaType, httpHeaders, entityStream);
+    }
+
+    protected boolean shouldThrowNoContentExceptionOnEmptyStreams() {
+        return false;
+    }
+
+    private static boolean isJaxRs2() {
+        try {
+            ofNullable(Thread.currentThread().getContextClassLoader())
+                    .orElseGet(ClassLoader::getSystemClassLoader)
+                    .loadClass("javax.ws.rs.core.Feature");
+            return true;
+        } catch (final NoClassDefFoundError | ClassNotFoundException e) {
+            return false;
+        }
     }
 }

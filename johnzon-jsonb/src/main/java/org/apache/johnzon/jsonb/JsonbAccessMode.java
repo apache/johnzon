@@ -868,8 +868,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         ReaderConverters(final DecoratedType annotationHolder) {
             final boolean numberType = isNumberType(annotationHolder.getType());
             final boolean dateType = isDateType(annotationHolder.getType());
+            final boolean hasRawType = hasRawType(annotationHolder.getType());
             final JsonbTypeDeserializer deserializer = annotationHolder.getAnnotation(JsonbTypeDeserializer.class);
             final JsonbTypeAdapter adapter = annotationHolder.getAnnotation(JsonbTypeAdapter.class);
+            final JsonbTypeAdapter typeAdapter = hasRawType ? getRawType(annotationHolder.getType()).getDeclaredAnnotation(JsonbTypeAdapter.class) : null;
             JsonbDateFormat dateFormat = dateType ? annotationHolder.getAnnotation(JsonbDateFormat.class) : null;
             JsonbNumberFormat numberFormat = numberType ? annotationHolder.getAnnotation(JsonbNumberFormat.class) : null;
             final JohnzonConverter johnzonConverter = annotationHolder.getAnnotation(JohnzonConverter.class);
@@ -881,9 +883,9 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 numberFormat = annotationHolder.getClassOrPackageAnnotation(JsonbNumberFormat.class);
             }
 
-            converter = adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
+            converter = adapter == null && typeAdapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
                     defaultConverters.get(new AdapterKey(annotationHolder.getType(), String.class)) :
-                    toConverter(types, annotationHolder.getType(), adapter, dateFormat, numberFormat);
+                    toConverter(types, annotationHolder.getType(), adapter != null ? adapter : typeAdapter, dateFormat, numberFormat);
 
             if (deserializer != null) {
                 final Class<? extends JsonbDeserializer> value = deserializer.value();
@@ -966,12 +968,14 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         WriterConverters(final DecoratedType reader, final Types types) {
             final boolean numberType = isNumberType(reader.getType());
             final boolean dateType = isDateType(reader.getType());
+            final boolean hasRawType = hasRawType(reader.getType());
             final JsonbTypeSerializer serializer = reader.getAnnotation(JsonbTypeSerializer.class);
             final JsonbTypeAdapter adapter = reader.getAnnotation(JsonbTypeAdapter.class);
+            final JsonbTypeAdapter typeAdapter = hasRawType ? getRawType(reader.getType()).getDeclaredAnnotation(JsonbTypeAdapter.class) : null;
             JsonbDateFormat dateFormat = dateType ? reader.getAnnotation(JsonbDateFormat.class) : null;
             JsonbNumberFormat numberFormat = numberType ? reader.getAnnotation(JsonbNumberFormat.class) : null;
             final JohnzonConverter johnzonConverter = reader.getAnnotation(JohnzonConverter.class);
-            validateAnnotations(reader, adapter, dateFormat, numberFormat, johnzonConverter);
+            validateAnnotations(reader, adapter != null ? adapter : typeAdapter, dateFormat, numberFormat, johnzonConverter);
             if (dateFormat == null && isDateType(reader.getType())) {
                 dateFormat = reader.getClassOrPackageAnnotation(JsonbDateFormat.class);
             }
@@ -979,9 +983,9 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 numberFormat = reader.getClassOrPackageAnnotation(JsonbNumberFormat.class);
             }
 
-            converter = adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
+            converter = adapter == null && typeAdapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null ?
                     defaultConverters.get(new AdapterKey(reader.getType(), String.class)) :
-                    toConverter(types, reader.getType(), adapter, dateFormat, numberFormat);
+                    toConverter(types, reader.getType(), adapter != null ? adapter : typeAdapter, dateFormat, numberFormat);
 
             if (serializer != null) {
                 final Class<? extends JsonbSerializer> value = serializer.value();
@@ -1031,6 +1035,20 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         }
         final Class<?> clazz = Class.class.cast(type);
         return Number.class.isAssignableFrom(clazz) || clazz.isPrimitive();
+    }
+
+    private boolean hasRawType(final Type type) {
+        return Class.class.isInstance(type) ||
+            (ParameterizedType.class.isInstance(type) &&
+                    Class.class.isInstance(ParameterizedType.class.cast(type).getRawType()));
+    }
+
+    private Class<?> getRawType(final Type type) { // only intended to be used after hasRawType check
+        if (Class.class.isInstance(type)) {
+            return Class.class.cast(type);
+        }
+        // ParameterizedType + Class raw type
+        return Class.class.cast(ParameterizedType.class.cast(type).getRawType());
     }
 
     private static class ClassDecoratedType implements DecoratedType {

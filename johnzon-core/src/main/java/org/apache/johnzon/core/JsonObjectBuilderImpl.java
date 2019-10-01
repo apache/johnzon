@@ -176,16 +176,16 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         if(name == null || value == null) {
             throw new NullPointerException("name or value/builder must not be null");
         }
-        
+
         attributeMap.put(name, value);
     }
-    
+
 
     @Override
     public JsonObject build() {
-        
+
         if(attributeMap == null || attributeMap.isEmpty()) {
-            return new JsonObjectImpl(Collections.EMPTY_MAP, bufferProvider);
+            return JsonValue.EMPTY_JSON_OBJECT;
         } else {
             Map<String, JsonValue> dump = (Collections.unmodifiableMap(attributeMap));
             return new JsonObjectImpl(dump, bufferProvider);

@@ -251,6 +251,8 @@ split makes it easier to mix json and other MediaType in the same resource (like
 
 Tip: ConfigurableJohnzonProvider maps most of MapperBuilder configuration letting you configure it through any IoC including not programming language based formats.
 
+IMPORTANT: when used with `johnzon-core`, `NoContentException` is not thrown in case of an empty incoming input stream by these providers except `JsrProvider` to limit the breaking changes.
+
 ### TomEE Configuration
 
 TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want however to customize it you need to follow this procedure:
@@ -314,6 +316,13 @@ JsonbConfig specific properties:
 * johnzon.deduplicateObjects: should instances be deduplicated.
 
 TIP: more in JohnzonBuilder class.
+
+A JAX-RS provider based on JSON-B is provided in the module as well. It is `org.apache.johnzon.jaxrs.jsonb.jaxrs.JsonbJaxrsProvider`.
+
+IMPORTANT: in JAX-RS 1.0 the provider can throw any exception he wants for an empty incoming stream on reader side. This had been broken in JAX-RS 2.x where it must throw a `javax.ws.rs.core.NoContentException`.
+To ensure you can pick the implementation you can and limit the breaking changes, you can set ̀throwNoContentExceptionOnEmptyStreams` on the provider to switch between both behaviors.
+Default will be picked from the current available API. Finally, this behavior only works with `johnzon-core`.
+
 
 #### Integration with `JsonValue`
 

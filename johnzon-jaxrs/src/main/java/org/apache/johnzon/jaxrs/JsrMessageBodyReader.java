@@ -27,7 +27,6 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyReader;
-import javax.ws.rs.ext.Provider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
@@ -36,7 +35,7 @@ import java.util.Collections;
 
 import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
-@Provider
+// @Provider // don't let it be scanned, it would conflict with JsrProvider
 @Consumes({
     "application/json", "*/json",
     "*/*+json", "*/x-json",

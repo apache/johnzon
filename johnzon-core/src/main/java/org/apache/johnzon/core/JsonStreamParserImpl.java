@@ -21,8 +21,10 @@ package org.apache.johnzon.core;
 import javax.json.JsonException;
 import javax.json.stream.JsonLocation;
 import javax.json.stream.JsonParsingException;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -149,8 +151,10 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         if (reader != null) {
             this.in = reader;
-        } else {
-            this.in = new RFC4627AwareInputStreamReader(inputStream, encoding);
+        } else if (encoding != null) { // always respect it
+            this.in = new InputStreamReader(inputStream, encoding);
+        } else { // should we log the usage is unexpected? (for perf we want to avoid the pushbackinputstream)
+            this.in = new RFC4627AwareInputStreamReader(inputStream);
         }
     }
 
@@ -207,7 +211,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         if (previousEvent != END_ARRAY && previousEvent != END_OBJECT &&
                 previousEvent != VALUE_STRING && previousEvent != VALUE_FALSE && previousEvent != VALUE_TRUE &&
                 previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) {
-            if (bufferPos == Integer.MIN_VALUE) { // check we don't have an empty string to parse
+            if (bufferPos < 0) { // check we don't have an empty string to parse
                 final char c = readNextChar();
                 bufferPos--;
                 return c != EOF;

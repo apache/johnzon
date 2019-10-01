@@ -72,7 +72,7 @@ public class JsonReaderImpl implements JsonReader {
         checkClosed();
 
         if (!parser.hasNext()) {
-            throw new IllegalStateException("Nothing to read");
+            throw new NothingToRead();
         }
 
 
@@ -281,5 +281,11 @@ public class JsonReaderImpl implements JsonReader {
             throw new IllegalStateException("read(), readObject(), readArray() or close() method was already called");
         }
 
+    }
+
+    public static class NothingToRead extends IllegalStateException {
+        public NothingToRead() {
+            super("Nothing to read");
+        }
     }
 }

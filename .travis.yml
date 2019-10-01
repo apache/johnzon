@@ -2,7 +2,10 @@ language: java
 sudo: false
 
 jdk:
-  - oraclejdk8 
-before_install: mvn clean install -DskipTests=true
-after_success:
-  - mvn clean cobertura:cobertura coveralls:report
+  - openjdk8
+  - openjdk11
+
+env:
+  global:
+    - MAVEN_OPTS="-Dmaven.artifact.threads=128"
+
