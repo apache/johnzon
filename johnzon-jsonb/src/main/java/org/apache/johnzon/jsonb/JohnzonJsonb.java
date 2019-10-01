@@ -20,8 +20,6 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.johnzon.mapper.util.ArrayUtil;
 import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
-import org.apache.johnzon.jsonb.extension.JsonValueReader;
-import org.apache.johnzon.jsonb.extension.JsonValueWriter;
 import org.apache.johnzon.mapper.JsonObjectGenerator;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperException;
@@ -43,17 +41,21 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
-// TODO: Optional handling for lists (and arrays)?
 public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     private final Mapper delegate;
     private final boolean ijson;
     private final Consumer<JohnzonJsonb> onClose;
+    private final Map<Class<?>, Boolean> structureAwareIo = new ConcurrentHashMap<>();
 
     public JohnzonJsonb(final Mapper build, final boolean ijson, final Consumer<JohnzonJsonb> onClose) {
         this.delegate = build;
@@ -143,18 +145,28 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
 
     @Override
     public <T> T fromJson(final Reader reader, final Class<T> type) throws JsonbException {
-        if (JsonValueReader.class.isInstance(reader)) {
-            return delegate.readObject(JsonValueReader.class.cast(reader).getInput(), type);
-        }
-
+        final boolean valueProvider = isValueProvider(reader);
         try {
             if (isArray(type)) {
+                if (valueProvider) {
+                    return delegate.readObject(((Supplier<JsonValue>) reader).get(), type);
+                }
                 return delegate.readTypedArray(reader, type.getComponentType(), type);
             } else if (JsonArray.class == type) {
+                if (valueProvider) {
+                    return delegate.readObject(((Supplier<JsonValue>) reader).get(), type);
+                }
                 return (T) delegate.readJsonArray(reader);
             } else if (Collection.class.isAssignableFrom(type)) {
+                if (valueProvider) {
+                    return delegate.readObject(((Supplier<JsonValue>) reader).get(), type);
+                }
                 return (T) delegate.readCollection(reader, new JohnzonParameterizedType(type, Object.class));
             }
+            if (valueProvider) {
+                return delegate.readObject(((Supplier<JsonValue>) reader).get(), type);
+            }
+
             final Type mappingType = unwrapPrimitiveOptional(type);
             final Object object = delegate.readObject(reader, mappingType);
             if (mappingType != type) {
@@ -168,8 +180,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
 
     @Override
     public <T> T fromJson(final Reader reader, final Type runtimeType) throws JsonbException {
-        if (JsonValueReader.class.isInstance(reader)) {
-            return delegate.readObject(JsonValueReader.class.cast(reader).getInput(), runtimeType);
+        if (isValueProvider(reader)) {
+            return delegate.readObject(((Supplier<JsonStructure>) reader).get(), runtimeType);
         }
 
         try {
@@ -323,8 +335,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
 
     @Override
     public void toJson(final Object inObject, final Writer writer) throws JsonbException {
-        if (JsonValueWriter.class.isInstance(writer)) {
-            JsonValueWriter.class.cast(writer).setResult(delegate.toStructure(inObject));
+        if (isValueConsumer(writer)) {
+            Consumer.class.cast(writer).accept(delegate.toStructure(inObject));
             return;
         }
 
@@ -342,8 +354,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
 
     @Override
     public void toJson(final Object inObject, final Type runtimeType, final Writer writer) throws JsonbException {
-        if (JsonValueWriter.class.isInstance(writer)) {
-            JsonValueWriter.class.cast(writer).setResult(delegate.toStructure(inObject));
+        if (isValueConsumer(writer)) {
+            Consumer.class.cast(writer).accept(delegate.toStructure(inObject));
             return;
         }
 
@@ -519,5 +531,36 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             jsonObjectGenerator.flush();
             return jsonObjectGenerator.getResult();
         }
+    }
+
+    private boolean isValueProvider(final Reader reader) {
+        final Class<? extends Reader> key = reader.getClass();
+        Boolean exists = structureAwareIo.get(key);
+        if (exists == null) {
+            exists = matchesType(key, Supplier.class);
+            structureAwareIo.putIfAbsent(key, exists);
+        }
+        return exists;
+    }
+
+    private boolean isValueConsumer(final Writer writer) {
+        final Class<? extends Writer> key = writer.getClass();
+        Boolean exists = structureAwareIo.get(key);
+        if (exists == null) {
+            exists = matchesType(writer.getClass(), Consumer.class);
+            structureAwareIo.putIfAbsent(key, exists);
+        }
+        return exists;
+    }
+
+    private boolean matchesType(final Class<?> type, final Class<?> rawType) {
+        return rawType.isAssignableFrom(type) &&
+                Stream.of(type.getGenericInterfaces())
+                        .filter(ParameterizedType.class::isInstance)
+                        .map(ParameterizedType.class::cast)
+                        .anyMatch(pt -> pt.getRawType() == rawType &&
+                                pt.getActualTypeArguments().length == 1 &&
+                                Class.class.isInstance(pt.getActualTypeArguments()[0]) &&
+                                JsonValue.class.isAssignableFrom(Class.class.cast(pt.getActualTypeArguments()[0])));
     }
 }

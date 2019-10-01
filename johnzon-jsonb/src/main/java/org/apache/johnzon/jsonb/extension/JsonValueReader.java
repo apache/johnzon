@@ -18,12 +18,17 @@
  */
 package org.apache.johnzon.jsonb.extension;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.function.Supplier;
 
 import javax.json.JsonStructure;
 
-public class JsonValueReader<T> extends Reader {
+public class JsonValueReader<T> extends Reader implements Supplier<JsonStructure> {
     private final JsonStructure input;
+    private ByteArrayInputStream fallbackDelegate;
     private T result;
 
     public JsonValueReader(final JsonStructure input) {
@@ -32,22 +37,35 @@ public class JsonValueReader<T> extends Reader {
 
     @Override
     public int read(final char[] cbuf, final int off, final int len) {
-        throw new UnsupportedOperationException();
+        if (fallbackDelegate == null) {
+            fallbackDelegate = new ByteArrayInputStream(input.toString().getBytes(StandardCharsets.UTF_8));
+        }
+        return fallbackDelegate.read();
     }
 
     @Override
-    public void close() {
-        // no-op
+    public void close() throws IOException {
+        if (fallbackDelegate != null) {
+            fallbackDelegate.close();
+        }
     }
 
+    @Override
+    public JsonStructure get() {
+        return input;
+    }
+
+    @Deprecated
     public JsonStructure getInput() {
         return input;
     }
 
+    @Deprecated
     public T getResult() {
         return result;
     }
 
+    @Deprecated
     public void setResult(final T result) {
         this.result = result;
     }

@@ -250,11 +250,20 @@ public class Mapper implements Closeable {
         return writer.toString();
     }
 
-    public <T> T readObject(final JsonStructure value, final Type clazz) {
+    public <T> T readObject(final JsonValue value, final Type clazz) {
         return new MappingParserImpl(config, mappings, new JsonReader() {
             @Override
             public JsonStructure read() {
-                return value;
+                switch (value.getValueType()) {
+                    case STRING:
+                    case FALSE:
+                    case TRUE:
+                    case NULL:
+                    case NUMBER:
+                        throw new UnsupportedOperationException("use readValue()");
+                    default:
+                        return JsonStructure.class.cast(readValue());
+                }
             }
 
             @Override

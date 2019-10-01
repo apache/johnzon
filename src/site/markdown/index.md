@@ -326,7 +326,7 @@ Default will be picked from the current available API. Finally, this behavior on
 
 #### Integration with `JsonValue`
 
-You can use some optimization to map a `JsonObject` to a POJO using Johnzon `JsonValueReader` and `JsonValueWriter`:
+You can use some optimization to map a `JsonObject` to a POJO using Johnzon `JsonValueReader` - or any implementation of  `Reader` implementing `Supplier<JsonStructure>` - and `JsonValueWriter` - or any implementation of  `Writer` implementing `Consumer<JsonValue>` -:
 
 <pre class="prettyprint linenums"><![CDATA[
 final JsonValueReader<Simple> reader = new JsonValueReader<>(Json.createObjectBuilder().add("value", "simple").build());

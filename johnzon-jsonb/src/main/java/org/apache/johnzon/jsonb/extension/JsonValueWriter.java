@@ -18,18 +18,26 @@
  */
 package org.apache.johnzon.jsonb.extension;
 
+import java.io.StringReader;
 import java.io.Writer;
+import java.util.function.Consumer;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
+import javax.json.JsonReader;
 import javax.json.JsonValue;
 
-public class JsonValueWriter extends Writer {
+public class JsonValueWriter extends Writer implements Consumer<JsonValue> {
     private JsonValue result;
+    private StringBuilder fallbackOutput;
 
     @Override
     public void write(final char[] cbuf, final int off, final int len) {
-        throw new UnsupportedOperationException();
+        if (fallbackOutput == null) {
+            fallbackOutput = new StringBuilder();
+        }
+        fallbackOutput.append(cbuf, off, len);
     }
 
     @Override
@@ -42,19 +50,30 @@ public class JsonValueWriter extends Writer {
         flush();
     }
 
+    @Deprecated
     public void setResult(final JsonValue result) {
         this.result = result;
     }
 
     public JsonValue getResult() {
+        if (result == null && fallbackOutput != null) {
+            try (final JsonReader reader = Json.createReader(new StringReader(fallbackOutput.toString()))) {
+                result = reader.readValue();
+            }
+        }
         return result;
     }
 
     public JsonObject getObject() {
-        return result.asJsonObject();
+        return getResult().asJsonObject();
     }
 
     public JsonArray getArray() {
-        return result.asJsonArray();
+        return getResult().asJsonArray();
+    }
+
+    @Override
+    public void accept(final JsonValue jsonValue) {
+        this.result = jsonValue;
     }
 }
