@@ -146,6 +146,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     private boolean failOnMissingCreatorValues;
     private final Types types = new Types();
     private final boolean globalIsNillable;
+    private final boolean supportsPrivateAccess;
 
     // CHECKSTYLE:OFF
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
@@ -155,7 +156,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                            final Supplier<JsonParserFactory> parserFactory,
                            final AccessMode delegate,
                            final boolean failOnMissingCreatorValues,
-                           final boolean globalIsNillable) {
+                           final boolean globalIsNillable,
+                           final boolean supportsPrivateAccess) {
         // CHECKSTYLE:ON
         this.globalIsNillable = globalIsNillable;
         this.naming = propertyNamingStrategy;
@@ -169,6 +171,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         this.jsonProvider = jsonProvider;
         this.parserFactory = parserFactory;
         this.failOnMissingCreatorValues = failOnMissingCreatorValues;
+        this.supportsPrivateAccess = supportsPrivateAccess;
     }
 
     @Override
@@ -182,22 +185,29 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         Constructor<?> constructor = null;
         Method factory = null;
         boolean invalidConstructorForDeserialization = false;
-        for (final Constructor<?> c : clazz.getConstructors()) {
+        for (final Constructor<?> c : supportsPrivateAccess ? clazz.getDeclaredConstructors() : clazz.getConstructors()) {
             if (c.isAnnotationPresent(JsonbCreator.class)) {
                 if (constructor != null) {
                     throw new JsonbException("Only one constructor or method can have @JsonbCreator");
                 }
+                if (!c.isAccessible()) {
+                    c.setAccessible(true);
+                }
                 constructor = c;
             }
         }
-        for (final Method m : clazz.getMethods()) {
+        for (final Method m : findPotentialFactoryMethods(clazz).collect(toList())) {
             final int modifiers = m.getModifiers();
-            if (Modifier.isPublic(modifiers) && m.isAnnotationPresent(JsonbCreator.class)) {
-                if (constructor != null || factory != null) {
-                    throw new JsonbException("Only one constructor or method can have @JsonbCreator");
-                }
-                factory = m;
+            if ((!supportsPrivateAccess && !Modifier.isPublic(modifiers)) || !m.isAnnotationPresent(JsonbCreator.class)) {
+                continue;
             }
+            if (constructor != null || factory != null) {
+                throw new JsonbException("Only one constructor or method can have @JsonbCreator");
+            }
+            if (!m.isAccessible()) {
+                m.setAccessible(true);
+            }
+            factory = m;
         }
         if (constructor == null && factory == null) {
             invalidConstructorForDeserialization = Stream.of(clazz.getDeclaredConstructors())
@@ -278,6 +288,16 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             } : factoryValidator, types, params, converters, itemConverters, objectConverters);
         }
         return methodFactory(clazz, finalFactory, factoryValidator, types, params, converters, itemConverters, objectConverters);
+    }
+
+    private Stream<Method> findPotentialFactoryMethods(final Class<?> clazz) {
+        return (!supportsPrivateAccess ?
+                Stream.of(clazz.getMethods()) :
+                Stream.concat(
+                        Stream.of(clazz.getDeclaredMethods()),
+                        clazz.getSuperclass() == null || clazz.getSuperclass() == Object.class || clazz.getSuperclass() == clazz ?
+                                Stream.empty() :
+                                findPotentialFactoryMethods(clazz)));
     }
 
     private Factory methodFactory(final Class<?> clazz, final Method finalFactory,

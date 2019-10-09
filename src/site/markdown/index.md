@@ -314,6 +314,15 @@ JsonbConfig specific properties:
 * johnzon.support-enum-container-deserialization: prevent EnumMap/EnumSet instantiation, true by default.
 * johnzon.attributeOrder: Comparator instance to sort properties by name.
 * johnzon.deduplicateObjects: should instances be deduplicated.
+* johnzon.supportsPrivateAccess: should private constructors/methods with `@JsonbCreator` be used too.
+* johnzon.fail-on-unknown-properties: should unmapped properties fail the mapping. Similar to `jsonb.fail-on-unknown-properties`.
+* johnzon.readAttributeBeforeWrite: should collection be read before being written, it enables to have an "append" mode.
+* johnzon.autoAdjustBuffer: should internal read buffers be autoadjusted to stay fixed.
+* johnzon.serialize-value-filter: enable to set a filter to not serialize some values.
+* johnzon.cdi.activated: should cdi support be active.
+* johnzon.accessMode: custom access mode, note that it can disable some JSON-B feature (annotations support).
+* johnzon.accessModeDelegate: delegate access mode used by JsonbAccessModel. Enables to enrich default access mode.
+* johnzon.failOnMissingCreatorValues: should the mapping fail when a `@JsonbCreator` misses some values.
 
 TIP: more in JohnzonBuilder class.
 

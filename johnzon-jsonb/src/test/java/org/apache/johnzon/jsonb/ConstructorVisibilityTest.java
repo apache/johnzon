@@ -18,7 +18,14 @@
  */
 package org.apache.johnzon.jsonb;
 
+import static org.junit.Assert.assertEquals;
+
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
+import javax.json.bind.annotation.JsonbCreator;
+import javax.json.bind.annotation.JsonbProperty;
 
 import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
@@ -33,11 +40,28 @@ public class ConstructorVisibilityTest {
         jsonb.fromJson("{}", PackageCons.class);
     }
 
+    @Test
+    public void instantiablePackageConstructor() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
+                .setProperty("johnzon.supportsPrivateAccess", "true"))) {
+            assertEquals("ok", jsonb.fromJson("{\"foo\":\"ok\"}", InstantiablePackageCons.class).value);
+        }
+    }
+
     public static class PackageCons {
         public String value;
 
         PackageCons() {
             // no-op
+        }
+    }
+
+    public static class InstantiablePackageCons {
+        public String value;
+
+        @JsonbCreator
+        InstantiablePackageCons(@JsonbProperty("foo") final String foo) {
+            this.value = foo;
         }
     }
 }

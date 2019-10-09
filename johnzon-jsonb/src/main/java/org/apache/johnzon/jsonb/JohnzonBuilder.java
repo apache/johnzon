@@ -141,6 +141,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             config = new JsonbConfig();
         }
 
+        final Boolean skipCdi = shouldSkipCdi();
+
         // todo: global spec toggle to disable all these ones at once?
         builder.setUseBigDecimalForObjectNumbers(
                 config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
@@ -222,7 +224,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 }
             }
             throw new IllegalArgumentException("Unsupported factory: " + val);
-        }).orElseGet(this::findFactory);
+        }).orElseGet(() -> findFactory(skipCdi));
 
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
@@ -235,9 +237,12 @@ public class JohnzonBuilder implements JsonbBuilder {
                                 .map(this::toAccessMode)
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, true)),
                         config.getProperty("johnzon.failOnMissingCreatorValues")
-                              .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
+                              .map(this::toBool)
                               .orElse(true) /*spec 1.0 requirement*/,
-                        isNillable));
+                        isNillable,
+                        config.getProperty("johnzon.supportsPrivateAccess")
+                                .map(this::toBool)
+                                .orElse(false)));
         builder.setAccessMode(accessMode);
 
         // user adapters
@@ -285,7 +290,9 @@ public class JohnzonBuilder implements JsonbBuilder {
             }
         });
 
-        getBeanManager(); // force detection
+        if (!skipCdi) {
+            getBeanManager(); // force detection
+        }
 
         final Types types = new Types();
         builder.setReadAttributeBeforeWrite(
@@ -340,7 +347,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             });
         });
 
-        final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && config.getProperty("johnzon.cdi.activated").map(Boolean.class::cast).orElse(Boolean.TRUE);
+        final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && !skipCdi;
         if (Closeable.class.isInstance(accessMode)) {
             builder.addCloseable(Closeable.class.cast(accessMode));
         }
@@ -408,9 +415,8 @@ public class JohnzonBuilder implements JsonbBuilder {
         return beanManager;
     }
 
-    private JohnzonAdapterFactory findFactory() {
-        if (getBeanManager() == NO_BM || config.getProperty("johnzon.skip-cdi")
-                .map(s -> "true".equalsIgnoreCase(String.valueOf(s))).orElse(false)) {
+    private JohnzonAdapterFactory findFactory(final boolean skipCdi) {
+        if (skipCdi || getBeanManager() == NO_BM) {
             return new SimpleJohnzonAdapterFactory();
         }
         try { // don't trigger CDI is not there
@@ -418,6 +424,12 @@ public class JohnzonBuilder implements JsonbBuilder {
         } catch (final NoClassDefFoundError | Exception e) {
             return new SimpleJohnzonAdapterFactory();
         }
+    }
+
+    private Boolean shouldSkipCdi() {
+        return config.getProperty("johnzon.skip-cdi")
+                .map(s -> "true".equalsIgnoreCase(String.valueOf(s)))
+                .orElseGet(() -> !config.getProperty("johnzon.cdi.activated").map(Boolean.class::cast).orElse(Boolean.TRUE));
     }
 
     private ClassLoader tccl() {
