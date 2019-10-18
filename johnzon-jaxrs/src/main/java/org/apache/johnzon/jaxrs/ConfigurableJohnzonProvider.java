@@ -20,6 +20,7 @@ package org.apache.johnzon.jaxrs;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -30,8 +31,10 @@ import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import javax.json.JsonReaderFactory;
 import javax.json.stream.JsonGeneratorFactory;
@@ -132,6 +135,46 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
 
     public void setFailOnUnknownProperties(final boolean active) {
         builder.setFailOnUnknownProperties(active);
+    }
+
+    public void setPolymorphicSerializationPredicate(final String classes) {
+        final Set<Class<?>> set = asSet(classes);
+        builder.setPolymorphicSerializationPredicate(set::contains);
+    }
+
+    public void setPolymorphicDeserializationPredicate(final String classes) {
+        final Set<Class<?>> set = asSet(classes);
+        builder.setPolymorphicDeserializationPredicate(set::contains);
+    }
+
+    public void setPolymorphicDiscriminatorMapper(final Map<String, String> discriminatorMapper) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Map<Class<?>, String> map = discriminatorMapper.entrySet().stream()
+                .collect(toMap(e -> {
+                    try {
+                        return loader.loadClass(e.getKey().trim());
+                    } catch (final ClassNotFoundException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }, Map.Entry::getValue));
+        builder.setPolymorphicDiscriminatorMapper(map::get);
+    }
+
+    public void setPolymorphicTypeLoader(final Map<String, String> aliasTypeMapping) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Map<String, Class<?>> map = aliasTypeMapping.entrySet().stream()
+                .collect(toMap(Map.Entry::getKey, e -> {
+                    try {
+                        return loader.loadClass(e.getValue().trim());
+                    } catch (final ClassNotFoundException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }));
+        builder.setPolymorphicTypeLoader(map::get);
+    }
+
+    public void setPolymorphicDiscriminator(final String value) {
+        builder.setPolymorphicDiscriminator(value);
     }
 
     public void setSupportConstructors(final boolean supportConstructors) {
@@ -268,5 +311,17 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
 
     public void setAutoAdjustStringBuffers(final boolean autoAdjustStringBuffers) {
         builder.setAutoAdjustStringBuffers(autoAdjustStringBuffers);
+    }
+
+    private Set<Class<?>> asSet(final String classes) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        return Stream.of(classes.split(" *, *"))
+                .map(n -> {
+                    try {
+                        return loader.loadClass(n.trim());
+                    } catch (final ClassNotFoundException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }).collect(toSet());
     }
 }

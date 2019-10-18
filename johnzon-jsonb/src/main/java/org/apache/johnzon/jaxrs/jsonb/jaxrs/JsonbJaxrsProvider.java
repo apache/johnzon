@@ -20,6 +20,7 @@ package org.apache.johnzon.jaxrs.jsonb.jaxrs;
 
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import javax.json.JsonStructure;
 import javax.json.bind.Jsonb;
@@ -47,13 +48,17 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import javax.annotation.Priority;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.ext.ContextResolver;
 import javax.ws.rs.ext.Providers;
+
+import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
 
 // here while we dont compile in java 8 jaxrs module, when migrated we'll merge it with IgnorableTypes hierarchy at least
 @Provider
@@ -163,6 +168,74 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         config.setProperty("johnzon.interfaceImplementationMapping", interfaceImplementationMapping.entrySet().stream()
              .collect(toMap(it -> load.apply(it.getKey()), it -> load.apply(it.getValue()))));
         customized = true;
+    }
+
+
+    public void setPolymorphicSerializationPredicate(final String classes) {
+        final Set<Class<?>> set = asSet(classes);
+        getOrCreatePolymorphicConfig().withSerializationPredicate(set::contains);
+        customized = true;
+    }
+
+    public void setPolymorphicDeserializationPredicate(final String classes) {
+        final Set<Class<?>> set = asSet(classes);
+        getOrCreatePolymorphicConfig().withDeserializationPredicate(set::contains);
+        customized = true;
+    }
+
+    public void setPolymorphicDiscriminatorMapper(final Map<String, String> discriminatorMapper) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Map<Class<?>, String> map = discriminatorMapper.entrySet().stream()
+                .collect(toMap(e -> {
+                    try {
+                        return loader.loadClass(e.getKey().trim());
+                    } catch (final ClassNotFoundException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }, Map.Entry::getValue));
+        getOrCreatePolymorphicConfig().withDiscriminatorMapper(map::get);
+        customized = true;
+    }
+
+    public void setPolymorphicTypeLoader(final Map<String, String> aliasTypeMapping) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Map<String, Class<?>> map = aliasTypeMapping.entrySet().stream()
+                .collect(toMap(Map.Entry::getKey, e -> {
+                    try {
+                        return loader.loadClass(e.getValue().trim());
+                    } catch (final ClassNotFoundException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }));
+        getOrCreatePolymorphicConfig().withTypeLoader(map::get);
+        customized = true;
+    }
+
+    public void setPolymorphicDiscriminator(final String value) {
+        getOrCreatePolymorphicConfig().withDiscriminator(value);
+        customized = true;
+    }
+
+    private PolymorphicConfig getOrCreatePolymorphicConfig() {
+        return config.getProperty(PolymorphicConfig.class.getName())
+                .map(PolymorphicConfig.class::cast)
+                .orElseGet(() -> {
+                    final PolymorphicConfig config = new PolymorphicConfig();
+                    this.config.setProperty(PolymorphicConfig.class.getName(), config);
+                    return config;
+                });
+    }
+
+    private Set<Class<?>> asSet(final String classes) {
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        return Stream.of(classes.split(" *, *"))
+                .map(n -> {
+                    try {
+                        return loader.loadClass(n.trim());
+                    } catch (final ClassNotFoundException ex) {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }).collect(toSet());
     }
 
     // actual impl
