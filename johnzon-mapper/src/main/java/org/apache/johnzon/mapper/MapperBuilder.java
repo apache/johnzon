@@ -70,6 +70,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 // this class is responsible to hold any needed config
 // to build the runtime
@@ -146,6 +148,13 @@ public class MapperBuilder {
     private boolean useJsRange;
     private boolean useBigDecimalForObjectNumbers;
     private boolean supportEnumContainerDeserialization = true;
+
+    // @experimental polymorphic api
+    private Function<String, Class<?>> typeLoader;
+    private Function<Class<?>, String> discriminatorMapper;
+    private Predicate<Class<?>> deserializationPredicate;
+    private Predicate<Class<?>> serializationPredicate;
+    private String discriminator;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -261,7 +270,9 @@ public class MapperBuilder {
                         accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
-                        supportEnumContainerDeserialization),
+                        supportEnumContainerDeserialization,
+                        typeLoader, discriminatorMapper, discriminator,
+                        deserializationPredicate, serializationPredicate),
                 closeables);
     }
 
@@ -536,6 +547,31 @@ public class MapperBuilder {
 
     public MapperBuilder setSupportEnumContainerDeserialization(final boolean supportEnumContainerDeserialization) {
         this.supportEnumContainerDeserialization = supportEnumContainerDeserialization;
+        return this;
+    }
+
+    public MapperBuilder setPolymorphicSerializationPredicate(final Predicate<Class<?>> serializationPredicate) {
+        this.serializationPredicate = serializationPredicate;
+        return this;
+    }
+
+    public MapperBuilder setPolymorphicDeserializationPredicate(final Predicate<Class<?>> deserializationPredicate) {
+        this.deserializationPredicate = deserializationPredicate;
+        return this;
+    }
+
+    public MapperBuilder setPolymorphicDiscriminatorMapper(final Function<Class<?>, String> discriminatorMapper) {
+        this.discriminatorMapper = discriminatorMapper;
+        return this;
+    }
+
+    public MapperBuilder setPolymorphicTypeLoader(final Function<String, Class<?>> typeLoader) {
+        this.typeLoader = typeLoader;
+        return this;
+    }
+
+    public MapperBuilder setPolymorphicDiscriminator(final String value) {
+        this.discriminator = value;
         return this;
     }
 }

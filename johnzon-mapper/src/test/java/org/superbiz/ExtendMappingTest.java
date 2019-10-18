@@ -18,16 +18,13 @@
  */
 package org.superbiz;
 
-import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.MapperConfig;
 import org.apache.johnzon.mapper.Mappings;
-import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
-import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.junit.Test;
 
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,13 +57,12 @@ public class ExtendMappingTest {
     public static class MyMappings extends Mappings {
         public MyMappings() {
             super(new MapperConfig(
-                    new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(),
-                    new HashMap<Class<?>, ObjectConverter.Writer<?>>(),
-                    new HashMap<Class<?>, ObjectConverter.Reader<?>>(),
+                    new ConcurrentHashMap<>(), new HashMap<>(), new HashMap<>(),
                     -1, true, true, true, false, false, false,
                     new FieldAccessMode(false, false),
-                    Charset.forName("UTF-8"), String::compareTo, false, false, null, false, false,
-                    emptyMap(), true, false, true));
+                    StandardCharsets.UTF_8, String::compareTo, false, false, null, false, false,
+                    emptyMap(), true, false, true,
+                    null, null, null, null, null));
         }
 
         @Override

@@ -178,7 +178,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 if (writeBody) {
                     generator.writeStartObject();
                 }
-                doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
+                if (config.getSerializationPredicate() != null && config.getSerializationPredicate().test(objectClass)) {
+                    generator.write(config.getDiscriminator(), config.getDiscriminatorMapper().apply(objectClass));
+                    doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
+                } else {
+                    doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
+                }
                 if (writeBody) {
                     generator.writeEnd();
                 }

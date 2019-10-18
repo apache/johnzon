@@ -88,6 +88,7 @@ import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.core.Types;
+import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
@@ -167,6 +168,15 @@ public class JohnzonBuilder implements JsonbBuilder {
             builder.setPretty(true);
         }
 
+        config.getProperty(PolymorphicConfig.class.getName())
+                .map(PolymorphicConfig.class::cast)
+                .ifPresent(pc -> {
+                    builder.setPolymorphicDiscriminator(pc.getDiscriminator());
+                    builder.setPolymorphicDeserializationPredicate(pc.getDeserializationPredicate());
+                    builder.setPolymorphicSerializationPredicate(pc.getSerializationPredicate());
+                    builder.setPolymorphicDiscriminatorMapper(pc.getDiscriminatorMapper());
+                    builder.setPolymorphicTypeLoader(pc.getTypeLoader());
+                });
         config.getProperty(JsonbConfig.ENCODING).ifPresent(encoding -> builder.setEncoding(String.valueOf(encoding)));
         final boolean isNillable = config.getProperty(JsonbConfig.NULL_VALUES)
                 .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))

@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Contains internal configuration for all the mapper stuff.
@@ -75,6 +77,12 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Map<Class<?>, Class<?>> interfaceImplementationMapping;
     private final boolean useBigDecimalForObjectNumbers;
 
+    private final Function<String, Class<?>> typeLoader;
+    private final Function<Class<?>, String> discriminatorMapper;
+    private final Predicate<Class<?>> serializationPredicate;
+    private final Predicate<Class<?>> deserializationPredicate;
+    private final String discriminator;
+
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
 
@@ -96,7 +104,12 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final Map<Class<?>, Class<?>> interfaceImplementationMapping,
                         final boolean useJsRange,
                         final boolean useBigDecimalForObjectNumbers,
-                        final boolean supportEnumMapDeserialization) {
+                        final boolean supportEnumMapDeserialization,
+                        final Function<String, Class<?>> typeLoader,
+                        final Function<Class<?>, String> discriminatorMapper,
+                        final String discriminator,
+                        final Predicate<Class<?>> deserializationPredicate,
+                        final Predicate<Class<?>> serializationPredicate) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -112,11 +125,16 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.useJsRange = useJsRange;
         this.useBigDecimalForObjectNumbers = useBigDecimalForObjectNumbers;
         this.supportEnumMapDeserialization = supportEnumMapDeserialization;
+        this.typeLoader = typeLoader;
+        this.discriminatorMapper = discriminatorMapper;
+        this.serializationPredicate = serializationPredicate;
+        this.deserializationPredicate = deserializationPredicate;
+        this.discriminator = discriminator;
 
         // handle Adapters
         this.adapters = adapters;
         this.reverseAdapters = new ConcurrentHashMap<>(adapters.size());
-        adapters.entrySet().forEach(e -> this.reverseAdapters.put(e.getValue(), e.getKey()));
+        adapters.forEach((k, v) -> this.reverseAdapters.put(v, k));
 
 
         this.attributeOrder = attributeOrder;
@@ -125,10 +143,30 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.serializeValueFilter = serializeValueFilter == null ? (name, value) -> false : serializeValueFilter;
         this.interfaceImplementationMapping = interfaceImplementationMapping;
 
-        this.objectConverterWriterCache = new HashMap<Class<?>, ObjectConverter.Writer<?>>(objectConverterWriters.size());
-        this.objectConverterReaderCache = new HashMap<Class<?>, ObjectConverter.Reader<?>>(objectConverterReaders.size());
+        this.objectConverterWriterCache = new HashMap<>(objectConverterWriters.size());
+        this.objectConverterReaderCache = new HashMap<>(objectConverterReaders.size());
         this.useBigDecimalForFloats = useBigDecimalForFloats;
         this.deduplicateObjects = deduplicateObjects;
+    }
+
+    public Function<String, Class<?>> getTypeLoader() {
+        return typeLoader;
+    }
+
+    public Function<Class<?>, String> getDiscriminatorMapper() {
+        return discriminatorMapper;
+    }
+
+    public Predicate<Class<?>> getDeserializationPredicate() {
+        return deserializationPredicate;
+    }
+
+    public Predicate<Class<?>> getSerializationPredicate() {
+        return serializationPredicate;
+    }
+
+    public String getDiscriminator() {
+        return discriminator;
     }
 
     public boolean isUseBigDecimalForObjectNumbers() {

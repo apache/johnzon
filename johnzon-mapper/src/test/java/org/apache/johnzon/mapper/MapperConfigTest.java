@@ -21,14 +21,13 @@ package org.apache.johnzon.mapper;
 import static java.util.Collections.emptyMap;
 
 import org.apache.johnzon.mapper.access.FieldAccessMode;
-import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.junit.Assert;
 import org.junit.Test;
 
 import javax.json.JsonValue;
 
 import java.lang.reflect.Type;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -157,7 +156,7 @@ public class MapperConfigTest {
 
 
     private MapperConfig createConfig(Map<Class<?>, ObjectConverter.Codec<?>> converter) {
-        return new MapperConfig(new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(0),
+        return new MapperConfig(new ConcurrentHashMap<>(0),
                                 Map.class.cast(converter), Map.class.cast(converter),
                                 -1,
                                 true,
@@ -167,9 +166,10 @@ public class MapperConfigTest {
                                 false,
                                 false,
                                 new FieldAccessMode(true, true),
-                                Charset.forName("UTF-8"),
+                                StandardCharsets.UTF_8,
                                 null,
-                                false, false, null, false, false, emptyMap(), true, false, true);
+                                false, false, null, false, false, emptyMap(), true, false, true,
+                                null, null, null, null, null);
     }
 
 

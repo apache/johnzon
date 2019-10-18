@@ -238,7 +238,8 @@ public class MappingParserImpl implements MappingParser {
     }
 
 
-    private Object buildObject(final Type inType, final JsonObject object, final boolean applyObjectConverter, JsonPointerTracker jsonPointer) {
+    private Object buildObject(final Type inType, final JsonObject object, final boolean applyObjectConverter,
+                               final JsonPointerTracker jsonPointer) {
         Type type = inType;
         if (inType == Object.class) {
             type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
@@ -256,6 +257,16 @@ public class MappingParserImpl implements MappingParser {
             }
         }
 
+        if (config.getDeserializationPredicate() != null && Class.class.isInstance(inType)) {
+            final Class<?> clazz = Class.class.cast(inType);
+            if (config.getDeserializationPredicate().test(clazz) && object.containsKey(config.getDiscriminator())) {
+                final String discriminator = object.getString(config.getDiscriminator());
+                final Class<?> nestedType = config.getTypeLoader().apply(discriminator);
+                if (nestedType != null && nestedType != inType) {
+                    return buildObject(nestedType, object, applyObjectConverter, jsonPointer);
+                }
+            }
+        }
         final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
 
         if (classMapping == null) {
