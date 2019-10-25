@@ -142,7 +142,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             config = new JsonbConfig();
         }
 
-        final Boolean skipCdi = shouldSkipCdi();
+        final boolean skipCdi = shouldSkipCdi();
 
         // todo: global spec toggle to disable all these ones at once?
         builder.setUseBigDecimalForObjectNumbers(
@@ -357,13 +357,15 @@ public class JohnzonBuilder implements JsonbBuilder {
             });
         });
 
-        final boolean useCdi = cdiIntegration != null && cdiIntegration.isCanWrite() && !skipCdi;
         if (Closeable.class.isInstance(accessMode)) {
             builder.addCloseable(Closeable.class.cast(accessMode));
         }
-        final Mapper mapper = builder.build();
+        return doCreateJsonb(skipCdi, ijson, builder.build());
+    }
 
-        if (useCdi) {
+    // note: this method must stay as small as possible to enable graalvm to replace it by "false" when needed
+    private Jsonb doCreateJsonb(final boolean skipCdi, final boolean ijson, final Mapper mapper) {
+        if (!skipCdi && cdiIntegration != null && cdiIntegration.isCanWrite()) {
             final JohnzonJsonb jsonb = new JohnzonJsonb(mapper, ijson, i -> {
                 if (cdiIntegration.isCanWrite()) {
                     cdiIntegration.untrack(i);
