@@ -387,7 +387,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>1.4</version>
+        <version>3.0.0-M2</version>
         <executions>
           <execution>
             <id>enforce-versions</id>
@@ -397,10 +397,10 @@
             <configuration>
               <rules>
                 <requireMavenVersion>
-                  <version>[3.1,)</version>
+                  <version>[3.3,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[${java-compile.version},)</version>
+                  <version>[${java-compile.version},1.9)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
