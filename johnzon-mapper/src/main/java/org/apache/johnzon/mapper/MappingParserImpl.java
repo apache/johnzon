@@ -1098,7 +1098,7 @@ public class MappingParserImpl implements MappingParser {
         }
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
-            if (clazz.isEnum()) {
+            if (Enum.class.isAssignableFrom(clazz)) {
                 final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz));
                 config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;

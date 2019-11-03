@@ -79,7 +79,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                             null, emptyList(), isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, generator);
                 } else if(writePrimitives(key, objectClass, object, generator)) {
                     // no-op
-                } else if (objectClass.isEnum()) {
+                } else if (Enum.class.isAssignableFrom(objectClass)) {
                     final Adapter adapter = config.findAdapter(objectClass);
                     final String adaptedValue = adapter.from(object).toString(); // we know it ends as String for enums
                     generator.write(key, adaptedValue);
@@ -139,7 +139,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             final Class<?> objectClass = object.getClass();
-            if (objectClass.isEnum()) {
+            if (Enum.class.isAssignableFrom(objectClass)) {
                 final Adapter adapter = config.findAdapter(objectClass);
                 final String adaptedValue = adapter.from(object).toString(); // we know it ends as String for enums
                 generator.write(adaptedValue);

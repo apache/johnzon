@@ -643,7 +643,7 @@ public class Mappings {
                     }
                 }
             }
-            if (converter == null && type.isEnum()) {
+            if (converter == null && Enum.class.isAssignableFrom(type)) {
                 final AdapterKey key = new AdapterKey(String.class, type);
                 converter = adapters.get(key); // first ensure user didnt override it
                 if (converter == null) {

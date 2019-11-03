@@ -31,8 +31,10 @@ public class EnumConverter<T extends Enum<T>> implements Converter<T>, Converter
     public EnumConverter(final Class<T> aClass) {
         this.enumType = aClass;
 
-        final T[] enumConstants = aClass.getEnumConstants();
-        values = new HashMap<String, T>(enumConstants.length);
+        final T[] enumConstants = aClass.isEnum() ?
+                aClass.getEnumConstants() :
+                (T[]) aClass.getSuperclass().getEnumConstants();
+        values = new HashMap<>(enumConstants.length);
         for (final T t : enumConstants) {
             values.put(t.name(), t);
         }
