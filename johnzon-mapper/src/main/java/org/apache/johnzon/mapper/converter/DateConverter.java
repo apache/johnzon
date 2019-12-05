@@ -20,34 +20,40 @@ package org.apache.johnzon.mapper.converter;
 
 import org.apache.johnzon.mapper.Converter;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.Date;
 
 public class DateConverter implements Converter<Date> {
-    // TODO: see if we can clean it
-    private final ThreadLocal<DateFormat> format;
+    private final DateTimeFormatter formatter;
 
     public DateConverter(final String pattern) {
-        format = new ThreadLocal<DateFormat>() {
-            @Override
-            protected DateFormat initialValue() {
-                return new SimpleDateFormat(pattern);
-            }
-        };
+        formatter = DateTimeFormatter.ofPattern(pattern);
     }
 
     @Override
     public String toString(final Date instance) {
-        return format.get().format(instance);
+        return formatter.format(instance.toInstant().atZone(ZoneId.systemDefault()));
     }
 
     @Override
     public Date fromString(final String text) {
         try {
-            return format.get().parse(text);
-        } catch (final ParseException e) {
+            TemporalAccessor parsedValue = formatter.parse(text);
+
+            if (parsedValue.isSupported(ChronoField.OFFSET_SECONDS)) {
+                // if "text" includes a timezone, just create an instant from it
+                return Date.from(Instant.from(parsedValue));
+            } else {
+                // otherwise, create a timezone-less localdatetime first, add the systemdefault timezone, and finally get the instant
+                return Date.from(LocalDateTime.from(parsedValue).atZone(ZoneId.systemDefault()).toInstant());
+            }
+        } catch (final DateTimeParseException e) {
             throw new IllegalArgumentException(e);
         }
     }
