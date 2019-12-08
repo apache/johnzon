@@ -19,8 +19,10 @@
 
 package org.apache.johnzon.osgi;
 
+import static java.util.Collections.singletonMap;
 import static java.util.Optional.of;
 import static java.util.Optional.ofNullable;
+import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.apache.aries.component.dsl.OSGi.all;
 import static org.apache.aries.component.dsl.OSGi.coalesce;
 import static org.apache.aries.component.dsl.OSGi.configuration;
@@ -28,6 +30,13 @@ import static org.apache.aries.component.dsl.OSGi.configurations;
 import static org.apache.aries.component.dsl.OSGi.ignore;
 import static org.apache.aries.component.dsl.OSGi.just;
 import static org.apache.aries.component.dsl.OSGi.register;
+import static org.apache.aries.component.dsl.OSGi.serviceReferences;
+import static org.apache.aries.component.dsl.Utils.highest;
+import static org.osgi.framework.Constants.SERVICE_RANKING;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_EXTENSION;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_MEDIA_TYPE;
+import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_NAME;
 
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -35,11 +44,14 @@ import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.annotation.Priority;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.ext.MessageBodyReader;
 import javax.ws.rs.ext.MessageBodyWriter;
 
@@ -53,9 +65,10 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.PrototypeServiceFactory;
+import org.osgi.framework.ServiceObjects;
 import org.osgi.framework.ServiceRegistration;
-import org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants;
 import org.osgi.util.converter.Converter;
 import org.osgi.util.converter.Converters;
 
@@ -94,7 +107,7 @@ public class Activator implements BundleActivator {
     private OSGiResult _result;
 
     @Override
-    public void start(BundleContext context) throws Exception {
+    public void start(final BundleContext context) throws Exception {
         _result = all(
             ignore(
                 JSR_CONFIGURATION.flatMap(
@@ -117,6 +130,20 @@ public class Activator implements BundleActivator {
                         },
                         new JsonbJaxrsProviderFactory(entry.getValue()),
                         getJaxrsExtensionProperties(entry.getKey(), entry.getValue())
+                    )
+                )
+            ),
+            ignore(
+                highest(serviceReferences(ClientBuilder.class)).flatMap(OSGi::prototypes).map(
+                    serviceObjects -> new JsonClientBuilderFactory(context, serviceObjects)
+                ).flatMap(
+                    factory -> register(
+                        ClientBuilder.class,
+                        factory,
+                        singletonMap(JAX_RS_MEDIA_TYPE, APPLICATION_JSON)
+                    ).effects(
+                        __ -> {},
+                        __ -> factory.close()
                     )
                 )
             ),
@@ -144,18 +171,18 @@ public class Activator implements BundleActivator {
                 }
             }
 
-            put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);
-            put(JaxrsWhiteboardConstants.JAX_RS_NAME, "johnzon.jsonb");
+            put(JAX_RS_EXTENSION, true);
+            put(JAX_RS_NAME, "johnzon.jsonb");
 
             putIfAbsent("ignores", config.ignores());
             putIfAbsent(
-                JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT,
+                JAX_RS_APPLICATION_SELECT,
                 config.osgi_jaxrs_application_select());
             putIfAbsent(
-                JaxrsWhiteboardConstants.JAX_RS_MEDIA_TYPE,
+                JAX_RS_MEDIA_TYPE,
                 config.osgi_jaxrs_media_type());
             putIfAbsent(
-                Constants.SERVICE_RANKING,
+                SERVICE_RANKING,
                 JsonbJaxrsProvider.class.getAnnotation(Priority.class).value());
         }};
     }
@@ -175,14 +202,14 @@ public class Activator implements BundleActivator {
                 }
             }
 
-            put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);
-            put(JaxrsWhiteboardConstants.JAX_RS_NAME, "johnzon.jsonp");
+            put(JAX_RS_EXTENSION, true);
+            put(JAX_RS_NAME, "johnzon.jsonp");
 
             putIfAbsent(
-                JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT,
+                JAX_RS_APPLICATION_SELECT,
                 config.osgi_jaxrs_application_select());
             putIfAbsent(
-                JaxrsWhiteboardConstants.JAX_RS_MEDIA_TYPE,
+                JAX_RS_MEDIA_TYPE,
                 config.osgi_jaxrs_media_type());
         }};
     }
@@ -251,6 +278,79 @@ public class Activator implements BundleActivator {
         @Override
         public void ungetService(
             Bundle bundle, ServiceRegistration<JsrProvider> registration, JsrProvider service) {
+        }
+
+    }
+
+    private static class JsonClientBuilderFactory implements AutoCloseable, PrototypeServiceFactory<ClientBuilder> {
+
+        private final BundleContext context;
+        private final ServiceObjects<ClientBuilder> serviceObjects;
+        private final List<ClientBuilder> instances = new CopyOnWriteArrayList<>();
+
+        public JsonClientBuilderFactory(BundleContext context, ServiceObjects<ClientBuilder> serviceObjects) {
+            this.context = context;
+            this.serviceObjects = serviceObjects;
+        }
+
+        @Override
+        public void close() {
+            instances.forEach(serviceObjects::ungetService);
+            instances.clear();
+        }
+
+        @Override
+        public ClientBuilder getService(
+            Bundle bundle, ServiceRegistration<ClientBuilder> registration) {
+
+            ClientBuilder clientBuilder = serviceObjects.getService();
+            instances.add(clientBuilder);
+
+            try {
+                bundle.getBundleContext().getServiceReferences(
+                    MessageBodyReader.class,
+                    String.format(
+                        "(&(%s=%d)(%s=%s))",
+                        Constants.SERVICE_BUNDLEID,
+                        context.getBundle().getBundleId(),
+                        JAX_RS_MEDIA_TYPE,
+                        APPLICATION_JSON)
+                ).stream().map(
+                    bundle.getBundleContext()::getServiceObjects
+                ).map(
+                    ServiceObjects::getService
+                ).forEach(clientBuilder::register);
+            } catch (InvalidSyntaxException e) {
+                // ignore this
+            }
+
+            try {
+                bundle.getBundleContext().getServiceReferences(
+                    MessageBodyWriter.class,
+                    String.format(
+                        "(&(%s=%d)(%s=%s))",
+                        Constants.SERVICE_BUNDLEID,
+                        context.getBundle().getBundleId(),
+                        JAX_RS_MEDIA_TYPE,
+                        APPLICATION_JSON)
+                ).stream().map(
+                    bundle.getBundleContext()::getServiceObjects
+                ).map(
+                    ServiceObjects::getService
+                ).forEach(clientBuilder::register);
+            } catch (InvalidSyntaxException e) {
+                // ignore this
+            }
+
+            return clientBuilder;
+        }
+
+        @Override
+        public void ungetService(
+            Bundle bundle, ServiceRegistration<ClientBuilder> registration, ClientBuilder service) {
+
+            instances.remove(service);
+            serviceObjects.ungetService(service);
         }
 
     }
