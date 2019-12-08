@@ -30,7 +30,7 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
     pid = Config.CONFIG_PID
 )
 public @interface Config {
-    public static final String CONFIG_PID = "org.apache.johnzon.jsonb";
+    public static final String CONFIG_PID = "org.apache.johnzon.jaxrs.jsonb";
 
     @AttributeDefinition(description = "List of fully qualified class names to ignore")
     String[] ignores() default {};

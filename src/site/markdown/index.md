@@ -539,11 +539,11 @@ Known limitations are (feel free to do a PR on github to add these missing featu
 
 Though Johnzon artifacts are OSGi bundles to begin with, this module provides further integration with the [OSGi JAX-RS Whiteboard](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html) and [OSGi CDI Integration](https://osgi.org/specification/osgi.enterprise/7.0.0/service.cdi.html) specifications.
 
-##### JAX-RS
+##### JAX-RS JSON-B
 
 This module provides `MessageBodyWriter` and `MessageBodyReader` extensions for the media type `application/json` (by default) to whiteboard JAX-RS Applications.
 
-Configuration of this extension is managed via Configuration Admin using the **pid** `org.apache.johnzon.jsonb` and defines a Metatype schema with the following properties:
+Configuration of this extension is managed via Configuration Admin using the **pid** `org.apache.johnzon.jaxrs.jsonb` and defines a Metatype schema with the following properties:
 
 |  Property    | Synopsis     | Type | Default |
 | ---- | ------------- | -- | -- |
