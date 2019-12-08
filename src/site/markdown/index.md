@@ -541,7 +541,9 @@ Though Johnzon artifacts are OSGi bundles to begin with, this module provides fu
 
 ##### JAX-RS JSON-B
 
-This module provides `MessageBodyWriter` and `MessageBodyReader` extensions for the media type `application/json` (by default) to whiteboard JAX-RS Applications.
+This module provides `MessageBodyWriter` and `MessageBodyReader` extension services for the media type `application/json` (by default) to whiteboard JAX-RS Applications.
+
+The service ranking of the **JSON-B** message body readers and writers is set to `4900` by default.
 
 Configuration of this extension is managed via Configuration Admin using the **pid** `org.apache.johnzon.jaxrs.jsonb` and defines a Metatype schema with the following properties:
 
@@ -565,6 +567,19 @@ Configuration of this extension is managed via Configuration Admin using the **p
 | `polymorphic.serialization.predicate` | | String | empty |
 | `polymorphic.deserialization.predicate` | | String | empty |
 | `polymorphic.discriminator` | | String | empty |
+
+##### JAX-RS JSON-P
+
+This module provides `MessageBodyWriter` and `MessageBodyReader` extensions for the media type `application/json` (by default) to whiteboard JAX-RS Applications.
+
+The service ranking of the **JSON-P** message body readers and writers is not set.
+
+Configuration of this extension is managed via Configuration Admin using the **pid** `org.apache.johnzon.jaxrs.jsonp` and defines a Metatype schema with the following properties:
+
+|  Property    | Synopsis     | Type | Default |
+| ---- | ------------- | -- | -- |
+| `osgi.jaxrs.application.select` | Filter expression used to match the extension to JAX-RS Whiteboard Applications | String | `(!(johnzon.jsonp=false))` *(which is a convention allowing the extension to bind to all applications unless the application is configured with `johnzon.jsonp=false`)* |
+| `osgi.jaxrs.media.type` | List of media types handled by the extension | String[] | `application/json` |
 
 ##### CDI
 

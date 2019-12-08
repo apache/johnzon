@@ -45,6 +45,7 @@ import javax.ws.rs.ext.MessageBodyWriter;
 
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.aries.component.dsl.OSGiResult;
+import org.apache.johnzon.jaxrs.JsrProvider;
 import org.apache.johnzon.jaxrs.jsonb.jaxrs.JsonbJaxrsProvider;
 import org.apache.johnzon.osgi.cdi.RegisterCdiExtension;
 import org.osgi.annotation.bundle.Header;
@@ -76,11 +77,37 @@ public class Activator implements BundleActivator {
         )
     );
 
+    private static final OSGi<Entry<Dictionary<String, ?>, JsrConfig>> JSR_CONFIGURATION = coalesce(
+        all(
+            configurations(JsrConfig.CONFIG_PID),
+            configuration(JsrConfig.CONFIG_PID)
+        ),
+        just(Hashtable::new)
+    ).map(
+        properties -> new AbstractMap.SimpleImmutableEntry<>(
+            properties,
+            CONVERTER.convert(properties).to(JsrConfig.class)
+        )
+    );
+
+
     private OSGiResult _result;
 
     @Override
     public void start(BundleContext context) throws Exception {
         _result = all(
+            ignore(
+                JSR_CONFIGURATION.flatMap(
+                    entry -> register(
+                        new String[]{
+                            MessageBodyReader.class.getName(),
+                            MessageBodyWriter.class.getName()
+                        },
+                        new JsrProviderFactory(),
+                        getJsrRegistrationProperties(entry.getKey(), entry.getValue())
+                    )
+                )
+            ),
             ignore(
                 CONFIGURATION.flatMap(
                     entry -> register(
@@ -130,6 +157,33 @@ public class Activator implements BundleActivator {
             putIfAbsent(
                 Constants.SERVICE_RANKING,
                 JsonbJaxrsProvider.class.getAnnotation(Priority.class).value());
+        }};
+    }
+
+    @SuppressWarnings("serial")
+    private Map<String, ?> getJsrRegistrationProperties(
+        Dictionary<String, ?> properties, JsrConfig config) {
+
+        Enumeration<String> keys = properties.keys();
+
+        return new Hashtable<String, Object>() {{
+            while (keys.hasMoreElements()) {
+                String key = keys.nextElement();
+
+                if(!key.startsWith(".")) {
+                    put(key, properties.get(key));
+                }
+            }
+
+            put(JaxrsWhiteboardConstants.JAX_RS_EXTENSION, true);
+            put(JaxrsWhiteboardConstants.JAX_RS_NAME, "johnzon.jsonp");
+
+            putIfAbsent(
+                JaxrsWhiteboardConstants.JAX_RS_APPLICATION_SELECT,
+                config.osgi_jaxrs_application_select());
+            putIfAbsent(
+                JaxrsWhiteboardConstants.JAX_RS_MEDIA_TYPE,
+                config.osgi_jaxrs_media_type());
         }};
     }
 
@@ -183,6 +237,22 @@ public class Activator implements BundleActivator {
             notEmpty(config.polymorphic_deserialization_predicate()).ifPresent(this::setPolymorphicDeserializationPredicate);
             notEmpty(config.polymorphic_discriminator()).ifPresent(this::setPolymorphicDiscriminator);
         }
+    }
+
+    private static class JsrProviderFactory implements PrototypeServiceFactory<JsrProvider> {
+
+        @Override
+        public JsrProvider getService(
+            Bundle bundle, ServiceRegistration<JsrProvider> registration) {
+
+            return new JsrProvider();
+        }
+
+        @Override
+        public void ungetService(
+            Bundle bundle, ServiceRegistration<JsrProvider> registration, JsrProvider service) {
+        }
+
     }
 
 }
