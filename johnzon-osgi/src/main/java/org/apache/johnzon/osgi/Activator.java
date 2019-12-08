@@ -19,6 +19,8 @@
 
 package org.apache.johnzon.osgi;
 
+import static java.util.Optional.of;
+import static java.util.Optional.ofNullable;
 import static org.apache.aries.component.dsl.OSGi.all;
 import static org.apache.aries.component.dsl.OSGi.coalesce;
 import static org.apache.aries.component.dsl.OSGi.configuration;
@@ -35,6 +37,7 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 
 import javax.annotation.Priority;
 import javax.ws.rs.ext.MessageBodyReader;
@@ -130,6 +133,14 @@ public class Activator implements BundleActivator {
         }};
     }
 
+    private static Optional<String> notEmpty(String value) {
+        return ofNullable(value).filter(s -> !s.isEmpty());
+    }
+
+    private static Optional<Boolean> whenTrue(boolean value) {
+        return of(Boolean.valueOf(value)).filter(b -> b == Boolean.TRUE);
+    }
+
     private static class JsonbJaxrsProviderFactory implements PrototypeServiceFactory<JsonbJaxrsProvider<?>> {
 
         private final Config config;
@@ -156,21 +167,21 @@ public class Activator implements BundleActivator {
         public ExtendedJsonbJaxrsProvider(final Config config) {
             super(Arrays.asList(config.ignores()));
 
-            setThrowNoContentExceptionOnEmptyStreams(config.throw_no_content_exception_on_empty_streams());
-            setFailOnUnknownProperties(config.fail_on_unknown_properties());
-            setUseJsRange(config.use_js_range());
-            setOtherProperties(config.other_properties());
-            setIJson(config.ijson());
-            setEncoding(config.encoding());
-            setBinaryDataStrategy(config.binary_datastrategy());
-            setPropertyNamingStrategy(config.property_naming_strategy());
-            setPropertyOrderStrategy(config.property_order_strategy());
-            setNullValues(config.null_values());
-            setPretty(config.pretty());
-            setFailOnMissingCreatorValues(config.fail_on_missing_creator_values());
-            setPolymorphicSerializationPredicate(config.polymorphic_serialization_predicate());
-            setPolymorphicDeserializationPredicate(config.polymorphic_deserialization_predicate());
-            setPolymorphicDiscriminator(config.polymorphic_discriminator());
+            whenTrue(config.throw_no_content_exception_on_empty_streams()).ifPresent(this::setThrowNoContentExceptionOnEmptyStreams);
+            whenTrue(config.fail_on_unknown_properties()).ifPresent(this::setFailOnUnknownProperties);
+            whenTrue(config.use_js_range()).ifPresent(this::setUseJsRange);
+            notEmpty(config.other_properties()).ifPresent(this::setOtherProperties);
+            whenTrue(config.ijson()).ifPresent(this::setIJson);
+            notEmpty(config.encoding()).ifPresent(this::setEncoding);
+            notEmpty(config.binary_datastrategy()).ifPresent(this::setBinaryDataStrategy);
+            notEmpty(config.property_naming_strategy()).ifPresent(this::setPropertyNamingStrategy);
+            notEmpty(config.property_order_strategy()).ifPresent(this::setPropertyOrderStrategy);
+            whenTrue(config.null_values()).ifPresent(this::setNullValues);
+            whenTrue(config.pretty()).ifPresent(this::setPretty);
+            whenTrue(config.fail_on_missing_creator_values()).ifPresent(this::setFailOnMissingCreatorValues);
+            notEmpty(config.polymorphic_serialization_predicate()).ifPresent(this::setPolymorphicSerializationPredicate);
+            notEmpty(config.polymorphic_deserialization_predicate()).ifPresent(this::setPolymorphicDeserializationPredicate);
+            notEmpty(config.polymorphic_discriminator()).ifPresent(this::setPolymorphicDiscriminator);
         }
     }
 
