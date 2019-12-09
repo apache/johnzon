@@ -19,15 +19,19 @@
 package org.apache.johnzon.jaxrs.jsonb.jaxrs;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
+import javax.json.Json;
+import javax.json.JsonObject;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.NoContentException;
@@ -59,6 +63,19 @@ public class JsonbJaxrsProviderTest {
         assertEquals("ok", foo.name);
     }
 
+    @Test // just to ensure we didnt break soemthing on read impl
+    public void jsonpTest() throws Exception {
+        JsonObject jsonObject = Json.createObjectBuilder().add("name", "ok").build();
+        try (JsonbJaxrsProvider<JsonObject> provider = new JsonbJaxrsProvider<JsonObject>() {{
+            setProviders(this);
+        }}) {
+            assertTrue(provider.isWriteable(jsonObject.getClass(), jsonObject.getClass(), null, MediaType.APPLICATION_JSON_TYPE));
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            provider.writeTo(jsonObject, jsonObject.getClass(), jsonObject.getClass(), null, MediaType.APPLICATION_JSON_TYPE, new MultivaluedHashMap<>(), outputStream);
+            assertEquals("{\"name\":\"ok\"}", outputStream.toString(StandardCharsets.UTF_8.name()));
+        }
+    }
+
     private Foo readFoo(final Boolean set, final InputStream stream) throws IOException {
         return new JsonbJaxrsProvider<Foo>() {{
             if (set != null) {
@@ -70,7 +87,7 @@ public class JsonbJaxrsProviderTest {
                 stream);
     }
 
-    private void setProviders(final JsonbJaxrsProvider<Foo> provider) {
+    private <T> void setProviders(final JsonbJaxrsProvider<T> provider) {
         try {
             final Field providers = JsonbJaxrsProvider.class.getDeclaredField("providers");
             providers.setAccessible(true);

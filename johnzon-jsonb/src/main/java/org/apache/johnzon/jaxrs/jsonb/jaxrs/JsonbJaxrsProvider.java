@@ -22,7 +22,6 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
-import javax.json.JsonStructure;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
@@ -246,8 +245,7 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
                 && !InputStream.class.isAssignableFrom(type)
                 && !Reader.class.isAssignableFrom(type)
                 && !Response.class.isAssignableFrom(type)
-                && !CharSequence.class.isAssignableFrom(type)
-                && !JsonStructure.class.isAssignableFrom(type);
+                && !CharSequence.class.isAssignableFrom(type);
     }
 
     @Override
@@ -258,8 +256,7 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
                 && !Writer.class.isAssignableFrom(type)
                 && !StreamingOutput.class.isAssignableFrom(type)
                 && !CharSequence.class.isAssignableFrom(type)
-                && !Response.class.isAssignableFrom(type)
-                && !JsonStructure.class.isAssignableFrom(type);
+                && !Response.class.isAssignableFrom(type);
     }
 
     @Override
