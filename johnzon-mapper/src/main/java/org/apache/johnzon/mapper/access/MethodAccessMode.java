@@ -18,6 +18,9 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import static java.util.stream.Collectors.toMap;
+import static org.apache.johnzon.mapper.reflection.Records.isRecord;
+
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -27,10 +30,12 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonProperty;
+import org.apache.johnzon.mapper.JohnzonRecord;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.ObjectConverter;
 
@@ -45,23 +50,30 @@ public class MethodAccessMode extends BaseAccessMode {
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
-        final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
-        for (final PropertyDescriptor descriptor : propertyDescriptors) {
-            final Method readMethod = descriptor.getReadMethod();
-            final String name = descriptor.getName();
-            if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
-                if (isIgnored(name) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
-                    continue;
-                }
-                readers.put(extractKey(name, readMethod, null), new MethodReader(readMethod, readMethod.getGenericReturnType()));
-            } else if (readMethod == null && descriptor.getWriteMethod() != null && // isXXX, not supported by javabeans
-                    (descriptor.getPropertyType() == Boolean.class || descriptor.getPropertyType() == boolean.class)) {
-                try {
-                    final Method method = clazz.getMethod(
-                            "is" + Character.toUpperCase(name.charAt(0)) + (name.length() > 1 ? name.substring(1) : ""));
-                    readers.put(extractKey(name, method, null), new MethodReader(method, method.getGenericReturnType()));
-                } catch (final NoSuchMethodException e) {
-                    // no-op
+        if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
+            readers.putAll(Stream.of(clazz.getMethods())
+                .filter(it -> it.getDeclaringClass() != Object.class && it.getParameterCount() == 0)
+                .filter(it -> !"toString".equals(it.getName()) && !"hashCode".equals(it.getName()))
+                .collect(toMap(Method::getName, it -> new MethodReader(it, it.getGenericReturnType()))));
+        } else {
+            final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
+            for (final PropertyDescriptor descriptor : propertyDescriptors) {
+                final Method readMethod = descriptor.getReadMethod();
+                final String name = descriptor.getName();
+                if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
+                    if (isIgnored(name) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
+                        continue;
+                    }
+                    readers.put(extractKey(name, readMethod, null), new MethodReader(readMethod, readMethod.getGenericReturnType()));
+                } else if (readMethod == null && descriptor.getWriteMethod() != null && // isXXX, not supported by javabeans
+                        (descriptor.getPropertyType() == Boolean.class || descriptor.getPropertyType() == boolean.class)) {
+                    try {
+                        final Method method = clazz.getMethod(
+                                "is" + Character.toUpperCase(name.charAt(0)) + (name.length() > 1 ? name.substring(1) : ""));
+                        readers.put(extractKey(name, method, null), new MethodReader(method, method.getGenericReturnType()));
+                    } catch (final NoSuchMethodException e) {
+                        // no-op
+                    }
                 }
             }
         }

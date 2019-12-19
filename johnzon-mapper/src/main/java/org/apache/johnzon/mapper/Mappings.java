@@ -359,6 +359,25 @@ public class Mappings {
         return false;
     }
 
+    public static Object getPrimitiveDefault(final Type type) {
+        if (type == long.class) {
+            return 0L;
+        } else if (type == int.class) {
+            return 0;
+        } else if (type == short.class) {
+            return (short) 0;
+        } else if (type == byte.class) {
+            return (byte) 0;
+        } else if (type == double.class) {
+            return 0.;
+        } else if (type == float.class) {
+            return 0f;
+        } else if (type == boolean.class) {
+            return false;
+        }
+        return null;
+    }
+
     public ClassMapping getClassMapping(final Type clazz) {
         return classes.get(clazz);
     }

@@ -83,6 +83,7 @@ import static javax.json.JsonValue.ValueType.NULL;
 import static javax.json.JsonValue.ValueType.NUMBER;
 import static javax.json.JsonValue.ValueType.STRING;
 import static javax.json.JsonValue.ValueType.TRUE;
+import static org.apache.johnzon.mapper.Mappings.getPrimitiveDefault;
 
 /**
  * This class is not concurrently usable as it contains state.
@@ -1002,16 +1003,19 @@ public class MappingParserImpl implements MappingParser {
         final Object[] objects = new Object[length];
 
         for (int i = 0; i < length; i++) {
-
-            String paramName = mapping.factory.getParameterNames()[i];
+            final String paramName = mapping.factory.getParameterNames()[i];
+            final Type parameterType = mapping.factory.getParameterTypes()[i];
             objects[i] = toValue(null,
                     object.get(paramName),
                     mapping.factory.getParameterConverter()[i],
                     mapping.factory.getParameterItemConverter()[i],
-                    mapping.factory.getParameterTypes()[i],
+                    parameterType,
                     mapping.factory.getObjectConverter()[i],
                     isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, paramName) : null,
                     mapping.clazz); //X TODO ObjectConverter in @JohnzonConverter with Constructors!
+            if (objects[i] == null) {
+                objects[i] = getPrimitiveDefault(parameterType);
+            }
         }
 
         return objects;

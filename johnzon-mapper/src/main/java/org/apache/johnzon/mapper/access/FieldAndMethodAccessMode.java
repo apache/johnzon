@@ -43,11 +43,13 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
                                     final boolean useGettersAsWriter, final boolean alwaysPreferMethodVisibility) {
         super(useConstructor, acceptHiddenConstructor);
         this.fields = new FieldAccessMode(useConstructor, acceptHiddenConstructor);
-        this.methods = new MethodAccessMode(useConstructor, acceptHiddenConstructor, useGettersAsWriter);
+        this.methods = new MethodAccessMode(
+                useConstructor, acceptHiddenConstructor, useGettersAsWriter);
         this.alwaysPreferMethodVisibility = alwaysPreferMethodVisibility;
     }
 
     // backward compatibility, don't delete since it can be used from user code in jsonb delegate access mode property
+    @Deprecated
     public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor,
                                     final boolean useGettersAsWriter) {
         this(useConstructor, acceptHiddenConstructor, useGettersAsWriter, true);

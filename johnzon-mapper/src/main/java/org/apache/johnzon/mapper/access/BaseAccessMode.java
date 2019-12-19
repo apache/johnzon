@@ -20,7 +20,10 @@ package org.apache.johnzon.mapper.access;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
+import static java.util.Comparator.comparing;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
+import static org.apache.johnzon.mapper.reflection.Records.isRecord;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 import java.beans.ConstructorProperties;
@@ -34,11 +37,13 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.JohnzonRecord;
 import org.apache.johnzon.mapper.MapperConverter;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
@@ -48,6 +53,7 @@ public abstract class BaseAccessMode implements AccessMode {
     private static final Type[] NO_PARAMS = new Type[0];
 
     private FieldFilteringStrategy fieldFilteringStrategy = new SingleEntryFieldFilteringStrategy();
+
     private final boolean acceptHiddenConstructor;
     private final boolean useConstructor;
 
@@ -105,25 +111,29 @@ public abstract class BaseAccessMode implements AccessMode {
     @Override
     public Factory findFactory(final Class<?> clazz) {
         Constructor<?> constructor = null;
-        for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
-            if (c.getParameterTypes().length == 0) {
-                if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
-                    c.setAccessible(true);
-                }
-                constructor = c;
-                if (!useConstructor) {
+        if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
+            constructor = findRecordConstructor(clazz);
+        } else {
+            for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
+                if (c.getParameterTypes().length == 0) {
+                    if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
+                        c.setAccessible(true);
+                    }
+                    constructor = c;
+                    if (!useConstructor) {
+                        break;
+                    }
+                } else if (c.getAnnotation(ConstructorProperties.class) != null) {
+                    constructor = c;
                     break;
                 }
-            } else if (c.getAnnotation(ConstructorProperties.class) != null) {
-                constructor = c;
-                break;
             }
-        }
-        if (constructor == null) {
-            try {
-                constructor = clazz.getConstructor();
-            } catch (final NoSuchMethodException e) {
-                return null; // readOnly class
+            if (constructor == null) {
+                try {
+                    constructor = clazz.getConstructor();
+                } catch (final NoSuchMethodException e) {
+                    return null; // readOnly class
+                }
             }
         }
 
@@ -137,8 +147,16 @@ public abstract class BaseAccessMode implements AccessMode {
             factoryParameterTypes = constructor.getGenericParameterTypes();
 
             constructorParameters = new String[constructor.getGenericParameterTypes().length];
-            final ConstructorProperties constructorProperties = constructor.getAnnotation(ConstructorProperties.class);
-            System.arraycopy(constructorProperties.value(), 0, constructorParameters, 0, constructorParameters.length);
+
+            final Constructor<?> fc = constructor;
+            final String[] constructorProperties = ofNullable(constructor.getAnnotation(ConstructorProperties.class))
+                    .map(ConstructorProperties::value)
+                    .orElseGet(() -> Stream.of(fc.getParameters())
+                            .map(p -> ofNullable(p.getAnnotation(JohnzonRecord.Name.class))
+                                            .map(JohnzonRecord.Name::value)
+                                            .orElseGet(p::getName))
+                            .toArray(String[]::new));
+            System.arraycopy(constructorProperties, 0, constructorParameters, 0, constructorParameters.length);
 
             constructorParameterConverters = new Adapter<?, ?>[constructor.getGenericParameterTypes().length];
             constructorItemParameterConverters = new Adapter<?, ?>[constructorParameterConverters.length];
@@ -218,6 +236,18 @@ public abstract class BaseAccessMode implements AccessMode {
                 return objectConverters;
             }
         };
+    }
+
+    private Constructor<?> findRecordConstructor(Class<?> clazz) {
+        return Stream.of(clazz.getConstructors())
+                .max(comparing(Constructor::getParameterCount))
+                .map(c -> {
+                    if (!c.isAccessible()) {
+                        c.setAccessible(true);
+                    }
+                    return c;
+                })
+                .orElse(null);
     }
 
     @Override
