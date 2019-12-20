@@ -49,12 +49,13 @@ public class MethodAccessMode extends BaseAccessMode {
 
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
-        final Map<String, Reader> readers = new HashMap<String, Reader>();
+        final Map<String, Reader> readers = new HashMap<>();
         if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
             readers.putAll(Stream.of(clazz.getMethods())
                 .filter(it -> it.getDeclaringClass() != Object.class && it.getParameterCount() == 0)
                 .filter(it -> !"toString".equals(it.getName()) && !"hashCode".equals(it.getName()))
-                .collect(toMap(Method::getName, it -> new MethodReader(it, it.getGenericReturnType()))));
+                .filter(it -> !isIgnored(it.getName()) && Meta.getAnnotation(it, JohnzonAny.class) == null)
+                .collect(toMap(m -> extractKey(m.getName(), m, null), it -> new MethodReader(it, it.getGenericReturnType()))));
         } else {
             final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
             for (final PropertyDescriptor descriptor : propertyDescriptors) {

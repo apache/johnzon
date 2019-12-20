@@ -21,7 +21,7 @@ package org.apache.johnzon.mapper.access;
 import static java.util.Arrays.asList;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,11 +37,7 @@ public final class Meta {
         // no-op
     }
 
-    public static <T extends Annotation> T getAnnotation(final Method holder, final Class<T> api) {
-        return getDirectAnnotation(holder, api);
-    }
-
-    public static <T extends Annotation> T getAnnotation(final Field holder, final Class<T> api) {
+    public static <T extends Annotation> T getAnnotation(final AnnotatedElement holder, final Class<T> api) {
         return getDirectAnnotation(holder, api);
     }
 
@@ -53,7 +49,7 @@ public final class Meta {
         return getIndirectAnnotation(api, holder::getDeclaringClass, () -> holder.getDeclaringClass().getPackage());
     }
 
-    private static <T extends Annotation> T getDirectAnnotation(final AccessibleObject holder, final Class<T> api) {
+    private static <T extends Annotation> T getDirectAnnotation(final AnnotatedElement holder, final Class<T> api) {
         final T annotation = holder.getAnnotation(api);
         if (annotation != null) {
             return annotation;

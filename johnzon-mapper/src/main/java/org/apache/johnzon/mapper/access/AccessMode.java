@@ -19,12 +19,14 @@
 package org.apache.johnzon.mapper.access;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
@@ -97,7 +99,12 @@ public interface AccessMode {
         ObjectConverter.Codec<?>[] getObjectConverter();
     }
 
-    Factory findFactory(Class<?> clazz);
+    Factory findFactory(Class<?> clazz, Function<AnnotatedElement, String>... parameterNameExtractors);
+
+    default Factory findFactory(final Class<?> clazz) {
+        return findFactory(clazz, null);
+    }
+
     Comparator<String> fieldComparator(Class<?> clazz);
     Map<String, Reader> findReaders(Class<?> clazz);
     Map<String, Writer> findWriters(Class<?> clazz);

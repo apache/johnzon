@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.mapper.access;
 
+import static org.apache.johnzon.mapper.reflection.Records.isRecord;
+
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonIgnore;
 import org.apache.johnzon.mapper.JohnzonProperty;
@@ -57,15 +59,21 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
-        final Map<String, Reader> fieldsReaders = this.fields.findReaders(clazz);
         final Map<String, Reader> methodReaders = this.methods.findReaders(clazz);
+        final boolean record = isRecord(clazz);
+        if (record) {
+            return methodReaders;
+        }
 
-        final Map<String, Reader> readers = new HashMap<String, Reader>();
+        final Map<String, Reader> fieldsReaders = this.fields.findReaders(clazz);
+        final Map<String, Reader> readers = new HashMap<>();
 
         for (final Map.Entry<String, Reader> entry : fieldsReaders.entrySet()) {
             final String key = entry.getKey();
-            Method m = getMethod("get" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz);
-            if (m == null && (boolean.class == entry.getValue().getType() || Boolean.class == entry.getValue().getType())) {
+            Method m = record ?
+                    getMethod(key, clazz) :
+                    getMethod("get" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz);
+            if (m == null && !record && (boolean.class == entry.getValue().getType() || Boolean.class == entry.getValue().getType())) {
                 m = getMethod("is" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz);
             }
             boolean skip = false;
@@ -89,7 +97,10 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
         for (final Map.Entry<String, Reader> entry : methodReaders.entrySet()) {
             final Method mr = MethodAccessMode.MethodDecoratedType.class.cast(entry.getValue()).getMethod();
-            final String fieldName = Introspector.decapitalize(mr.getName().startsWith("is") ? mr.getName().substring(2) : mr.getName().substring(3));
+            final String fieldName = record ?
+                    mr.getName() :
+                    Introspector.decapitalize(mr.getName().startsWith("is") ?
+                            mr.getName().substring(2) : mr.getName().substring(3));
             final Field f = getField(fieldName, clazz);
             boolean skip = false;
             if (f != null) {

@@ -28,6 +28,7 @@ import static org.apache.johnzon.mapper.reflection.Converters.matches;
 
 import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,12 +38,15 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.JohnzonRecord;
 import org.apache.johnzon.mapper.MapperConverter;
 import org.apache.johnzon.mapper.ObjectConverter;
@@ -109,9 +113,10 @@ public abstract class BaseAccessMode implements AccessMode {
     }
 
     @Override
-    public Factory findFactory(final Class<?> clazz) {
+    public Factory findFactory(final Class<?> clazz, final Function<AnnotatedElement, String>... parameterNameExtractors) {
         Constructor<?> constructor = null;
-        if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
+        final boolean record = isRecord(clazz);
+        if (record || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
             constructor = findRecordConstructor(clazz);
         } else {
             for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
@@ -151,11 +156,33 @@ public abstract class BaseAccessMode implements AccessMode {
             final Constructor<?> fc = constructor;
             final String[] constructorProperties = ofNullable(constructor.getAnnotation(ConstructorProperties.class))
                     .map(ConstructorProperties::value)
-                    .orElseGet(() -> Stream.of(fc.getParameters())
-                            .map(p -> ofNullable(p.getAnnotation(JohnzonRecord.Name.class))
-                                            .map(JohnzonRecord.Name::value)
-                                            .orElseGet(p::getName))
-                            .toArray(String[]::new));
+                    .orElseGet(() -> {
+                        if (record) {
+                            return Stream.of(fc.getParameters())
+                                    .map(p -> {
+                                        try {
+                                            if (parameterNameExtractors != null) {
+                                                return Stream.of(parameterNameExtractors)
+                                                        .map(fn -> fn.apply(p))
+                                                        .filter(Objects::nonNull)
+                                                        .findFirst()
+                                                        .orElseGet(p::getName);
+                                            }
+                                            final JohnzonProperty property = Meta.getAnnotation(
+                                                    clazz.getMethod(p.getName()), JohnzonProperty.class);
+                                            return property != null ? property.value() : p.getName();
+                                        } catch (final NoSuchMethodException e) {
+                                            return p.getName();
+                                        }
+                                    })
+                                    .toArray(String[]::new);
+                        }
+                        return Stream.of(fc.getParameters())
+                                .map(p -> ofNullable(p.getAnnotation(JohnzonRecord.Name.class))
+                                        .map(JohnzonRecord.Name::value)
+                                        .orElseGet(p::getName))
+                                .toArray(String[]::new);
+                    });
             System.arraycopy(constructorProperties, 0, constructorParameters, 0, constructorParameters.length);
 
             constructorParameterConverters = new Adapter<?, ?>[constructor.getGenericParameterTypes().length];

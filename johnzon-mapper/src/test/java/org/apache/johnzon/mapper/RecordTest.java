@@ -29,7 +29,7 @@ public class RecordTest {
     public void roundTrip() {
         final Record ref = new Record(119, "Santa");
         try (final Mapper mapper = new MapperBuilder().setAttributeOrder(String.CASE_INSENSITIVE_ORDER).build()) {
-            final String expectedJson = "{\"age\":119,\"name\":\"Santa\"}";
+            final String expectedJson = "{\"_name\":\"Santa\",\"age\":119}";
             assertEquals(expectedJson, mapper.writeObjectAsString(ref));
             assertEquals(ref, mapper.readObject(expectedJson, Record.class));
         }
@@ -38,6 +38,8 @@ public class RecordTest {
     @JohnzonRecord
     public static class Record {
         private final int age;
+
+        @JohnzonProperty("_name")
         private final String name;
 
         public Record() { // simulate custom constructor
@@ -45,13 +47,13 @@ public class RecordTest {
             this.name = "failed";
         }
 
-        public Record(final int age) { // simulate custom constructor
+        public Record(final int age) { // simulate another custom constructor
             this.age = age;
             this.name = "failed";
         }
 
         public Record(@JohnzonRecord.Name("age") final int age,
-                      @JohnzonRecord.Name("name") final String name) {
+                      @JohnzonRecord.Name("_name") final String name) {
             this.age = age;
             this.name = name;
         }

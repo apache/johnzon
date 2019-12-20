@@ -27,6 +27,7 @@ import static org.apache.johnzon.mapper.reflection.Converters.matches;
 import java.io.Closeable;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
@@ -181,7 +182,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     @Override
-    public Factory findFactory(final Class<?> clazz) {
+    public Factory findFactory(final Class<?> clazz, final Function<AnnotatedElement, String>... parameterNameExtractors) {
         Constructor<?> constructor = null;
         Method factory = null;
         boolean invalidConstructorForDeserialization = false;
@@ -280,7 +281,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         }
 
         if (constructor == null && factory == null && !invalidConstructorForDeserialization) {
-            return delegate.findFactory(clazz);
+            final Stream<Function<AnnotatedElement, String>> jsonbFn = Stream.of(this::getJsonbProperty);
+            return delegate.findFactory(
+                    clazz,
+                    (parameterNameExtractors == null ?
+                        jsonbFn : Stream.concat(jsonbFn, Stream.of(parameterNameExtractors))).toArray(Function[]::new));
         }
         if (constructor != null || invalidConstructorForDeserialization) {
             return constructorFactory(finalConstructor, invalidConstructorForDeserialization ? (Consumer<Object[]>) objects -> {
@@ -288,6 +293,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             } : factoryValidator, types, params, converters, itemConverters, objectConverters);
         }
         return methodFactory(clazz, finalFactory, factoryValidator, types, params, converters, itemConverters, objectConverters);
+    }
+
+    private String getJsonbProperty(final AnnotatedElement a) {
+        final JsonbProperty p = Meta.getAnnotation(a, JsonbProperty.class);
+        return p != null ? p.value() : null;
     }
 
     private Stream<Method> findPotentialFactoryMethods(final Class<?> clazz) {
