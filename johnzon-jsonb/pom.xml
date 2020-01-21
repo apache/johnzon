@@ -120,9 +120,11 @@
               osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"
             </Require-Capability>
             <_contract>
-              !JavaJAXRS,
-              !JavaCDI,
-              *
+              JavaAnnotation,
+              JavaCDI;effective:="active",
+              JavaJAXRS;effective:="active",
+              JavaJSONB,
+              JavaJSONP
             </_contract>
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
           </instructions>
