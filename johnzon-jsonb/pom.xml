@@ -112,6 +112,12 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
+            <Import-Package>
+              javax.ws.rs;resolution=optional,
+              javax.ws.rs.core;resolution=optional,
+              javax.ws.rs.ext;resolution=optional,
+              *
+            </Import-Package>
             <Require-Capability>osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
           </instructions>
