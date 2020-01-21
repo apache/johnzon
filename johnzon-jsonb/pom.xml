@@ -116,9 +116,14 @@
               javax.ws.rs.*;resolution:=optional,
               *
             </Import-Package>
-            <Require-Capability> <!-- todo: make JavaCDI and JavaJAXRS optional -->
+            <Require-Capability>
               osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"
             </Require-Capability>
+            <_contract>
+              !JavaJAXRS,
+              !JavaCDI,
+              *
+            </_contract>
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
           </instructions>
         </configuration>
