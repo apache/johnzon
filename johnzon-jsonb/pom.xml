@@ -114,14 +114,21 @@
           <instructions>
             <Import-Package>
               javax.ws.rs.*;resolution:=optional,
-              javax.ws.rs.core.*;resolution:=optional,
-              javax.ws.rs.ext.*;resolution:=optional,
               *
             </Import-Package>
-            <Require-Capability>osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
+            <Require-Capability> <!-- todo: make JavaCDI and JavaJAXRS optional -->
+              osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"
+            </Require-Capability>
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
           </instructions>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>biz.aQute.bnd</groupId>
+            <artifactId>biz.aQute.bndlib</artifactId>
+            <version>4.3.1</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
