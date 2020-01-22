@@ -121,8 +121,8 @@
             </Require-Capability>
             <_contract>
               JavaAnnotation,
-              JavaCDI;effective:="active",
-              JavaJAXRS;effective:="active",
+              !JavaCDI,
+              !JavaJAXRS,
               JavaJSONB,
               JavaJSONP
             </_contract>
