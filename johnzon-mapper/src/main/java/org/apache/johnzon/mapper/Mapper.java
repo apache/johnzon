@@ -40,6 +40,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -177,10 +178,9 @@ public class Mapper implements Closeable {
     public void writeObject(final Object object, final OutputStream stream) {
         Charset charset = config.getEncoding();
         if (charset == null) {
-            writeObject(object, new OutputStreamWriter(stream));
-        } else {
-            writeObject(object, new OutputStreamWriter(stream));
+            charset = StandardCharsets.UTF_8;
         }
+        writeObject(object, new OutputStreamWriter(stream, charset));
     }
 
     private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
