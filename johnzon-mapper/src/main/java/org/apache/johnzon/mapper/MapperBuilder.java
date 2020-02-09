@@ -197,9 +197,6 @@ public class MapperBuilder {
         if (this.provider == null) {
             this.provider = JsonProvider.provider();
         }
-        if (readerFactory == null) {
-            readerFactory = provider.createReaderFactory(emptyMap());
-        }
         if (builderFactory == null) {
             builderFactory = provider.createBuilderFactory(emptyMap());
         }
