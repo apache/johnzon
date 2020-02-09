@@ -193,12 +193,15 @@ public class MapperBuilder {
             if (encoding != null) {
                 config.put("org.apache.johnzon.encoding", encoding.name());
             }
-            if (readerFactory == null) {
-                readerFactory = provider.createReaderFactory(config);
-            }
-            if (builderFactory == null) {
-                builderFactory = provider.createBuilderFactory(emptyMap());
-            }
+        }
+        if (this.provider == null) {
+            this.provider = JsonProvider.provider();
+        }
+        if (readerFactory == null) {
+            readerFactory = provider.createReaderFactory(emptyMap());
+        }
+        if (builderFactory == null) {
+            builderFactory = provider.createBuilderFactory(emptyMap());
         }
 
         if (accessMode == null) {
