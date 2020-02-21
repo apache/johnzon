@@ -32,6 +32,9 @@ import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbException;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -531,6 +534,43 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             jsonObjectGenerator.flush();
             return jsonObjectGenerator.getResult();
         }
+    }
+
+    @Override
+    public <T> T fromJson(final JsonParser json, final Class<T> type) {
+        return type.cast(fromJson(json, Type.class.cast(type)));
+    }
+
+    @Override
+    public <T> T fromJson(final JsonParser parser, final Type runtimeType) {
+        try {
+            if (isArray(runtimeType)) {
+                final Class<T> type = Class.class.cast(runtimeType);
+                return delegate.readTypedArray(parser, type.getComponentType(), type);
+            } else if (JsonArray.class == runtimeType) {
+                return (T) delegate.readJsonArray(parser);
+            } else if (isCollection(runtimeType)) {
+                return (T) delegate.readCollection(parser, ParameterizedType.class.cast(runtimeType));
+            }
+            final Type mappingType = unwrapPrimitiveOptional(runtimeType);
+            final Object object = delegate.readObject(parser, mappingType);
+            if (mappingType != runtimeType) {
+                return wrapPrimitiveOptional(object, runtimeType);
+            }
+            return (T) object;
+        } catch (final MapperException me) {
+            throw new JsonbException(me.getMessage(), me);
+        }
+    }
+
+    @Override
+    public void toJson(final Object object, final JsonGenerator jsonGenerator) {
+        delegate.writeObjectWithGenerator(unwrapOptional(object), jsonGenerator);
+    }
+
+    @Override
+    public void toJson(final Object object, final Type runtimeType, final JsonGenerator jsonGenerator) {
+        toJson(object, jsonGenerator);
     }
 
     private boolean isValueProvider(final Reader reader) {

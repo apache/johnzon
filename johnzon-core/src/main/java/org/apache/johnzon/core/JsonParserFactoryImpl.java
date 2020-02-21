@@ -71,6 +71,10 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
         this.defaultEncoding = ofNullable(getString(ENCODING, null)).map(Charset::forName).orElse(null);
     }
 
+    public BufferStrategy.BufferProvider<char[]> getValueBufferProvider() {
+        return valueBufferProvider;
+    }
+
     private JsonStreamParserImpl getDefaultJsonParserImpl(final InputStream in) {
         if (defaultEncoding != null) {
             return getDefaultJsonParserImpl(in, defaultEncoding);

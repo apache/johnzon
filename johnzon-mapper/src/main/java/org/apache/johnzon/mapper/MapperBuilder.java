@@ -169,32 +169,34 @@ public class MapperBuilder {
             if (bufferStrategy != null) {
                 config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
             }
-            if (pretty) {
-                config.put(JsonGenerator.PRETTY_PRINTING, true);
-            }
 
             if (generatorFactory == null) {
+                if (pretty) {
+                    config.put(JsonGenerator.PRETTY_PRINTING, true);
+                }
                 generatorFactory = provider.createGeneratorFactory(config);
             }
 
-            config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
-            if (supportsComments) {
-                config.put("org.apache.johnzon.supports-comments", "true");
+            if (readerFactory == null) {
+                config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
+                if (supportsComments) {
+                    config.put("org.apache.johnzon.supports-comments", "true");
+                }
+                if (maxSize > 0) {
+                    config.put("org.apache.johnzon.max-string-length", maxSize);
+                }
+                if (bufferSize > 0) {
+                    config.put("org.apache.johnzon.default-char-buffer", bufferSize);
+                }
+                if (autoAdjustStringBuffers) {
+                    config.put("org.apache.johnzon.auto-adjust-buffer", true);
+                }
+                if (encoding != null) {
+                    config.put("org.apache.johnzon.encoding", encoding.name());
+                }
+                readerFactory = provider.createReaderFactory(config);
             }
-            if (maxSize > 0) {
-                config.put("org.apache.johnzon.max-string-length", maxSize);
-            }
-            if (bufferSize > 0) {
-                config.put("org.apache.johnzon.default-char-buffer", bufferSize);
-            }
-            if (autoAdjustStringBuffers) {
-                config.put("org.apache.johnzon.auto-adjust-buffer", true);
-            }
-            if (encoding != null) {
-                config.put("org.apache.johnzon.encoding", encoding.name());
-            }
-        }
-        if (this.provider == null) {
+        } else if (this.provider == null) {
             this.provider = JsonProvider.provider();
         }
         if (builderFactory == null) {

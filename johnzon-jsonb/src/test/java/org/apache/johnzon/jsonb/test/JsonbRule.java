@@ -29,6 +29,8 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
 
 import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
 import org.junit.rules.TestRule;
@@ -143,5 +145,25 @@ public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
     @Override
     public JsonValue toJsonValue(final Object object, final Type runtimeType) {
         return JsonbExtension.class.cast(jsonb).toJsonValue(object, runtimeType);
+    }
+
+    @Override
+    public <T> T fromJson(final JsonParser json, final Class<T> type) {
+        return JsonbExtension.class.cast(jsonb).fromJson(json, type);
+    }
+
+    @Override
+    public <T> T fromJson(final JsonParser json, final Type runtimeType) {
+        return JsonbExtension.class.cast(jsonb).fromJson(json, runtimeType);
+    }
+
+    @Override
+    public void toJson(final Object object, final JsonGenerator jsonGenerator) {
+        JsonbExtension.class.cast(jsonb).toJson(object, jsonGenerator);
+    }
+
+    @Override
+    public void toJson(final Object object, final Type runtimeType, final JsonGenerator jsonGenerator) {
+        JsonbExtension.class.cast(jsonb).toJson(object, runtimeType, jsonGenerator);
     }
 }

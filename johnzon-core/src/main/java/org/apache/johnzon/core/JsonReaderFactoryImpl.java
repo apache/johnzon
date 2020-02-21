@@ -29,6 +29,7 @@ import java.util.Map;
 
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.stream.JsonParser;
 
 class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFactory {
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
@@ -43,25 +44,25 @@ class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFac
 
     @Override
     public JsonReader createReader(final Reader reader) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(reader), getCharArrayProvider());
+        return new JsonReaderImpl(parserFactory.createInternalParser(reader), parserFactory.getValueBufferProvider());
     }
 
     @Override
     public JsonReader createReader(final InputStream in) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(in), getCharArrayProvider());
+        return new JsonReaderImpl(parserFactory.createInternalParser(in), parserFactory.getValueBufferProvider());
     }
 
     @Override
     public JsonReader createReader(final InputStream in, final Charset charset) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(in, charset), getCharArrayProvider());
+        return new JsonReaderImpl(parserFactory.createInternalParser(in, charset), parserFactory.getValueBufferProvider());
+    }
+
+    public JsonReader createReader(final JsonParser parser) {
+        return new JsonReaderImpl(parser, parserFactory.getValueBufferProvider());
     }
 
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
-    }
-
-    private BufferStrategy.BufferProvider<char[]> getCharArrayProvider() {
-        return getBufferProvider().newCharProvider(1024);
     }
 }

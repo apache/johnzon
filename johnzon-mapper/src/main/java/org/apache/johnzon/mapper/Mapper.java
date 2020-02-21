@@ -49,6 +49,7 @@ import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
+import javax.json.stream.JsonParser;
 
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
@@ -62,7 +63,6 @@ public class Mapper implements Closeable {
     protected final JsonGeneratorFactory generatorFactory;
     protected final JsonBuilderFactory builderFactory;
     protected final JsonProvider provider;
-    protected final ReaderHandler readerHandler;
     protected final Collection<Closeable> closeables;
     protected final Charset charset;
 
@@ -75,7 +75,6 @@ public class Mapper implements Closeable {
         this.provider = provider;
         this.config = config;
         this.mappings = new Mappings(config);
-        this.readerHandler = ReaderHandler.create(readerFactory);
         this.closeables = closeables;
         this.charset = config.getEncoding();
     }
@@ -298,6 +297,12 @@ public class Mapper implements Closeable {
         }
     }
 
+    public <T> T readObject(final JsonParser stream, final Type clazz) {
+        try (final JsonReader reader = JohnzonCores.map(stream, readerFactory)) {
+            return mapObject(clazz, reader);
+        }
+    }
+
     public <T> T readObject(final InputStream stream, final Type clazz) {
         try (final JsonReader reader = charset == null ? readerFactory.createReader(stream(stream)) : readerFactory.createReader(
                 stream(stream), charset)) {
@@ -325,6 +330,12 @@ public class Mapper implements Closeable {
         }
     }
 
+    public <T> Collection<T> readCollection(final JsonParser stream, final ParameterizedType genericType) {
+        try (final JsonReader reader = JohnzonCores.map(stream, readerFactory)) {
+            return mapObject(genericType, reader);
+        }
+    }
+
     public <T> T[] readArray(final Reader stream, final Class<T> clazz) {
         try (final JsonReader reader = readerFactory.createReader(stream(stream))) {
             return (T[]) mapArray(clazz, reader);
@@ -343,8 +354,20 @@ public class Mapper implements Closeable {
         }
     }
 
+    public <T> T readTypedArray(final JsonParser parser, final Class<?> elementType, final Class<T> arrayType) {
+        try (final JsonReader reader = JohnzonCores.map(parser, readerFactory)) {
+            return arrayType.cast(mapArray(elementType, reader));
+        }
+    }
+
     public JsonArray readJsonArray(final Reader stream) {
         try (final JsonReader reader = readerFactory.createReader(stream(stream))) {
+            return reader.readArray();
+        }
+    }
+
+    public JsonArray readJsonArray(final JsonParser stream) {
+        try (final JsonReader reader = JohnzonCores.map(stream, readerFactory)) {
             return reader.readArray();
         }
     }

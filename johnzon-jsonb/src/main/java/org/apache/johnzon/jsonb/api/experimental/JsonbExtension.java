@@ -21,14 +21,29 @@ package org.apache.johnzon.jsonb.api.experimental;
 import java.lang.reflect.Type;
 
 import javax.json.JsonValue;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
 
-// https://github.com/eclipse-ee4j/jsonb-api/issues/111
 public interface JsonbExtension {
+    // https://github.com/eclipse-ee4j/jsonb-api/issues/111
+
     <T> T fromJsonValue(JsonValue json, Class<T> type);
 
     <T> T fromJsonValue(JsonValue json, Type runtimeType);
 
     JsonValue toJsonValue(Object object);
 
-    JsonValue toJsonValue (Object object, Type runtimeType);
+    JsonValue toJsonValue(Object object, Type runtimeType);
+
+    // https://github.com/eclipse-ee4j/jsonb-api/issues/224
+
+
+
+    <T> T fromJson(JsonParser json, Class<T> type);
+
+    <T> T fromJson(JsonParser json, Type runtimeType);
+
+    void toJson(Object object, JsonGenerator jsonGenerator);
+
+    void toJson(Object object, Type runtimeType, JsonGenerator jsonGenerator);
 }
