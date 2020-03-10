@@ -61,12 +61,13 @@ public final class Generics {
     // - wildcard support?
     // - cycle handling (Foo<Foo>)
     // - ....
-    public static Type resolve(final Type value, final Type rootClass) {
+    public static Type resolve(final Type value, final Type rootClass,
+                               final Map<Type, Type> resolved) {
         if (TypeVariable.class.isInstance(value)) {
-            return resolveTypeVariable(value, rootClass);
+            return resolveTypeVariable(value, rootClass, resolved);
         }
         if (ParameterizedType.class.isInstance(value)) {
-            return resolveParameterizedType(value, rootClass);
+            return resolveParameterizedType(value, rootClass, resolved);
         }
         if (WildcardType.class.isInstance(value)) {
             return resolveWildcardType(value);
@@ -83,12 +84,13 @@ public final class Generics {
         return value;
     }
 
-    private static Type resolveParameterizedType(final Type value, final Type rootClass) {
+    private static Type resolveParameterizedType(final Type value, final Type rootClass,
+                                                 final Map<Type, Type> resolved) {
         Collection<Type> args = null;
         final ParameterizedType parameterizedType = ParameterizedType.class.cast(value);
         int index = 0;
         for (final Type arg : parameterizedType.getActualTypeArguments()) {
-            final Type type = resolve(arg, rootClass);
+            final Type type = resolve(arg, rootClass, resolved);
             if (type != arg) {
                 if (args == null) {
                     args = new ArrayList<>();
@@ -109,7 +111,13 @@ public final class Generics {
     }
 
     // for now the level is hardcoded to 2 with generic > concrete
-    private static Type resolveTypeVariable(final Type value, final Type rootClass) {
+    private static Type resolveTypeVariable(final Type value, final Type rootClass,
+                                            final Map<Type, Type> resolved) {
+        final Type alreadyResolved = resolved.get(value);
+        if (alreadyResolved != null) {
+            return alreadyResolved;
+        }
+
         final TypeVariable<?> tv = TypeVariable.class.cast(value);
         Type parent = rootClass;
         while (Class.class.isInstance(parent)) {
@@ -124,7 +132,7 @@ public final class Generics {
             if (argIndex >= 0) {
                 final Type type = parentPt.getActualTypeArguments()[argIndex];
                 if (TypeVariable.class.isInstance(type)) {
-                    return resolveTypeVariable(type, rootClass);
+                    return resolveTypeVariable(type, rootClass, resolved);
                 }
                 return type;
             }

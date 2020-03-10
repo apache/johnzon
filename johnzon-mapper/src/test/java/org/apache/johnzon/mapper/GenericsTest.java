@@ -30,6 +30,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.junit.Test;
 import org.superbiz.Model;
 
@@ -94,16 +95,38 @@ public class GenericsTest {
     public void typeVariableMultiLevel() {
         final String input = "{\"aalist\":[{\"detail\":\"something2\",\"name\":\"Na2\"}]," +
                 "\"childA\":{\"detail\":\"something\",\"name\":\"Na\"},\"childB\":{}}";
-        final Mapper mapper = new MapperBuilder().setAttributeOrder(String::compareTo).build();
-        final Model model = mapper.readObject(input, Model.class);
-        assertNotNull(model.getChildA());
-        assertNotNull(model.getChildB());
-        assertNotNull(model.getAalist());
-        assertEquals("something", model.getChildA().detail);
-        assertEquals("Na", model.getChildA().name);
-        assertEquals(1, model.getAalist().size());
-        assertEquals("something2", model.getAalist().iterator().next().detail);
-        assertEquals(input, mapper.writeObjectAsString(model));
+        try (final Mapper mapper = new MapperBuilder().setAttributeOrder(String::compareTo).build()) {
+            final Model model = mapper.readObject(input, Model.class);
+            assertNotNull(model.getChildA());
+            assertNotNull(model.getChildB());
+            assertNotNull(model.getAalist());
+            assertEquals("something", model.getChildA().detail);
+            assertEquals("Na", model.getChildA().name);
+            assertEquals(1, model.getAalist().size());
+            assertEquals("something2", model.getAalist().iterator().next().detail);
+            assertEquals(input, mapper.writeObjectAsString(model));
+        }
+    }
+
+    @Test
+    public void genericClasses() {
+        final String input = "{\"aalist\":[{\"name\":\"Na2\"}]}";
+        try (final Mapper mapper = new MapperBuilder().setAttributeOrder(String::compareTo).build()) {
+            final GenericModel<SimpleModel> model = mapper.readObject(
+                    input, new JohnzonParameterizedType(GenericModel.class, SimpleModel.class));
+            assertNotNull(model.aalist);
+            assertEquals(1, model.aalist.size());
+            assertEquals("Na2", model.aalist.get(0).name);
+            assertEquals(input, mapper.writeObjectAsString(model));
+        }
+    }
+
+    public static class SimpleModel {
+        public String name;
+    }
+
+    public static class GenericModel<T> {
+        public List<T> aalist;
     }
 
     public interface Holder<T> {

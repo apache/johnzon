@@ -327,7 +327,7 @@ public class Mappings {
             }
 
             final CollectionMapping mapping = new CollectionMapping(isPrimitive(fieldArgTypes[0]), collectionType,
-                    Generics.resolve(fieldArgTypes[0], root));
+                    Generics.resolve(fieldArgTypes[0], root, emptyMap()));
             collections.putIfAbsent(aType, mapping);
             return mapping;
         }
@@ -529,7 +529,7 @@ public class Mappings {
             final Setter setter = new Setter(
                     value, isPrimitive(param),
                     (returnType != null && returnType.isArray()) || GenericArrayType.class.isInstance(value.getType()),
-                    resolve(param, rootClass),
+                    resolve(param, rootClass, resolvedTypes),
                     findConverter(copyDate, value), value.findObjectConverterReader(),
                     writeIgnore != null ? writeIgnore.minVersion() : -1);
             setters.put(key, setter);
