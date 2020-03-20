@@ -339,8 +339,7 @@ public class JsonPointerImpl implements JsonPointer {
 
             try {
                 JsonArray jsonArray = (JsonArray) jsonValue;
-                int arrayIndex = Integer.parseInt(referenceToken);
-                validateArraySize(jsonArray, arrayIndex, jsonArray.size());
+                int arrayIndex = getArrayIndex(referenceToken, jsonArray, false);
                 return jsonArray.get(arrayIndex);
             } catch (NumberFormatException e) {
                 throw new JsonException("'" + referenceToken + "' is no valid array index", e);
@@ -460,6 +459,8 @@ public class JsonPointerImpl implements JsonPointer {
     private int getArrayIndex(String referenceToken, JsonArray jsonArray, boolean addOperation) {
         if (addOperation && referenceToken.equals("-")) {
             return jsonArray.size();
+        } else if (!addOperation && referenceToken.equals("-")) {
+            return jsonArray.size() - 1;
         }
 
         validateArrayIndex(referenceToken);
@@ -486,7 +487,7 @@ public class JsonPointerImpl implements JsonPointer {
     }
 
     private void validateArrayIndex(String referenceToken) throws JsonException {
-        if (referenceToken.startsWith("+") || referenceToken.startsWith("-")) {
+        if (referenceToken.startsWith("+") || (referenceToken.startsWith("-") && referenceToken.length() > 1)) {
             throw new JsonException("An array index must not start with '" + referenceToken.charAt(0) + "'");
         }
         if (referenceToken.startsWith("0") && referenceToken.length() > 1) {
