@@ -466,7 +466,7 @@ public class JsonPointerTest {
                         .add("baz")).build(); // [["bar","qux","baz"]]
 
         JsonStructure result = jsonPointer.remove(target);
-        assertEquals("[[\"bar\",\"qux\"]]", result.toString()); // [["bar","baz"]]
+        assertEquals("[[\"bar\",\"qux\"]]", result.toString()); // [["bar","qux"]]
     }
 
     @Test
