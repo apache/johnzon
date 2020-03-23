@@ -184,7 +184,7 @@ public class MethodAccessMode extends BaseAccessMode {
             try {
                 method.invoke(instance, value);
             } catch (final Exception e) {
-                throw new MapperException(e);
+                throw new MapperException("Error calling " + method, e);
             }
         }
 
@@ -204,7 +204,7 @@ public class MethodAccessMode extends BaseAccessMode {
             try {
                 return method.invoke(instance);
             } catch (final Exception e) {
-                throw new MapperException(e);
+                throw new MapperException("Error calling " + method, e);
             }
         }
 
@@ -228,7 +228,7 @@ public class MethodAccessMode extends BaseAccessMode {
                         collection.addAll(Collection.class.cast(value));
                     }
                 } catch (final Exception e) {
-                    throw new MapperException(e);
+                    throw new MapperException("Error calling " + method, e);
                 }
             }
         }

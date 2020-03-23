@@ -28,4 +28,8 @@ public class MapperException extends JsonException {
     public MapperException(final String s) {
         super(s);
     }
+
+    public MapperException(final String s, final Throwable cause) {
+        super(s, cause);
+    }
 }

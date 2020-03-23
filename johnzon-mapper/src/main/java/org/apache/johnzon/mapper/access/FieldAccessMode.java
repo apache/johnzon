@@ -154,7 +154,7 @@ public class FieldAccessMode extends BaseAccessMode {
             try {
                 field.set(instance, value);
             } catch (final Exception e) {
-                throw new MapperException(e);
+                throw new MapperException("Error setting " + field, e);
             }
         }
 
@@ -174,7 +174,7 @@ public class FieldAccessMode extends BaseAccessMode {
             try {
                 return field.get(instance);
             } catch (final Exception e) {
-                throw new MapperException(e);
+                throw new MapperException("Error setting " + field, e);
             }
         }
 
