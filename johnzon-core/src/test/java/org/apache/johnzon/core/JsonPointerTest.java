@@ -470,6 +470,19 @@ public class JsonPointerTest {
     }
 
     @Test
+    public void testRemoveLastArrayElementSimple() {
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
+        JsonStructure target = Json.createArrayBuilder()
+                .add("bar")
+                .add("qux")
+                .add("baz")
+                .build();
+
+        JsonStructure result = jsonPointer.remove(target);
+        assertEquals("[\"bar\",\"qux\"]", result.toString());
+    }
+
+    @Test
     public void testRemoveObjectMember() {
         JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/baz");
         JsonStructure target = Json.createObjectBuilder()

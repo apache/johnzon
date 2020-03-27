@@ -437,9 +437,9 @@ public class JsonPointerImpl implements JsonPointer {
             return objectBuilder.build();
         } else if (jsonValue.getValueType() == JsonValue.ValueType.ARRAY) {
             final JsonArray jsonArray = jsonValue.asJsonArray();
-            if (IS_NUMBER.matcher(token).matches()) {
-                final JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
+            if ("-".equals(token) || IS_NUMBER.matcher(token).matches()) {
                 final int arrayIndex = getArrayIndex(token, jsonArray, false);
+                final JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
                 final int jsonArraySize = jsonArray.size();
                 for (int i = 0; i < jsonArraySize; i++) {
                     final boolean matchesIndex = i == arrayIndex;

@@ -717,7 +717,7 @@ public class JsonPatchTest {
                               .build();
 
         JsonPatchImpl patch = new JsonPatchImpl(PROVIDER, new JsonPatchImpl.PatchValue(PROVIDER, JsonPatch.Operation.COPY,
-                                                                             "/1",
+                                                                             "/2",
                                                                              "/-",
                                                                              null));
 
