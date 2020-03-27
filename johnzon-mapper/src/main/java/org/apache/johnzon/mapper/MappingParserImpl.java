@@ -77,6 +77,7 @@ import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 import static javax.json.JsonValue.ValueType.ARRAY;
 import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.NULL;
@@ -164,6 +165,20 @@ public class MappingParserImpl implements MappingParser {
             if (classMapping != null && classMapping.adapter != null) {
                 return (T) classMapping.adapter.to(JsonString.class.cast(jsonValue).getString());
             }
+
+            final Adapter adapter = findAdapter(targetType);
+            if (adapter != null && TypeAwareAdapter.class.isInstance(adapter)) {
+                final TypeAwareAdapter typeAwareAdapter = TypeAwareAdapter.class.cast(adapter);
+                if (typeAwareAdapter.getTo() == String.class) {
+                    return (T) adapter.to(JsonString.class.cast(jsonValue).getString());
+                }
+                if (typeAwareAdapter.getTo() == JsonString.class) {
+                    return (T) adapter.to(JsonString.class.cast(jsonValue));
+                }
+                if (typeAwareAdapter.getTo() == CharSequence.class) {
+                    return (T) adapter.to(JsonString.class.cast(jsonValue).getChars());
+                }
+            }
         }
         if (JsonNumber.class.isInstance(jsonValue)) {
             final JsonNumber number = JsonNumber.class.cast(jsonValue);
@@ -235,6 +250,7 @@ public class MappingParserImpl implements MappingParser {
         if (FALSE == valueType && (Boolean.class == targetType || boolean.class == targetType || Object.class == targetType)) {
             return (T) Boolean.FALSE;
         }
+
         throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);
     }
 
@@ -1093,10 +1109,13 @@ public class MappingParserImpl implements MappingParser {
     }
 
     /**
-     * @deprecated see MapperConfig
+     * @deprecated see MapperConfig - it is acually reversed so maybe not deprecated after all?
      */
     private Adapter findAdapter(final Type aClass) {
-        final Adapter<?, ?> converter = config.getAdapters().get(new AdapterKey(aClass, String.class));
+        if (config.getNoParserAdapterTypes().contains(aClass)) {
+            return null;
+        }
+        final Adapter<?, ?> converter = config.getAdapters().get(new AdapterKey(aClass, String.class, true));
         if (converter != null) {
             return converter;
         }
@@ -1108,6 +1127,17 @@ public class MappingParserImpl implements MappingParser {
                 return enumConverter;
             }
         }
+        final List<AdapterKey> matched = config.getAdapters().keySet().stream()
+                .filter(k -> k.isAssignableFrom(aClass))
+                .collect(toList());
+        if (matched.size() == 1) {
+            final Adapter<?, ?> adapter = config.getAdapters().get(matched.iterator().next());
+            if (TypeAwareAdapter.class.isInstance(adapter)) {
+                config.getAdapters().put(new AdapterKey(aClass, TypeAwareAdapter.class.cast(adapter).getTo()), adapter);
+            }
+            return adapter;
+        }
+        config.getNoParserAdapterTypes().add(aClass);
         return null;
     }
 

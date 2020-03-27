@@ -29,6 +29,8 @@ import javax.json.bind.JsonbConfig;
 import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.annotation.JsonbTypeAdapter;
 import javax.json.bind.config.PropertyOrderStrategy;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +43,41 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 public class AdapterTest {
+    public static class PathAdapter implements JsonbAdapter<Path, JsonString> {
+        @Override
+        public JsonString adaptToJson(final Path path) {
+            return Json.createValue(path.toString());
+        }
+
+        @Override
+        public Path adaptFromJson(final JsonString jsonString) {
+            return Paths.get(jsonString.getString());
+        }
+    }
+
+    public static class PathWrapper {
+        public Path path;
+    }
+
+    @Test
+    public void testSerialize() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new PathAdapter()))) {
+            final PathWrapper wrapper = new PathWrapper();
+            wrapper.path = Paths.get("/example/file.txt");
+            assertEquals("{\"path\":\"/example/file.txt\"}", jsonb.toJson(wrapper));
+            assertEquals("\"/example/file.txt\"", jsonb.toJson(wrapper.path));
+        }
+    }
+
+    @Test
+    public void testDeserialize() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new PathAdapter()))) {
+            final Path expected = Paths.get("/example/file.txt");
+            assertEquals(expected, jsonb.fromJson("{\"path\":\"/example/file.txt\"}", PathWrapper.class).path);
+            assertEquals(expected, jsonb.fromJson("\"/example/file.txt\"", Path.class));
+        }
+    }
+
     @Test
     public void adapt() throws Exception {
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new BarAdapter()))) {

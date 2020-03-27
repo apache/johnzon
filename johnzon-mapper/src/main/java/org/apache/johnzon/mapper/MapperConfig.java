@@ -26,13 +26,17 @@ import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import javax.json.JsonValue;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Contains internal configuration for all the mapper stuff.
@@ -85,6 +89,9 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
+
+    private final Collection<Type> noParserAdapterTypes = new ConcurrentHashMap<Type, Boolean>().keySet(true);
+    private final Collection<Type> noGeneratorAdapterTypes = new ConcurrentHashMap<Type, Boolean>().keySet(true);
 
     //disable checkstyle for 10+ parameters
     //CHECKSTYLE:OFF
@@ -149,6 +156,14 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.deduplicateObjects = deduplicateObjects;
     }
 
+    public Collection<Type> getNoParserAdapterTypes() {
+        return noParserAdapterTypes;
+    }
+
+    public Collection<Type> getNoGeneratorAdapterTypes() {
+        return noGeneratorAdapterTypes;
+    }
+
     public Function<String, Class<?>> getTypeLoader() {
         return typeLoader;
     }
@@ -186,7 +201,11 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     }
 
     public Adapter findAdapter(final Type aClass) {
-        final Adapter<?, ?> converter = adapters.get(new AdapterKey(aClass, String.class));
+        if (getNoGeneratorAdapterTypes().contains(aClass)) { // avoid to create a key for nothing
+            return null;
+        }
+
+        final Adapter<?, ?> converter = adapters.get(new AdapterKey(aClass, String.class, true));
         if (converter != null) {
             return converter;
         }
@@ -204,6 +223,17 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                 return enumConverter;
             }
         }
+        final List<AdapterKey> matched = adapters.keySet().stream()
+                .filter(k -> k.isAssignableFrom(aClass))
+                .collect(toList());
+        if (matched.size() == 1) {
+            final Adapter<?, ?> adapter = adapters.get(matched.iterator().next());
+            if (TypeAwareAdapter.class.isInstance(adapter)) {
+                adapters.put(new AdapterKey(aClass, TypeAwareAdapter.class.cast(adapter).getTo()), adapter);
+            }
+            return adapter;
+        }
+        getNoGeneratorAdapterTypes().add(aClass);
         return null;
     }
 

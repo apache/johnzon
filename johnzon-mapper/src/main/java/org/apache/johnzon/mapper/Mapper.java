@@ -44,6 +44,7 @@ import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
@@ -195,8 +196,13 @@ public class Mapper implements Closeable {
             return;
         }
 
+        final Adapter adapter = config.findAdapter(object.getClass());
+        if (adapter != null && TypeAwareAdapter.class.isInstance(adapter) && TypeAwareAdapter.class.cast(adapter).getTo() == JsonString.class) {
+            writeObject(adapter.from(object), stream);
+            return;
+        }
         try (final JsonGenerator generator = generatorFactory.createGenerator(stream(stream))) {
-            writeObjectWithGenerator(object, generator);
+            writeObjectWithGenerator(adapter == null ? object : adapter.from(object), generator);
         }
     }
 

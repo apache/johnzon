@@ -24,10 +24,20 @@ public class AdapterKey {
     private final Type from;
     private final Type to;
     private final int hash;
+    private Class valueAsClass;
+    private Class<?> keyAsClass;
 
     public AdapterKey(final Type from, final Type to) {
+        this(from, to, false);
+    }
+
+    public AdapterKey(final Type from, final Type to, final boolean lookup) {
         this.from = from;
         this.to = to;
+        if (!lookup) {
+            this.keyAsClass = Class.class.isInstance(from) ? Class.class.cast(from) : null;
+            this.valueAsClass = Class.class.isInstance(to) ? Class.class.cast(to) : null;
+        }
 
         int result = from.hashCode();
         result = 31 * result + to.hashCode();
@@ -54,6 +64,14 @@ public class AdapterKey {
         final AdapterKey that = AdapterKey.class.cast(o);
         return from.equals(that.from) && to.equals(that.to);
 
+    }
+
+    public boolean isAssignableFrom(final Type type) {
+        return keyAsClass != null && Class.class.isInstance(type) && keyAsClass.isAssignableFrom(Class.class.cast(type));
+    }
+
+    public boolean isAssignableTo(final Type type) {
+        return valueAsClass != null && Class.class.isInstance(type) && valueAsClass.isAssignableFrom(Class.class.cast(type));
     }
 
     @Override
