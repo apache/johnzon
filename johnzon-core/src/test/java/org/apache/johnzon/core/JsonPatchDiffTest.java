@@ -32,6 +32,25 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class JsonPatchDiffTest {
+    @Test
+    public void fromEmptyArray() {
+        final JsonObject from = Json.createObjectBuilder().add("testEmpty", JsonValue.EMPTY_JSON_ARRAY).build();
+        final JsonObject to = Json.createObjectBuilder()
+                .add("testEmpty", Json.createArrayBuilder().add("something"))
+                .build();
+        final  JsonPatch diff = Json.createDiff(from, to);
+        assertEquals("[{\"op\":\"add\",\"path\":\"/testEmpty/0\",\"value\":\"something\"}]", diff.toString());
+    }
+
+    @Test
+    public void toEmptyArray() {
+        final JsonObject from = Json.createObjectBuilder()
+                .add("testEmpty", Json.createArrayBuilder().add("something"))
+                .build();
+        final JsonObject to = Json.createObjectBuilder().add("testEmpty", JsonValue.EMPTY_JSON_ARRAY).build();
+        final  JsonPatch diff = Json.createDiff(from, to);
+        assertEquals("[{\"op\":\"remove\",\"path\":\"/testEmpty/0\"}]", diff.toString());
+    }
 
     @Test
     public void testAddDiff() {

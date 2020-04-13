@@ -143,6 +143,9 @@ final class JsonObjectImpl extends AbstractMap<String, JsonValue> implements Jso
 
     @Override
     public String toString() {
+        if (unmodifieableBackingMap.isEmpty()) {
+            return "{}";
+        }
         final StringWriter writer = new StringWriter();
         try (final JsonGenerator generator = new JsonGeneratorImpl(writer, provider, false)) {
             generator.writeStartObject();

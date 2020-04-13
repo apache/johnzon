@@ -61,19 +61,16 @@ class JsonPatchDiff extends DiffBase {
 
     private void diffJsonArray(JsonPatchBuilder patchBuilder, String basePath, JsonArray source, JsonArray target) {
         for (int i = 0; i < source.size(); i++) {
-            JsonValue sourceValue = source.get(i);
-
+            final JsonValue sourceValue = source.get(i);
             if (target.size() <= i) {
                 patchBuilder.remove(basePath + i);
                 continue;
             }
-
             diff(patchBuilder, basePath + i, sourceValue, target.get(i));
         }
 
         if (target.size() > source.size()) {
-
-            for (int i = target.size() - source.size(); i < target.size(); i++) {
+            for (int i = source.size(); i < target.size(); i++) {
                 patchBuilder.add(basePath + i, target.get(i));
             }
         }
@@ -81,8 +78,7 @@ class JsonPatchDiff extends DiffBase {
     }
 
     private void diffJsonObjects(JsonPatchBuilder patchBuilder, String basePath, JsonObject source, JsonObject target) {
-
-        for (Map.Entry<String, JsonValue> sourceEntry : source.entrySet()) {
+        for (final Map.Entry<String, JsonValue> sourceEntry : source.entrySet()) {
             String attributeName = sourceEntry.getKey();
 
             if (target.containsKey(attributeName)) {
@@ -93,13 +89,10 @@ class JsonPatchDiff extends DiffBase {
             }
         }
 
-        for (Map.Entry<String, JsonValue> targetEntry : target.entrySet()) {
+        for (final Map.Entry<String, JsonValue> targetEntry : target.entrySet()) {
             if (!source.containsKey(targetEntry.getKey())) {
                 patchBuilder.add(basePath + JsonPointerUtil.encode(targetEntry.getKey()), targetEntry.getValue());
             }
         }
-
     }
-
-
 }

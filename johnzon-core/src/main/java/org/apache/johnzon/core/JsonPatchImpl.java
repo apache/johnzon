@@ -38,6 +38,7 @@ class JsonPatchImpl implements JsonPatch {
     private final JsonProvider provider;
     private final List<PatchValue> patches;
 
+    private volatile JsonArray json;
 
     JsonPatchImpl(final JsonProvider provider, final PatchValue... patches) {
         this(provider, Arrays.asList(patches));
@@ -118,16 +119,30 @@ class JsonPatchImpl implements JsonPatch {
 
     @Override
     public JsonArray toJsonArray() {
-
-        JsonArrayBuilder builder = provider.createArrayBuilder();
-        for (PatchValue patch : patches) {
-            builder.add(patch.toJson());
+        if (patches.isEmpty()) {
+            return JsonValue.EMPTY_JSON_ARRAY;
         }
-
-        return builder.build();
+        if (json == null) {
+            synchronized (this) {
+                if (json == null) {
+                    final JsonArrayBuilder builder = provider.createArrayBuilder();
+                    for (final PatchValue patch : patches) {
+                        builder.add(patch.toJson());
+                    }
+                    json = builder.build();
+                }
+            }
+        }
+        return json;
     }
 
-
+    @Override
+    public String toString() {
+        if (patches.isEmpty()) {
+            return "[]";
+        }
+        return toJsonArray().toString();
+    }
 
     static class PatchValue {
         private final JsonProvider provider;
@@ -135,6 +150,10 @@ class JsonPatchImpl implements JsonPatch {
         private final JsonPointerImpl path;
         private final JsonPointerImpl from;
         private final JsonValue value;
+
+        private volatile String str;
+        private volatile JsonObject json;
+        private volatile Integer hash;
 
         PatchValue(final JsonProvider provider,
                    final JsonPatch.Operation operation,
@@ -181,38 +200,54 @@ class JsonPatchImpl implements JsonPatch {
 
         @Override
         public int hashCode() {
-            int result = operation.hashCode();
-            result = 31 * result + path.hashCode();
-            result = 31 * result + (from != null ? from.hashCode() : 0);
-            result = 31 * result + (value != null ? value.hashCode() : 0);
-            return result;
+            if (hash == null) {
+                synchronized (this) {
+                    if (hash == null) {
+                        int result = operation.hashCode();
+                        result = 31 * result + path.hashCode();
+                        result = 31 * result + (from != null ? from.hashCode() : 0);
+                        result = 31 * result + (value != null ? value.hashCode() : 0);
+                        hash = result;
+                    }
+                }
+            }
+            return hash;
         }
 
 
         @Override
         public String toString() {
-            return "{" +
-                   "op: " + operation +
-                   ", path: " + path +
-                   ", from: " + from +
-                   ", value: " + value +
-                   '}';
+            if (str == null) {
+                synchronized (this) {
+                    if (str == null) {
+                        str = "{op: " + operation + ", path: " + path + ", from: " + from + ", value: " + value + '}';
+                    }
+                }
+            }
+            return str;
         }
 
         JsonObject toJson() {
-            JsonObjectBuilder builder = provider.createObjectBuilder()
-                                            .add("op", operation.name().toLowerCase())
-                                            .add("path", path.getJsonPointer());
+            if (json == null) {
+                synchronized (this) {
+                    if (json == null) {
+                        JsonObjectBuilder builder = provider.createObjectBuilder()
+                                .add("op", operation.name().toLowerCase())
+                                .add("path", path.getJsonPointer());
 
-            if (from != null) {
-                builder.add("from", from.getJsonPointer());
+                        if (from != null) {
+                            builder.add("from", from.getJsonPointer());
+                        }
+
+                        if (value != null) {
+                            builder.add("value", value);
+                        }
+
+                        json = builder.build();
+                    }
+                }
             }
-
-            if (value != null) {
-                builder.add("value", value);
-            }
-
-            return builder.build();
+            return json;
         }
     }
 }
