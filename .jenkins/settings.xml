@@ -22,17 +22,5 @@
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
                           https://maven.apache.org/xsd/settings-1.0.0.xsd">
   <profiles>
-    <profile>
-      <id>json-1.3-spec-staging</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <repositories>
-        <repository>
-          <id>staging-repo</id>
-          <url>https://repository.apache.org/content/repositories/orgapachegeronimo-1112</url>
-        </repository>
-      </repositories>
-    </profile>
   </profiles>
 </settings>
