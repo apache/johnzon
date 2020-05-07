@@ -31,6 +31,7 @@ import javax.json.spi.JsonProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 
@@ -408,8 +409,18 @@ public class JsonPointerImpl implements JsonPointer {
     }
 
     private boolean isPositionToAdd(List<String> currentPath) {
-        return currentPath.size() == referenceTokens.size() - 1 &&
-                currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2));
+      if (currentPath.size() == referenceTokens.size() - 1) {
+        // Check the whole path to see if they are identical or not
+        for (int i = 0; i < currentPath.size(); i++) {
+          if (!Objects.equals(currentPath.get(i), referenceTokens.get(i))) {
+            return false;
+          }
+        }
+
+        return true;
+      }
+
+      return false;
     }
 
     private JsonValue remove(final JsonValue jsonValue, final int currentPosition) {
