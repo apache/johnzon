@@ -379,7 +379,7 @@ public class JsonPointerImpl implements JsonPointer {
                     objectBuilder.add(entry.getKey(), addInternal(entry.getValue(), newValue, currentPath, canMatch(currentPath)));
                     currentPath.remove(entry.getKey());
 
-                    if (check && isPositionToAdd(currentPath)) {
+                    if (isPositionToAdd(currentPath)) {
                         objectBuilder.add(referenceTokens.get(referenceTokens.size() - 1), newValue);
                     }
                 }
