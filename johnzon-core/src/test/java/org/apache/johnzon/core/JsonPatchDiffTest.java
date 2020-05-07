@@ -16,22 +16,82 @@
  */
 package org.apache.johnzon.core;
 
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 import java.io.StringReader;
+import java.io.StringWriter;
 
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonPatch;
+import javax.json.JsonReader;
 import javax.json.JsonValue;
+import javax.json.JsonWriter;
+import javax.json.stream.JsonGenerator;
 
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
 public class JsonPatchDiffTest {
+    @Test
+    public void nestedObjects() {
+        final String source = "{\n" +
+                "  \"caseDiscussionDailySchedule\":{\n" +
+                "    \"schedule\":{\n" +
+                "      \"TUESDAY\":[\n" +
+                "        {\n" +
+                "          \"start\":\"07:00+03:00\",\n" +
+                "          \"end\":\"08:00+03:00\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"MONDAY\":[\n" +
+                "        {\n" +
+                "          \"start\":\"07:00+03:00\",\n" +
+                "          \"end\":\"08:00+03:00\"\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        final String operation = "[" +
+                "{\"op\":\"replace\",\"path\":\"/caseDiscussionDailySchedule/schedule/MONDAY/0/start\",\"value\":null}" +
+                "]";
+        final String expectedResult = "{\n" +
+                "  \"caseDiscussionDailySchedule\":{\n" +
+                "    \"schedule\":{\n" +
+                "      \"TUESDAY\":[\n" +
+                "        {\n" +
+                "          \"start\":\"07:00+03:00\",\n" +
+                "          \"end\":\"08:00+03:00\"\n" +
+                "        }\n" +
+                "      ],\n" +
+                "      \"MONDAY\":[\n" +
+                "        {\n" +
+                "          \"end\":\"08:00+03:00\",\n" +
+                "          \"start\":null\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  }\n" +
+                "}";
+        final JsonReader reader1 = Json.createReader(new StringReader(source));
+        final JsonObject src = reader1.readObject();
+        reader1.close();
+        final JsonReader reader2 = Json.createReader(new StringReader(operation));
+        final JsonArray op = reader2.readArray();
+        reader2.close();
+        final JsonObject result = Json.createPatch(op).apply(src);
+        final StringWriter formattedResult = new StringWriter();
+        final JsonWriter writer = Json.createWriterFactory(singletonMap(JsonGenerator.PRETTY_PRINTING, true))
+                .createWriter(formattedResult);
+        writer.write(result);
+        writer.close();
+        assertEquals(expectedResult, formattedResult.toString());
+    }
     @Test
     public void fromEmptyArray() {
         final JsonObject from = Json.createObjectBuilder().add("testEmpty", JsonValue.EMPTY_JSON_ARRAY).build();

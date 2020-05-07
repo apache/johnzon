@@ -31,6 +31,7 @@ import javax.json.spi.JsonProvider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 
@@ -356,12 +357,17 @@ public class JsonPointerImpl implements JsonPointer {
         List<String> currentPath = new ArrayList<>();
         currentPath.add("");
 
-        return (T) addInternal(jsonValue, newValue, currentPath);
+        return (T) addInternal(jsonValue, newValue, currentPath, true);
     }
 
-    private JsonValue addInternal(JsonValue jsonValue, JsonValue newValue, List<String> currentPath) {
+    private JsonValue addInternal(JsonValue jsonValue, JsonValue newValue, List<String> currentPath,
+                                  boolean check) {
         if (jsonValue.getValueType() == JsonValue.ValueType.OBJECT) {
-            JsonObject jsonObject = (JsonObject) jsonValue;
+            JsonObject jsonObject = jsonValue.asJsonObject();
+            if (!check) {
+                return provider.createObjectBuilder(jsonObject).build();
+            }
+
             JsonObjectBuilder objectBuilder = provider.createObjectBuilder();
 
             if (jsonObject.isEmpty() && isPositionToAdd(currentPath)) {
@@ -370,22 +376,25 @@ public class JsonPointerImpl implements JsonPointer {
                 for (Map.Entry<String, JsonValue> entry : jsonObject.entrySet()) {
 
                     currentPath.add(entry.getKey());
-                    objectBuilder.add(entry.getKey(), addInternal(entry.getValue(), newValue, currentPath));
+                    objectBuilder.add(entry.getKey(), addInternal(entry.getValue(), newValue, currentPath, canMatch(currentPath)));
                     currentPath.remove(entry.getKey());
 
-                    if (isPositionToAdd(currentPath)) {
+                    if (check && isPositionToAdd(currentPath)) {
                         objectBuilder.add(referenceTokens.get(referenceTokens.size() - 1), newValue);
                     }
                 }
             }
             return objectBuilder.build();
         } else if (jsonValue.getValueType() == JsonValue.ValueType.ARRAY) {
-            JsonArray jsonArray = (JsonArray) jsonValue;
+            JsonArray jsonArray = jsonValue.asJsonArray();
+            if (!check) {
+                return provider.createArrayBuilder(jsonArray).build();
+            }
             JsonArrayBuilder arrayBuilder = provider.createArrayBuilder();
 
             int arrayIndex = -1;
             if (isPositionToAdd(currentPath)) {
-                arrayIndex = getArrayIndex(referenceTokens.get(referenceTokens.size() - 1), jsonArray, true);
+                arrayIndex = getArrayIndex(referenceTokens.get(referenceTokens.size() - 1), jsonArray, canMatch(currentPath));
             }
 
             int jsonArraySize = jsonArray.size();
@@ -399,7 +408,7 @@ public class JsonPointerImpl implements JsonPointer {
 
                 String path = String.valueOf(i);
                 currentPath.add(path);
-                arrayBuilder.add(addInternal(jsonArray.get(i), newValue, currentPath));
+                arrayBuilder.add(addInternal(jsonArray.get(i), newValue, currentPath, canMatch(currentPath)));
                 currentPath.remove(path);
             }
             return arrayBuilder.build();
@@ -410,6 +419,11 @@ public class JsonPointerImpl implements JsonPointer {
     private boolean isPositionToAdd(List<String> currentPath) {
         return currentPath.size() == referenceTokens.size() - 1 &&
                 currentPath.get(currentPath.size() - 1).equals(referenceTokens.get(referenceTokens.size() - 2));
+    }
+
+    private boolean canMatch(final List<String> currentPath) {
+        return currentPath.size() <= referenceTokens.size() &&
+                Objects.equals(currentPath.get(currentPath.size() - 1), referenceTokens.get(currentPath.size() - 1));
     }
 
     private JsonValue remove(final JsonValue jsonValue, final int currentPosition) {

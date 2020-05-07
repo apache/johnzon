@@ -95,4 +95,14 @@ public class JsonPointerUtilTest {
         assertEquals("~1", decodedString);
     }
 
+    @Test
+    public void someComplexRoundTrip() {
+        assertRoundTrip("/a/b/e/~foo", "~1a~1b~1e~1~0foo");
+        assertRoundTrip("/first/0/second~almost/third~another/last", "~1first~10~1second~0almost~1third~0another~1last");
+    }
+
+    private void assertRoundTrip(final String clear, final String encoded) {
+        assertEquals(encoded, JsonPointerUtil.encode(clear));
+        assertEquals(clear, JsonPointerUtil.decode(encoded));
+    }
 }

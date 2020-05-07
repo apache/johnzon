@@ -18,21 +18,19 @@
  */
 package org.apache.johnzon.core;
 
-public class JsonPointerUtil {
-
+public final class JsonPointerUtil {
     private JsonPointerUtil() {
-
+        // no-op
     }
 
     /**
      * Transforms "~" to "~0" and then "/" to "~1"
      */
     public static String encode(String s) {
-        if (s == null || s.length() == 0) {
+        if (s == null || s.isEmpty()) {
             return s;
         }
-
-        return s.replace("~", "~0").replace("/", "~1");
+        return replace(replace(s, "~", "~0"), "/", "~1");
     }
 
     /**
@@ -42,8 +40,18 @@ public class JsonPointerUtil {
         if (s == null || s.length() == 0) {
             return s;
         }
-
-        return s.replace("~1", "/").replace("~0", "~");
+        return replace(replace(s, "~1", "/"), "~0", "~");
     }
 
+    // regex have too much overhead (Matcher + Pattern) at runtime even when precompiled
+    private static String replace(final String src, final String from, final String to) {
+        if (src.isEmpty()) {
+            return src;
+        }
+        final int start = src.indexOf(from);
+        if (start >= 0) {
+            return src.substring(0, start) + to + replace(src.substring(start + from.length()), from, to);
+        }
+        return src;
+    }
 }
