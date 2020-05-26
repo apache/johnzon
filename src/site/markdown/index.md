@@ -535,6 +535,48 @@ Known limitations are (feel free to do a PR on github to add these missing featu
 * Doesn't support references in the schema
 * Doesn't support: dependencies, propertyNames, if/then/else, allOf/anyOf/oneOf/not, format validations
 
+### JSON Logic
+
+<pre class="prettyprint linenums"><![CDATA[
+<dependency>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-jsonlogic</artifactId>
+  <version>${johnzon.version}</version>
+</dependency>
+<dependency> <!-- requires an implementation of JSON-P -->
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-core</artifactId>
+  <version>${johnzon.version}</version>
+</dependency>
+]]></pre>
+
+This module provides a way to execute any [JSON Logic](http://jsonlogic.com/) expression.
+
+<pre class="prettyprint linenums"><![CDATA[
+final JohnzonJsonLogic jsonLogic = new JohnzonJsonLogic();
+final JsonValue result = jsonLogic.apply(
+        builderFactory.createObjectBuilder()
+                .add("merge", builderFactory.createArrayBuilder()
+                        .add(builderFactory.createArrayBuilder()
+                                .add(1)
+                                .add(2))
+                        .add(3)
+                        .add("4"))
+                .build(),
+        JsonValue.EMPTY_JSON_ARRAY);
+]]></pre>
+
+Default operators are supported - except "log" one to let you pick the logger (impl + name) you want.
+
+To register a custom operator just do it on your json logic instance:
+
+<pre class="prettyprint linenums"><![CDATA[
+final JohnzonJsonLogic jsonLogic = new JohnzonJsonLogic();
+jsonLogic.registerOperator(
+  "log",
+  (jsonLogic, config, args) -> log.info(String.valueOf(jsonLogic.apply(config, args)));
+]]></pre>
+
 ### OSGi JAX-RS Whiteboard
 
 Though Johnzon artifacts are OSGi bundles to begin with, this module provides further integration with the [OSGi JAX-RS Whiteboard](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html) and [OSGi CDI Integration](https://osgi.org/specification/osgi.enterprise/7.0.0/service.cdi.html) specifications.

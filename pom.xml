@@ -64,6 +64,7 @@
     <module>johnzon-json-extras</module>
     <module>johnzon-jsonschema</module>
     <module>johnzon-osgi</module>
+    <module>johnzon-jsonlogic</module>
   </modules>
 
   <dependencyManagement>
