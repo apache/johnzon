@@ -78,6 +78,7 @@ import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 import static javax.json.JsonValue.ValueType.ARRAY;
 import static javax.json.JsonValue.ValueType.FALSE;
 import static javax.json.JsonValue.ValueType.NULL;
@@ -424,7 +425,9 @@ public class MappingParserImpl implements MappingParser {
                 final String key = entry.getKey();
                 if (!classMapping.setters.containsKey(key)) {
                     try {
-                        classMapping.anySetter.invoke(t, key, toValue(null, entry.getValue(), null, null, Object.class, null,
+                        classMapping.anySetter.invoke(t, key,
+                                toValue(null, entry.getValue(), null, null,
+                                        classMapping.anySetter.getGenericParameterTypes()[1], null,
                                 isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type));
                     } catch (final IllegalAccessException e) {
                         throw new IllegalStateException(e);
@@ -432,6 +435,16 @@ public class MappingParserImpl implements MappingParser {
                         throw new MapperException(e.getCause());
                     }
                 }
+            }
+        } else if (classMapping.anyField != null) {
+            final Type tRef = type;
+            try {
+                classMapping.anyField.set(t, object.entrySet().stream()
+                    .collect(toMap(Map.Entry::getKey, e -> toValue(null, e.getValue(), null, null,
+                            ParameterizedType.class.cast(classMapping.anyField.getGenericType()).getActualTypeArguments()[1], null,
+                            isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, e.getKey()) : null, tRef))));
+            } catch (final IllegalAccessException e) {
+                throw new IllegalStateException(e);
             }
         }
         if (classMapping.mapAdder != null) {

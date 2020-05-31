@@ -20,6 +20,7 @@ package org.apache.johnzon.mapper.access;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -113,6 +114,7 @@ public interface AccessMode {
     Adapter<?, ?> findAdapter(Class<?> clazz);
     Method findAnyGetter(Class<?> clazz);
     Method findAnySetter(Class<?> clazz);
+    Field findAnyField(Class<?> clazz);
 
     default Method findMapAdder(final Class<?> clazz) {
         return MapHelper.find((name, type, param) -> type.getMethod("add" + name, String.class, param), clazz);

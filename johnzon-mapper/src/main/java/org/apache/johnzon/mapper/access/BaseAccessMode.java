@@ -30,15 +30,18 @@ import java.beans.ConstructorProperties;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -302,7 +305,7 @@ public abstract class BaseAccessMode implements AccessMode {
         for (final Method current : clazz.getMethods()) {
             if (current.getAnnotation(JohnzonAny.class) != null) {
                 final Class<?>[] parameterTypes = current.getParameterTypes();
-                if (parameterTypes.length == 2 && parameterTypes[0] == String.class && parameterTypes[1] == Object.class) {
+                if (parameterTypes.length == 2 && parameterTypes[0] == String.class) {
                     if (m != null) {
                         throw new IllegalArgumentException("Ambiguous @JohnzonAny on " + m + " and " + current);
                     }
@@ -311,6 +314,24 @@ public abstract class BaseAccessMode implements AccessMode {
             }
         }
         return m;
+    }
+
+    @Override
+    public Field findAnyField(final Class<?> clazz) {
+        if (clazz.isInterface() || clazz.isEnum()) {
+            return null;
+        }
+        Class<?> current = clazz;
+        final Set<Class<?>> visited = new HashSet<>();
+        while (current != null && current != Object.class && visited.add(current)) {
+            for (final Field f : current.getDeclaredFields()) {
+                if (f.isAnnotationPresent(JohnzonAny.class)) { // todo: validation? waiting for jsonb standard behavior
+                    return f;
+                }
+            }
+            current = clazz.getSuperclass();
+        }
+        return null;
     }
 
     private <T> Map<String, T> sanitize(final Class<?> type, final Map<String, T> delegate) {

@@ -728,6 +728,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     }
 
     @Override
+    public Field findAnyField(final Class<?> clazz) {
+        return partialDelegate.findAnyField(clazz);
+    }
+
+    @Override
     public void afterParsed(final Class<?> clazz) {
         parsingCache.remove(clazz);
         partialDelegate.afterParsed(clazz);

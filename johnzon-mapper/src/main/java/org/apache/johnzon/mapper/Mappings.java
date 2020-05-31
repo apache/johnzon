@@ -25,6 +25,7 @@ import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
+import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
@@ -53,6 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
 import org.apache.johnzon.mapper.converter.EnumConverter;
@@ -72,6 +74,7 @@ public class Mappings {
         public final ObjectConverter.Writer writer;
         public final Getter anyGetter;
         public final Method anySetter;
+        public final Field anyField;
         public final Method mapAdder;
         public final Class<?> mapAdderType;
 
@@ -83,7 +86,7 @@ public class Mappings {
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
                                final Adapter<?, ?> adapter,
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
-                               final Getter anyGetter, final Method anySetter,
+                               final Getter anyGetter, final Method anySetter, final Field anyField,
                                final Method mapAdder) {
             this.clazz = clazz;
             this.factory = factory;
@@ -94,6 +97,7 @@ public class Mappings {
             this.reader = reader;
             this.anyGetter = anyGetter;
             this.anySetter = anySetter;
+            this.anyField = anyField;
             this.mapAdder = mapAdder;
             this.mapAdderType = mapAdder == null ? null : mapAdder.getParameterTypes()[1];
         }
@@ -479,6 +483,7 @@ public class Mappings {
         }
 
         final Method anyGetter = accessMode.findAnyGetter(clazz);
+        final Field anyField = accessMode.findAnyField(clazz);
         final ClassMapping mapping = new ClassMapping(
                 clazz, accessMode.findFactory(clazz), getters, setters,
                 accessMode.findAdapter(clazz),
@@ -486,8 +491,11 @@ public class Mappings {
                 accessMode.findWriter(clazz),
                 anyGetter != null ? new Getter(
                         new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false,false, false, false, true, null, null, -1, null) : null,
+                        false,false, false, false, true, null, null, -1, null) :
+                        (anyField != null ? new Getter(new FieldAccessMode.FieldReader(anyField, anyField.getGenericType()),
+                        false,false, false, false, true, null, null, -1, null) : null),
                 accessMode.findAnySetter(clazz),
+                anyField,
                 Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
 
         accessMode.afterParsed(clazz);
