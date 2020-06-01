@@ -29,7 +29,7 @@
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon</artifactId>
   <packaging>pom</packaging>
-  <version>1.2.7-SNAPSHOT</version>
+  <version>1.2.7</version>
   <name>Apache Johnzon</name>
   <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
@@ -466,7 +466,7 @@
     <connection>scm:git:https://git-wip-us.apache.org/repos/asf/johnzon.git</connection>
     <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/johnzon.git</developerConnection>
     <url>https://git-wip-us.apache.org/repos/asf?p=johnzon.git</url>
-    <tag>HEAD</tag>
+    <tag>v1.2.7</tag>
   </scm>
 
   <reporting>
