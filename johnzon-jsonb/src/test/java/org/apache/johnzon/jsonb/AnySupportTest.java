@@ -49,6 +49,21 @@ public class AnySupportTest {
         assertEquals("{\"a\":{\"b\":\"c\"}}", rule.toJson(object));
     }
 
+    @Test
+    public void mixed() {
+        final Mixed object = rule.fromJson("{\"explicit\":\"a\",\"bar\":\"dummy\"}", Mixed.class);
+        assertEquals("a", object.explicit);
+        assertEquals(singletonMap("bar", "dummy"), object.values);
+        assertEquals("{\"explicit\":\"a\",\"bar\":\"dummy\"}", rule.toJson(object));
+    }
+
+    public static class Mixed {
+        public String explicit;
+
+        @JohnzonAny
+        private Map<String, String> values;
+    }
+
     public static class Foo {
         @JohnzonAny
         private Map<String, String> values;

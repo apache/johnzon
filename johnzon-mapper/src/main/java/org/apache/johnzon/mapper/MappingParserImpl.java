@@ -440,6 +440,7 @@ public class MappingParserImpl implements MappingParser {
             final Type tRef = type;
             try {
                 classMapping.anyField.set(t, object.entrySet().stream()
+                    .filter(it -> !classMapping.setters.containsKey(it.getKey()))
                     .collect(toMap(Map.Entry::getKey, e -> toValue(null, e.getValue(), null, null,
                             ParameterizedType.class.cast(classMapping.anyField.getGenericType()).getActualTypeArguments()[1], null,
                             isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, e.getKey()) : null, tRef))));
