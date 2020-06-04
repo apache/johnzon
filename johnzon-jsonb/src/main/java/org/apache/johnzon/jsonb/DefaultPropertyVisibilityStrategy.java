@@ -32,6 +32,7 @@ import javax.json.bind.config.PropertyVisibilityStrategy;
 
 class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.PropertyVisibilityStrategy {
     private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
+    private volatile boolean skipGetpackage;
 
     @Override
     public boolean isVisible(final Field field) {
@@ -75,7 +76,13 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
                 break;
             }
             final String parentPack = name.substring(0, end);
-            p = Package.getPackage(parentPack);
+            if (!skipGetpackage) {
+                try {
+                    p = Package.getPackage(parentPack);
+                } catch (final Error unsupported) {
+                    skipGetpackage = true; // graalvm likely
+                }
+            }
             if (p == null) {
                 try {
                     p = ofNullable(type.getClassLoader()).orElseGet(ClassLoader::getSystemClassLoader)
