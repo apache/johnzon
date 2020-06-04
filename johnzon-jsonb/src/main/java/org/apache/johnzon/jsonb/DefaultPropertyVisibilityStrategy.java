@@ -75,6 +75,7 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
             if (end < 0) {
                 break;
             }
+            p = null;
             final String parentPack = name.substring(0, end);
             if (!skipGetpackage) {
                 try {
