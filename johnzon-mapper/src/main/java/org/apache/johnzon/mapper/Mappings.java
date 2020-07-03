@@ -387,15 +387,16 @@ public class Mappings {
     }
 
     public ClassMapping findOrCreateClassMapping(final Type clazz) {
-        return doFindOrCreateClassMapping(clazz, emptyMap());
+        return doFindOrCreateClassMapping(clazz, emptyMap(), false);
     }
 
-    private ClassMapping doFindOrCreateClassMapping(final Type clazz, final Map<Type, Type> args) {
+    private ClassMapping doFindOrCreateClassMapping(final Type clazz, final Map<Type, Type> args,
+                                                    final boolean noPutForClass) {
         ClassMapping classMapping = classes.get(clazz);
         if (classMapping == null) {
             if (ParameterizedType.class.isInstance(clazz)) {
                 final ParameterizedType pt = ParameterizedType.class.cast(clazz);
-                final ClassMapping mapping = doFindOrCreateClassMapping(pt.getRawType(), Generics.toResolvedTypes(pt));
+                final ClassMapping mapping = doFindOrCreateClassMapping(pt.getRawType(), Generics.toResolvedTypes(pt), true);
                 return putOrGetClassMapping(clazz, mapping);
             }
             if (!Class.class.isInstance(clazz)) {
@@ -414,7 +415,9 @@ public class Mappings {
             } else {
                 classMapping = createClassMapping(asClass, args);
             }
-            classMapping = putOrGetClassMapping(clazz, classMapping);
+            if (!noPutForClass) {
+                classMapping = putOrGetClassMapping(clazz, classMapping);
+            }
         }
         return classMapping;
     }
