@@ -21,6 +21,7 @@ package org.apache.johnzon.mapper;
 import static java.util.Collections.emptyMap;
 
 import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.map.LazyConverterMap;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -31,7 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class MapperConfigTest {
 
@@ -156,7 +156,7 @@ public class MapperConfigTest {
 
 
     private MapperConfig createConfig(Map<Class<?>, ObjectConverter.Codec<?>> converter) {
-        return new MapperConfig(new ConcurrentHashMap<>(0),
+        return new MapperConfig(new LazyConverterMap(),
                                 Map.class.cast(converter), Map.class.cast(converter),
                                 -1,
                                 true,

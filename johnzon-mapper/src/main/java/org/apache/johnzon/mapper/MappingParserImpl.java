@@ -503,15 +503,9 @@ public class MappingParserImpl implements MappingParser {
             if (JsonObject.class == key.getTo() || JsonStructure.class == key.getTo()) {
                 return converter.to(jsonValue.asJsonObject());
             }
-
-            //X TODO maybe we can put this into MapperConfig?
-            //X      config.getAdapter(AdapterKey)
-            //X      config.getAdapterKey(Adapter)
-            final AdapterKey adapterKey = getAdapterKey(converter);
-
             final Object param;
             try {
-                Type to = adapterKey.getTo();
+                Type to = key.getTo();
                 param = buildObject(to, JsonObject.class.cast(jsonValue), to instanceof Class, jsonPointer);
             } catch (final Exception e) {
                 throw new MapperException(e);
@@ -575,9 +569,7 @@ public class MappingParserImpl implements MappingParser {
 
         if (adapterKey == null) {
             if (converter instanceof TypeAwareAdapter) {
-                TypeAwareAdapter typeAwareAdapter = (TypeAwareAdapter) converter;
-                adapterKey = new AdapterKey(typeAwareAdapter.getFrom(), typeAwareAdapter.getTo());
-                config.getReverseAdapters().putIfAbsent(converter, adapterKey);
+                return TypeAwareAdapter.class.cast(converter).getKey();
 
             } else {
                 Class<?> current = converter.getClass();
@@ -655,7 +647,7 @@ public class MappingParserImpl implements MappingParser {
             if (JsonObject.class == type || JsonStructure.class == type) {
                 return jsonValue;
             }
-            final boolean typedAdapter = TypeAwareAdapter.class.isInstance(itemConverter);
+            final boolean typedAdapter = !ConverterAdapter.class.isInstance(itemConverter) && TypeAwareAdapter.class.isInstance(itemConverter);
             final Object object = buildObject(
                     baseInstance != null ? baseInstance.getClass() : (
                             typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
@@ -1136,12 +1128,12 @@ public class MappingParserImpl implements MappingParser {
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (Enum.class.isAssignableFrom(clazz)) {
-                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz));
+                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz), clazz);
                 config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;
             }
         }
-        final List<AdapterKey> matched = config.getAdapters().keySet().stream()
+        final List<AdapterKey> matched = config.getAdapters().adapterKeys().stream()
                 .filter(k -> k.isAssignableFrom(aClass))
                 .collect(toList());
         if (matched.size() == 1) {

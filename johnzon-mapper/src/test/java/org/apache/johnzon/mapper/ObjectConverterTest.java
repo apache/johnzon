@@ -108,6 +108,15 @@ public class ObjectConverterTest {
             result = 31 * result + Arrays.hashCode(linkedPersonsArray);
             return result;
         }
+
+        @Override
+        public String toString() {
+            return "Contact{" +
+                    "linkedPersons=" + linkedPersons +
+                    ", linkedPersonsArray=" + Arrays.toString(linkedPersonsArray) +
+                    ", personMap=" + personMap +
+                    '}';
+        }
     }
 
     public static class Person {
@@ -155,6 +164,14 @@ public class ObjectConverterTest {
             int result = firstName != null ? firstName.hashCode() : 0;
             result = 31 * result + (lastName != null ? lastName.hashCode() : 0);
             return result;
+        }
+
+        @Override
+        public String toString() {
+            return "Person{" +
+                    "firstName='" + firstName + '\'' +
+                    ", lastName='" + lastName + '\'' +
+                    '}';
         }
     }
 }

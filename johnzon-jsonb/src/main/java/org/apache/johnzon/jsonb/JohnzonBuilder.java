@@ -18,72 +18,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import static java.time.format.DateTimeFormatter.ofPattern;
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-import static java.time.temporal.ChronoField.YEAR;
-import static java.util.Collections.emptyMap;
-import static java.util.Optional.ofNullable;
-import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
-import static javax.json.bind.config.PropertyOrderStrategy.ANY;
-
-import java.io.Closeable;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.OffsetTime;
-import java.time.Period;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQueries;
-import java.util.Base64;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.SimpleTimeZone;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import javax.json.JsonBuilderFactory;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.JsonbException;
-import javax.json.bind.adapter.JsonbAdapter;
-import javax.json.bind.config.BinaryDataStrategy;
-import javax.json.bind.config.PropertyNamingStrategy;
-import javax.json.bind.config.PropertyVisibilityStrategy;
-import javax.json.bind.serializer.JsonbDeserializer;
-import javax.json.bind.serializer.JsonbSerializer;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParserFactory;
-
 import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.core.JsonParserFactoryImpl;
@@ -95,7 +29,6 @@ import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
 import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
-import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
@@ -103,8 +36,42 @@ import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
+import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
+
+import javax.json.JsonBuilderFactory;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
+import javax.json.bind.adapter.JsonbAdapter;
+import javax.json.bind.config.BinaryDataStrategy;
+import javax.json.bind.config.PropertyNamingStrategy;
+import javax.json.bind.config.PropertyVisibilityStrategy;
+import javax.json.bind.serializer.JsonbDeserializer;
+import javax.json.bind.serializer.JsonbSerializer;
+import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParserFactory;
+import java.io.Closeable;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
+
+import static java.time.format.DateTimeFormatter.ofPattern;
+import static java.util.Collections.emptyMap;
+import static java.util.Optional.ofNullable;
+import static javax.json.bind.config.PropertyNamingStrategy.IDENTITY;
+import static javax.json.bind.config.PropertyOrderStrategy.ANY;
 
 public class JohnzonBuilder implements JsonbBuilder {
     private static final Object NO_BM = new Object();
@@ -212,8 +179,13 @@ public class JohnzonBuilder implements JsonbBuilder {
         builder.setUseJsRange(toBool( // https://github.com/eclipse-ee4j/jsonb-api/issues/180
                 System.getProperty("johnzon.use-js-range", config.getProperty("johnzon.use-js-range")
                 .map(String::valueOf).orElse("false"))));
-
-        final Map<AdapterKey, Adapter<?, ?>> defaultConverters = createJava8Converters(builder);
+        builder.setUseShortISO8601Format(false);
+        config.getProperty(JsonbConfig.DATE_FORMAT)
+                .map(String.class::cast)
+                .ifPresent(dateFormat -> builder.setAdaptersDateTimeFormatter(config.getProperty(JsonbConfig.LOCALE)
+                        .map(it -> String.class.isInstance(it) ? new LocaleConverter().to(it.toString()) : Locale.class.cast(it))
+                        .map(value -> ofPattern(dateFormat, value))
+                        .orElseGet(() -> ofPattern(dateFormat))));
 
         final JohnzonAdapterFactory factory = config.getProperty("johnzon.factory").map(val -> {
             if (JohnzonAdapterFactory.class.isInstance(val)) {
@@ -241,7 +213,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .orElseGet(() -> new JsonbAccessMode(
                         propertyNamingStrategy, orderValue, visibilityStrategy,
                         !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                        defaultConverters,
+                        builder.getAdapters(),
                         factory, jsonp, builderFactorySupplier, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
                                 .map(this::toAccessMode)
@@ -266,7 +238,7 @@ public class JohnzonBuilder implements JsonbBuilder {
             final Type[] args = pt.getActualTypeArguments();
             final JohnzonJsonbAdapter johnzonJsonbAdapter = new JohnzonJsonbAdapter(adapter, args[0], args[1]);
             builder.addAdapter(args[0], args[1], johnzonJsonbAdapter);
-            defaultConverters.put(new AdapterKey(args[0], args[1]), johnzonJsonbAdapter);
+            builder.getAdapters().put(new AdapterKey(args[0], args[1]), johnzonJsonbAdapter);
         }));
 
         ofNullable(config.getProperty("johnzon.fail-on-unknown-properties")
@@ -446,405 +418,6 @@ public class JohnzonBuilder implements JsonbBuilder {
 
     private ClassLoader tccl() {
         return ofNullable(Thread.currentThread().getContextClassLoader()).orElseGet(ClassLoader::getSystemClassLoader);
-    }
-
-    // TODO: move these converters in converter package
-    private Map<AdapterKey, Adapter<?, ?>> createJava8Converters(final MapperBuilder builder) {
-        final Map<AdapterKey, Adapter<?, ?>> converters = new HashMap<>();
-
-        final ZoneId zoneIDUTC = ZoneId.of("UTC");
-
-        // built-in converters not in mapper
-        converters.put(new AdapterKey(Period.class, String.class), new ConverterAdapter<>(new Converter<Period>() {
-            @Override
-            public String toString(final Period instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public Period fromString(final String text) {
-                return Period.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(Duration.class, String.class), new ConverterAdapter<>(new Converter<Duration>() {
-            @Override
-            public String toString(final Duration instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public Duration fromString(final String text) {
-                return Duration.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new Converter<Date>() {
-            @Override
-            public String toString(final Date instance) {
-                return ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC)
-                        .format(DateTimeFormatter.ISO_ZONED_DATE_TIME);
-            }
-
-            @Override
-            public Date fromString(final String text) {
-                try {
-                    return Date.from(ZonedDateTime.parse(text).toInstant());
-                } catch (final DateTimeParseException dte) {
-                    return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
-                }
-            }
-        }));
-        converters.put(new AdapterKey(Calendar.class, String.class), new ConverterAdapter<>(new Converter<Calendar>() {
-            @Override
-            public String toString(final Calendar instance) {
-                return toStringCalendar(instance);
-            }
-
-            @Override
-            public Calendar fromString(final String text) {
-                return fromCalendar(text, zdt -> {
-                    final Calendar instance = Calendar.getInstance();
-                    instance.clear();
-                    instance.setTimeZone(TimeZone.getTimeZone(zdt.getZone()));
-                    instance.setTimeInMillis(zdt.toInstant().toEpochMilli());
-                    return instance;
-                });
-            }
-        }));
-        converters.put(new AdapterKey(GregorianCalendar.class, String.class), new ConverterAdapter<>(new Converter<GregorianCalendar>() {
-            @Override
-            public String toString(final GregorianCalendar instance) {
-                return toStringCalendar(instance);
-            }
-
-            @Override
-            public GregorianCalendar fromString(final String text) {
-                return fromCalendar(text, GregorianCalendar::from);
-            }
-        }));
-        converters.put(new AdapterKey(TimeZone.class, String.class), new ConverterAdapter<>(new Converter<TimeZone>() {
-            @Override
-            public String toString(final TimeZone instance) {
-                return instance.getID();
-            }
-
-            @Override
-            public TimeZone fromString(final String text) {
-                checkForDeprecatedTimeZone(text);
-                return TimeZone.getTimeZone(text);
-            }
-        }));
-        converters.put(new AdapterKey(ZoneId.class, String.class), new ConverterAdapter<>(new Converter<ZoneId>() {
-            @Override
-            public String toString(final ZoneId instance) {
-                return instance.getId();
-            }
-
-            @Override
-            public ZoneId fromString(final String text) {
-                return ZoneId.of(text);
-            }
-        }));
-        converters.put(new AdapterKey(ZoneOffset.class, String.class), new ConverterAdapter<>(new Converter<ZoneOffset>() {
-            @Override
-            public String toString(final ZoneOffset instance) {
-                return instance.getId();
-            }
-
-            @Override
-            public ZoneOffset fromString(final String text) {
-                return ZoneOffset.of(text);
-            }
-        }));
-        converters.put(new AdapterKey(SimpleTimeZone.class, String.class), new ConverterAdapter<>(new Converter<SimpleTimeZone>() {
-            @Override
-            public String toString(final SimpleTimeZone instance) {
-                return instance.getID();
-            }
-
-            @Override
-            public SimpleTimeZone fromString(final String text) {
-                checkForDeprecatedTimeZone(text);
-                final TimeZone timeZone = TimeZone.getTimeZone(text);
-                return new SimpleTimeZone(timeZone.getRawOffset(), timeZone.getID());
-            }
-        }));
-        converters.put(new AdapterKey(Instant.class, String.class), new ConverterAdapter<>(new Converter<Instant>() {
-            @Override
-            public String toString(final Instant instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public Instant fromString(final String text) {
-                return Instant.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(LocalDate.class, String.class), new ConverterAdapter<>(new Converter<LocalDate>() {
-            @Override
-            public String toString(final LocalDate instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public LocalDate fromString(final String text) {
-                return LocalDate.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(LocalTime.class, String.class), new ConverterAdapter<>(new Converter<LocalTime>() {
-            @Override
-            public String toString(final LocalTime instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public LocalTime fromString(final String text) {
-                return LocalTime.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new Converter<LocalDateTime>() {
-            @Override
-            public String toString(final LocalDateTime instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public LocalDateTime fromString(final String text) {
-                return LocalDateTime.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(ZonedDateTime.class, String.class), new ConverterAdapter<>(new Converter<ZonedDateTime>() {
-            @Override
-            public String toString(final ZonedDateTime instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public ZonedDateTime fromString(final String text) {
-                return ZonedDateTime.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(OffsetDateTime.class, String.class), new ConverterAdapter<>(new Converter<OffsetDateTime>() {
-            @Override
-            public String toString(final OffsetDateTime instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public OffsetDateTime fromString(final String text) {
-                return OffsetDateTime.parse(text);
-            }
-        }));
-        converters.put(new AdapterKey(OffsetTime.class, String.class), new ConverterAdapter<>(new Converter<OffsetTime>() {
-            @Override
-            public String toString(final OffsetTime instance) {
-                return instance.toString();
-            }
-
-            @Override
-            public OffsetTime fromString(final String text) {
-                return OffsetTime.parse(text);
-            }
-        }));
-        addDateFormatConfigConverters(converters, zoneIDUTC);
-
-        converters.forEach((k, v) -> builder.addAdapter(k.getFrom(), k.getTo(), v));
-        return converters;
-    }
-
-    private String toStringCalendar(final Calendar instance) {
-        if (!hasTime(instance)) { // spec
-            final LocalDate localDate = LocalDate.of(
-                    instance.get(Calendar.YEAR),
-                    instance.get(Calendar.MONTH) + 1,
-                    instance.get(Calendar.DAY_OF_MONTH));
-            return localDate.toString() +
-                    (instance.getTimeZone() != null ?
-                            instance.getTimeZone().toZoneId().getRules()
-                                    .getOffset(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(localDate.toEpochDay()))) : "");
-        }
-        return ZonedDateTime.ofInstant(instance.toInstant(), instance.getTimeZone().toZoneId())
-                .format(DateTimeFormatter.ISO_DATE_TIME);
-    }
-
-    private boolean hasTime(final Calendar instance) {
-        if (!instance.isSet(Calendar.HOUR_OF_DAY)) {
-            return false;
-        }
-        return instance.get(Calendar.HOUR_OF_DAY) != 0 ||
-            (instance.isSet(Calendar.MINUTE)&& instance.get(Calendar.MINUTE) != 0) ||
-            (instance.isSet(Calendar.SECOND) && instance.get(Calendar.SECOND) != 0);
-    }
-
-    private <T extends Calendar> T fromCalendar(final String text, final Function<ZonedDateTime, T> calendarSupplier) {
-        switch (text.length()) {
-            case 10: {
-                final ZonedDateTime date = LocalDate.parse(text)
-                        .atTime(0, 0, 0)
-                        .atZone(ZoneId.of("UTC"));
-                return calendarSupplier.apply(date);
-            }
-            default:
-                final ZonedDateTime zonedDateTime = ZonedDateTime.parse(text);
-                return calendarSupplier.apply(zonedDateTime);
-        }
-    }
-
-
-    private void addDateFormatConfigConverters(final Map<AdapterKey, Adapter<?, ?>> converters, final ZoneId zoneIDUTC) {
-        // config, override defaults
-        config.getProperty(JsonbConfig.DATE_FORMAT).map(String.class::cast).ifPresent(dateFormat -> {
-            final Optional<Locale> locale = config.getProperty(JsonbConfig.LOCALE).map(Locale.class::cast);
-            final DateTimeFormatter formatter = locale.isPresent() ? ofPattern(dateFormat, locale.get()) : ofPattern(dateFormat);
-
-            converters.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<>(new Converter<Date>() {
-
-                @Override
-                public String toString(final Date instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
-                }
-
-                @Override
-                public Date fromString(final String text) {
-                    try {
-                        return Date.from(parseZonedDateTime(text, formatter, zoneIDUTC).toInstant());
-                    } catch (final DateTimeParseException dpe) {
-                        return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
-                    }
-                }
-            }));
-            converters.put(new AdapterKey(LocalDateTime.class, String.class), new ConverterAdapter<>(new Converter<LocalDateTime>() {
-
-                @Override
-                public String toString(final LocalDateTime instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(ZoneOffset.UTC), zoneIDUTC));
-                }
-
-                @Override
-                public LocalDateTime fromString(final String text) {
-                    try {
-                        return parseZonedDateTime(text, formatter, zoneIDUTC).toLocalDateTime();
-                    } catch (final DateTimeParseException dpe) {
-                        return LocalDateTime.parse(text);
-                    }
-                }
-            }));
-            converters.put(new AdapterKey(LocalDate.class, String.class), new ConverterAdapter<>(new Converter<LocalDate>() {
-
-                @Override
-                public String toString(final LocalDate instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(TimeUnit.DAYS.toMillis(instance.toEpochDay())), zoneIDUTC));
-                }
-
-                @Override
-                public LocalDate fromString(final String text) {
-                    try {
-                        return parseZonedDateTime(text, formatter, zoneIDUTC).toLocalDate();
-                    } catch (final DateTimeParseException dpe) {
-                        return LocalDate.parse(text);
-                    }
-                }
-            }));
-            converters.put(new AdapterKey(OffsetDateTime.class, String.class), new ConverterAdapter<>(new Converter<OffsetDateTime>() {
-
-                @Override
-                public String toString(final OffsetDateTime instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
-                }
-
-                @Override
-                public OffsetDateTime fromString(final String text) {
-                    try {
-                        return parseZonedDateTime(text, formatter, zoneIDUTC).toOffsetDateTime();
-                    } catch (final DateTimeParseException dpe) {
-                        return OffsetDateTime.parse(text);
-                    }
-                }
-            }));
-            converters.put(new AdapterKey(ZonedDateTime.class, String.class), new ConverterAdapter<>(new Converter<ZonedDateTime>() {
-
-                @Override
-                public String toString(final ZonedDateTime instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), zoneIDUTC));
-                }
-
-                @Override
-                public ZonedDateTime fromString(final String text) {
-                    try {
-                        return parseZonedDateTime(text, formatter, zoneIDUTC);
-                    } catch (final DateTimeParseException dpe) {
-                        return ZonedDateTime.parse(text);
-                    }
-                }
-            }));
-            converters.put(new AdapterKey(Calendar.class, String.class), new ConverterAdapter<>(new Converter<Calendar>() {
-
-                @Override
-                public String toString(final Calendar instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), instance.getTimeZone().toZoneId()));
-                }
-
-                @Override
-                public Calendar fromString(final String text) {
-                    final ZonedDateTime zonedDateTime = parseZonedDateTime(text, formatter, zoneIDUTC);
-                    final Calendar instance = Calendar.getInstance();
-                    instance.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
-                    instance.setTime(Date.from(zonedDateTime.toInstant()));
-                    return instance;
-                }
-            }));
-            converters.put(new AdapterKey(GregorianCalendar.class, String.class), new ConverterAdapter<>(new Converter<GregorianCalendar>() {
-
-                @Override
-                public String toString(final GregorianCalendar instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), instance.getTimeZone().toZoneId()));
-                }
-
-                @Override
-                public GregorianCalendar fromString(final String text) {
-                    final ZonedDateTime zonedDateTime = parseZonedDateTime(text, formatter, zoneIDUTC);
-                    final Calendar instance = GregorianCalendar.getInstance();
-                    instance.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
-                    instance.setTime(Date.from(zonedDateTime.toInstant()));
-                    return GregorianCalendar.class.cast(instance);
-                }
-            }));
-            converters.put(new AdapterKey(Instant.class, String.class), new ConverterAdapter<>(new Converter<Instant>() {
-
-                @Override
-                public String toString(final Instant instance) {
-                    return formatter.format(ZonedDateTime.ofInstant(instance, zoneIDUTC));
-                }
-
-                @Override
-                public Instant fromString(final String text) {
-                    return parseZonedDateTime(text, formatter, zoneIDUTC).toInstant();
-                }
-            }));
-        });
-    }
-    
-    private static ZonedDateTime parseZonedDateTime(final String text, final DateTimeFormatter formatter, final ZoneId defaultZone){
-        TemporalAccessor parse = formatter.parse(text);
-        ZoneId zone = parse.query(TemporalQueries.zone());
-        if (Objects.isNull(zone)) {
-            zone = defaultZone;
-        }
-        int year = parse.isSupported(YEAR) ? parse.get(YEAR) : 0;
-        int month = parse.isSupported(MONTH_OF_YEAR) ? parse.get(MONTH_OF_YEAR) : 0;
-        int day = parse.isSupported(DAY_OF_MONTH) ? parse.get(DAY_OF_MONTH) : 0;
-        int hour = parse.isSupported(HOUR_OF_DAY) ? parse.get(HOUR_OF_DAY) : 0;
-        int minute = parse.isSupported(MINUTE_OF_HOUR) ? parse.get(MINUTE_OF_HOUR) : 0;
-        int second = parse.isSupported(SECOND_OF_MINUTE) ? parse.get(SECOND_OF_MINUTE) : 0;
-        int millisecond = parse.isSupported(MILLI_OF_SECOND) ? parse.get(MILLI_OF_SECOND) : 0;
-        return ZonedDateTime.of(year, month, day, hour, minute, second, millisecond, zone);
-    }
-
-    private static void checkForDeprecatedTimeZone(final String text) {
-        switch (text) {
-            case "CST": // really for TCK, this sucks for end users so we don't fail for all deprecated zones
-                throw new JsonbException("Deprecated timezone: '" + text + '"');
-            default:
-        }
     }
 
     private Map<String, ?> generatorConfig() {

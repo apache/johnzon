@@ -18,12 +18,31 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.TypeAwareAdapter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
 
+import java.lang.reflect.Type;
 import java.util.Locale;
 
 // from [lang]
-public class LocaleConverter implements Adapter<Locale, String> {
+public class LocaleConverter implements TypeAwareAdapter<Locale, String> {
+    private final AdapterKey key = new AdapterKey(Locale.class, String.class);
+
+    @Override
+    public Type getTo() {
+        return key.getTo();
+    }
+
+    @Override
+    public Type getFrom() {
+        return key.getFrom();
+    }
+
+    @Override
+    public AdapterKey getKey() {
+        return key;
+    }
+
     @Override
     public String from(final Locale instance) {
         return instance.toString();

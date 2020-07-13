@@ -19,6 +19,7 @@
 package org.apache.johnzon.jsonb.converter;
 
 import org.apache.johnzon.mapper.TypeAwareAdapter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
 
 import javax.json.bind.JsonbException;
 import javax.json.bind.adapter.JsonbAdapter;
@@ -28,11 +29,13 @@ public class JohnzonJsonbAdapter<JsonType, OriginalType> implements TypeAwareAda
     private final JsonbAdapter<OriginalType, JsonType> delegate;
     private final Type from;
     private final Type to;
+    private final AdapterKey key;
 
     public JohnzonJsonbAdapter(final JsonbAdapter<OriginalType, JsonType> delegate, final Type from, final Type to) {
         this.delegate = delegate;
         this.from = from;
         this.to = to;
+        this.key = new AdapterKey(from, to);
     }
 
     @Override
@@ -57,6 +60,11 @@ public class JohnzonJsonbAdapter<JsonType, OriginalType> implements TypeAwareAda
         } catch (final Exception e) {
             throw new JsonbException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    public AdapterKey getKey() {
+        return key;
     }
 
     @Override

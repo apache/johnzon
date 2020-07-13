@@ -24,15 +24,43 @@ import javax.json.JsonArray;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
+import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 public class JohnzonJsonbTest {
+    @Rule
+    public final JsonbRule rule = new JsonbRule();
+
     @Test
     public void jsonArray() throws Exception {
         try (final Jsonb jsonb = JsonbBuilder.create()) {
             final String json = "[{\"foo\":\"bar\"}]";
             final JsonArray array = jsonb.fromJson(json, JsonArray.class);
             assertEquals(json, array.toString());
+        }
+    }
+
+    @Test
+    public void longBounds() {
+        final String max = rule.toJson(new LongWrapper(Long.MAX_VALUE));
+        assertEquals("{\"value\":9223372036854775807}", max);
+        assertEquals(Long.MAX_VALUE, rule.fromJson(max, LongWrapper.class).value, 0);
+
+        final String min = rule.toJson(new LongWrapper(Long.MIN_VALUE));
+        assertEquals("{\"value\":-9223372036854775808}", min);
+        assertEquals(Long.MIN_VALUE, rule.fromJson(min, LongWrapper.class).value, 0);
+    }
+
+    public static class LongWrapper {
+        public Long value;
+
+        public LongWrapper() {
+            // no-op
+        }
+
+        public LongWrapper(final Long value) {
+            this.value = value;
         }
     }
 }

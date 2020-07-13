@@ -197,7 +197,7 @@ public abstract class BaseAccessMode implements AccessMode {
                         try {
                             MapperConverter mapperConverter = JohnzonConverter.class.cast(a).value().newInstance();
                             if (mapperConverter instanceof Converter) {
-                                final Adapter<?, ?> converter = new ConverterAdapter((Converter) mapperConverter);
+                                final Adapter<?, ?> converter = new ConverterAdapter((Converter) mapperConverter, constructor.getGenericParameterTypes()[i]);
                                 if (matches(constructor.getParameterTypes()[i], converter)) {
                                     constructorParameterConverters[i] = converter;
                                     constructorItemParameterConverters[i] = null;

@@ -28,25 +28,18 @@ import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
-import org.apache.johnzon.mapper.converter.BigDecimalConverter;
-import org.apache.johnzon.mapper.converter.BigIntegerConverter;
 import org.apache.johnzon.mapper.converter.BooleanConverter;
 import org.apache.johnzon.mapper.converter.ByteConverter;
 import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
-import org.apache.johnzon.mapper.converter.ClassConverter;
-import org.apache.johnzon.mapper.converter.DateConverter;
 import org.apache.johnzon.mapper.converter.DoubleConverter;
 import org.apache.johnzon.mapper.converter.FloatConverter;
 import org.apache.johnzon.mapper.converter.IntegerConverter;
-import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.converter.LongConverter;
 import org.apache.johnzon.mapper.converter.ShortConverter;
-import org.apache.johnzon.mapper.converter.StringConverter;
-import org.apache.johnzon.mapper.converter.URIConverter;
-import org.apache.johnzon.mapper.converter.URLConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.map.LazyConverterMap;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonReaderFactory;
@@ -56,58 +49,20 @@ import javax.json.stream.JsonGeneratorFactory;
 import java.io.Closeable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.net.URI;
-import java.net.URL;
 import java.nio.charset.Charset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 // this class is responsible to hold any needed config
 // to build the runtime
 public class MapperBuilder {
-    private static final Map<AdapterKey, Adapter<?, ?>> DEFAULT_CONVERTERS = new HashMap<AdapterKey, Adapter<?, ?>>(24);
-
-    static {
-        //DEFAULT_CONVERTERS.put(Date.class, new DateConverter("yyyy-MM-dd'T'HH:mm:ssZ")); // ISO8601 long RFC822 zone
-        DEFAULT_CONVERTERS.put(new AdapterKey(Date.class, String.class), new ConverterAdapter<Date>(new DateConverter("yyyyMMddHHmmssZ"))); // ISO8601 short
-        DEFAULT_CONVERTERS.put(new AdapterKey(URL.class, String.class), new ConverterAdapter<URL>(new URLConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(URI.class, String.class), new ConverterAdapter<URI>(new URIConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Class.class, String.class), new ConverterAdapter<Class<?>>(new ClassConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(String.class, String.class), new ConverterAdapter<String>(new StringConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(BigDecimal.class, String.class), new ConverterAdapter<BigDecimal>(new BigDecimalConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(BigInteger.class, String.class), new ConverterAdapter<BigInteger>(new BigIntegerConverter()));
-        /* primitives should be hanlded low level and adapters will wrap them in string which is unlikely
-        DEFAULT_CONVERTERS.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<Byte>(new CachedDelegateConverter<Byte>(new ByteConverter())));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<Character>(new CharacterConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Double.class, String.class), new ConverterAdapter<Double>(new DoubleConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Float.class, String.class), new ConverterAdapter<Float>(new FloatConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Integer.class, String.class), new ConverterAdapter<Integer>(new IntegerConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Long.class, String.class), new ConverterAdapter<Long>(new LongConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Short.class, String.class), new ConverterAdapter<Short>(new ShortConverter()));
-        DEFAULT_CONVERTERS.put(new AdapterKey(Boolean.class, String.class), new ConverterAdapter<Boolean>(new CachedDelegateConverter<Boolean>(new BooleanConverter())));
-        DEFAULT_CONVERTERS.put(new AdapterKey(byte.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Byte.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(char.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Character.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(double.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Double.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(float.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Float.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(int.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Integer.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(long.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Long.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(short.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Short.class, String.class)));
-        DEFAULT_CONVERTERS.put(new AdapterKey(boolean.class, String.class), DEFAULT_CONVERTERS.get(new AdapterKey(Boolean.class, String.class)));
-        */
-        DEFAULT_CONVERTERS.put(new AdapterKey(Locale.class, String.class), new LocaleConverter());
-    }
-
     private JsonReaderFactory readerFactory;
     private JsonGeneratorFactory generatorFactory;
     private JsonProvider provider;
@@ -134,7 +89,7 @@ public class MapperBuilder {
     private boolean enforceQuoteString;
     private AccessMode accessMode;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
-    private ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters = new ConcurrentHashMap<AdapterKey, Adapter<?, ?>>(DEFAULT_CONVERTERS);
+    private LazyConverterMap adapters = new LazyConverterMap();
     private Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders = new HashMap<Class<?>, ObjectConverter.Reader<?>>();
     private Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters = new HashMap<Class<?>, ObjectConverter.Writer<?>>();
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
@@ -244,14 +199,14 @@ public class MapperBuilder {
         }
 
         if (primitiveConverters) {
-            adapters.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<Byte>(new CachedDelegateConverter<Byte>(new ByteConverter())));
-            adapters.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<Character>(new CharacterConverter()));
-            adapters.put(new AdapterKey(Double.class, String.class), new ConverterAdapter<Double>(new DoubleConverter()));
-            adapters.put(new AdapterKey(Float.class, String.class), new ConverterAdapter<Float>(new FloatConverter()));
-            adapters.put(new AdapterKey(Integer.class, String.class), new ConverterAdapter<Integer>(new IntegerConverter()));
-            adapters.put(new AdapterKey(Long.class, String.class), new ConverterAdapter<Long>(new LongConverter()));
-            adapters.put(new AdapterKey(Short.class, String.class), new ConverterAdapter<Short>(new ShortConverter()));
-            adapters.put(new AdapterKey(Boolean.class, String.class), new ConverterAdapter<Boolean>(new CachedDelegateConverter<Boolean>(new BooleanConverter())));
+            adapters.put(new AdapterKey(Byte.class, String.class), new ConverterAdapter<>(new CachedDelegateConverter<>(new ByteConverter()), Byte.class));
+            adapters.put(new AdapterKey(Character.class, String.class), new ConverterAdapter<>(new CharacterConverter(), Character.class));
+            adapters.put(new AdapterKey(Double.class, String.class), new ConverterAdapter<>(new DoubleConverter(), Double.class));
+            adapters.put(new AdapterKey(Float.class, String.class), new ConverterAdapter<>(new FloatConverter(), Float.class));
+            adapters.put(new AdapterKey(Integer.class, String.class), new ConverterAdapter<>(new IntegerConverter(), Integer.class));
+            adapters.put(new AdapterKey(Long.class, String.class), new ConverterAdapter<>(new LongConverter(), Long.class));
+            adapters.put(new AdapterKey(Short.class, String.class), new ConverterAdapter<>(new ShortConverter(), Short.class));
+            adapters.put(new AdapterKey(Boolean.class, String.class), new ConverterAdapter<>(new CachedDelegateConverter<>(new BooleanConverter()), Boolean.class));
             adapters.put(new AdapterKey(byte.class, String.class), adapters.get(new AdapterKey(Byte.class, String.class)));
             adapters.put(new AdapterKey(char.class, String.class), adapters.get(new AdapterKey(Character.class, String.class)));
             adapters.put(new AdapterKey(double.class, String.class), adapters.get(new AdapterKey(Double.class, String.class)));
@@ -276,6 +231,25 @@ public class MapperBuilder {
                         typeLoader, discriminatorMapper, discriminator,
                         deserializationPredicate, serializationPredicate),
                 closeables);
+    }
+
+    public ConcurrentHashMap<AdapterKey, Adapter<?,?>> getAdapters() {
+        return adapters;
+    }
+
+    public MapperBuilder setUseShortISO8601Format(final boolean useShortISO8601Format) {
+        adapters.setUseShortISO8601Format(useShortISO8601Format);
+        return this;
+    }
+
+    public MapperBuilder setAdaptersDateTimeFormatter(final DateTimeFormatter dateTimeFormatter) {
+        adapters.setDateTimeFormatter(dateTimeFormatter);
+        return this;
+    }
+
+    public MapperBuilder setAdaptersDateTimeFormatterString(final String dateTimeFormatter) {
+        adapters.setDateTimeFormatter(DateTimeFormatter.ofPattern(dateTimeFormatter));
+        return this;
     }
 
     public MapperBuilder setInterfaceImplementationMapping(final Map<Class<?>, Class<?>> interfaceImplementationMapping) {
@@ -395,13 +369,13 @@ public class MapperBuilder {
 
     @Deprecated // use addAdapter
     public MapperBuilder addPropertyEditor(final Class<?> clazz, final Converter<?> converter) {
-        adapters.put(new AdapterKey(clazz, String.class), new ConverterAdapter(converter));
+        adapters.put(new AdapterKey(clazz, String.class), new ConverterAdapter(converter, clazz));
         return this;
     }
 
     @Deprecated // use addAdapter
     public MapperBuilder addConverter(final Type clazz, final Converter<?> converter) {
-        adapters.put(new AdapterKey(clazz, String.class), new ConverterAdapter(converter));
+        adapters.put(new AdapterKey(clazz, String.class), new ConverterAdapter(converter, clazz));
         return this;
     }
 

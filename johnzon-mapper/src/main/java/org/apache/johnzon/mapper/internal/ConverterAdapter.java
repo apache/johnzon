@@ -18,14 +18,18 @@
  */
 package org.apache.johnzon.mapper.internal;
 
-import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.TypeAwareAdapter;
 
-public class ConverterAdapter<A> implements Adapter<A, String> {
+import java.lang.reflect.Type;
+
+public class ConverterAdapter<A> implements TypeAwareAdapter<A, String> {
     private final Converter<A> converter;
+    private final AdapterKey key;
 
-    public ConverterAdapter(final Converter<A> converter) {
+    public ConverterAdapter(final Converter<A> converter, final Type from) {
         this.converter = converter;
+        this.key = new AdapterKey(from, String.class);
     }
 
     public Converter<A> getConverter() {
@@ -40,5 +44,20 @@ public class ConverterAdapter<A> implements Adapter<A, String> {
     @Override
     public String from(final A a) {
         return converter.toString(a);
+    }
+
+    @Override
+    public Type getTo() {
+        return key.getTo();
+    }
+
+    @Override
+    public Type getFrom() {
+        return key.getFrom();
+    }
+
+    @Override
+    public AdapterKey getKey() {
+        return key;
     }
 }

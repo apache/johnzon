@@ -441,20 +441,20 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             converter = new JohnzonJsonbAdapter(instance.getValue(), actualTypeArguments[0], actualTypeArguments[1]);
         } else if (dateFormat != null) { // TODO: support lists, LocalDate?
             if (Date.class == type) {
-                converter = new ConverterAdapter<>(new JsonbDateConverter(dateFormat));
+                converter = new ConverterAdapter<>(new JsonbDateConverter(dateFormat), Date.class);
             } else if (LocalDateTime.class == type) {
-                converter = new ConverterAdapter<>(new JsonbLocalDateTimeConverter(dateFormat));
+                converter = new ConverterAdapter<>(new JsonbLocalDateTimeConverter(dateFormat), LocalDateTime.class);
             } else if (LocalDate.class == type) {
-                converter = new ConverterAdapter<>(new JsonbLocalDateConverter(dateFormat));
+                converter = new ConverterAdapter<>(new JsonbLocalDateConverter(dateFormat), LocalDate.class);
             } else if (ZonedDateTime.class == type) {
-                converter = new ConverterAdapter<>(new JsonbZonedDateTimeConverter(dateFormat));
+                converter = new ConverterAdapter<>(new JsonbZonedDateTimeConverter(dateFormat), ZonedDateTime.class);
             } else { // can happen if set on the class, todo: refine the checks
                 converter = null; // todo: should we fallback on numberformat?
             }
         } else if (numberFormat != null) {  // TODO: support lists?
-            converter = new ConverterAdapter<>(new JsonbNumberConverter(numberFormat));
+            converter = new ConverterAdapter<>(new JsonbNumberConverter(numberFormat), Number.class);
         } else {
-            converter = new ConverterAdapter<>(new JsonbValueConverter());
+            converter = new ConverterAdapter<>(new JsonbValueConverter(), Object.class);
         }
         return converter;
     }
@@ -985,7 +985,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 try {
                     MapperConverter mapperConverter = johnzonConverter.value().newInstance();
                     if (mapperConverter instanceof Converter) {
-                        converter = new ConverterAdapter<>((Converter) mapperConverter);
+                        converter = new ConverterAdapter<>((Converter) mapperConverter, annotationHolder.getType());
                     } else if (mapperConverter instanceof ObjectConverter.Reader) {
                         reader = (ObjectConverter.Reader) mapperConverter;
                     }
@@ -1045,7 +1045,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 try {
                     MapperConverter mapperConverter = johnzonConverter.value().newInstance();
                     if (mapperConverter instanceof Converter) {
-                        converter = new ConverterAdapter<>((Converter) mapperConverter) ;
+                        converter = new ConverterAdapter<>((Converter) mapperConverter, reader.getType()) ;
                     } else if (mapperConverter instanceof ObjectConverter.Writer) {
                         writer = (ObjectConverter.Writer) mapperConverter;
                     }

@@ -21,13 +21,13 @@ package org.superbiz;
 import org.apache.johnzon.mapper.MapperConfig;
 import org.apache.johnzon.mapper.Mappings;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.map.LazyConverterMap;
 import org.junit.Test;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
@@ -57,7 +57,7 @@ public class ExtendMappingTest {
     public static class MyMappings extends Mappings {
         public MyMappings() {
             super(new MapperConfig(
-                    new ConcurrentHashMap<>(), new HashMap<>(), new HashMap<>(),
+                    new LazyConverterMap(), new HashMap<>(), new HashMap<>(),
                     -1, true, true, true, false, false, false,
                     new FieldAccessMode(false, false),
                     StandardCharsets.UTF_8, String::compareTo, false, false, null, false, false,

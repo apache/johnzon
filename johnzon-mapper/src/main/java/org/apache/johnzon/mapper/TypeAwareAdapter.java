@@ -18,9 +18,15 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.internal.AdapterKey;
+
 import java.lang.reflect.Type;
 
 public interface TypeAwareAdapter<A, B> extends Adapter<A, B> {
     Type getTo();
     Type getFrom();
+
+    default AdapterKey getKey() {
+        return new AdapterKey(getFrom(), getTo());
+    }
 }

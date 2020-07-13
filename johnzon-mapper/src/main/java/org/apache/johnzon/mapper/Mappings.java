@@ -160,16 +160,27 @@ public class Mappings {
                 }
                 if (theObjectConverter == null) {
                     Adapter adapter;
+                    final Type readerType = reader.getType();
                     if (converter instanceof Converter) {
-                        adapter = new ConverterAdapter((Converter) converter);
+                        adapter = new ConverterAdapter((Converter) converter, readerType);
                     } else {
                         adapter = (Adapter) converter;
                     }
 
-                    if (matches(reader.getType(), adapter)) {
+                    if (matches(readerType, adapter)) {
                         theConverter = adapter;
                     } else {
-                        theItemConverter = adapter;
+                        if (converter instanceof Converter) {
+                            if (ParameterizedType.class.isInstance(readerType) && ParameterizedType.class.cast(readerType).getActualTypeArguments().length > 0) {
+                                final Type[] args = ParameterizedType.class.cast(readerType).getActualTypeArguments();
+                                // List<A> or Map<String, A> lead to read the last arg in all cases
+                                theItemConverter = new ConverterAdapter((Converter) converter, args[args.length - 1]);
+                            } else {
+                                theItemConverter = adapter;
+                            }
+                        } else {
+                            theItemConverter = adapter;
+                        }
                     }
                 }
             }
@@ -237,18 +248,29 @@ public class Mappings {
                 if (converter instanceof ObjectConverter.Reader) {
                     theObjectConverter = (ObjectConverter.Reader) converter;
                 }
+                final Type writerType = writer.getType();
                 if (theObjectConverter == null) {
                     Adapter adapter;
                     if (converter instanceof Converter) {
-                        adapter = new ConverterAdapter((Converter) converter);
+                        adapter = new ConverterAdapter((Converter) converter, writerType);
                     } else {
                         adapter = (Adapter) converter;
                     }
 
-                    if (matches(writer.getType(), adapter)) {
+                    if (matches(writerType, adapter)) {
                         theConverter = adapter;
                     } else {
-                        theItemConverter = adapter;
+                        if (converter instanceof Converter) {
+                            if (ParameterizedType.class.isInstance(writerType) && ParameterizedType.class.cast(writerType).getActualTypeArguments().length > 0) {
+                                final Type[] args = ParameterizedType.class.cast(writerType).getActualTypeArguments();
+                                // List<A> or Map<String, A> lead to read the last arg in all cases
+                                theItemConverter = new ConverterAdapter((Converter) converter, args[args.length - 1]);
+                            } else {
+                                theItemConverter = adapter;
+                            }
+                        } else {
+                            theItemConverter = adapter;
+                        }
                     }
                 }
             }
@@ -677,7 +699,7 @@ public class Mappings {
                 final AdapterKey key = new AdapterKey(String.class, type);
                 converter = adapters.get(key); // first ensure user didnt override it
                 if (converter == null) {
-                    converter = new ConverterAdapter(new EnumConverter(type));
+                    converter = new ConverterAdapter(new EnumConverter(type), type);
                     adapters.put(key, (Adapter<?, ?>) converter);
                 }
             }
@@ -694,12 +716,12 @@ public class Mappings {
         public MapBuilderReader(final Map<String, Getter> objectGetters, final String[] paths, final int version) {
             this.getters = objectGetters;
             this.paths = paths;
-            this.template = new LinkedHashMap<String, Object>();
+            this.template = new LinkedHashMap<>();
             this.version = version;
 
             Map<String, Object> last = this.template;
             for (int i = 1; i < paths.length; i++) {
-                final Map<String, Object> newLast = new LinkedHashMap<String, Object>();
+                final Map<String, Object> newLast = new LinkedHashMap<>();
                 last.put(paths[i], newLast);
                 last = newLast;
             }
@@ -707,7 +729,7 @@ public class Mappings {
 
         @Override
         public Object read(final Object instance) {
-            final Map<String, Object> map = new LinkedHashMap<String, Object>(template);
+            final Map<String, Object> map = new LinkedHashMap<>(template);
             Map<String, Object> nested = map;
             for (int i = 1; i < paths.length; i++) {
                 nested = Map.class.cast(nested.get(paths[i]));

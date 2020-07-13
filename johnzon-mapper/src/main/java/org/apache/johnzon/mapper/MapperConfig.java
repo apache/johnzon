@@ -22,6 +22,7 @@ import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.map.LazyConverterMap;
 
 import javax.json.JsonValue;
 import java.lang.reflect.Type;
@@ -67,7 +68,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final boolean supportEnumMapDeserialization; // for tck
     private final AccessMode accessMode;
     private final Charset encoding;
-    private final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters;
+    private final LazyConverterMap adapters;
     private final ConcurrentMap<Adapter<?, ?>, AdapterKey> reverseAdapters;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters;
@@ -95,7 +96,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     //disable checkstyle for 10+ parameters
     //CHECKSTYLE:OFF
-    public MapperConfig(final ConcurrentMap<AdapterKey, Adapter<?, ?>> adapters,
+    public MapperConfig(final LazyConverterMap adapters,
                         final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters,
                         final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders,
                         final int version, final boolean close,
@@ -218,12 +219,12 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (Enum.class.isAssignableFrom(clazz)) {
-                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz));
+                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz), clazz);
                 adapters.putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;
             }
         }
-        final List<AdapterKey> matched = adapters.keySet().stream()
+        final List<AdapterKey> matched = adapters.adapterKeys().stream()
                 .filter(k -> k.isAssignableFrom(aClass))
                 .collect(toList());
         if (matched.size() == 1) {
@@ -382,7 +383,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         return encoding;
     }
 
-    public ConcurrentMap<AdapterKey, Adapter<?, ?>> getAdapters() {
+    public LazyConverterMap getAdapters() {
         return adapters;
     }
 
