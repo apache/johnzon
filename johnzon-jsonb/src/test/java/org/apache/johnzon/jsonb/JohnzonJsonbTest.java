@@ -20,7 +20,9 @@ package org.apache.johnzon.jsonb;
 
 import static org.junit.Assert.assertEquals;
 
+import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 
@@ -28,9 +30,23 @@ import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
 import org.junit.Test;
 
+import java.util.List;
+
 public class JohnzonJsonbTest {
     @Rule
     public final JsonbRule rule = new JsonbRule();
+
+    @Test
+    public void listJsonValue() {
+        assertEquals(Json.createValue(1.1),
+                rule.fromJson("{\"value\":[1.1]}", ArrayJsonValueWrapper.class).value.get(0));
+    }
+
+    @Test
+    public void listObject() {
+        assertEquals(1.1, Number.class.cast(
+                rule.fromJson("{\"value\":[1.1]}", ArrayObjectWrapper.class).value.get(0)).doubleValue(), 0);
+    }
 
     @Test
     public void jsonArray() throws Exception {
@@ -62,5 +78,13 @@ public class JohnzonJsonbTest {
         public LongWrapper(final Long value) {
             this.value = value;
         }
+    }
+
+    public static class ArrayObjectWrapper {
+        public List<Object> value;
+    }
+
+    public static class ArrayJsonValueWrapper {
+        public List<JsonValue> value;
     }
 }

@@ -478,16 +478,13 @@ public class MappingParserImpl implements MappingParser {
             final long longValue = jsonNumber.longValue();
             if (intValue == longValue) {
                 return intValue;
-            } else {
-                return longValue;
             }
-        } else {
-            if (config.isUseBigDecimalForFloats()) {
-                return jsonNumber.bigDecimalValue();
-            } else {
-                return jsonNumber.doubleValue();
-            }
+            return longValue;
         }
+        if (config.isUseBigDecimalForFloats()) {
+            return jsonNumber.bigDecimalValue();
+        }
+        return jsonNumber.doubleValue();
     }
 
     private Object convertTo(final Adapter converter, final JsonValue jsonValue, final JsonPointerTracker jsonPointer,
@@ -644,7 +641,7 @@ public class MappingParserImpl implements MappingParser {
         }
 
         if (JsonObject.class.isInstance(jsonValue)) {
-            if (JsonObject.class == type || JsonStructure.class == type) {
+            if (JsonObject.class == type || JsonStructure.class == type || JsonValue.class == type) {
                 return jsonValue;
             }
             final boolean typedAdapter = !ConverterAdapter.class.isInstance(itemConverter) && TypeAwareAdapter.class.isInstance(itemConverter);
@@ -655,12 +652,12 @@ public class MappingParserImpl implements MappingParser {
                     jsonPointer);
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
-            if (JsonArray.class == type || JsonStructure.class == type) {
+            if (JsonArray.class == type || JsonStructure.class == type || JsonValue.class == type) {
                 return jsonValue;
             }
             return buildArray(type, JsonArray.class.cast(jsonValue), itemConverter, null, jsonPointer, rootType);
         } else if (JsonNumber.class.isInstance(jsonValue)) {
-            if (JsonNumber.class == type) {
+            if (JsonNumber.class == type || JsonValue.class == type) {
                 return jsonValue;
             }
 
@@ -686,12 +683,12 @@ public class MappingParserImpl implements MappingParser {
                 return number.bigDecimalValue();
             }
 
-            int intValue = number.intValueExact();
             if (type == Integer.class || type == int.class) {
-                return intValue;
+                return number.intValueExact();
             }
 
             if (type == Short.class || type == short.class) {
+                final int intValue = number.intValue();
                 short shortVal = (short) intValue;
                 if (intValue != shortVal) {
                     throw new java.lang.ArithmeticException("Overflow");
@@ -700,12 +697,13 @@ public class MappingParserImpl implements MappingParser {
             }
 
             if (type == Byte.class || type == byte.class) {
+                final int intValue = number.intValueExact();
                 Validator.validateByte(intValue);
                 return (byte) intValue;
             }
 
         } else if (JsonString.class.isInstance(jsonValue)) {
-            if (JsonString.class == type) {
+            if (JsonString.class == type || JsonValue.class == type) {
                 return jsonValue;
             }
 
