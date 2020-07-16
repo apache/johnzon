@@ -37,9 +37,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-json_1.1_spec</artifactId>
-      <version>${geronimo-jsonp.version}</version>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
+      <version>${json-api.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
@@ -76,7 +76,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-plugin-plugin</artifactId>
-        <version>3.4</version>
+        <version>3.5.2</version>
         <executions>
           <execution>
             <id>mojo-descriptor</id>

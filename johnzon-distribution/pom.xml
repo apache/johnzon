@@ -30,22 +30,22 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-json_1.1_spec</artifactId>
-      <version>${geronimo-jsonp.version}</version>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
+      <version>${json-api.version}</version>
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-json_1.1_spec</artifactId>
-      <version>${geronimo-jsonp.version}</version>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
+      <version>${json-api.version}</version>
       <scope>compile</scope>
       <classifier>sources</classifier>
     </dependency>
     <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-json_1.1_spec</artifactId>
-      <version>${geronimo-jsonp.version}</version>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
+      <version>${json-api.version}</version>
       <scope>compile</scope>
       <classifier>javadoc</classifier>
     </dependency>
