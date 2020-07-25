@@ -64,8 +64,14 @@ public class AdapterTest {
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().withAdapters(new PathAdapter()))) {
             final PathWrapper wrapper = new PathWrapper();
             wrapper.path = Paths.get("/example/file.txt");
-            assertEquals("{\"path\":\"/example/file.txt\"}", jsonb.toJson(wrapper));
-            assertEquals("\"/example/file.txt\"", jsonb.toJson(wrapper.path));
+
+            if (System.getProperty("os.name").contains("Windows")) {
+                assertEquals("{\"path\":\"\\\\example\\\\file.txt\"}", jsonb.toJson(wrapper));
+                assertEquals("\"\\\\example\\\\file.txt\"", jsonb.toJson(wrapper.path));
+            } else {
+                assertEquals("{\"path\":\"/example/file.txt\"}", jsonb.toJson(wrapper));
+                assertEquals("\"/example/file.txt\"", jsonb.toJson(wrapper.path));
+            }
         }
     }
 
@@ -109,7 +115,7 @@ public class AdapterTest {
         try (final Jsonb jsonb = JsonbBuilder.create()) {
             final Baz baz = new Baz();
             baz.value = "test";
-            
+
             final String toString = jsonb.toJson(baz);
             assertEquals("\"test\"", toString);
         }
@@ -205,7 +211,7 @@ public class AdapterTest {
 
         @JsonbTypeAdapter(DummyAdapter.class)
         public Dummy dummy;
-        
+
         public Baz baz;
     }
 
