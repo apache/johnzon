@@ -131,9 +131,12 @@ public class JohnzonBuilder implements JsonbBuilder {
                     return it;
                 }).orElse(false);
 
-        if (config.getProperty(JsonbConfig.FORMATTING).map(Boolean.class::cast).orElse(false)) {
-            builder.setPretty(true);
-        }
+        config.getProperty(JsonbConfig.FORMATTING).map(Boolean.class::cast).ifPresent(builder::setPretty);
+        config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).map(String::valueOf).ifPresent(builder::setBufferStrategy);
+        config.getProperty(JsonParserFactoryImpl.BUFFER_LENGTH).map(Integer.class::cast).ifPresent(builder::setBufferSize);
+        config.getProperty(JsonParserFactoryImpl.MAX_STRING_LENGTH).map(Integer.class::cast).ifPresent(builder::setMaxSize);
+        config.getProperty(JsonParserFactoryImpl.SUPPORTS_COMMENTS).map(Boolean.class::cast).ifPresent(builder::setSupportsComments);
+        config.getProperty(JsonParserFactoryImpl.ENCODING).map(String::valueOf).ifPresent(builder::setEncoding);
 
         config.getProperty(PolymorphicConfig.class.getName())
                 .map(PolymorphicConfig.class::cast)
@@ -144,7 +147,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                     builder.setPolymorphicDiscriminatorMapper(pc.getDiscriminatorMapper());
                     builder.setPolymorphicTypeLoader(pc.getTypeLoader());
                 });
-        config.getProperty(JsonbConfig.ENCODING).ifPresent(encoding -> builder.setEncoding(String.valueOf(encoding)));
+
         final boolean isNillable = config.getProperty(JsonbConfig.NULL_VALUES)
                 .map(it -> String.class.isInstance(it) ? Boolean.parseBoolean(it.toString()) : Boolean.class.cast(it))
                 .map(serNulls -> {
@@ -160,7 +163,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         final PropertyVisibilityStrategy visibilityStrategy = config.getProperty(JsonbConfig.PROPERTY_VISIBILITY_STRATEGY)
                 .map(PropertyVisibilityStrategy.class::cast).orElse(new DefaultPropertyVisibilityStrategy());
 
-        config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
+        config.getProperty("johnzon.attributeOrder")
+                .map(Comparator.class::cast)
+                .ifPresent(builder::setAttributeOrder);
         config.getProperty("johnzon.enforceQuoteString")
                 .map(this::toBool)
                 .ifPresent(builder::setEnforceQuoteString);
