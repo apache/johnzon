@@ -32,6 +32,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,10 +58,10 @@ import org.junit.Test;
 public class JsonParserTest {
     
     
-    static final Charset UTF_8 = Charset.forName("UTF-8");
-    static final Charset UTF_16BE = Charset.forName("UTF-16BE");
-    static final Charset UTF_16LE = Charset.forName("UTF-16LE");
-    static final Charset UTF_16 = Charset.forName("UTF-16");
+    static final Charset UTF_8 = StandardCharsets.UTF_8;
+    static final Charset UTF_16BE = StandardCharsets.UTF_16BE;
+    static final Charset UTF_16LE = StandardCharsets.UTF_16LE;
+    static final Charset UTF_16 = StandardCharsets.UTF_16;
     static final Charset UTF_32LE = Charset.forName("UTF-32LE");
     static final Charset UTF_32BE = Charset.forName("UTF-32BE");
     

@@ -18,17 +18,39 @@
  */
 package org.apache.johnzon.core;
 
-import java.io.StringReader;
-import java.util.stream.Collectors;
+import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.stream.JsonParser;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import org.junit.Test;
-
+import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
 
 public class JsonParserStreamingTest {
+    @Test
+    public void parseEscapeCharacters() throws IOException {
+        final int len = 8192;
+        final byte[] bytes = ("{\"source\":\"" +
+                IntStream.range(0, 16558).mapToObj(it -> "\\").collect(joining("")) +
+                "\t\"}").getBytes(StandardCharsets.UTF_8);
+
+        final BufferStrategy.BufferProvider<char[]> bs = BufferStrategyFactory.valueOf("QUEUE").newCharProvider(len);
+        try (final InputStream stream = new ByteArrayInputStream(bytes)) {
+            final JsonStreamParserImpl impl = new JsonStreamParserImpl(stream, len, bs, bs, false);
+            while (impl.hasNext()) {
+                impl.next();
+            }
+        } catch (final ArrayIndexOutOfBoundsException aioobe) {
+            assertEquals("Buffer too small for such a long string", aioobe.getMessage());
+        }
+    }
 
     @Test
     public void testArrayStream() {

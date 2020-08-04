@@ -160,6 +160,9 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     //append a single char to the value buffer
     private void appendToCopyBuffer(final char c) {
+        if (fallBackCopyBufferLength >= fallBackCopyBuffer.length - 1) {
+            doAutoAdjust(1);
+        }
         fallBackCopyBuffer[fallBackCopyBufferLength++] = c;
     }
 
@@ -173,19 +176,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             }
 
             if (fallBackCopyBufferLength >= fallBackCopyBuffer.length - length) { // not good at runtime but handled
-                if (!autoAdjust) {
-                    throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
-                }
-
-                final char[] newArray = new char[fallBackCopyBuffer.length + Math.max(getBufferExtends(fallBackCopyBuffer.length), length)];
-                // TODO: log to adjust size once?
-                System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
-                System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
-                if (releaseFallBackCopyBufferLength) {
-                    bufferProvider.release(fallBackCopyBuffer);
-                    releaseFallBackCopyBufferLength = false;
-                }
-                fallBackCopyBuffer = newArray;
+                doAutoAdjust(length);
             } else {
                 System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength, length);
             }
@@ -193,6 +184,22 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         }
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
+    }
+
+    private void doAutoAdjust(final int length) {
+        if (!autoAdjust) {
+            throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
+        }
+
+        final char[] newArray = new char[fallBackCopyBuffer.length + Math.max(getBufferExtends(fallBackCopyBuffer.length), length)];
+        // TODO: log to adjust size once?
+        System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
+        System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
+        if (releaseFallBackCopyBufferLength) {
+            bufferProvider.release(fallBackCopyBuffer);
+            releaseFallBackCopyBufferLength = false;
+        }
+        fallBackCopyBuffer = newArray;
     }
 
     /**
@@ -614,7 +621,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
                     //another escape chars, for example \t
                 } else {
                     appendToCopyBuffer(Strings.asEscapedChar(n));
-
                 }
 
             } else {
