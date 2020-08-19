@@ -57,7 +57,6 @@ import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
-import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.Generics;
@@ -699,7 +698,7 @@ public class Mappings {
                 final AdapterKey key = new AdapterKey(String.class, type);
                 converter = adapters.get(key); // first ensure user didnt override it
                 if (converter == null) {
-                    converter = new ConverterAdapter(new EnumConverter(type), type);
+                    converter = new ConverterAdapter(config.getEnumConverterFactory().apply(type), type);
                     adapters.put(key, (Adapter<?, ?>) converter);
                 }
             }

@@ -21,6 +21,7 @@ package org.superbiz;
 import org.apache.johnzon.mapper.MapperConfig;
 import org.apache.johnzon.mapper.Mappings;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.map.LazyConverterMap;
 import org.junit.Test;
 
@@ -62,7 +63,8 @@ public class ExtendMappingTest {
                     new FieldAccessMode(false, false),
                     StandardCharsets.UTF_8, String::compareTo, false, false, null, false, false,
                     emptyMap(), true, false, true,
-                    null, null, null, null, null));
+                    null, null, null, null, null,
+                    type -> new EnumConverter(type)));
         }
 
         @Override

@@ -16,40 +16,53 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.mapper.converter;
+package org.apache.johnzon.jsonb.adapter;
 
 import org.apache.johnzon.mapper.MapperConfig;
 
+import javax.json.bind.annotation.JsonbProperty;
+import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EnumConverter<T extends Enum<T>> implements MapperConfig.CustomEnumConverter<T> {
+public class JsonbEnumAdapter<T extends Enum<T>> implements MapperConfig.CustomEnumConverter<T> {
     private final Map<String, T> values;
+    private final Map<T, String> reversed;
     private final Class<T> enumType;
 
-    public EnumConverter(final Class<T> aClass) {
+    public JsonbEnumAdapter(final Class<T> aClass) {
         this.enumType = aClass;
 
         final T[] enumConstants = aClass.isEnum() ?
                 aClass.getEnumConstants() :
                 (T[]) aClass.getSuperclass().getEnumConstants();
         values = new HashMap<>(enumConstants.length);
+        reversed = new HashMap<>(enumConstants.length);
         for (final T t : enumConstants) {
-            values.put(t.name(), t);
+            try {
+                final Field field = findField(aClass, t.name());
+                final JsonbProperty property = field.getAnnotation(JsonbProperty.class);
+                final String name = property == null || property.value().isEmpty() ? t.name() : property.value();
+                values.put(name, t);
+                reversed.put(t, name);
+            } catch (final Exception e) {
+                values.put(t.name(), t);
+                reversed.put(t, t.name());
+            }
         }
     }
 
     @Override // no need of cache here, it is already fast
     public String toString(final T instance) {
-        return instance != null ? instance.name() : null;
+        return instance != null ? reversed.get(instance) : null;
     }
 
     @Override
     public T fromString(final String text) {
-        T val = values.get(text);
+        final T val = values.get(text);
         if (val == null) {
-            throw new IllegalArgumentException("Illegal " + enumType + " enum value: " + text);
+            throw new IllegalArgumentException("Illegal " + enumType + " enum value: " + text + ", known values: " + values.keySet());
         }
         return val;
     }
@@ -62,5 +75,18 @@ public class EnumConverter<T extends Enum<T>> implements MapperConfig.CustomEnum
     @Override
     public Type type() {
         return enumType;
+    }
+
+    private Field findField(final Class<T> impl, final String field) {
+        Class<?> type = impl;
+        while (type != null && type != Object.class && type != Enum.class) {
+            try {
+                return type.getDeclaredField(field);
+            } catch (final NoSuchFieldException e) {
+                // continue
+            }
+            type = type.getSuperclass();
+        }
+        throw new IllegalArgumentException("Missing field: " + field);
     }
 }

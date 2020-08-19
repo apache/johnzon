@@ -20,7 +20,6 @@ package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
-import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
@@ -1126,7 +1125,7 @@ public class MappingParserImpl implements MappingParser {
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (Enum.class.isAssignableFrom(clazz)) {
-                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz), clazz);
+                final Adapter<?, ?> enumConverter = new ConverterAdapter(config.getEnumConverterFactory().apply(clazz), clazz);
                 config.getAdapters().putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;
             }

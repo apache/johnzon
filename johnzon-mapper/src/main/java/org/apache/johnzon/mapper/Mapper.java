@@ -18,8 +18,22 @@
  */
 package org.apache.johnzon.mapper;
 
-import static org.apache.johnzon.mapper.internal.Streams.noClose;
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.util.ArrayUtil;
 
+import javax.json.JsonArray;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonString;
+import javax.json.JsonStructure;
+import javax.json.JsonValue;
+import javax.json.spi.JsonProvider;
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+import javax.json.stream.JsonParser;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,22 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 
-import javax.json.JsonArray;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonString;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
-import javax.json.stream.JsonParser;
-
-import org.apache.johnzon.mapper.internal.JsonPointerTracker;
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.util.ArrayUtil;
+import static org.apache.johnzon.mapper.internal.Streams.noClose;
 
 public class Mapper implements Closeable {
 
@@ -79,7 +78,6 @@ public class Mapper implements Closeable {
         this.closeables = closeables;
         this.charset = config.getEncoding();
     }
-
 
     public <T> void writeArray(final Object object, final OutputStream stream) {
         if (object instanceof short[]) {
@@ -401,7 +399,9 @@ public class Mapper implements Closeable {
     }
 
     private boolean isDedup(final Type clazz) {
-        if (clazz instanceof Class) {
+        if (clazz instanceof Class &&
+                JsonValue.class != clazz && JsonStructure.class != clazz &&
+                JsonObject.class != clazz && JsonArray.class != clazz) {
             return isDeduplicateObjects((Class) clazz);
         }
         return false;

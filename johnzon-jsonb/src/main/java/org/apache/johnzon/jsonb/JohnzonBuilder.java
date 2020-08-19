@@ -22,6 +22,7 @@ import org.apache.johnzon.core.AbstractJsonFactory;
 import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
 import org.apache.johnzon.core.JsonParserFactoryImpl;
 import org.apache.johnzon.core.Types;
+import org.apache.johnzon.jsonb.adapter.JsonbEnumAdapter;
 import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
@@ -32,6 +33,7 @@ import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.MapperConfig;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
@@ -96,6 +98,7 @@ public class JohnzonBuilder implements JsonbBuilder {
 
     @Override
     public Jsonb build() {
+        builder.setEnumConverterFactory(type -> newEnumConverter(Class.class.cast(type)));
         if (jsonp != null) {
             builder.setGeneratorFactory(jsonp.createGeneratorFactory(generatorConfig()));
             builder.setReaderFactory(jsonp.createReaderFactory(readerConfig()));
@@ -333,6 +336,10 @@ public class JohnzonBuilder implements JsonbBuilder {
             builder.addCloseable(Closeable.class.cast(accessMode));
         }
         return doCreateJsonb(skipCdi, ijson, builder.build());
+    }
+
+    private <T extends Enum<T>> MapperConfig.CustomEnumConverter<T> newEnumConverter(final Class<T> enumType) {
+        return new JsonbEnumAdapter<>(enumType);
     }
 
     // note: this method must stay as small as possible to enable graalvm to replace it by "false" when needed

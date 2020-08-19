@@ -33,6 +33,7 @@ import org.apache.johnzon.mapper.converter.ByteConverter;
 import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.converter.DoubleConverter;
+import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.converter.FloatConverter;
 import org.apache.johnzon.mapper.converter.IntegerConverter;
 import org.apache.johnzon.mapper.converter.LongConverter;
@@ -103,6 +104,7 @@ public class MapperBuilder {
     private boolean useJsRange;
     private boolean useBigDecimalForObjectNumbers;
     private boolean supportEnumContainerDeserialization = true;
+    private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
 
     // @experimental polymorphic api
     private Function<String, Class<?>> typeLoader;
@@ -229,8 +231,13 @@ public class MapperBuilder {
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
                         supportEnumContainerDeserialization,
                         typeLoader, discriminatorMapper, discriminator,
-                        deserializationPredicate, serializationPredicate),
+                        deserializationPredicate, serializationPredicate,
+                        enumConverterFactory),
                 closeables);
+    }
+
+    public void setEnumConverterFactory(final Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory) {
+        this.enumConverterFactory = enumConverterFactory;
     }
 
     public ConcurrentHashMap<AdapterKey, Adapter<?,?>> getAdapters() {

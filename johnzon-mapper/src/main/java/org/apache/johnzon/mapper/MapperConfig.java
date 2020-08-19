@@ -19,7 +19,6 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.converter.EnumConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.map.LazyConverterMap;
@@ -94,6 +93,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Collection<Type> noParserAdapterTypes = new ConcurrentHashMap<Type, Boolean>().keySet(true);
     private final Collection<Type> noGeneratorAdapterTypes = new ConcurrentHashMap<Type, Boolean>().keySet(true);
 
+    private final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory;
+
     //disable checkstyle for 10+ parameters
     //CHECKSTYLE:OFF
     public MapperConfig(final LazyConverterMap adapters,
@@ -117,7 +118,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final Function<Class<?>, String> discriminatorMapper,
                         final String discriminator,
                         final Predicate<Class<?>> deserializationPredicate,
-                        final Predicate<Class<?>> serializationPredicate) {
+                        final Predicate<Class<?>> serializationPredicate,
+                        final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -138,6 +140,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.serializationPredicate = serializationPredicate;
         this.deserializationPredicate = deserializationPredicate;
         this.discriminator = discriminator;
+        this.enumConverterFactory = enumConverterFactory;
 
         // handle Adapters
         this.adapters = adapters;
@@ -155,6 +158,10 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.objectConverterReaderCache = new HashMap<>(objectConverterReaders.size());
         this.useBigDecimalForFloats = useBigDecimalForFloats;
         this.deduplicateObjects = deduplicateObjects;
+    }
+
+    public Function<Class<?>, CustomEnumConverter<?>> getEnumConverterFactory() {
+        return enumConverterFactory;
     }
 
     public Collection<Type> getNoParserAdapterTypes() {
@@ -219,7 +226,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         if (Class.class.isInstance(aClass)) {
             final Class<?> clazz = Class.class.cast(aClass);
             if (Enum.class.isAssignableFrom(clazz)) {
-                final Adapter<?, ?> enumConverter = new ConverterAdapter(new EnumConverter(clazz), clazz);
+                final Adapter<?, ?> enumConverter = new ConverterAdapter(enumConverterFactory.apply(clazz), clazz);
                 adapters.putIfAbsent(new AdapterKey(String.class, aClass), enumConverter);
                 return enumConverter;
             }
@@ -417,5 +424,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     public boolean isSupportEnumContainerDeserialization() {
         return supportEnumMapDeserialization;
+    }
+
+    public interface CustomEnumConverter<A> extends Converter<A>, Converter.TypeAccess {
     }
 }
