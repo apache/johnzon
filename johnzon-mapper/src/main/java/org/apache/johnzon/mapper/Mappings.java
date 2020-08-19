@@ -685,7 +685,7 @@ public class Mappings {
                     if (adapterEntry.getKey().getFrom() == type && !(
                             // ignore internal converters to let primitives be correctly handled
                             ConverterAdapter.class.isInstance(adapterEntry.getValue()) &&
-                                    ConverterAdapter.class.cast(adapterEntry.getValue()).getConverter().getClass().getName().startsWith("org.apache.johnzon.mapper."))) {
+                                    isBuiltInJohnzonConverter(ConverterAdapter.class.cast(adapterEntry.getValue()).getConverter()))) {
 
                         if (converter != null) {
                             throw new IllegalArgumentException("Ambiguous adapter for " + decoratedType);
@@ -704,6 +704,14 @@ public class Mappings {
             }
         }
         return converter;
+    }
+
+    private boolean isBuiltInJohnzonConverter(final Converter<?> converter) {
+        final Class<?> clazz = converter.getClass();
+        // don't reduce too much this package filter, we really want to filter the mapper module ones
+        return clazz.getName().startsWith("org.apache.johnzon.mapper.") ||
+                // jsonb adds a custom converter for enums so we must filter this one too
+                (MapperConfig.CustomEnumConverter.class.isAssignableFrom(clazz) && clazz.getName().startsWith("org.apache.johnzon."));
     }
 
     private static class MapBuilderReader implements AccessMode.Reader {
