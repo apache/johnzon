@@ -37,9 +37,6 @@ abstract class BaseNumberValidation extends BaseValidation {
     @Override
     protected Stream<ValidationResult.ValidationError> onNumber(final JsonNumber number) {
         final double val = number.doubleValue();
-        if (val <= 0) {
-            return toError(val);
-        }
         if (isValid(val)) {
             return Stream.empty();
         }

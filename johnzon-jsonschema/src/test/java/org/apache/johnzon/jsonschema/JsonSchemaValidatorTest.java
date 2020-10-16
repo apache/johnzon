@@ -242,28 +242,55 @@ public class JsonSchemaValidatorTest {
 
     @Test
     public void minimum() {
-        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
-                .add("type", "object")
-                .add("properties", jsonFactory.createObjectBuilder()
-                        .add("age", jsonFactory.createObjectBuilder()
-                                .add("type", "number")
-                                .add("minimum", 5)
-                                .build())
-                        .build())
-                .build());
+        {
+            final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                    .add("type", "object")
+                    .add("properties", jsonFactory.createObjectBuilder()
+                            .add("age", jsonFactory.createObjectBuilder()
+                                    .add("type", "number")
+                                    .add("minimum", 5)
+                                    .build())
+                            .build())
+                    .build());
 
-        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 5).build()).isSuccess());
-        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 6).build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 5).build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 6).build()).isSuccess());
 
-        final ValidationResult failure = validator.apply(jsonFactory.createObjectBuilder().add("age", 2).build());
-        assertFalse(failure.isSuccess());
-        final Collection<ValidationResult.ValidationError> errors = failure.getErrors();
-        assertEquals(1, errors.size());
-        final ValidationResult.ValidationError error = errors.iterator().next();
-        assertEquals("/age", error.getField());
-        assertEquals("2.0 is less than 5.0", error.getMessage());
+            final ValidationResult failure = validator.apply(jsonFactory.createObjectBuilder().add("age", 2).build());
+            assertFalse(failure.isSuccess());
+            final Collection<ValidationResult.ValidationError> errors = failure.getErrors();
+            assertEquals(1, errors.size());
+            final ValidationResult.ValidationError error = errors.iterator().next();
+            assertEquals("/age", error.getField());
+            assertEquals("2.0 is less than 5.0", error.getMessage());
 
-        validator.close();
+            validator.close();
+        }
+        {
+            final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                    .add("type", "object")
+                    .add("properties", jsonFactory.createObjectBuilder()
+                            .add("age", jsonFactory.createObjectBuilder()
+                                    .add("type", "number")
+                                    .add("minimum", -1)
+                                    .build())
+                            .build())
+                    .build());
+
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 1).build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 0).build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", -1).build()).isSuccess());
+
+            final ValidationResult failure = validator.apply(jsonFactory.createObjectBuilder().add("age", -2).build());
+            assertFalse(failure.isSuccess());
+            final Collection<ValidationResult.ValidationError> errors = failure.getErrors();
+            assertEquals(1, errors.size());
+            final ValidationResult.ValidationError error = errors.iterator().next();
+            assertEquals("/age", error.getField());
+            assertEquals("-2.0 is less than -1.0", error.getMessage());
+
+            validator.close();
+        }
     }
 
     @Test
