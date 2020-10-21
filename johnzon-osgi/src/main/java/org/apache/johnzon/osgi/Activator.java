@@ -166,6 +166,7 @@ public class Activator implements BundleActivator {
     private static class ExtendedJsonbJaxrsProvider extends JsonbJaxrsProvider<Object> {
         public ExtendedJsonbJaxrsProvider(final Config config) {
             super(Arrays.asList(config.ignores()));
+            this.config.setProperty("johnzon.skip-cdi", true); // by default disable it since to work it requires some effort
 
             whenTrue(config.throw_no_content_exception_on_empty_streams()).ifPresent(this::setThrowNoContentExceptionOnEmptyStreams);
             whenTrue(config.fail_on_unknown_properties()).ifPresent(this::setFailOnUnknownProperties);
