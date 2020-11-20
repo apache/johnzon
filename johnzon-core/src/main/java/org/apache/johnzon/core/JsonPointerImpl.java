@@ -474,7 +474,9 @@ public class JsonPointerImpl implements JsonPointer {
         if (addOperation && referenceToken.equals("-")) {
             return jsonArray.size();
         } else if (!addOperation && referenceToken.equals("-")) {
-            return jsonArray.size() - 1;
+            final int arrayIndex = jsonArray.size();
+            validateArraySize(referenceToken, jsonArray, arrayIndex, jsonArray.size());
+            return arrayIndex;
         }
 
         validateArrayIndex(referenceToken);
@@ -482,7 +484,7 @@ public class JsonPointerImpl implements JsonPointer {
         try {
             int arrayIndex = Integer.parseInt(referenceToken);
             int arraySize = addOperation ? jsonArray.size() + 1 : jsonArray.size();
-            validateArraySize(jsonArray, arrayIndex, arraySize);
+            validateArraySize(referenceToken, jsonArray, arrayIndex, arraySize);
             return arrayIndex;
         } catch (NumberFormatException e) {
             throw new JsonException("'" + referenceToken + "' is no valid array index", e);
@@ -509,9 +511,14 @@ public class JsonPointerImpl implements JsonPointer {
         }
     }
 
-    private void validateArraySize(JsonArray jsonArray, int arrayIndex, int arraySize) throws JsonException {
+    private void validateArraySize(final String referenceToken, final JsonArray jsonArray,
+                                   final int arrayIndex, final int arraySize) throws JsonException {
+
         if (arrayIndex >= arraySize) {
-            throw new JsonException("'" + jsonArray + "' contains no element for index " + arrayIndex);
+            throw new JsonException(String.format("'%s' contains no element for index %d and for '%s'.", jsonArray, arrayIndex, referenceToken));
+        }
+        if (arrayIndex < 0) {
+            throw new JsonException(String.format("%d is not a valid index for array '%s' and for '%s'.", arrayIndex, jsonArray, referenceToken));
         }
     }
 
