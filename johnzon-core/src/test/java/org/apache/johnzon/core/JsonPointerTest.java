@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.core;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.json.Json;
@@ -31,7 +30,6 @@ import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
-
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
@@ -457,15 +455,26 @@ public class JsonPointerTest {
         assertEquals("[[\"bar\",\"baz\"]]", result.toString()); // [["bar","baz"]]
     }
 
-    @Ignore("https://issues.apache.org/jira/browse/JOHNZON-325 anything other than add with - should fail")
-    @Test
+    @Test(expected = JsonException.class)
     public void testRemoveLastArrayElement() {
         JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/0/-");
         JsonStructure target = Json.createArrayBuilder()
-                .add(Json.createArrayBuilder()
-                        .add("bar")
-                        .add("qux")
-                        .add("baz")).build(); // [["bar","qux","baz"]]
+                                   .add(Json.createArrayBuilder()
+                                            .add("bar")
+                                            .add("qux")
+                                            .add("baz")).build(); // [["bar","qux","baz"]]
+
+        JsonStructure result = jsonPointer.remove(target);
+        assertEquals("[[\"bar\",\"qux\"]]", result.toString()); // [["bar","qux"]]
+    }
+
+    public void testRemoveLastArrayElementWithPatch() {
+        JsonPointerImpl jsonPointer = new JsonPatchImpl.JsonPatchPointerImpl(JsonProvider.provider(), "/0/-");
+        JsonStructure target = Json.createArrayBuilder()
+                                   .add(Json.createArrayBuilder()
+                                            .add("bar")
+                                            .add("qux")
+                                            .add("baz")).build(); // [["bar","qux","baz"]]
 
         JsonStructure result = jsonPointer.remove(target);
         assertEquals("[[\"bar\",\"qux\"]]", result.toString()); // [["bar","qux"]]
@@ -582,8 +591,7 @@ public class JsonPointerTest {
         assertEquals("[[\"bar\",\"qux\",\"baz\",\"xyz\"]]", result.toString());
     }
 
-    @Ignore("https://issues.apache.org/jira/browse/JOHNZON-325 anything other than add with - should fail")
-    @Test
+    @Test(expected = JsonException.class)
     public void testRemoveLastArrayElementSimple() {
         JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
         JsonStructure target = Json.createArrayBuilder()
@@ -591,6 +599,19 @@ public class JsonPointerTest {
                 .add("qux")
                 .add("baz")
                 .build();
+
+        JsonStructure result = jsonPointer.remove(target);
+        assertEquals("[\"bar\",\"qux\"]", result.toString());
+    }
+
+    @Test
+    public void testRemoveLastArrayElementSimpleWithPatch() {
+        JsonPointerImpl jsonPointer = new JsonPatchImpl.JsonPatchPointerImpl(JsonProvider.provider(), "/-");
+        JsonStructure target = Json.createArrayBuilder()
+                                   .add("bar")
+                                   .add("qux")
+                                   .add("baz")
+                                   .build();
 
         JsonStructure result = jsonPointer.remove(target);
         assertEquals("[\"bar\",\"qux\"]", result.toString());

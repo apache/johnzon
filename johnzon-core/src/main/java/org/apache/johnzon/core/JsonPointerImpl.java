@@ -473,8 +473,9 @@ public class JsonPointerImpl implements JsonPointer {
     private int getArrayIndex(String referenceToken, JsonArray jsonArray, boolean addOperation) {
         if (addOperation && referenceToken.equals("-")) {
             return jsonArray.size();
+
         } else if (!addOperation && referenceToken.equals("-")) {
-            final int arrayIndex = jsonArray.size();
+            final int arrayIndex = jsonArray.size() - minusShift();
             validateArraySize(referenceToken, jsonArray, arrayIndex, jsonArray.size());
             return arrayIndex;
         }
@@ -491,6 +492,16 @@ public class JsonPointerImpl implements JsonPointer {
         }
     }
 
+    /**
+     * This method can be overridden in sub classes.
+     * It's main goal is to support patch operation using "-" to replace, remove last element which is forbidden in JsonPointer
+     *
+     * @return the shift to apply on minus. For pointer, it's 0 because we need the element right after the last.
+     */
+    protected int minusShift() {
+        return 0;
+    }
+
     private void validateJsonPointer(JsonValue target, int size) throws NullPointerException, JsonException {
         if (target == null) {
             throw new NullPointerException("target must not be null");
@@ -503,7 +514,7 @@ public class JsonPointerImpl implements JsonPointer {
     }
 
     private void validateArrayIndex(String referenceToken) throws JsonException {
-        if (referenceToken.startsWith("+") || (referenceToken.startsWith("-") && referenceToken.length() > 1)) {
+        if (referenceToken.startsWith("-") && referenceToken.length() > 1) {
             throw new JsonException("An array index must not start with '" + referenceToken.charAt(0) + "'");
         }
         if (referenceToken.startsWith("0") && referenceToken.length() > 1) {
@@ -515,10 +526,10 @@ public class JsonPointerImpl implements JsonPointer {
                                    final int arrayIndex, final int arraySize) throws JsonException {
 
         if (arrayIndex >= arraySize) {
-            throw new JsonException(String.format("'%s' contains no element for index %d and for '%s'.", jsonArray, arrayIndex, referenceToken));
+            throw new JsonException("'" + jsonArray + "' contains no element for index " + arrayIndex + " and for '" + referenceToken + "'.");
         }
         if (arrayIndex < 0) {
-            throw new JsonException(String.format("%d is not a valid index for array '%s' and for '%s'.", arrayIndex, jsonArray, referenceToken));
+            throw new JsonException(arrayIndex + " is not a valid index for array '" + jsonArray + "' and for '" + referenceToken + "'.");
         }
     }
 
