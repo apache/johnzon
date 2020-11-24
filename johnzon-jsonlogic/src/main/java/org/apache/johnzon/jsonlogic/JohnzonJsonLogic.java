@@ -82,7 +82,7 @@ public class JohnzonJsonLogic {
 
         final Set<String> keys = object.keySet();
         if (keys.size() != 1) {
-            throw new IllegalArgumentException("Invaid argument, multiple keys found: " + keys);
+            throw new IllegalArgumentException("Invalid argument, multiple keys found: " + keys);
         }
         final String operator = keys.iterator().next();
         final Operator impl = operators.get(operator);
