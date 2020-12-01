@@ -151,42 +151,42 @@ public class JohnzonJsonbTest {
     @Test
     public void byteArrayRuntimeType() {
         byte[] input = new byte[] { 0x00, 0x01 };
-        final String output = rule.toJson(input, int[].class);
+        final String output = rule.toJson(input, byte[].class);
         assertEquals("[0,1]", output);
     }
 
     @Test
     public void longArrayRuntimeType() {
         long[] input = new long[] { 0L, 1L, 2L, 3L, 4L, 5L, 6L };
-        final String output = rule.toJson(input, int[].class);
+        final String output = rule.toJson(input, long[].class);
         assertEquals("[0,1,2,3,4,5,6]", output);
     }
 
     @Test
     public void shortArrayRuntimeType() {
         short[] input = new short[] { 0, 1, 2 };
-        final String output = rule.toJson(input, int[].class);
+        final String output = rule.toJson(input, short[].class);
         assertEquals("[0,1,2]", output);
     }
 
     @Test
     public void booleanArrayRuntimeType() {
         boolean[] input = new boolean[] { true, false };
-        final String output = rule.toJson(input, int[].class);
+        final String output = rule.toJson(input, boolean[].class);
         assertEquals("[true,false]", output);
     }
 
     @Test
     public void floatArrayRuntimeType() {
         float[] input = new float[] { 1.0f, 1.1f };
-        final String output = rule.toJson(input, int[].class);
+        final String output = rule.toJson(input, float[].class);
         assertEquals("[1.0,1.1]", output);
     }
 
     @Test
     public void doubleArrayRuntimeType() {
         double[] input = new double[] { 1.0, 1.1 };
-        final String output = rule.toJson(input, int[].class);
+        final String output = rule.toJson(input, double[].class);
         assertEquals("[1.0,1.1]", output);
     }
 
