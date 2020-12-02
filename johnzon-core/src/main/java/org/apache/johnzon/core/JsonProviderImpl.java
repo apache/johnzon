@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.core;
 
+import org.apache.johnzon.core.spi.JsonPointerFactory;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -27,7 +29,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -52,17 +56,9 @@ import javax.json.stream.JsonGeneratorFactory;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
+import static java.util.Comparator.comparing;
+
 public class JsonProviderImpl extends JsonProvider implements Serializable {
-
-    /**
-     * This makes Johnzon to be compliant with spec, essentially regarding the JSON Pointer /-
-     *
-     * The setting is necessary for Johnzon to be compliant with JSR-374 / Jakarta JSON Processing (https://github.com/eclipse-ee4j/jsonp/),
-     * which specifies the "/-" reference points to the index after the last element in the
-     * array: https://github.com/eclipse-ee4j/jakartaee-tck/tree/master/src/com/sun/ts/tests/jsonp/api/(pointertests|patchtests)
-     */
-    private final boolean isStrictCompliance = Boolean.getBoolean("org.apache.johnzon.strict-jsonp-compliance");
-
     private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
             .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024)));
@@ -73,6 +69,13 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
     private final Supplier<JsonBuilderFactory> builderFactory = new Cached<>(() ->
             new JsonBuilderFactoryImpl(null, bufferProvider.get()));
+    private final JsonPointerFactory jsonPointerFactory;
+
+    public JsonProviderImpl() {
+        jsonPointerFactory = StreamSupport.stream(ServiceLoader.load(JsonPointerFactory.class).spliterator(), false)
+                .min(comparing(JsonPointerFactory::ordinal))
+                .orElseGet(DefaultJsonPointerFactory::new);
+    }
 
     @Override
     public JsonParser createParser(final InputStream in) {
@@ -213,7 +216,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonPointer createPointer(String path) {
-        return new JsonPointerImpl(this, isStrictCompliance, path);
+        return jsonPointerFactory.createPointer(this, path);
     }
 
     @Override

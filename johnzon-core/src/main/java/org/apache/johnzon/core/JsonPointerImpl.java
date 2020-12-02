@@ -27,6 +27,7 @@ import javax.json.JsonPointer;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,18 +41,16 @@ public class JsonPointerImpl implements JsonPointer {
     private final String jsonPointer;
     private final List<String> referenceTokens = new ArrayList<>();
     private static final Pattern IS_NUMBER = Pattern.compile("\\d+");
-    private boolean isStrictCompliance;
 
     /**
      * Constructs and initializes a JsonPointer.
      *
-     * @param provider the JSON Provider creating this pointer
-     * @param isStrictCompliance is we are running in a strict compliance or not
+     * @param provider the JSON provider used to create this pointer
      * @param jsonPointer the JSON Pointer string
      * @throws NullPointerException if {@code jsonPointer} is {@code null}
      * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
      */
-    public JsonPointerImpl(final JsonProvider provider, final boolean isStrictCompliance, final String jsonPointer) {
+    public JsonPointerImpl(final JsonProvider provider, final String jsonPointer) {
         if (jsonPointer == null) {
             throw new NullPointerException("jsonPointer must not be null");
         }
@@ -60,25 +59,12 @@ public class JsonPointerImpl implements JsonPointer {
         }
 
         this.provider = provider;
-        this.isStrictCompliance = isStrictCompliance;
         this.jsonPointer = jsonPointer;
         String[] encodedReferenceTokens = jsonPointer.split("/", -1);
 
         for (String encodedReferenceToken : encodedReferenceTokens) {
             referenceTokens.add(JsonPointerUtil.decode(encodedReferenceToken));
         }
-    }
-
-    /**
-     * Constructs and initializes a JsonPointer.
-     *
-     * @param provider the JSON Provider creating this pointer
-     * @param jsonPointer the JSON Pointer string
-     * @throws NullPointerException if {@code jsonPointer} is {@code null}
-     * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
-     */
-    public JsonPointerImpl(final JsonProvider provider, final String jsonPointer) {
-        this(provider, false, jsonPointer);
     }
 
     /**
@@ -490,10 +476,7 @@ public class JsonPointerImpl implements JsonPointer {
             return jsonArray.size();
 
         } else if (!addOperation && referenceToken.equals("-")) {
-            // by default there is no shift. RFC says /- is the element right after the last one.
-            // for replace/remove and get, Johnzon treats it as last element of the array
-            final int shift = isStrictCompliance ? 0 : 1;
-            final int arrayIndex = jsonArray.size() - shift;
+            final int arrayIndex = jsonArray.size() - minusShift();
             validateArraySize(referenceToken, jsonArray, arrayIndex, jsonArray.size());
             return arrayIndex;
         }
@@ -505,9 +488,19 @@ public class JsonPointerImpl implements JsonPointer {
             int arraySize = addOperation ? jsonArray.size() + 1 : jsonArray.size();
             validateArraySize(referenceToken, jsonArray, arrayIndex, arraySize);
             return arrayIndex;
-        } catch (NumberFormatException e) {
+        } catch (final NumberFormatException e) {
             throw new JsonException("'" + referenceToken + "' is no valid array index", e);
         }
+    }
+
+    /**
+     * This method can be overridden in sub classes.
+     * It's main goal is to support patch operation using "-" to replace, remove last element which is forbidden in JsonPointer
+     *
+     * @return the shift to apply on minus. For backward compatibility it's 1. We can have a strict JSONP compliancy with the dedicated module.
+     */
+    protected int minusShift() {
+        return 1;
     }
 
     private void validateJsonPointer(JsonValue target, int size) throws NullPointerException, JsonException {

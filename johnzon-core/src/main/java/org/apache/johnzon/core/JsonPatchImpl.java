@@ -226,7 +226,7 @@ class JsonPatchImpl implements JsonPatch {
                 synchronized (this) {
                     if (str == null) {
                         str = "{op: " + operation + ", path: " +
-                              pathPointer + ", from: " + fromPointer + ", value: " + value + '}';
+                              path + ", from: " + from + ", value: " + value + '}';
                     }
                 }
             }

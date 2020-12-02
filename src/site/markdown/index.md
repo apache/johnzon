@@ -52,6 +52,22 @@ You'll surely want to add the API as dependency too:
 </dependency>
 ]]></pre>
 
+### JSON-P Strict Compliance (stable)
+
+<pre class="prettyprint linenums"><![CDATA[
+<dependency>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-jsonp-strict</artifactId>
+  <version>${johnzon.version}</version>
+</dependency>
+]]></pre>
+
+This module enables to enforce a strict compliance of JsonPointer behavior on `/-` usage.
+Johnzon default implementation enables to use it as "remove last element" when using a remove patch (or not add semantic).
+This module enforces this case to be invalid to be closer to the intended wording of the JSON Pointer underlying specs.
+
+Note that you can even customize this behavior implementing your own `JsonPointerFactory` and changing the ordinal value to take a highest priority.
+
 ### Mapper (stable)
 
 <pre class="prettyprint linenums"><![CDATA[

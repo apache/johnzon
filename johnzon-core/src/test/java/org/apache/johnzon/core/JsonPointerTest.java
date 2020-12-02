@@ -455,9 +455,8 @@ public class JsonPointerTest {
         assertEquals("[[\"bar\",\"baz\"]]", result.toString()); // [["bar","baz"]]
     }
 
-    @Test(expected = JsonException.class)
-    public void testRemoveLastArrayElement() {
-        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
+    public void testRemoveLastArrayElementWithPatch() {
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/0/-");
         JsonStructure target = Json.createArrayBuilder()
                                    .add(Json.createArrayBuilder()
                                             .add("bar")
@@ -466,78 +465,6 @@ public class JsonPointerTest {
 
         JsonStructure result = jsonPointer.remove(target);
         assertEquals("[[\"bar\",\"qux\"]]", result.toString()); // [["bar","qux"]]
-    }
-
-    @Test(expected = JsonException.class)
-    public void testGetLastArrayElementSimple() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                         .add("bar")
-                                         .add("qux")
-                                         .add("baz")
-                                         .build();
-
-        jsonPointer.getValue(target);
-    }
-
-    @Test(expected = JsonException.class)
-    public void testGetLastArrayElement() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                         .add(Json.createArrayBuilder()
-                                                  .add("bar")
-                                                  .add("qux")
-                                                  .add("baz")).build(); // [["bar","qux","baz"]]
-
-        jsonPointer.getValue(target);
-    }
-
-    @Test(expected = JsonException.class)
-    public void testGetLastArrayElement2() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                         .add(Json.createArrayBuilder()
-                                                  .add("bar")
-                                                  .add("qux")
-                                                  .add("baz")).build(); // [["bar","qux","baz"]]
-
-        jsonPointer.getValue(target);
-    }
-
-    @Test(expected = JsonException.class)
-    public void testReplaceLastArrayElementSimple() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                         .add("bar")
-                                         .add("qux")
-                                         .add("baz")
-                                         .build();
-
-        jsonPointer.replace(target, new JsonStringImpl("won't work"));
-    }
-
-    @Test(expected = JsonException.class)
-    public void testReplaceLastArrayElement() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                         .add(Json.createArrayBuilder()
-                                                  .add("bar")
-                                                  .add("qux")
-                                                  .add("baz")).build(); // [["bar","qux","baz"]]
-
-        jsonPointer.replace(target, new JsonStringImpl("won't work"));
-    }
-
-    @Test(expected = JsonException.class)
-    public void testReplaceLastArrayElement2() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                         .add(Json.createArrayBuilder()
-                                                  .add("bar")
-                                                  .add("qux")
-                                                  .add("baz")).build(); // [["bar","qux","baz"]]
-
-        jsonPointer.replace(target, new JsonStringImpl("won't work"));
     }
 
     @Test
@@ -579,14 +506,14 @@ public class JsonPointerTest {
         assertEquals("[[\"bar\",\"qux\",\"baz\",\"xyz\"]]", result.toString());
     }
 
-    @Test(expected = JsonException.class)
-    public void testRemoveLastArrayElementSimple() {
-        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
+    @Test
+    public void testRemoveLastArrayElementSimpleWithPatch() {
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
         JsonStructure target = Json.createArrayBuilder()
-                .add("bar")
-                .add("qux")
-                .add("baz")
-                .build();
+                                   .add("bar")
+                                   .add("qux")
+                                   .add("baz")
+                                   .build();
 
         JsonStructure result = jsonPointer.remove(target);
         assertEquals("[\"bar\",\"qux\"]", result.toString());
@@ -596,17 +523,6 @@ public class JsonPointerTest {
     public void testRemoveLastArrayElementFromEmptySimple() {
         final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
         final JsonStructure target = Json.createArrayBuilder().build();
-        jsonPointer.remove(target);
-    }
-
-    @Test(expected = JsonException.class)
-    public void testRemoveLastArrayElementFromEmpty() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
-        final JsonStructure target = Json.createArrayBuilder()
-                                   .add(Json.createArrayBuilder()
-                                            .add("bar")
-                                            .add("qux")
-                                            .add("baz")).build(); // [["bar","qux","baz"]]
         jsonPointer.remove(target);
     }
 

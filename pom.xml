@@ -65,6 +65,7 @@
     <module>johnzon-jsonschema</module>
     <module>johnzon-osgi</module>
     <module>johnzon-jsonlogic</module>
+    <module>johnzon-jsonp-strict</module>
   </modules>
 
   <dependencyManagement>
@@ -150,6 +151,7 @@
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
+          <consoleOutput>true</consoleOutput>
           <includes>
             <include>src/**/*</include>
             <include>pom.xml</include>
@@ -162,7 +164,7 @@
             <exclude>*.iws</exclude>
             <exclude>*.iml</exclude>
             <exclude>*.ipr</exclude>
-            <exclude>**/META-INF/services/javax.*</exclude>
+            <exclude>**/META-INF/services/*</exclude>
             <exclude>**/*.json</exclude>
             <exclude>**/*.yml</exclude>
             <exclude>**/bench/*.txt</exclude>
