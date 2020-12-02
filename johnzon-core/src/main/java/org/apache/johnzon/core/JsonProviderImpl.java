@@ -56,6 +56,10 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     /**
      * This makes Johnzon to be compliant with spec, essentially regarding the JSON Pointer /-
+     *
+     * The setting is necessary for Johnzon to be compliant with JSR-374 / Jakarta JSON Processing (https://github.com/eclipse-ee4j/jsonp/),
+     * which specifies the "/-" reference points to the index after the last element in the
+     * array: https://github.com/eclipse-ee4j/jakartaee-tck/tree/master/src/com/sun/ts/tests/jsonp/api/(pointertests|patchtests)
      */
     private final boolean isStrictCompliance = Boolean.getBoolean("org.apache.johnzon.strict-jsonp-compliance");
 
