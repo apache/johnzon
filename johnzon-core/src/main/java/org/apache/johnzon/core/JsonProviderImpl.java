@@ -57,7 +57,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     /**
      * This makes Johnzon to be compliant with spec, essentially regarding the JSON Pointer /-
      */
-    private final boolean isStrictCompliance = Boolean.getBoolean("org.apache.johnzon.STRICT_JSONP_COMPLIANCE");
+    private final boolean isStrictCompliance = Boolean.getBoolean("org.apache.johnzon.strict-jsonp-compliance");
 
     private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
