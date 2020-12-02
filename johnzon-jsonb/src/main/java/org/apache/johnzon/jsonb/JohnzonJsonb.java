@@ -317,6 +317,12 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             for (int i = 0; i < length; i++) {
                 array[i] = ((short[])object)[i];
             }
+        } else if (boolean.class == componentType) {
+            final int length = ArrayUtil.getArrayLength(object);
+            array = new Boolean[length];
+            for (int i = 0; i < length; i++) {
+                array[i] = ((boolean[])object)[i];
+            }
         } else {
             array = (Object[]) object;
         }
@@ -327,7 +333,7 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     public String toJson(final Object inObject, final Type runtimeType) throws JsonbException {
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(runtimeType)) {
-            return delegate.writeArrayAsString((Object[]) object);
+            return delegate.writeArrayAsString(toArray(object));
         } else if (isCollection(runtimeType)) {
             return delegate.writeArrayAsString(Collection.class.cast(object));
         } else if (ijson && isNotObjectOrArray(object)) {
@@ -378,7 +384,7 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     public void toJson(final Object inObject, final OutputStream stream) throws JsonbException {
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(object.getClass())) {
-            delegate.writeArray((Object[]) object, stream);
+            delegate.writeArray(toArray(object), stream);
         } else if (Collection.class.isInstance(object)) {
             delegate.writeArray(Collection.class.cast(object), stream);
         } else if (ijson && isNotObjectOrArray(object)) {
