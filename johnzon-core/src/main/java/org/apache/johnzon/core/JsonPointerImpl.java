@@ -499,7 +499,7 @@ public class JsonPointerImpl implements JsonPointer {
      * @return the shift to apply on minus. For pointer, it's 0 because we need the element right after the last.
      */
     protected int minusShift() {
-        return 0;
+        return 1;
     }
 
     private void validateJsonPointer(JsonValue target, int size) throws NullPointerException, JsonException {

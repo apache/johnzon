@@ -29,6 +29,7 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonPatch;
+import javax.json.JsonPointer;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
@@ -147,9 +148,11 @@ class JsonPatchImpl implements JsonPatch {
     static class PatchValue {
         private final JsonProvider provider;
         private final JsonPatch.Operation operation;
-        private final JsonPointerImpl path;
-        private final JsonPointerImpl from;
+        private final JsonPointer path;
+        private final JsonPointer from;
         private final JsonValue value;
+        private final String pathPtr;
+        private final String fromPtr;
 
         private volatile String str;
         private volatile JsonObject json;
@@ -162,11 +165,13 @@ class JsonPatchImpl implements JsonPatch {
                    final JsonValue value) {
             this.provider = provider;
             this.operation = operation;
-            this.path = new JsonPatchPointerImpl(provider, path);
+            this.path = provider.createPointer(path);
+            this.pathPtr = path;
+            this.fromPtr = from;
 
             // ignore from if we do not need it
             if (operation == JsonPatch.Operation.MOVE || operation == JsonPatch.Operation.COPY) {
-                this.from = new JsonPatchPointerImpl(provider, from);
+                this.from = provider.createPointer(from);
             } else {
                 this.from = null;
             }
@@ -233,10 +238,10 @@ class JsonPatchImpl implements JsonPatch {
                     if (json == null) {
                         JsonObjectBuilder builder = provider.createObjectBuilder()
                                 .add("op", operation.name().toLowerCase())
-                                .add("path", path.getJsonPointer());
+                                .add("path", pathPtr);
 
-                        if (from != null) {
-                            builder.add("from", from.getJsonPointer());
+                        if (fromPtr != null) {
+                            builder.add("from", fromPtr);
                         }
 
                         if (value != null) {
@@ -248,26 +253,6 @@ class JsonPatchImpl implements JsonPatch {
                 }
             }
             return json;
-        }
-    }
-
-    public static class JsonPatchPointerImpl extends JsonPointerImpl {
-
-        /**
-         * Constructs and initializes a JsonPointer.
-         *
-         * @param provider the JsonProvider
-         * @param jsonPointer the JSON Pointer string
-         * @throws NullPointerException if {@code jsonPointer} is {@code null}
-         * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
-         */
-        public JsonPatchPointerImpl(final JsonProvider provider, final String jsonPointer) {
-            super(provider, jsonPointer);
-        }
-
-        @Override
-        protected int minusShift() {
-            return 1;
         }
     }
 }
