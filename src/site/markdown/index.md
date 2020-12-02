@@ -63,8 +63,11 @@ You'll surely want to add the API as dependency too:
 ]]></pre>
 
 This module enables to enforce a strict compliance of JsonPointer behavior on `/-` usage.
-Johnzon default implementation enables to use it as "remove last element" when using a remove patch (or not add semantic).
-This module enforces this case to be invalid to be closer to the intended wording of the JSON Pointer underlying specs.
+Johnzon default implementation enables an extended usage of it for replace/remove and get operations.
+In that case, it will point to the last element of the array so it's easy to replace/remove or get the last element of the array.
+For add operation, it remains the same, aka points to the element right after the last element of the array.
+
+This module enforces Johnzon to be JSONP compliant and fail if `/-` is used for anything but add.
 
 Note that you can even customize this behavior implementing your own `JsonPointerFactory` and changing the ordinal value to take a highest priority.
 

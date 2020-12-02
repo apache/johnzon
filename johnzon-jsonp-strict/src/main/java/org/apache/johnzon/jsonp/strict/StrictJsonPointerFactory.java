@@ -24,12 +24,20 @@ import org.apache.johnzon.core.spi.JsonPointerFactory;
 import javax.json.JsonPointer;
 import javax.json.spi.JsonProvider;
 
+/**
+ * This aims at replacing the {@link org.apache.johnzon.core.DefaultJsonPointerFactory} in order to force Johnzon
+ * to comply with the specification and pass the TCK.
+ */
 public class StrictJsonPointerFactory implements JsonPointerFactory {
+
     @Override
     public JsonPointer createPointer(final JsonProvider provider, final String path) {
         return new StrictJsonPointerImpl(provider, path);
     }
 
+    /**
+     * This overrides the default shift and puts Johnzon into a standard behavior to pass the TCK
+     */
     private static class StrictJsonPointerImpl extends JsonPointerImpl {
         public StrictJsonPointerImpl(final JsonProvider provider, final String path) {
             super(provider, path);
@@ -39,4 +47,5 @@ public class StrictJsonPointerFactory implements JsonPointerFactory {
             return 0;
         }
     }
+
 }

@@ -23,9 +23,16 @@ import org.apache.johnzon.core.spi.JsonPointerFactory;
 import javax.json.JsonPointer;
 import javax.json.spi.JsonProvider;
 
+/**
+ * This is not a standard factory but allows Johnzon to support an extended version of JSon Pointer.
+ * By default, we support an extended usage of /- when used with replace/remove/get. But in the johnzon-jsonp-strict
+ * module, it's overridden so we can pass the JSONP TCK in standalone environments or TomEE or else.
+ */
 public class DefaultJsonPointerFactory implements JsonPointerFactory {
+
     @Override
     public JsonPointer createPointer(final JsonProvider provider, final String path) {
         return new JsonPointerImpl(provider, path);
     }
+
 }

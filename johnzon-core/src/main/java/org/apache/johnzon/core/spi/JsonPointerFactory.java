@@ -21,7 +21,13 @@ package org.apache.johnzon.core.spi;
 import javax.json.JsonPointer;
 import javax.json.spi.JsonProvider;
 
+/**
+ * Factory to create JsonPointer instances. We have a default one in Johnzon, but the aim is tom being able to
+ * override it in some edge cases. It uses a usual service loader mechanism to load and sort the factories using
+ * the ordinal.
+ */
 public interface JsonPointerFactory {
+
     JsonPointer createPointer(JsonProvider provider, String path);
 
     default int ordinal() {
