@@ -53,6 +53,12 @@ import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
 public class JsonProviderImpl extends JsonProvider implements Serializable {
+
+    /**
+     * This makes Johnzon to be compliant with spec, essentially regarding the JSON Pointer /-
+     */
+    private final boolean isStrictCompliance = Boolean.getBoolean("org.apache.johnzon.STRICT_JSONP_COMPLIANCE");
+
     private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
             .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024)));
@@ -203,7 +209,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonPointer createPointer(String path) {
-        return new JsonPointerImpl(this, path);
+        return new JsonPointerImpl(this, isStrictCompliance, path);
     }
 
     @Override

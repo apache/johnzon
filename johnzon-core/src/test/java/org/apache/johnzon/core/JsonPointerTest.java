@@ -457,19 +457,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveLastArrayElement() {
-        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/0/-");
-        JsonStructure target = Json.createArrayBuilder()
-                                   .add(Json.createArrayBuilder()
-                                            .add("bar")
-                                            .add("qux")
-                                            .add("baz")).build(); // [["bar","qux","baz"]]
-
-        JsonStructure result = jsonPointer.remove(target);
-        assertEquals("[[\"bar\",\"qux\"]]", result.toString()); // [["bar","qux"]]
-    }
-
-    public void testRemoveLastArrayElementWithPatch() {
-        JsonPointerImpl jsonPointer = new JsonPatchImpl.JsonPatchPointerImpl(JsonProvider.provider(), "/0/-");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
         JsonStructure target = Json.createArrayBuilder()
                                    .add(Json.createArrayBuilder()
                                             .add("bar")
@@ -482,7 +470,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testGetLastArrayElementSimple() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
         final JsonStructure target = Json.createArrayBuilder()
                                          .add("bar")
                                          .add("qux")
@@ -494,7 +482,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testGetLastArrayElement() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
         final JsonStructure target = Json.createArrayBuilder()
                                          .add(Json.createArrayBuilder()
                                                   .add("bar")
@@ -506,7 +494,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testGetLastArrayElement2() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/0/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
         final JsonStructure target = Json.createArrayBuilder()
                                          .add(Json.createArrayBuilder()
                                                   .add("bar")
@@ -518,7 +506,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceLastArrayElementSimple() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
         final JsonStructure target = Json.createArrayBuilder()
                                          .add("bar")
                                          .add("qux")
@@ -530,7 +518,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceLastArrayElement() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
         final JsonStructure target = Json.createArrayBuilder()
                                          .add(Json.createArrayBuilder()
                                                   .add("bar")
@@ -542,7 +530,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testReplaceLastArrayElement2() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/0/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
         final JsonStructure target = Json.createArrayBuilder()
                                          .add(Json.createArrayBuilder()
                                                   .add("bar")
@@ -593,25 +581,12 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveLastArrayElementSimple() {
-        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
+        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/-");
         JsonStructure target = Json.createArrayBuilder()
                 .add("bar")
                 .add("qux")
                 .add("baz")
                 .build();
-
-        JsonStructure result = jsonPointer.remove(target);
-        assertEquals("[\"bar\",\"qux\"]", result.toString());
-    }
-
-    @Test
-    public void testRemoveLastArrayElementSimpleWithPatch() {
-        JsonPointerImpl jsonPointer = new JsonPatchImpl.JsonPatchPointerImpl(JsonProvider.provider(), "/-");
-        JsonStructure target = Json.createArrayBuilder()
-                                   .add("bar")
-                                   .add("qux")
-                                   .add("baz")
-                                   .build();
 
         JsonStructure result = jsonPointer.remove(target);
         assertEquals("[\"bar\",\"qux\"]", result.toString());
@@ -626,7 +601,7 @@ public class JsonPointerTest {
 
     @Test(expected = JsonException.class)
     public void testRemoveLastArrayElementFromEmpty() {
-        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/0/-");
+        final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), true, "/0/-");
         final JsonStructure target = Json.createArrayBuilder()
                                    .add(Json.createArrayBuilder()
                                             .add("bar")

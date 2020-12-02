@@ -162,11 +162,11 @@ class JsonPatchImpl implements JsonPatch {
                    final JsonValue value) {
             this.provider = provider;
             this.operation = operation;
-            this.path = new JsonPatchPointerImpl(provider, path);
+            this.path = new JsonPointerImpl(provider, path);
 
             // ignore from if we do not need it
             if (operation == JsonPatch.Operation.MOVE || operation == JsonPatch.Operation.COPY) {
-                this.from = new JsonPatchPointerImpl(provider, from);
+                this.from = new JsonPointerImpl(provider, from);
             } else {
                 this.from = null;
             }
@@ -251,23 +251,4 @@ class JsonPatchImpl implements JsonPatch {
         }
     }
 
-    public static class JsonPatchPointerImpl extends JsonPointerImpl {
-
-        /**
-         * Constructs and initializes a JsonPointer.
-         *
-         * @param provider the JsonProvider
-         * @param jsonPointer the JSON Pointer string
-         * @throws NullPointerException if {@code jsonPointer} is {@code null}
-         * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
-         */
-        public JsonPatchPointerImpl(final JsonProvider provider, final String jsonPointer) {
-            super(provider, jsonPointer);
-        }
-
-        @Override
-        protected int minusShift() {
-            return 1;
-        }
-    }
 }
