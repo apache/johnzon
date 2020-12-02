@@ -30,7 +30,6 @@ import javax.json.JsonPatch;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
-
 import java.io.StringReader;
 
 import static org.junit.Assert.assertEquals;

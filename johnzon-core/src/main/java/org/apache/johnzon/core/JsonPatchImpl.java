@@ -29,6 +29,7 @@ import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonPatch;
+import javax.json.JsonPointer;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import javax.json.spi.JsonProvider;
@@ -64,25 +65,25 @@ class JsonPatchImpl implements JsonPatch {
 
             switch (patch.operation) {
                 case ADD:
-                    patched = patch.path.add(patched, patch.value);
+                    patched = patch.pathPointer.add(patched, patch.value);
                     break;
                 case REMOVE:
-                    patched = patch.path.remove(patched);
+                    patched = patch.pathPointer.remove(patched);
                     break;
                 case REPLACE:
                     // first remove the existing element and then add the new value
-                    patched = patch.path.add(patch.path.remove(patched), patch.value);
+                    patched = patch.pathPointer.add(patch.pathPointer.remove(patched), patch.value);
                     break;
                 case MOVE:
-                    JsonValue valueToMove = patch.from.getValue(patched);
-                    patched = patch.path.add(patch.from.remove(patched), valueToMove);
+                    JsonValue valueToMove = patch.fromPointer.getValue(patched);
+                    patched = patch.pathPointer.add(patch.fromPointer.remove(patched), valueToMove);
                     break;
                 case COPY:
-                    JsonValue toCopy = patch.from.getValue(patched);
-                    patched = patch.path.add(patched, toCopy);
+                    JsonValue toCopy = patch.fromPointer.getValue(patched);
+                    patched = patch.pathPointer.add(patched, toCopy);
                     break;
                 case TEST:
-                    JsonValue toTest = patch.path.getValue(patched);
+                    JsonValue toTest = patch.pathPointer.getValue(patched);
                     if (!toTest.equals(patch.value)) {
                         throw new JsonException("JsonPatch.Operation.TEST fails! Values are not equal");
                     }
@@ -147,8 +148,10 @@ class JsonPatchImpl implements JsonPatch {
     static class PatchValue {
         private final JsonProvider provider;
         private final JsonPatch.Operation operation;
-        private final JsonPointerImpl path;
-        private final JsonPointerImpl from;
+        private String path;
+        private String from;
+        private final JsonPointer pathPointer;
+        private final JsonPointer fromPointer;
         private final JsonValue value;
 
         private volatile String str;
@@ -162,13 +165,15 @@ class JsonPatchImpl implements JsonPatch {
                    final JsonValue value) {
             this.provider = provider;
             this.operation = operation;
-            this.path = new JsonPatchPointerImpl(provider, path);
+            this.path = path;
+            this.from = from;
+            this.pathPointer = provider.createPointer(path);
 
             // ignore from if we do not need it
             if (operation == JsonPatch.Operation.MOVE || operation == JsonPatch.Operation.COPY) {
-                this.from = new JsonPatchPointerImpl(provider, from);
+                this.fromPointer = provider.createPointer(from);
             } else {
-                this.from = null;
+                this.fromPointer = null;
             }
 
             this.value = value;
@@ -220,7 +225,8 @@ class JsonPatchImpl implements JsonPatch {
             if (str == null) {
                 synchronized (this) {
                     if (str == null) {
-                        str = "{op: " + operation + ", path: " + path + ", from: " + from + ", value: " + value + '}';
+                        str = "{op: " + operation + ", path: " +
+                              path + ", from: " + from + ", value: " + value + '}';
                     }
                 }
             }
@@ -233,10 +239,10 @@ class JsonPatchImpl implements JsonPatch {
                     if (json == null) {
                         JsonObjectBuilder builder = provider.createObjectBuilder()
                                 .add("op", operation.name().toLowerCase())
-                                .add("path", path.getJsonPointer());
+                                .add("path", path);
 
-                        if (from != null) {
-                            builder.add("from", from.getJsonPointer());
+                        if (fromPointer != null) {
+                            builder.add("from", from);
                         }
 
                         if (value != null) {
@@ -251,23 +257,4 @@ class JsonPatchImpl implements JsonPatch {
         }
     }
 
-    public static class JsonPatchPointerImpl extends JsonPointerImpl {
-
-        /**
-         * Constructs and initializes a JsonPointer.
-         *
-         * @param provider the JsonProvider
-         * @param jsonPointer the JSON Pointer string
-         * @throws NullPointerException if {@code jsonPointer} is {@code null}
-         * @throws JsonException        if {@code jsonPointer} is not a valid JSON Pointer
-         */
-        public JsonPatchPointerImpl(final JsonProvider provider, final String jsonPointer) {
-            super(provider, jsonPointer);
-        }
-
-        @Override
-        protected int minusShift() {
-            return 1;
-        }
-    }
 }
