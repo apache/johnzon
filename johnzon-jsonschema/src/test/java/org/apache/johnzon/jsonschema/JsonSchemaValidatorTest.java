@@ -355,6 +355,25 @@ public class JsonSchemaValidatorTest {
 
         validator.close();
     }
+    
+    @Test
+    public void integerType() {
+    	final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("age", jsonFactory.createObjectBuilder()
+                                .add("type", "integer")
+                                .build())
+                        .build())
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 30).build()).isSuccess());
+        // check no decimal numbers allowed
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder() .add("age", 30.3) .build()).isSuccess());
+        
+        validator.close();
+    }
 
     @Test
     public void minLength() {
@@ -657,4 +676,6 @@ public class JsonSchemaValidatorTest {
 
         validator.close();
     }
+    
+
 }

@@ -55,6 +55,7 @@ public class TypeValidation implements ValidationExtension {
             case "string":
                 return Stream.of(JsonValue.ValueType.STRING);
             case "number":
+            case "integer":
                 return Stream.of(JsonValue.ValueType.NUMBER);
             case "array":
                 return Stream.of(JsonValue.ValueType.ARRAY);
