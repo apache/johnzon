@@ -360,7 +360,7 @@ public class JsonSchemaValidatorTest {
     
     @Test
     public void integerType() {
-    	final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
                 .add("type", "object")
                 .add("properties", jsonFactory.createObjectBuilder()
                         .add("age", jsonFactory.createObjectBuilder()
