@@ -23,6 +23,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Collection;
 
 import javax.json.Json;
@@ -355,6 +357,29 @@ public class JsonSchemaValidatorTest {
 
         validator.close();
     }
+    
+    @Test
+    public void integerType() {
+    	final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("age", jsonFactory.createObjectBuilder()
+                                .add("type", "integer")
+                                .build())
+                        .build())
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 30).build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", -10).build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", BigInteger.valueOf(50)).build()).isSuccess());
+        // check no decimal numbers allowed
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder() .add("age", 30.3f) .build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder() .add("age", -7.4d) .build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder() .add("age", BigDecimal.valueOf(50.35613d)).build()).isSuccess());
+        
+        validator.close();
+    }
 
     @Test
     public void minLength() {
@@ -657,4 +682,6 @@ public class JsonSchemaValidatorTest {
 
         validator.close();
     }
+    
+
 }

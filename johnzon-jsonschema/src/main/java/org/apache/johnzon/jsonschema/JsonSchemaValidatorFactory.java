@@ -43,6 +43,7 @@ import org.apache.johnzon.jsonschema.spi.builtin.ContainsValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.EnumValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.ExclusiveMaximumValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.ExclusiveMinimumValidation;
+import org.apache.johnzon.jsonschema.spi.builtin.IntegerValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.ItemsValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.MaxItemsValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.MaxLengthValidation;
@@ -88,6 +89,7 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
         return asList(
                 new RequiredValidation(),
                 new TypeValidation(),
+                new IntegerValidation(),
                 new EnumValidation(),
                 new MultipleOfValidation(),
                 new MaximumValidation(),
