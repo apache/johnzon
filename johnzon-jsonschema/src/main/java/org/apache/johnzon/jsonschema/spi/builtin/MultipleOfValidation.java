@@ -40,8 +40,8 @@ public class MultipleOfValidation implements ValidationExtension {
         return Optional.empty();
     }
 
-    private static class Impl extends BaseNumberValidation {
-        private Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final double multipleOf) {
+    static class Impl extends BaseNumberValidation {
+        Impl(final String pointer, final Function<JsonValue, JsonValue> valueProvider, final double multipleOf) {
             super(pointer, valueProvider, multipleOf);
         }
 
