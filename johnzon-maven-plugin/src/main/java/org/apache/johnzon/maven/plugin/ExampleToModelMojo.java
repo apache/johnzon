@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.maven.plugin;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -68,7 +67,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     @Parameter
     protected String header;
 
-    @Parameter
+    @Parameter(defaultValue = "${project}", readonly = true)
     protected MavenProject project;
 
     @Parameter(property = "johnzon.attach", defaultValue = "true")
@@ -199,7 +198,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     private void handleArray(final Writer writer, final String prefix,
                              final Map<String, JsonObject> nestedTypes,
                              final JsonValue value,
-                             final String jsonField,final String fieldName,
+                             final String jsonField, final String fieldName,
                              final int arrayLevel,
                              final Collection<String> imports) throws IOException {
         final JsonArray array = JsonArray.class.cast(value);
@@ -239,7 +238,7 @@ public class ExampleToModelMojo extends AbstractMojo {
                                     final Collection<String> imports) throws IOException {
         final String actualType = buildArrayType(arrayLevel, type);
         final String actualField = buildValidFieldName(jsonField);
-        final String methodName = StringUtils.capitalize(actualField);
+        final String methodName = capitalize(actualField);
 
         if (!jsonField.equals(field)) { // TODO: add it to imports in eager visitor
             imports.add("org.apache.johnzon.mapper.JohnzonProperty");
@@ -253,6 +252,16 @@ public class ExampleToModelMojo extends AbstractMojo {
         writer.append(prefix).append("public void set").append(methodName).append("(final ").append(actualType).append(" newValue) {\n");
         writer.append(prefix).append("    this.").append(actualField).append(" = newValue;\n");
         writer.append(prefix).append("}\n");
+    }
+
+    private String capitalize(final String str) {
+        if (str != null && !str.isEmpty()) {
+            final char firstChar = str.charAt(0);
+            return Character.isTitleCase(firstChar) ?
+                    str :
+                    (Character.toTitleCase(firstChar) + str.substring(1));
+        }
+        return str;
     }
 
     private String buildArrayType(final int arrayLevel, final String type) {
@@ -282,7 +291,7 @@ public class ExampleToModelMojo extends AbstractMojo {
     }
 
     private void generateFile(final JsonReaderFactory readerFactory, final File source) throws MojoExecutionException {
-        final String javaName = StringUtils.capitalize(toJavaName(source.getName()));
+        final String javaName = capitalize(toJavaName(source.getName()));
         final String jsonToClass = packageBase + '.' + javaName;
         final File outputFile = new File(target, jsonToClass.replace('.', '/') + ".java");
 
@@ -313,7 +322,8 @@ public class ExampleToModelMojo extends AbstractMojo {
     }
 
     private String toJavaFieldName(final String key) {
-        return StringUtils.uncapitalize(toJavaName(key));
+        final String javaName = toJavaName(key);
+        return Character.toLowerCase(javaName.charAt(0)) + javaName.substring(1);
     }
 
     private String toJavaName(final String file) {
@@ -329,7 +339,7 @@ public class ExampleToModelMojo extends AbstractMojo {
                 builder.append(anIn);
             }
         }
-        return StringUtils.capitalize(builder.toString());
+        return capitalize(builder.toString());
     }
 
     private interface Visitor {

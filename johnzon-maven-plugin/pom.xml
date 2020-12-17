@@ -43,15 +43,25 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.johnzon</groupId>
+      <groupId>org.apache.geronimo.specs</groupId>
+      <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+      <version>${geronimo-jsonb.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>johnzon-mapper</artifactId>
       <version>${project.version}</version>
     </dependency>
-
     <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.4</version>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>johnzon-jsonb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>johnzon-jsonschema</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
