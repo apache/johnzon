@@ -35,12 +35,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.BiPredicate;
 import java.util.stream.Collector;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.stream.Collectors.joining;
 
 public class JohnzonJsonLogic {
@@ -82,14 +85,40 @@ public class JohnzonJsonLogic {
 
         final Set<String> keys = object.keySet();
         if (keys.size() != 1) {
-            throw new IllegalArgumentException("Invalid argument, multiple keys found: " + keys);
+            throw invalidArgument(keys);
         }
         final String operator = keys.iterator().next();
         final Operator impl = operators.get(operator);
         if (impl == null) {
-            throw new IllegalArgumentException("Missing operator '" + operator + "'");
+            throw missingOperator(operator);
         }
         return impl.apply(this, object.get(operator), args);
+    }
+
+    public CompletionStage<JsonValue> applyStage(final JsonValue logic, final JsonValue args) {
+        if (logic.getValueType() != JsonValue.ValueType.OBJECT) {
+            return completedFuture(logic);
+        }
+
+        final JsonObject object = logic.asJsonObject();
+        if (object.size() > 1) {
+            return completedFuture(object);
+        }
+
+        final Set<String> keys = object.keySet();
+        if (keys.size() != 1) {
+            final CompletableFuture<JsonValue> promise = new CompletableFuture<>();
+            promise.completeExceptionally(invalidArgument(keys));
+            return promise;
+        }
+        final String operator = keys.iterator().next();
+        final Operator impl = operators.get(operator);
+        if (impl == null) {
+            final CompletableFuture<JsonValue> promise = new CompletableFuture<>();
+            promise.completeExceptionally(missingOperator(operator));
+            return promise;
+        }
+        return impl.applyStage(this, object.get(operator), args);
     }
 
     public boolean isTruthy(final JsonValue value) {
@@ -204,6 +233,14 @@ public class JohnzonJsonLogic {
         registerOperator("cat", this::catImpl);
         registerOperator("substr", this::substrImpl);
         return this;
+    }
+
+    private IllegalArgumentException invalidArgument(final Set<String> keys) {
+        return new IllegalArgumentException("Invalid argument, multiple keys found: " + keys);
+    }
+
+    private IllegalArgumentException missingOperator(final String operator) {
+        return new IllegalArgumentException("Missing operator '" + operator + "'");
     }
 
     private JsonValue minImpl(final JohnzonJsonLogic logic, final JsonValue config, final JsonValue params) {

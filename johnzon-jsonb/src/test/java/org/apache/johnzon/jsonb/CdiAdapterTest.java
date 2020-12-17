@@ -20,10 +20,14 @@ package org.apache.johnzon.jsonb;
 
 import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.config.WebBeansFinder;
-import org.apache.webbeans.lifecycle.test.OpenWebBeansTestLifeCycle;
-import org.apache.webbeans.lifecycle.test.OpenWebBeansTestMetaDataDiscoveryService;
+import org.apache.webbeans.corespi.se.DefaultScannerService;
+import org.apache.webbeans.lifecycle.StandaloneLifeCycle;
 import org.apache.webbeans.proxy.OwbNormalScopeProxy;
+import org.apache.webbeans.spi.ContainerLifecycle;
+import org.apache.webbeans.spi.ScannerService;
 import org.apache.webbeans.util.WebBeansUtil;
+import org.apache.xbean.finder.AnnotationFinder;
+import org.apache.xbean.finder.archive.ClassesArchive;
 import org.junit.Test;
 
 import javax.enterprise.context.ApplicationScoped;
@@ -32,8 +36,9 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.annotation.JsonbTypeAdapter;
+import java.util.Properties;
 
-import static java.util.Arrays.asList;
+import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -42,10 +47,14 @@ public class CdiAdapterTest {
     @Test
     public void run() {
         WebBeansFinder.clearInstances(WebBeansUtil.getCurrentClassLoader());
-        final OpenWebBeansTestLifeCycle testLifecycle = new OpenWebBeansTestLifeCycle();
-        final WebBeansContext ctx = WebBeansContext.currentInstance();
-        final OpenWebBeansTestMetaDataDiscoveryService discoveryService = OpenWebBeansTestMetaDataDiscoveryService.class.cast(ctx.getScannerService());
-        discoveryService.deployClasses(asList(Service.class, ModelAdapter.class));
+        final ContainerLifecycle testLifecycle = new StandaloneLifeCycle();
+        new WebBeansContext(singletonMap(
+                ScannerService.class, new DefaultScannerService() {
+                    @Override
+                    protected AnnotationFinder initFinder() {
+                        return new AnnotationFinder(new ClassesArchive(Service.class, ModelAdapter.class));
+                    }
+                }), new Properties());
         testLifecycle.startApplication(null);
         try {
             Jsonb jsonb = JsonbBuilder.create();
@@ -57,6 +66,7 @@ public class CdiAdapterTest {
             }
         } finally {
             testLifecycle.stopApplication(null);
+            WebBeansFinder.clearInstances(WebBeansUtil.getCurrentClassLoader());
         }
     }
 

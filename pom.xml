@@ -45,12 +45,11 @@
     <felix.plugin.version>4.0.0</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <java-compile.version>1.8</java-compile.version>
-    <cxf.version>3.0.0</cxf.version>
-    <javadoc.params /> <!-- for java 8 set disable doclint (by profile) -->
+    <cxf.version>3.4.1</cxf.version>
     <checkstyle.version>2.15</checkstyle.version> <!-- checkstyle > 2.15 version do not support java 6 -->
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
-    <owb.version>1.7.5</owb.version>
+    <owb.version>2.0.20</owb.version>
   </properties>
 
   <modules>
@@ -345,7 +344,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.3</version>
+        <version>3.2.0</version>
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -354,7 +353,11 @@
             </goals>
             <configuration>
               <show>private</show>
-              <additionalparam>${javadoc.params}</additionalparam> <!-- maven plugin generated a HelpMojo with malformed javadoc -->
+              <detectJavaApiLink>false</detectJavaApiLink>
+              <detectLinks>false</detectLinks>
+              <detectOfflineLinks>false</detectOfflineLinks>
+              <doclint>none</doclint>
+              <source>8</source>
             </configuration>
           </execution>
         </executions>
@@ -508,7 +511,6 @@
         <configuration>
           <notimestamp>true</notimestamp>
           <show>private</show>
-          <additionalparam>${javadoc.params}</additionalparam> <!-- maven plugin generated a HelpMojo with malformed javadoc -->
         </configuration>
         <reportSets>
           <reportSet>
@@ -762,7 +764,6 @@
       </activation>
       <properties>
         <checkstyle.version>2.17</checkstyle.version>
-        <javadoc.params>-Xdoclint:none</javadoc.params>
       </properties>
     </profile>
   </profiles>

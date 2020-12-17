@@ -18,12 +18,18 @@
  */
 package org.apache.johnzon.jsonlogic;
 
+import org.apache.johnzon.jsonlogic.spi.AsyncOperator;
+import org.apache.johnzon.jsonlogic.spi.Operator;
 import org.junit.Test;
 
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
@@ -31,6 +37,90 @@ import static org.junit.Assert.assertEquals;
 public class JohnzonJsonLogicTest {
     private final JohnzonJsonLogic jsonLogic = new JohnzonJsonLogic();
     private final JsonBuilderFactory builderFactory = Json.createBuilderFactory(emptyMap());
+
+    @Test
+    public void stage() throws InterruptedException {
+        // if the async exec is too immediate we will execute the thenAccept callback in main thread
+        // which is not the goal of this test so let's ensure we are in the expected case
+        final CountDownLatch waitChainReady = new CountDownLatch(1);
+
+        final JohnzonJsonLogic jsonLogic = new JohnzonJsonLogic()
+                .registerOperator("async", new Operator() {
+                    @Override
+                    public CompletionStage<JsonValue> applyStage(final JohnzonJsonLogic logic,
+                                                                 final JsonValue config,
+                                                                 final JsonValue params) {
+                        return logic.applyStage(
+                                builderFactory.createObjectBuilder().add("async2", "ok").build(),
+                                builderFactory.createObjectBuilder().add("p2", "1").build())
+                                .thenApplyAsync(
+                                        previous -> builderFactory.createObjectBuilder()
+                                                .add("thread", Thread.currentThread().getName())
+                                                .add("config", config)
+                                                .add("params", params)
+                                                .add("exec2", previous)
+                                                .build(),
+                                        r -> new Thread(r, "async").start());
+                    }
+
+                    @Override
+                    public JsonValue apply(final JohnzonJsonLogic logic, final JsonValue config, final JsonValue params) {
+                        throw new UnsupportedOperationException();
+                    }
+                })
+                .registerOperator("async2", new AsyncOperator() {
+                    @Override
+                    public CompletionStage<JsonValue> applyStage(final JohnzonJsonLogic logic,
+                                                                 final JsonValue config,
+                                                                 final JsonValue params) {
+                        return CompletableFuture.supplyAsync(() -> {
+                            try {
+                                waitChainReady.await();
+                            } catch (final InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            return builderFactory.createObjectBuilder()
+                                    .add("thread2", Thread.currentThread().getName())
+                                    .add("config2", config)
+                                    .add("params2", params)
+                                    .build();
+                        }, r -> new Thread(r, "async2").start());
+                    }
+
+                    @Override
+                    public JsonValue apply(final JohnzonJsonLogic logic, final JsonValue config, final JsonValue params) {
+                        throw new UnsupportedOperationException();
+                    }
+                });
+
+        final CountDownLatch latch = new CountDownLatch(1); // if we use Future.get we break stage threading
+        final AtomicReference<JsonValue> output = new AtomicReference<>();
+        jsonLogic
+                .applyStage(
+                        builderFactory.createObjectBuilder()
+                                .add("async", "a")
+                                .build(),
+                        builderFactory.createObjectBuilder()
+                                .add("p1", "0")
+                                .build())
+                .thenAccept(result -> {
+                    output.set(builderFactory.createObjectBuilder()
+                            .add("exec1", result)
+                            .add("thenSyncThread", Thread.currentThread().getName())
+                            .build());
+                    latch.countDown();
+                });
+        waitChainReady.countDown();
+        latch.await();
+        assertEquals("" +
+                        "{" +
+                        "\"exec1\":{\"thread\":\"async\",\"config\":\"a\",\"params\":{\"p1\":\"0\"}," +
+                        "\"exec2\":{\"thread2\":\"async2\",\"config2\":\"ok\",\"params2\":{\"p2\":\"1\"}}}," +
+                        "\"thenSyncThread\":\"async\"" +
+                        "}" +
+                        "",
+                output.get().toString());
+    }
 
     @Test
     public void varObjectString() {

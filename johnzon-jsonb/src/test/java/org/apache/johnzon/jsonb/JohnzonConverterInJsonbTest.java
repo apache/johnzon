@@ -53,7 +53,7 @@ public class JohnzonConverterInJsonbTest {
         assertNotNull(json);
 
         TestDTO deserialized = jsonb.fromJson(json, TestDTO.class);
-        assertEquals(dto.instant, deserialized.instant);
+        assertEquals(dto.instant.toEpochMilli(), deserialized.instant.toEpochMilli());
     }
 
     @Test
@@ -67,7 +67,7 @@ public class JohnzonConverterInJsonbTest {
         assertNotNull(json);
 
         TestDTOWithOC deserialized = jsonb.fromJson(json, TestDTOWithOC.class);
-        assertEquals(deserialized.dto.instant, dto.dto.instant);
+        assertEquals(deserialized.dto.instant.toEpochMilli(), dto.dto.instant.toEpochMilli());
     }
 
     public static class TestDTOWithOC {

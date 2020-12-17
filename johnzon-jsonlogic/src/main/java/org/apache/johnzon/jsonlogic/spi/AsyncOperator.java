@@ -21,22 +21,27 @@ package org.apache.johnzon.jsonlogic.spi;
 import org.apache.johnzon.jsonlogic.JohnzonJsonLogic;
 
 import javax.json.JsonValue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
-
-import static java.util.concurrent.CompletableFuture.completedFuture;
+import java.util.concurrent.ExecutionException;
 
 @FunctionalInterface
-public interface Operator {
-    default CompletionStage<JsonValue> applyStage(JohnzonJsonLogic logic, JsonValue config, JsonValue params) {
+public interface AsyncOperator extends Operator {
+    @Override
+    CompletionStage<JsonValue> applyStage(JohnzonJsonLogic logic, JsonValue config, JsonValue params);
+
+    @Override
+    default JsonValue apply(JohnzonJsonLogic logic, JsonValue config, JsonValue params) {
         try {
-            return completedFuture(apply(logic, config, params));
-        } catch (final RuntimeException re) {
-            final CompletableFuture<JsonValue> promise = new CompletableFuture<>();
-            promise.completeExceptionally(re);
-            return promise;
+            return applyStage(logic, config, params).toCompletableFuture().get();
+        } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException e) {
+            final Throwable cause = e.getCause();
+            if (RuntimeException.class.isInstance(cause)) {
+                throw RuntimeException.class.cast(cause);
+            }
+            throw new IllegalStateException(cause);
         }
     }
-
-    JsonValue apply(JohnzonJsonLogic logic, JsonValue config, JsonValue params);
 }
