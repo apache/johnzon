@@ -508,17 +508,14 @@ public class Mappings {
 
         final Method anyGetter = accessMode.findAnyGetter(clazz);
         final Field anyField = accessMode.findAnyField(clazz);
+        
         final ClassMapping mapping = new ClassMapping(
                 clazz, accessMode.findFactory(clazz), getters, setters,
                 accessMode.findAdapter(clazz),
                 accessMode.findReader(clazz),
                 accessMode.findWriter(clazz),
-                anyGetter != null ? MethodAccessMode.MethodReader.create(anyGetter, anyGetter.getReturnType())
-                    .map(reader -> new Getter(reader, false,false, false, false, true, null, null, -1, null))
-                    .orElse(null) :
-                        (anyField != null ? FieldAccessMode.FieldReader.create(anyField, anyField.getGenericType())
-                             .map(reader -> new Getter(reader, false,false, false, false, true, null, null, -1, null))
-                             .orElse(null) : null),
+                anyGetter != null ? createMethodReader(anyGetter) :
+                    (anyField != null ? createFieldReader(anyField) : null),
                 accessMode.findAnySetter(clazz),
                 anyField,
                 Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
@@ -526,6 +523,32 @@ public class Mappings {
         accessMode.afterParsed(clazz);
 
         return mapping;
+    }
+
+    private Getter createFieldReader(final Field anyField) {
+        if (anyField == null) {
+            return null;
+        }
+        
+        final FieldAccessMode.FieldReader reader = FieldAccessMode.FieldReader.create(anyField, anyField.getGenericType());
+        if (reader == null) {
+            return null;
+        }
+        
+        return new Getter(reader, false,false, false, false, true, null, null, -1, null);
+    }
+
+    private Getter createMethodReader(final Method anyGetter) {
+        if (anyGetter == null) {
+            return null;
+        }
+        
+        final MethodAccessMode.MethodReader reader = MethodAccessMode.MethodReader.create(anyGetter, anyGetter.getReturnType());
+        if (reader == null) {
+            return null;
+        }
+        
+        return new Getter(reader, false,false, false, false, true, null, null, -1, null);
     }
 
     protected Class<?> findModelClass(final Class<?> inClazz) {

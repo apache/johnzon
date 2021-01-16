@@ -30,7 +30,6 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
@@ -92,8 +91,10 @@ public class MethodAccessMode extends BaseAccessMode {
             }
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null) {
-                MethodWriter.create(writeMethod, writeMethod.getGenericParameterTypes()[0]).ifPresent(writer ->
-                    writers.put(extractKey(descriptor.getName(), writeMethod, descriptor.getReadMethod()), writer));
+                final MethodWriter writer = MethodWriter.create(writeMethod, writeMethod.getGenericParameterTypes()[0]);
+                if (writer != null) {
+                    writers.put(extractKey(descriptor.getName(), writeMethod, descriptor.getReadMethod()), writer);
+                }
             } else if (supportGetterAsWritter
                     && Collection.class.isAssignableFrom(descriptor.getPropertyType())
                     && descriptor.getReadMethod() != null) {
@@ -177,16 +178,16 @@ public class MethodAccessMode extends BaseAccessMode {
     }
 
     public static class MethodWriter extends MethodDecoratedType implements Writer {
-        MethodWriter(final Method method, final Type type) {
+        public MethodWriter(final Method method, final Type type) {
             super(method, type);
         }
         
-        public static Optional<MethodWriter> create(final Method method, final Type type) {
+        public static MethodWriter create(final Method method, final Type type) {
             try {
-                return Optional.of(new MethodWriter(method, type));
+                return new MethodWriter(method, type);
             } catch (RuntimeException ex) {
                 // It may throw InaccessibleObjectException, only available in JDK16+
-                return Optional.empty();
+                return null;
             }
         }
 
@@ -206,16 +207,16 @@ public class MethodAccessMode extends BaseAccessMode {
     }
 
     public static class MethodReader extends MethodDecoratedType implements Reader {
-        private MethodReader(final Method method, final Type type) {
+        public MethodReader(final Method method, final Type type) {
             super(method, type);
         }
 
-        public static Optional<MethodReader> create(final Method method, final Type type) {
+        public static MethodReader create(final Method method, final Type type) {
             try {
-                return Optional.of(new MethodReader(method, type));
+                return new MethodReader(method, type);
             } catch (RuntimeException ex) {
                 // It may throw InaccessibleObjectException, only available in JDK16+
-                return Optional.empty();
+                return null;
             }
         }
         

@@ -120,9 +120,10 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
             final Reader existing = readers.get(entry.getKey());
             if (existing == null) {
                 if (f != null) { // useful to hold the Field and transient state for example, just as fallback
-                    FieldAccessMode.FieldReader.create(f, f.getType()).ifPresent(reader ->
-                        readers.put(entry.getKey(), new CompositeReader(
-                            entry.getValue(), reader)));
+                    final FieldAccessMode.FieldReader reader = FieldAccessMode.FieldReader.create(f, f.getType());
+                    if (reader != null) {
+                        readers.put(entry.getKey(), new CompositeReader(entry.getValue(), reader));
+                    }
                 } else {
                     readers.put(entry.getKey(), entry.getValue());
                 }
@@ -216,9 +217,10 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
             final Writer existing = writers.get(entry.getKey());
             if (existing == null) {
                 if (f != null) { // useful to hold the Field and transient state for example, just as fallback
-                    FieldAccessMode.FieldWriter.create(f, f.getType()).ifPresent(writer ->
-                        writers.put(entry.getKey(), new CompositeWriter(
-                            entry.getValue(), writer)));
+                    final FieldAccessMode.FieldWriter writer = FieldAccessMode.FieldWriter.create(f, f.getType());
+                    if (writer != null) {
+                        writers.put(entry.getKey(), new CompositeWriter(entry.getValue(), writer));
+                    }
                 } else {
                     writers.put(entry.getKey(), entry.getValue());
                 }
