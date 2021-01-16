@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -125,7 +126,12 @@ public abstract class BaseAccessMode implements AccessMode {
             for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
                 if (c.getParameterTypes().length == 0) {
                     if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
-                        c.setAccessible(true);
+                        try {
+                            c.setAccessible(true);
+                        } catch (RuntimeException ex) {
+                            // It may throw InaccessibleObjectException, only available in JDK16+
+                            continue; // skip inaccessible constructors
+                        }
                     }
                     constructor = c;
                     if (!useConstructor) {

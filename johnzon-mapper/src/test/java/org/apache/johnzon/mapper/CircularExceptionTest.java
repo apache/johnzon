@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 
 public class CircularExceptionTest {
     @Test
-    public void dontStackOverFlow() {
+    public void dontStackOverFlowUsingFieldAccess() {
         final Throwable oopsImVicous = new Exception("circular");
         oopsImVicous.getStackTrace(); // fill it
         oopsImVicous.initCause(new IllegalArgumentException(oopsImVicous));
@@ -33,4 +33,13 @@ public class CircularExceptionTest {
         assertTrue(serialized.contains("\"stackTrace\":[{"));
     }
 
+    @Test
+    public void dontStackOverFlowUsingMethodAccess() {
+        final Throwable oopsImVicous = new Exception("circular");
+        oopsImVicous.getStackTrace(); // fill it
+        oopsImVicous.initCause(new IllegalArgumentException(oopsImVicous));
+        final String serialized = new MapperBuilder().setAccessModeName("method").build().writeObjectAsString(oopsImVicous);
+        assertTrue(serialized.contains("\"message\":\"circular\""));
+        assertTrue(serialized.contains("\"stackTrace\":[{"));
+    }
 }

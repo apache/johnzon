@@ -24,6 +24,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonAny;
@@ -46,7 +47,8 @@ public class FieldAccessMode extends BaseAccessMode {
             }
 
             final Field field = f.getValue();
-            readers.put(extractKey(field, key), new FieldReader(field, field.getGenericType()));
+            FieldReader.create(field, field.getGenericType()).ifPresent(reader ->
+                readers.put(extractKey(field, key), reader));
         }
         return readers;
     }
@@ -61,7 +63,8 @@ public class FieldAccessMode extends BaseAccessMode {
             }
 
             final Field field = f.getValue();
-            writers.put(extractKey(field, key), new FieldWriter(field, field.getGenericType()));
+            FieldWriter.create(field, field.getGenericType()).ifPresent(writer ->
+                writers.put(extractKey(field, key), writer));
         }
         return writers;
     }
@@ -102,6 +105,7 @@ public class FieldAccessMode extends BaseAccessMode {
         public FieldDecoratedType(final Field field, final Type type) {
             this.field = field;
             if (!field.isAccessible()) {
+                // It may throw InaccessibleObjectException on JDK16+
                 this.field.setAccessible(true);
             }
             this.type = type;
@@ -145,8 +149,17 @@ public class FieldAccessMode extends BaseAccessMode {
     }
 
     public static class FieldWriter extends FieldDecoratedType implements Writer {
-        public FieldWriter(final Field field, final Type type) {
+        private FieldWriter(final Field field, final Type type) {
             super(field, type);
+        }
+        
+        public static Optional<FieldWriter> create(final Field field, final Type type) {
+            try {
+                return Optional.of(new FieldWriter(field, type));
+            } catch (RuntimeException ex) {
+                // It may throw InaccessibleObjectException, only available in JDK16+
+                return Optional.empty();
+            }
         }
 
         @Override
@@ -165,8 +178,17 @@ public class FieldAccessMode extends BaseAccessMode {
     }
 
     public static class FieldReader extends FieldDecoratedType  implements Reader {
-        public FieldReader(final Field field, final Type type) {
+        private FieldReader(final Field field, final Type type) {
             super(field, type);
+        }
+        
+        public static Optional<FieldReader> create(final Field field, final Type type) {
+            try {
+                return Optional.of(new FieldReader(field, type));
+            } catch (RuntimeException ex) {
+                // It may throw InaccessibleObjectException, only available in JDK16+
+                return Optional.empty();
+            }
         }
 
         @Override

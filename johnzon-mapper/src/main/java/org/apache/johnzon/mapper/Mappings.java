@@ -513,11 +513,12 @@ public class Mappings {
                 accessMode.findAdapter(clazz),
                 accessMode.findReader(clazz),
                 accessMode.findWriter(clazz),
-                anyGetter != null ? new Getter(
-                        new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false,false, false, false, true, null, null, -1, null) :
-                        (anyField != null ? new Getter(new FieldAccessMode.FieldReader(anyField, anyField.getGenericType()),
-                        false,false, false, false, true, null, null, -1, null) : null),
+                anyGetter != null ? MethodAccessMode.MethodReader.create(anyGetter, anyGetter.getReturnType())
+                    .map(reader -> new Getter(reader, false,false, false, false, true, null, null, -1, null))
+                    .orElse(null) :
+                        (anyField != null ? FieldAccessMode.FieldReader.create(anyField, anyField.getGenericType())
+                             .map(reader -> new Getter(reader, false,false, false, false, true, null, null, -1, null))
+                             .orElse(null) : null),
                 accessMode.findAnySetter(clazz),
                 anyField,
                 Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
