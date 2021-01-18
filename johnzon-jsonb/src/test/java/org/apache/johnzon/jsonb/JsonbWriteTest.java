@@ -28,8 +28,10 @@ import javax.json.bind.spi.JsonbProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static java.util.Arrays.asList;
@@ -92,6 +94,14 @@ public class JsonbWriteTest {
         assertEquals("[\"a\",\"b\"]", JsonbProvider.provider().create().build().toJson(map));
     }
 
+    @Test
+    public void listOfSimple() {
+        final List<Simple> list = new ArrayList<>();
+        list.add(new Simple());
+        list.add(new Simple());
+        assertEquals("[{},{}]", JsonbProvider.provider().create().build().toJson(list, List.class));
+    }
+    
     @Test
     public void propertyMappingNotNillable() {
         final SimpleProperty simple = new SimpleProperty();
