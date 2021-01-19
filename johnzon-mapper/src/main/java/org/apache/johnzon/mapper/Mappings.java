@@ -530,8 +530,8 @@ public class Mappings {
             return null;
         }
         
-        final FieldAccessMode.FieldReader reader = FieldAccessMode.FieldReader.create(anyField, anyField.getGenericType());
-        if (reader == null) {
+        final FieldAccessMode.FieldReader reader = new FieldAccessMode.FieldReader(anyField, anyField.getGenericType());
+        if (!reader.isAccessible()) {
             return null;
         }
         
@@ -543,8 +543,8 @@ public class Mappings {
             return null;
         }
         
-        final MethodAccessMode.MethodReader reader = MethodAccessMode.MethodReader.create(anyGetter, anyGetter.getReturnType());
-        if (reader == null) {
+        final MethodAccessMode.MethodReader reader = new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType());
+        if (!reader.isAccessible()) {
             return null;
         }
         

@@ -46,8 +46,8 @@ public class FieldAccessMode extends BaseAccessMode {
             }
 
             final Field field = f.getValue();
-            final FieldReader reader = FieldReader.create(field, field.getGenericType());
-            if (reader != null) {
+            final FieldReader reader = new FieldReader(field, field.getGenericType());
+            if (reader.isAccessible()) {
                 readers.put(extractKey(field, key), reader);
             }
         }
@@ -64,8 +64,8 @@ public class FieldAccessMode extends BaseAccessMode {
             }
 
             final Field field = f.getValue();
-            final FieldWriter writer = FieldWriter.create(field, field.getGenericType());
-            if (writer != null) {
+            final FieldWriter writer = new FieldWriter(field, field.getGenericType());
+            if (writer.isAccessible()) {
                 writers.put(extractKey(field, key), writer);
             }
         }
@@ -104,13 +104,11 @@ public class FieldAccessMode extends BaseAccessMode {
     public static abstract class FieldDecoratedType implements DecoratedType {
         protected final Field field;
         protected final Type type;
+        protected final boolean accessible;
 
         public FieldDecoratedType(final Field field, final Type type) {
             this.field = field;
-            if (!field.isAccessible()) {
-                // It may throw InaccessibleObjectException on JDK16+
-                this.field.setAccessible(true);
-            }
+            this.accessible = Accessor.trySetAccessible(field);
             this.type = type;
         }
 
@@ -149,20 +147,19 @@ public class FieldAccessMode extends BaseAccessMode {
                     "field=" + field +
                     '}';
         }
+        
+        /**
+         * Returns accessibility of the decorated field 
+         * @return "true" if this particular field is accessible, "false" otherwise
+         */
+        public boolean isAccessible() {
+            return accessible;
+        }
     }
 
     public static class FieldWriter extends FieldDecoratedType implements Writer {
         public FieldWriter(final Field field, final Type type) {
             super(field, type);
-        }
-        
-        public static FieldWriter create(final Field field, final Type type) {
-            try {
-                return new FieldWriter(field, type);
-            } catch (RuntimeException ex) {
-                // It may throw InaccessibleObjectException, only available in JDK16+
-                return null;
-            }
         }
 
         @Override
@@ -183,15 +180,6 @@ public class FieldAccessMode extends BaseAccessMode {
     public static class FieldReader extends FieldDecoratedType  implements Reader {
         public FieldReader(final Field field, final Type type) {
             super(field, type);
-        }
-        
-        public static FieldReader create(final Field field, final Type type) {
-            try {
-                return new FieldReader(field, type);
-            } catch (RuntimeException ex) {
-                // It may throw InaccessibleObjectException, only available in JDK16+
-                return null;
-            }
         }
 
         @Override

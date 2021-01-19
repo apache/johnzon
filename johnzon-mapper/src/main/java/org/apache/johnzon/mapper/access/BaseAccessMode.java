@@ -125,10 +125,7 @@ public abstract class BaseAccessMode implements AccessMode {
             for (final Constructor<?> c : clazz.getDeclaredConstructors()) {
                 if (c.getParameterTypes().length == 0) {
                     if (!Modifier.isPublic(c.getModifiers()) && acceptHiddenConstructor) {
-                        try {
-                            c.setAccessible(true);
-                        } catch (RuntimeException ex) {
-                            // It may throw InaccessibleObjectException, only available in JDK16+
+                        if (!Accessor.trySetAccessible(c)) {
                             continue; // skip inaccessible constructors
                         }
                     }

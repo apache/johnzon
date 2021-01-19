@@ -91,15 +91,18 @@ public class MethodAccessMode extends BaseAccessMode {
             }
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null) {
-                final MethodWriter writer = MethodWriter.create(writeMethod, writeMethod.getGenericParameterTypes()[0]);
-                if (writer != null) {
+                final MethodWriter writer = new MethodWriter(writeMethod, writeMethod.getGenericParameterTypes()[0]);
+                if (writer.isAccessible()) {
                     writers.put(extractKey(descriptor.getName(), writeMethod, descriptor.getReadMethod()), writer);
                 }
             } else if (supportGetterAsWritter
                     && Collection.class.isAssignableFrom(descriptor.getPropertyType())
                     && descriptor.getReadMethod() != null) {
                 final Method readMethod = descriptor.getReadMethod();
-                writers.put(extractKey(descriptor.getName(), readMethod, null), new MethodGetterAsWriter(readMethod, readMethod.getGenericReturnType()));
+                final MethodGetterAsWriter writer = new MethodGetterAsWriter(readMethod, readMethod.getGenericReturnType());
+                if (writer.isAccessible()) {
+                    writers.put(extractKey(descriptor.getName(), readMethod, null), writer);
+                }
             }
         }
         return writers;
@@ -130,13 +133,11 @@ public class MethodAccessMode extends BaseAccessMode {
     public static abstract class MethodDecoratedType implements DecoratedType {
         protected final Method method;
         protected final Type type;
-
+        protected final boolean accessible;
+        
         public MethodDecoratedType(final Method method, final Type type) {
             this.method = method;
-            if (!method.isAccessible()) {
-                // It may throw InaccessibleObjectException, only available in JDK16+
-                method.setAccessible(true);
-            }
+            this.accessible = Accessor.trySetAccessible(method);
             this.type = type;
         }
 
@@ -175,20 +176,19 @@ public class MethodAccessMode extends BaseAccessMode {
                     "method=" + method +
                     '}';
         }
+        
+        /**
+         * Returns accessibility of the decorated method 
+         * @return "true" if this particular method is accessible, "false" otherwise
+         */
+        public boolean isAccessible() {
+            return accessible;
+        }
     }
 
     public static class MethodWriter extends MethodDecoratedType implements Writer {
         public MethodWriter(final Method method, final Type type) {
             super(method, type);
-        }
-        
-        public static MethodWriter create(final Method method, final Type type) {
-            try {
-                return new MethodWriter(method, type);
-            } catch (RuntimeException ex) {
-                // It may throw InaccessibleObjectException, only available in JDK16+
-                return null;
-            }
         }
 
         @Override
@@ -211,15 +211,6 @@ public class MethodAccessMode extends BaseAccessMode {
             super(method, type);
         }
 
-        public static MethodReader create(final Method method, final Type type) {
-            try {
-                return new MethodReader(method, type);
-            } catch (RuntimeException ex) {
-                // It may throw InaccessibleObjectException, only available in JDK16+
-                return null;
-            }
-        }
-        
         @Override
         public Object read(final Object instance) {
             try {
