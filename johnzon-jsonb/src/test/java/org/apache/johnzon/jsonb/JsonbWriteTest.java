@@ -21,21 +21,44 @@ package org.apache.johnzon.jsonb;
 import org.junit.Test;
 
 import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.spi.JsonbProvider;
-
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
 public class JsonbWriteTest {
+    @Test
+    public void mapOfSimple() throws Exception {
+        final Map<String, Simple> list = new TreeMap<>();
+        list.put("1", new Simple());
+        list.put("2", new Simple());
+        try (final Jsonb jsonb = JsonbBuilder.create()){
+            assertEquals("{\"1\":{},\"2\":{}}", jsonb.toJson(list, Map.class));
+        }
+    }
+
+    @Test
+    public void listOfSimple() throws Exception {
+        final List<Simple> list = new ArrayList<>();
+        list.add(new Simple());
+        list.add(new Simple());
+        try (final Jsonb jsonb = JsonbBuilder.create()){
+            assertEquals("[{},{}]", jsonb.toJson(list, List.class));
+        }
+    }
+
     @Test
     public void boolAsString() {
         assertEquals("true", JsonbProvider.provider().create().build().toJson(Boolean.TRUE));

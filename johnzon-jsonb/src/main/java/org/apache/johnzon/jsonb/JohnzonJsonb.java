@@ -44,11 +44,14 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigInteger;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
+import java.util.Set;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -449,7 +452,8 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
 
     private boolean isCollection(final Type runtimeType) {
         if (!ParameterizedType.class.isInstance(runtimeType)) {
-            return false;
+            return runtimeType == List.class || runtimeType == Set.class ||
+                    runtimeType == SortedSet.class || runtimeType == Collection.class;
         }
         final Type rawType = ParameterizedType.class.cast(runtimeType).getRawType();
         return Class.class.isInstance(rawType) && Collection.class.isAssignableFrom(Class.class.cast(rawType));
