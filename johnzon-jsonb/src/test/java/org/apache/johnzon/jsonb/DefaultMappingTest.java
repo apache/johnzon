@@ -61,6 +61,7 @@ import static org.junit.Assert.fail;
 // taken from the examples of the spec
 // TODO: bunch of asserts
 //CHECKSTYLE:OFF
+
 public class DefaultMappingTest {
     private static final Jsonb JSONB = JsonbBuilder.create();
 
@@ -150,11 +151,11 @@ public class DefaultMappingTest {
 
     @Test
     public void simpleValues() {
-        assertEquals("\"strValue\"", JSONB.toJson("\"strValue\""));
-        assertEquals("true", JSONB.toJson("true"));
-        assertEquals("false", JSONB.toJson("false"));
-        assertEquals("null", JSONB.toJson("null"));
-        assertEquals("strValue", JSONB.toJson(Optional.of("strValue")));
+        assertEquals("\"\"strValue\"\"", JSONB.toJson("\"strValue\""));
+        assertEquals("\"true\"", JSONB.toJson("true"));
+        assertEquals("\"false\"", JSONB.toJson("false"));
+        assertEquals("\"null\"", JSONB.toJson("null"));
+        assertEquals("\"strValue\"", JSONB.toJson(Optional.of("strValue")));
         assertEquals("null", JSONB.toJson(Optional.ofNullable(null)));
         assertEquals("null", JSONB.toJson(Optional.empty()));
         assertEquals("1", JSONB.toJson(OptionalInt.of(1)));
@@ -195,6 +196,9 @@ public class DefaultMappingTest {
 
         OptionalDouble emptyOptionalDouble = JSONB.fromJson("null", OptionalDouble.class);
         assertTrue(!emptyOptionalDouble.isPresent());
+
+        final String testText = "test";
+        assertEquals(testText, JSONB.fromJson(JSONB.toJson(testText), String.class));
     }
 
     public static void fromJsonPrimitives() {

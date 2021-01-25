@@ -164,9 +164,6 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .map(PropertyVisibilityStrategy.class::cast).orElse(new DefaultPropertyVisibilityStrategy());
 
         config.getProperty("johnzon.attributeOrder").ifPresent(comp -> builder.setAttributeOrder(Comparator.class.cast(comp)));
-        config.getProperty("johnzon.enforceQuoteString")
-                .map(this::toBool)
-                .ifPresent(builder::setEnforceQuoteString);
         config.getProperty("johnzon.primitiveConverters")
                 .map(this::toBool)
                 .ifPresent(builder::setPrimitiveConverters);

@@ -73,7 +73,6 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders;
     private final Comparator<String> attributeOrder;
-    private final boolean enforceQuoteString;
     private final boolean failOnUnknown;
     private final SerializeValueFilter serializeValueFilter;
     private final boolean useBigDecimalForFloats;
@@ -106,7 +105,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean readAttributeBeforeWrite,
                         final AccessMode accessMode, final Charset encoding,
                         final Comparator<String> attributeOrder,
-                        final boolean enforceQuoteString, final boolean failOnUnknown,
+                        final boolean failOnUnknown,
                         final SerializeValueFilter serializeValueFilter,
                         final boolean useBigDecimalForFloats,
                         final Boolean deduplicateObjects,
@@ -149,7 +148,6 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
 
         this.attributeOrder = attributeOrder;
-        this.enforceQuoteString = enforceQuoteString;
         this.failOnUnknown = failOnUnknown;
         this.serializeValueFilter = serializeValueFilter == null ? (name, value) -> false : serializeValueFilter;
         this.interfaceImplementationMapping = interfaceImplementationMapping;
@@ -408,10 +406,6 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     public Comparator<String> getAttributeOrder() {
         return attributeOrder;
-    }
-
-    public boolean isEnforceQuoteString() {
-        return enforceQuoteString;
     }
 
     public boolean isUseBigDecimalForFloats() {

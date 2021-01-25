@@ -282,10 +282,6 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         builder.setReadAttributeBeforeWrite(rabw);
     }
 
-    public void setEnforceQuoteString(final boolean val) {
-        builder.setEnforceQuoteString(val);
-    }
-
     public void setPrimitiveConverters(final boolean val) {
         builder.setPrimitiveConverters(val);
     }

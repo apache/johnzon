@@ -61,7 +61,7 @@ public class ExtendMappingTest {
                     new LazyConverterMap(), new HashMap<>(), new HashMap<>(),
                     -1, true, true, true, false, false, false,
                     new FieldAccessMode(false, false),
-                    StandardCharsets.UTF_8, String::compareTo, false, false, null, false, false,
+                    StandardCharsets.UTF_8, String::compareTo, false, null, false, false,
                     emptyMap(), true, false, true,
                     null, null, null, null, null,
                     type -> new EnumConverter(type)));

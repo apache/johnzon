@@ -222,10 +222,6 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
         builder.setEncoding(encoding);
     }
 
-    public void setEnforceQuoteString(final boolean val) {
-        builder.setEnforceQuoteString(val);
-    }
-
     public void setPrimitiveConverters(final boolean val) {
         builder.setPrimitiveConverters(val);
     }

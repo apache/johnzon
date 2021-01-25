@@ -88,7 +88,6 @@ public class MapperBuilder {
     private boolean treatByteArrayAsBase64;
     private boolean treatByteArrayAsBase64URL;
     private boolean readAttributeBeforeWrite;
-    private boolean enforceQuoteString;
     private AccessMode accessMode;
     private Charset encoding = Charset.forName(System.getProperty("johnzon.mapper.encoding", "UTF-8"));
     private LazyConverterMap adapters = new LazyConverterMap();
@@ -231,7 +230,7 @@ public class MapperBuilder {
                         version, close,
                         skipNull, skipEmptyArray,
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
-                        accessMode, encoding, attributeOrder, enforceQuoteString, failOnUnknownProperties,
+                        accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
                         supportEnumContainerDeserialization,
@@ -454,15 +453,6 @@ public class MapperBuilder {
         if (ObjectConverter.Writer.class.isInstance(objectConverter)) {
             this.objectConverterWriters.put(targetType, ObjectConverter.Writer.class.cast(objectConverter));
         }
-        return this;
-    }
-
-    public MapperBuilder setEnforceQuoteString() {
-        return setEnforceQuoteString(true);
-    }
-
-    public MapperBuilder setEnforceQuoteString(final boolean val) {
-        this.enforceQuoteString = val;
         return this;
     }
 
