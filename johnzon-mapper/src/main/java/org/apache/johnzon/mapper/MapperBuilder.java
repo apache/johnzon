@@ -106,6 +106,7 @@ public class MapperBuilder {
     private boolean useBigDecimalForObjectNumbers;
     private boolean supportEnumContainerDeserialization = true;
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
+    private boolean skipAccessModeWrapper;
 
     // @experimental polymorphic api
     private Function<String, Class<?>> typeLoader;
@@ -200,7 +201,7 @@ public class MapperBuilder {
                 throw new IllegalStateException("AccessMode is not an BaseAccessMode");
             }
         }
-        if (!KnownNotOpenedJavaTypesAccessMode.class.isInstance(accessMode)) {
+        if (!skipAccessModeWrapper && !KnownNotOpenedJavaTypesAccessMode.class.isInstance(accessMode)) {
             accessMode = new KnownNotOpenedJavaTypesAccessMode(accessMode);
         }
 
@@ -559,6 +560,11 @@ public class MapperBuilder {
 
     public MapperBuilder setPolymorphicDiscriminator(final String value) {
         this.discriminator = value;
+        return this;
+    }
+
+    public MapperBuilder setSkipAccessModeWrapper(final boolean skipAccessModeWrapper) {
+        this.skipAccessModeWrapper = skipAccessModeWrapper;
         return this;
     }
 }
