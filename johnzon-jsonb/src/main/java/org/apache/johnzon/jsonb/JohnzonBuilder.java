@@ -38,7 +38,6 @@ import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
-import org.apache.johnzon.mapper.access.KnownNotOpenedJavaTypesAccessMode;
 import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 
@@ -212,29 +211,27 @@ public class JohnzonBuilder implements JsonbBuilder {
             throw new IllegalArgumentException("Unsupported factory: " + val);
         }).orElseGet(() -> findFactory(skipCdi));
 
+        ofNullable(config.getProperty("johnzon.skip-exception-serialization"))
+                .map(v -> Boolean.parseBoolean(String.valueOf(v)))
+                .ifPresent(builder::setSkipAccessModeWrapper);
+
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
-                .orElseGet(() -> {
-                    final AccessMode access = new JsonbAccessMode(
-                            propertyNamingStrategy, orderValue, visibilityStrategy,
-                            !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                            builder.getAdapters(),
-                            factory, jsonp, builderFactorySupplier, parserFactoryProvider,
-                            config.getProperty("johnzon.accessModeDelegate")
-                                    .map(this::toAccessMode)
-                                    .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, true)),
-                            config.getProperty("johnzon.failOnMissingCreatorValues")
-                                    .map(this::toBool)
-                                    .orElse(true) /*spec 1.0 requirement*/,
-                            isNillable,
-                            config.getProperty("johnzon.supportsPrivateAccess")
-                                    .map(this::toBool)
-                                    .orElse(false));
-                    return ofNullable(config.getProperty("johnzon.enable-exception-serialization"))
-                            .map(v -> Boolean.parseBoolean(String.valueOf(v)))
-                            .map(it -> it ? new KnownNotOpenedJavaTypesAccessMode(access) : access)
-                            .orElseGet(() -> new KnownNotOpenedJavaTypesAccessMode(access));
-                });
+                .orElseGet(() -> new JsonbAccessMode(
+                        propertyNamingStrategy, orderValue, visibilityStrategy,
+                        !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                        builder.getAdapters(),
+                        factory, jsonp, builderFactorySupplier, parserFactoryProvider,
+                        config.getProperty("johnzon.accessModeDelegate")
+                                .map(this::toAccessMode)
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, true)),
+                        config.getProperty("johnzon.failOnMissingCreatorValues")
+                                .map(this::toBool)
+                                .orElse(true) /*spec 1.0 requirement*/,
+                        isNillable,
+                        config.getProperty("johnzon.supportsPrivateAccess")
+                                .map(this::toBool)
+                                .orElse(false)));
         builder.setAccessMode(accessMode);
 
         // user adapters
