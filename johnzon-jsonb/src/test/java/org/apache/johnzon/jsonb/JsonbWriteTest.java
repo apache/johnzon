@@ -22,8 +22,11 @@ import org.junit.Test;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.json.bind.JsonbConfig;
+import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
+import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.spi.JsonbProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
@@ -36,9 +39,29 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static java.util.Arrays.asList;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class JsonbWriteTest {
+    @Test
+    public void throwable() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
+                .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL))){
+            final IllegalStateException exception = new IllegalStateException("oops");
+            exception.setStackTrace(new StackTraceElement[]{
+                    new StackTraceElement("foo", "bar", "dummy", 1),
+                    new StackTraceElement("foo2", "bar2", "dummy2", 2)
+            });
+            final String json = jsonb.toJson(exception, Throwable.class);
+            final Throwable throwable = jsonb.fromJson(json, Throwable.class);
+            assertEquals(exception.getMessage(), throwable.getMessage());
+            assertArrayEquals(exception.getStackTrace(), throwable.getStackTrace());
+            assertEquals("{\"message\":\"oops\"," +
+                    "\"stackTrace\":[{\"className\":\"foo\",\"fileName\":\"dummy\",\"lineNumber\":1,\"methodName\":\"bar\"}," +
+                    "{\"className\":\"foo2\",\"fileName\":\"dummy2\",\"lineNumber\":2,\"methodName\":\"bar2\"}]}", json);
+        }
+    }
+
     @Test
     public void mapOfSimple() throws Exception {
         final Map<String, Simple> list = new TreeMap<>();
@@ -201,5 +224,13 @@ public class JsonbWriteTest {
         }
     }
 
+    public static class CustomException extends RuntimeException {
+        private final int code;
 
+        @JsonbCreator
+        public CustomException(final String message, final int code) {
+            super(message);
+            this.code = code;
+        }
+    }
 }

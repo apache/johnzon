@@ -28,6 +28,7 @@ import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.access.KnownNotOpenedJavaTypesAccessMode;
 import org.apache.johnzon.mapper.converter.BooleanConverter;
 import org.apache.johnzon.mapper.converter.ByteConverter;
 import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
@@ -198,6 +199,9 @@ public class MapperBuilder {
             } else {
                 throw new IllegalStateException("AccessMode is not an BaseAccessMode");
             }
+        }
+        if (!KnownNotOpenedJavaTypesAccessMode.class.isInstance(accessMode)) {
+            accessMode = new KnownNotOpenedJavaTypesAccessMode(accessMode);
         }
 
         if (primitiveConverters) {

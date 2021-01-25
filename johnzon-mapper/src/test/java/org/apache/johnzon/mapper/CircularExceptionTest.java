@@ -23,13 +23,15 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 public class CircularExceptionTest {
+    // note that with KnownNotOpenedJavaTypes this test will not test circular case anymore
+    // but we still care to test exceptions don't loop so kept it
     @Test
     public void dontStackOverFlow() {
         final Throwable oopsImVicous = new Exception("circular");
         oopsImVicous.getStackTrace(); // fill it
         oopsImVicous.initCause(new IllegalArgumentException(oopsImVicous));
         final String serialized = new MapperBuilder().setAccessModeName("field").build().writeObjectAsString(oopsImVicous);
-        assertTrue(serialized.contains("\"detailMessage\":\"circular\""));
+        assertTrue(serialized.contains("\"message\":\"circular\""));
         assertTrue(serialized.contains("\"stackTrace\":[{"));
     }
 
