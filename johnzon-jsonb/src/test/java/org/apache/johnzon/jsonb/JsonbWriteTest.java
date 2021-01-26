@@ -23,6 +23,7 @@ import org.junit.Test;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
+import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.annotation.JsonbCreator;
 import javax.json.bind.annotation.JsonbDateFormat;
 import javax.json.bind.annotation.JsonbProperty;
@@ -43,6 +44,27 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 
 public class JsonbWriteTest {
+    @Test
+    public void rawAdapter() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
+                .withAdapters(new JsonbAdapter<SimpleProperty, String>() {
+                    @Override
+                    public String adaptToJson(final SimpleProperty obj) {
+                        return obj.getValue();
+                    }
+
+                    @Override
+                    public SimpleProperty adaptFromJson(final String obj) {
+                        throw new UnsupportedOperationException();
+                    }
+                }))) {
+            final SimpleProperty property = new SimpleProperty();
+            property.setValue("ok");
+            final String json = jsonb.toJson(property, Throwable.class);
+            assertEquals("\"ok\"", json);
+        }
+    }
+
     @Test
     public void throwable() throws Exception {
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()

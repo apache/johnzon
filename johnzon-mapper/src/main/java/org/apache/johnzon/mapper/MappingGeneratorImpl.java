@@ -120,7 +120,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
         return this;
     }
 
-    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
+    public void doWriteObject(Object object, JsonGenerator generator, boolean writeBody, final Collection<String> ignoredProperties,
+                              JsonPointerTracker jsonPointer) {
 
         try {
             if (object instanceof Map) {
@@ -228,6 +229,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
         final Class<?> type = value.getClass();
         if (type == String.class) {
             generator.write(value.toString());
+            handled = true;
+        } else if (JsonValue.class.isAssignableFrom(type)) {
+            generator.write(JsonValue.class.cast(value));
             handled = true;
         } else if (type == long.class || type == Long.class) {
             final long longValue = Long.class.cast(value).longValue();

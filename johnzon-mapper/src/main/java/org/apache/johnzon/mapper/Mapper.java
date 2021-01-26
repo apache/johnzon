@@ -168,45 +168,26 @@ public class Mapper implements Closeable {
     }
 
     public void writeObject(final Object object, final Writer stream) {
-        if (JsonValue.class.isInstance(object)
-                || Boolean.class.isInstance(object) || String.class.isInstance(object) || Number.class.isInstance(object)
-                || object == null) {
-            try {
-                final String valueOf = String.valueOf(object);
-                if (object instanceof String) {
-                    stream.write('"');
-                    stream.write(valueOf);
-                    stream.write('"');
-                }  else {
-                    stream.write(valueOf);
-                }
+        if (object == null) {
+            try (final Writer w = stream) {
+                w.write("null");
             } catch (final IOException e) {
                 throw new MapperException(e);
-            } finally {
-                if (config.isClose()) {
-                    try {
-                        stream.close();
-                    } catch (final IOException e) {
-                        // no-op
-                    }
-                } else {
-                    try {
-                        stream.flush();
-                    } catch (final IOException e) {
-                        // no-op
-                    }
-                }
             }
             return;
         }
-
         final Adapter adapter = config.findAdapter(object.getClass());
         if (adapter != null && TypeAwareAdapter.class.isInstance(adapter) && TypeAwareAdapter.class.cast(adapter).getTo() == JsonString.class) {
             writeObject(adapter.from(object), stream);
             return;
         }
         try (final JsonGenerator generator = generatorFactory.createGenerator(stream(stream))) {
-            writeObjectWithGenerator(adapter == null ? object : adapter.from(object), generator);
+            final Object converted = adapter == null ? object : adapter.from(object);
+            if (CharSequence.class.isInstance(converted)) {
+                writeObjectWithGenerator(provider.createValue(converted.toString()), generator);
+            } else {
+                writeObjectWithGenerator(converted, generator);
+            }
         }
     }
 

@@ -151,7 +151,7 @@ public class DefaultMappingTest {
 
     @Test
     public void simpleValues() {
-        assertEquals("\"\"strValue\"\"", JSONB.toJson("\"strValue\""));
+        assertEquals("\"\\\"strValue\\\"\"", JSONB.toJson("\"strValue\""));
         assertEquals("\"true\"", JSONB.toJson("true"));
         assertEquals("\"false\"", JSONB.toJson("false"));
         assertEquals("\"null\"", JSONB.toJson("null"));
