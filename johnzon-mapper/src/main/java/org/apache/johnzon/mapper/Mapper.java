@@ -223,19 +223,19 @@ public class Mapper implements Closeable {
     }
 
     public String writeArrayAsString(final Collection<?> instance) {
-        final StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter(2048);
         writeArray(instance, writer);
         return writer.toString();
     }
 
     public <T> String writeArrayAsString(final T[] instance) {
-        final StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter(2048);
         writeArray(instance, writer);
         return writer.toString();
     }
 
     public String writeObjectAsString(final Object instance) {
-        final StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter(2048);
         writeObject(instance, writer);
         return writer.toString();
     }

@@ -42,6 +42,9 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //-1 would cause a re-read of the first character in the buffer (which is at zero index)
     private int bufferPos = Integer.MIN_VALUE;
 
+    // performance optimisation to avoid subtraction on readNextChar
+    private int bufferLeft = 0;
+
     //available character in the buffer. It might be <= "buffer.length".
     private int availableCharsInBuffer;
 
@@ -220,7 +223,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
                 previousEvent != VALUE_NULL && previousEvent != VALUE_NUMBER) {
             if (bufferPos < 0) { // check we don't have an empty string to parse
                 final char c = readNextChar();
-                bufferPos--;
+                unreadChar();
                 return c != EOF;
             }
             return true;
@@ -289,7 +292,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //refill is necessary copy the already read value part into the value buffer
     protected final char readNextChar() {
 
-        if ((availableCharsInBuffer - bufferPos) <= 1) {
+        if (bufferLeft == 0) {
             //fillbuffer
 
             //copy content from old buffer to valuebuffer
@@ -317,6 +320,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             }
 
             bufferPos = 0;
+            bufferLeft = availableCharsInBuffer - bufferPos - 1;
             //end fillbuffer
         } else {
 
@@ -327,6 +331,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             //}
 
             bufferPos++;
+            bufferLeft--;
         }
 
         return buffer[bufferPos];
@@ -370,13 +375,18 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
                 : null;
     }
 
+    private void unreadChar() {
+        bufferPos--;
+        bufferLeft++;
+    }
+
     @Override
     protected final Event internalNext() {
         //main entry, make decision how to handle the current character in the stream
 
         if (!hasNext()) {
             final char c = readNextChar();
-            bufferPos--;
+            unreadChar();
             if (c != EOF) {
                 throw uexc("No available event");
             }
@@ -657,7 +667,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
                 //current n is one of < '\u001F' -OR- ESCAPE_CHAR -OR- EOL -OR- QUOTE
 
-                bufferPos--; //unread one char
+                unreadChar(); //unread one char
 
             }
         } while (true);
@@ -686,8 +696,11 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         //always the beginning quote of a key or value  
 
         //last event must one of the following-> : { [ ,
-        if (previousEvent != -1 && (previousEvent != KEY_SEPARATOR_EVENT && previousEvent != START_OBJECT && previousEvent != START_ARRAY
-                && previousEvent != COMMA_EVENT)) {
+        if (previousEvent != -1 &&
+                (previousEvent != KEY_SEPARATOR_EVENT &&
+                 previousEvent != START_OBJECT &&
+                 previousEvent != START_ARRAY  &&
+                 previousEvent != COMMA_EVENT)) {
             throw uexc("Expected : { [ ,");
         }
         //starting quote already consumed
@@ -792,7 +805,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         if (y == COMMA_CHAR || y == END_ARRAY_CHAR || y == END_OBJECT_CHAR || y == EOL || y == SPACE || y == TAB || y == CR || y == EOF) {
 
-            bufferPos--;//unread one char
+            unreadChar();//unread one char
 
             //['-', DIGIT]
             if (isCurrentNumberIntegral && c == MINUS && cumulatedDigitValue >= 48 && cumulatedDigitValue <= 57) {
