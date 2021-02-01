@@ -320,7 +320,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             }
 
             bufferPos = 0;
-            bufferLeft = availableCharsInBuffer - bufferPos - 1;
+            bufferLeft = availableCharsInBuffer - 1;
             //end fillbuffer
         } else {
 
