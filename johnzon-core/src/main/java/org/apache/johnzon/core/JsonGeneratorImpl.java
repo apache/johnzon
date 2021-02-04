@@ -463,7 +463,7 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         JsonGenerationException ex = null;
         final GeneratorState state = currentState();
         if (state != GeneratorState.END && state != GeneratorState.ROOT_VALUE) {
-            ex = new JsonGenerationException("Invalid json");
+            ex = new JsonGenerationException("Invalid json, state=" + state);
         }
         try {
             if (ex == null) {

@@ -18,11 +18,10 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class DynamicMappingGenerator implements MappingGenerator {
     private final MappingGenerator delegate;
@@ -30,7 +29,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
     private final Runnable writeEnd;
     private final String keyName;
 
-    private InObjectOrPrimitiveJsonGenerator generator;
+    protected InObjectOrPrimitiveJsonGenerator generator;
 
     public DynamicMappingGenerator(final MappingGenerator delegate,
                                    final Runnable writeStart,
@@ -42,10 +41,14 @@ public class DynamicMappingGenerator implements MappingGenerator {
         this.keyName = keyName;
     }
 
+    protected JsonGenerator getRawJsonGenerator() {
+        return delegate.getJsonGenerator();
+    }
+
     @Override
     public JsonGenerator getJsonGenerator() {
         return generator == null ? generator = new InObjectOrPrimitiveJsonGenerator(
-                delegate.getJsonGenerator(), writeStart, keyName) : generator;
+                getRawJsonGenerator(), writeStart, keyName) : generator;
     }
 
     @Override
@@ -61,8 +64,13 @@ public class DynamicMappingGenerator implements MappingGenerator {
     private JsonGenerator ensureGenerator(final JsonGenerator generator) {
         if (this.generator != null && this.generator != generator && this.generator.delegate != generator) {
             this.generator = null;
+            reset();
         }
         return getJsonGenerator(); // ensure we wrap it
+    }
+
+    protected void reset() {
+        // no-op
     }
 
     public void flushIfNeeded() {
@@ -340,6 +348,220 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public void flush() {
             delegate.flush();
+        }
+    }
+
+    private static abstract class DelegatingGenerator implements JsonGenerator {
+        protected final JsonGenerator delegate;
+
+        protected DelegatingGenerator(final JsonGenerator generator) {
+            this.delegate = generator;
+        }
+
+        @Override
+        public JsonGenerator writeKey(final String name) {
+            delegate.writeKey(name);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final JsonValue value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final String value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final BigInteger value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final BigDecimal value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final int value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final long value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final double value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String name, final boolean value) {
+            delegate.write(name, value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator writeNull(final String name) {
+            delegate.writeNull(name);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final JsonValue value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final String value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final BigDecimal value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final BigInteger value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final int value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final long value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(final double value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator write(boolean value) {
+            delegate.write(value);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator writeNull() {
+            delegate.writeNull();
+            return this;
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+
+        @Override
+        public void flush() {
+            delegate.flush();
+        }
+    }
+
+    private static class SkipLastWriteEndGenerator extends DelegatingGenerator {
+        private int level = -1;
+
+        private SkipLastWriteEndGenerator(final JsonGenerator generator) {
+            super(generator);
+        }
+
+        @Override
+        public JsonGenerator writeStartObject() {
+            level++;
+            if (level > 0) {
+                delegate.writeStartObject();
+            }
+            return this;
+        }
+
+        @Override
+        public JsonGenerator writeStartObject(final String name) {
+            level++;
+            if (level == 0) {
+                level++; // force a writeEnd since it will be a nested object and not the object we are writing
+            }
+            delegate.writeStartObject(name);
+            return this;
+        }
+
+        @Override
+        public JsonGenerator writeStartArray() {
+            level++;
+            delegate.writeStartArray();
+            return this;
+        }
+
+        @Override
+        public JsonGenerator writeStartArray(final String name) {
+            delegate.writeStartArray(name);
+            level++;
+            return this;
+        }
+
+        @Override
+        public JsonGenerator writeEnd() {
+            if (level > 0) {
+                delegate.writeEnd();
+            }
+            level--;
+            return this;
+        }
+    }
+
+    public static class SkipEnclosingWriteEnd extends DynamicMappingGenerator {
+        private static final Runnable NOOP = () -> {
+        };
+        private final JsonGenerator rawGenerator;
+
+        private SkipLastWriteEndGenerator skippingGenerator;
+
+        public SkipEnclosingWriteEnd(final MappingGenerator delegate, final String keyName, final JsonGenerator generator) {
+            super(delegate, NOOP, NOOP, keyName);
+            this.rawGenerator = generator;
+        }
+
+        @Override
+        protected JsonGenerator getRawJsonGenerator() {
+            return rawGenerator;
+        }
+
+        @Override
+        public JsonGenerator getJsonGenerator() {
+            if (skippingGenerator == null) {
+                skippingGenerator = new SkipLastWriteEndGenerator(super.getJsonGenerator());
+            }
+            return skippingGenerator;
+        }
+
+        @Override
+        protected void reset() {
+            super.reset();
+            skippingGenerator = null;
         }
     }
 }

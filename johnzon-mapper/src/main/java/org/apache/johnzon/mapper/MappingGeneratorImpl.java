@@ -45,7 +45,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
     private final MapperConfig config;
     private final JsonGenerator generator;
     private final Mappings mappings;
-    
+
     private final Boolean isDeduplicateObjects;
     private Map<Object, String> jsonPointers;
 
@@ -348,7 +348,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
         }
 
         if (classMapping.writer != null) {
-            classMapping.writer.writeJson(object, this);
+            final DynamicMappingGenerator gen = new DynamicMappingGenerator.SkipEnclosingWriteEnd(this, null, generator);
+            classMapping.writer.writeJson(object, gen);
+            gen.flushIfNeeded();
             return;
         }
         if (classMapping.adapter != null) {

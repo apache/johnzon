@@ -55,6 +55,12 @@ public class SerializerTest {
     public final JsonbRule jsonb = new JsonbRule()
             .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL);
 
+    @Test // https://issues.apache.org/jira/browse/JOHNZON-335
+    public void testNestedSerializer() {
+        final String s = jsonb.toJson(new OuterTestModel());
+        assertEquals("{\"foo\":\"generated in outer serializer\",\"inner\":{\"bar\":\"generated in inner serializer\"}}", s);
+    }
+
     @Test
     public void passthroughSerializer() {
         final NameHolder nameHolder = new NameHolder();
@@ -768,6 +774,33 @@ public class SerializerTest {
 
         public void setStudent(List<Student> student) {
             this.student = student;
+        }
+    }
+
+    @JsonbTypeSerializer(OuterTestSerializer.class)
+    public static class OuterTestModel {
+    }
+
+    @JsonbTypeSerializer(InnerTestSerializer.class)
+    public static class InnerTestModel {
+    }
+
+    public static class OuterTestSerializer implements JsonbSerializer<OuterTestModel> {
+        @Override
+        public void serialize(final OuterTestModel obj, final JsonGenerator generator, final SerializationContext ctx) {
+            generator.writeStartObject();
+            generator.write("foo", "generated in outer serializer");
+            ctx.serialize("inner", new InnerTestModel(), generator);
+            generator.writeEnd();
+        }
+    }
+
+    public static class InnerTestSerializer implements JsonbSerializer<InnerTestModel> {
+        @Override
+        public void serialize(final InnerTestModel obj, final JsonGenerator generator, final SerializationContext ctx) {
+            generator.writeStartObject();
+            generator.write("bar", "generated in inner serializer");
+            generator.writeEnd();
         }
     }
 }
