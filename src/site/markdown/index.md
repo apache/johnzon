@@ -596,6 +596,8 @@ jsonLogic.registerOperator(
   (jsonLogic, config, args) -> log.info(String.valueOf(jsonLogic.apply(config, args)));
 ]]></pre>
 
+Note that by default the set of standard JSON Logic operators is enriched with JSON-P jsonpatch, json merge diff and json merge patch operators.
+
 ### OSGi JAX-RS Whiteboard
 
 Though Johnzon artifacts are OSGi bundles to begin with, this module provides further integration with the [OSGi JAX-RS Whiteboard](https://osgi.org/specification/osgi.cmpn/7.0.0/service.jaxrs.html) and [OSGi CDI Integration](https://osgi.org/specification/osgi.enterprise/7.0.0/service.cdi.html) specifications.

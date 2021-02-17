@@ -24,8 +24,10 @@ import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonException;
+import javax.json.JsonMergePatch;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
+import javax.json.JsonPatch;
 import javax.json.JsonPointer;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
@@ -37,6 +39,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.stream.Collector;
 import java.util.stream.DoubleStream;
@@ -49,13 +52,18 @@ import static java.util.stream.Collectors.joining;
 public class JohnzonJsonLogic {
     private final JsonProvider provider;
     private final Map<String, Operator> operators = new HashMap<>();
-    private final Map<String, JsonPointer> pointers = new HashMap<>();
+    private final Map<String, JsonPointer> pointers = new ConcurrentHashMap<>();
+    private final Map<JsonArray, JsonPatch> jsonPatches = new ConcurrentHashMap<>();
+    private final Map<JsonValue, JsonMergePatch> jsonMergePatches = new ConcurrentHashMap<>();
     private final JsonBuilderFactory builderFactory;
     private boolean cachePointers;
+    private boolean cacheJsonPatches;
+    private boolean cacheJsonMergePatches;
 
     public JohnzonJsonLogic() {
         this(JsonProvider.provider());
         registerDefaultOperators();
+        registerExtensionsOperators();
     }
 
     public JohnzonJsonLogic(final JsonProvider provider) {
@@ -65,6 +73,16 @@ public class JohnzonJsonLogic {
 
     public JohnzonJsonLogic cachePointers() {
         this.cachePointers = true;
+        return this;
+    }
+
+    public JohnzonJsonLogic cacheJsonPatches() {
+        this.cacheJsonPatches = true;
+        return this;
+    }
+
+    public JohnzonJsonLogic cacheJsonMergePatches() {
+        this.cacheJsonMergePatches = true;
         return this;
     }
 
@@ -188,6 +206,35 @@ public class JohnzonJsonLogic {
             default:
                 return false;
         }
+    }
+
+    public JohnzonJsonLogic registerExtensionsOperators() {
+        registerOperator("jsonpatch", (logic, config, params) -> getJsonPatch(config)
+                .apply(JsonStructure.class.cast(params)));
+        registerOperator("jsonmergepatch", (logic, config, params) -> getJsonMergePatch(config)
+                .apply(params));
+        registerOperator("jsonmergediff", (logic, config, params) -> {
+            final JsonArray array = params.asJsonArray();
+            if (array.size() != 2) {
+                throw new IllegalArgumentException("jsonmergediff should have 2 parameters (in an array): " + array);
+            }
+            return provider.createMergeDiff(config, array.get(0)).apply(array.get(1));
+        });
+        return this;
+    }
+
+    private JsonPatch getJsonPatch(final JsonValue config) {
+        if (!cacheJsonPatches) {
+            return provider.createPatch(config.asJsonArray());
+        }
+        return jsonPatches.computeIfAbsent(config.asJsonArray(), provider::createPatch);
+    }
+
+    private JsonMergePatch getJsonMergePatch(final JsonValue config) {
+        if (!cacheJsonPatches) {
+            return provider.createMergePatch(config);
+        }
+        return jsonMergePatches.computeIfAbsent(config, provider::createMergePatch);
     }
 
     // to not depend on a logger we don't register "log" operation but it is trivial to do:

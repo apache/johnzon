@@ -25,6 +25,7 @@ import org.junit.Test;
 import javax.json.Json;
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonObject;
+import javax.json.JsonPatch;
 import javax.json.JsonValue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -120,6 +121,79 @@ public class JohnzonJsonLogicTest {
                         "}" +
                         "",
                 output.get().toString());
+    }
+
+    @Test
+    public void jsonPatch() {
+        assertEquals(
+                builderFactory.createObjectBuilder()
+                        .add("dummy", builderFactory.createObjectBuilder().add("added", true))
+                        .add("foo", "replaced")
+                        .build(),
+                jsonLogic.apply(
+                        builderFactory.createObjectBuilder()
+                                .add("jsonpatch", builderFactory.createArrayBuilder()
+                                        .add(builderFactory.createObjectBuilder()
+                                                .add("op", JsonPatch.Operation.ADD.operationName())
+                                                .add("path", "/dummy")
+                                                .add("value", builderFactory.createObjectBuilder()
+                                                        .add("added", true)))
+                                        .add(builderFactory.createObjectBuilder()
+                                                .add("op", JsonPatch.Operation.REPLACE.operationName())
+                                                .add("path", "/foo")
+                                                .add("value", "replaced")))
+                                .build(),
+                        Json.createObjectBuilder().add("foo", "bar").build()));
+    }
+
+    @Test
+    public void jsonMergePatch() {
+        assertEquals(
+                builderFactory.createObjectBuilder()
+                        .add("a", "z")
+                        .add("c", builderFactory.createObjectBuilder()
+                                .add("d", "e"))
+                        .build(),
+                jsonLogic.apply(
+                        builderFactory.createObjectBuilder()
+                                .add("jsonmergepatch", builderFactory.createObjectBuilder()
+                                        .add("a", "z")
+                                        .add("c", builderFactory.createObjectBuilder()
+                                                .addNull("f"))
+                                        .build())
+                                .build(),
+                        builderFactory.createObjectBuilder()
+                                .add("a", "b")
+                                .add("c", builderFactory.createObjectBuilder()
+                                        .add("d", "e")
+                                        .add("f", "g"))
+                                .build()));
+    }
+
+    @Test
+    public void jsonMergeDiff() {
+        assertEquals(
+                builderFactory.createObjectBuilder()
+                        .add("a", "z")
+                        .add("c", builderFactory.createObjectBuilder()
+                                .addNull("f"))
+                        .build(),
+                jsonLogic.apply(
+                        builderFactory.createObjectBuilder()
+                                .add("jsonmergediff", builderFactory.createObjectBuilder()
+                                        .add("a", "b")
+                                        .add("c", builderFactory.createObjectBuilder()
+                                                .add("d", "e")
+                                                .add("f", "g")))
+                                .build(),
+                        builderFactory.createArrayBuilder()
+                                .add(builderFactory.createObjectBuilder()
+                                        .add("a", "z")
+                                        .add("c", builderFactory.createObjectBuilder()
+                                                .add("d", "e"))
+                                        .build())
+                                .add(builderFactory.createObjectBuilder())
+                                .build()));
     }
 
     @Test
