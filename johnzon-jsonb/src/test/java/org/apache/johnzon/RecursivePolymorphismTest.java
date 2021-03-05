@@ -23,6 +23,8 @@ import org.junit.Test;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
+import javax.json.bind.annotation.JsonbPropertyOrder;
+import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.serializer.DeserializationContext;
 import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
@@ -30,7 +32,9 @@ import javax.json.bind.serializer.SerializationContext;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
 import java.lang.reflect.Type;
+import java.util.List;
 
+import static java.util.Arrays.asList;
 import static javax.json.stream.JsonParser.Event.KEY_NAME;
 import static javax.json.stream.JsonParser.Event.START_OBJECT;
 import static javax.json.stream.JsonParser.Event.VALUE_NUMBER;
@@ -41,23 +45,54 @@ public class RecursivePolymorphismTest {
     public void read() throws Exception {
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
                 .withDeserializers(new PolyDeserializer()))) {
-            final Parent parent = jsonb.fromJson("{\"type\":1,\"name\":\"first\",\"uno\":true,\"duo\":true}", Parent.class);
-            assertEquals("Child1{name='first', uno=true}", parent.toString());
+            final Parent parent = jsonb.fromJson("{\"type\":1,\"name\":\"first\",\"id\":1,\"duo\":true," +
+                    "\"sibling\":{\"type\":1,\"name\":\"second\",\"id\":2,\"duo\":true}," +
+                    "\"parents\":[{\"type\":1,\"name\":\"third\",\"id\":3,\"duo\":true}," +
+                    "{\"type\":2,\"name\":\"fourth\",\"id\":4,\"duo\":true}]" +
+                    "}", Parent.class);
+            assertEquals(
+                    "Child1{" +
+                            "name='first', " +
+                            "id=1, " +
+                            "sibling=Child1{name='second', id=2, sibling=null, parents=null}, " +
+                            "parents=[Child1{name='third', id=3, sibling=null, parents=null}, Child2{name='fourth', duo=true}]}",
+                    parent.toString());
         }
     }
 
     @Test
     public void write() throws Exception {
+        final Child1 parent1 = new Child1();
+        parent1.name = "p1";
+        parent1.id = 0;
+
+        final Child1 sibling = new Child1();
+        sibling.name = "s";
+        sibling.id = 2;
+
+        final Child2 parent2 = new Child2();
+        parent2.name = "p2";
+        parent2.duo = true;
+
         final Child1 child1 = new Child1();
         child1.name = "first";
-        child1.uno = true;
+        child1.id = 1;
+        child1.sibling = sibling;
+        child1.parents = asList(parent1, parent2);
+
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
                 .withSerializers(new PolySerializer()))) {
             final String json = jsonb.toJson(child1);
-            assertEquals("{\"type\":1,\"name\":\"first\",\"uno\":true}", json);
+            assertEquals("{" +
+                    "\"type\":1,\"id\":1,\"name\":\"first\"," +
+                    "\"parents\":[" +
+                    "{\"type\":1,\"id\":0,\"name\":\"p1\"}," +
+                    "{\"type\":2,\"duo\":true,\"name\":\"p2\"}]," +
+                    "\"sibling\":{\"type\":1,\"id\":2,\"name\":\"s\"}}", json);
         }
     }
 
+    @JsonbPropertyOrder(PropertyOrderStrategy.LEXICOGRAPHICAL)
     public static class Parent {
         public String name;
 
@@ -67,15 +102,20 @@ public class RecursivePolymorphismTest {
         }
     }
 
+    @JsonbPropertyOrder(PropertyOrderStrategy.LEXICOGRAPHICAL)
     public static class Child1 extends Parent {
-        public boolean uno;
+        public int id;
+        public Parent sibling;
+        public List<Parent> parents;
 
         @Override
         public String toString() {
-            return "Child1{name='" + name + "', uno=" + uno + '}';
+            return "Child1{name='" + name + "', id=" + id +
+                    ", sibling=" + sibling + ", parents=" + parents + "}";
         }
     }
 
+    @JsonbPropertyOrder(PropertyOrderStrategy.LEXICOGRAPHICAL)
     public static class Child2 extends Parent {
         public boolean duo;
 

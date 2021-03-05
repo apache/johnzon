@@ -48,7 +48,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
     @Override
     public JsonGenerator getJsonGenerator() {
         return generator == null ? generator = new InObjectOrPrimitiveJsonGenerator(
-                getRawJsonGenerator(), writeStart, keyName) : generator;
+                getRawJsonGenerator(), writeStart, keyName, writeEnd) : generator;
     }
 
     @Override
@@ -74,9 +74,8 @@ public class DynamicMappingGenerator implements MappingGenerator {
     }
 
     public void flushIfNeeded() {
-        if (this.generator.state == WritingState.WROTE_START) {
-            writeEnd.run();
-            this.generator.state = WritingState.NONE;
+        if (generator != null) {
+            generator.endIfNeeded();
         }
     }
 
@@ -86,17 +85,19 @@ public class DynamicMappingGenerator implements MappingGenerator {
         DONT_WRITE_END
     }
 
-    private static class InObjectOrPrimitiveJsonGenerator implements JsonGenerator {
+    public static class InObjectOrPrimitiveJsonGenerator implements JsonGenerator {
         private final JsonGenerator delegate;
         private final Runnable writeStart;
+        private final Runnable writeEnd;
         private final String keyIfNoObject;
         private WritingState state = WritingState.NONE; // todo: we need a stack (linkedlist) here to be accurate
         private int nested = 0;
 
         private InObjectOrPrimitiveJsonGenerator(final JsonGenerator generator, final Runnable writeStart,
-                                                 final String keyName) {
+                                                 final String keyName, final Runnable writeEnd) {
             this.delegate = generator;
             this.writeStart = writeStart;
+            this.writeEnd = writeEnd;
             this.keyIfNoObject = keyName;
         }
 
@@ -226,18 +227,6 @@ public class DynamicMappingGenerator implements MappingGenerator {
         }
 
         @Override
-        public JsonGenerator writeEnd() {
-            if (nested == 0 && state == WritingState.WROTE_START) {
-                state = WritingState.NONE;
-            }
-            if (nested > 0) {
-                nested--;
-            }
-            delegate.writeEnd();
-            return this;
-        }
-
-        @Override
         public JsonGenerator write(final JsonValue value) {
             if (isWritingPrimitive()) {
                 state = WritingState.DONT_WRITE_END;
@@ -336,10 +325,6 @@ public class DynamicMappingGenerator implements MappingGenerator {
             return this;
         }
 
-        private boolean isWritingPrimitive() {
-            return state == WritingState.NONE && keyIfNoObject != null;
-        }
-
         @Override
         public void close() {
             delegate.close();
@@ -348,6 +333,58 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public void flush() {
             delegate.flush();
+        }
+
+        @Override
+        public JsonGenerator writeEnd() {
+            return doWriteEnd(false);
+        }
+
+        private JsonGenerator doWriteEnd(final boolean useDelegate) {
+            if (nested == 0 && state == WritingState.WROTE_START) {
+                state = WritingState.NONE;
+            }
+            if (nested > 0) {
+                nested--;
+            }
+            if (!useDelegate && nested == 0 && SkipEnclosingWriteEnd.NOOP != writeEnd) {
+                writeEnd.run();
+            } else {
+                if (nested == 0) {
+                    final JsonGenerator unwrap = unwrap(delegate);
+                    unwrap.writeEnd();
+                } else {
+                    delegate.writeEnd();
+                }
+            }
+            return this;
+        }
+
+        private JsonGenerator unwrap(final JsonGenerator delegate) {
+            JsonGenerator current = delegate;
+            while (SkipLastWriteEndGenerator.class.isInstance(current)) {
+                current = SkipLastWriteEndGenerator.class.cast(current).delegate;
+            }
+            return current;
+        }
+
+        public void endIfNeeded() {
+            endIfNeeded(this);
+        }
+
+        private boolean isWritingPrimitive() {
+            return state == WritingState.NONE && keyIfNoObject != null;
+        }
+
+        public static void endIfNeeded(final JsonGenerator generator) {
+            if (!InObjectOrPrimitiveJsonGenerator.class.isInstance(generator)) {
+                return;
+            }
+            final InObjectOrPrimitiveJsonGenerator jsonGenerator = InObjectOrPrimitiveJsonGenerator.class.cast(generator);
+            if (jsonGenerator.state == WritingState.WROTE_START) {
+                jsonGenerator.doWriteEnd(true);
+                jsonGenerator.state = WritingState.DONT_WRITE_END;
+            }
         }
     }
 
