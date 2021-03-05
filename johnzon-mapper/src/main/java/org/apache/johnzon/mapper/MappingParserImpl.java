@@ -136,18 +136,22 @@ public class MappingParserImpl implements MappingParser {
     }
 
     @Override
-    public <T> T readObject(JsonValue jsonValue, Type targetType) {
-        return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType);
+    public <T> T readObject(final JsonValue jsonValue, final Type targetType) {
+        return readObject(jsonValue, targetType, targetType instanceof Class || targetType instanceof ParameterizedType, null);
     }
 
-    private <T> T readObject(JsonValue jsonValue, Type targetType, boolean applyObjectConverter) {
+    public <T> T readObject(final JsonValue jsonValue, final Type targetType, final boolean applyObjectConverter,
+                            final Collection<Class<?>> skippedConverters) {
         final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
 
         if (JsonStructure.class == targetType || JsonObject.class == targetType || JsonValue.class == targetType) {
             return (T) jsonValue;
         }
         if (JsonObject.class.isInstance(jsonValue)) {
-            return (T) buildObject(targetType, JsonObject.class.cast(jsonValue), applyObjectConverter, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null);
+            return (T) buildObject(
+                    targetType, JsonObject.class.cast(jsonValue), applyObjectConverter,
+                    isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null,
+                    skippedConverters);
         }
         if (JsonString.class.isInstance(jsonValue)) {
             if ((targetType == String.class || targetType == Object.class)) {
@@ -221,7 +225,7 @@ public class MappingParserImpl implements MappingParser {
                             isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
                 }
                 if (Collection.class.isAssignableFrom(asClass)) {
-                    return readObject(jsonValue, new JohnzonParameterizedType(asClass, Object.class), applyObjectConverter);
+                    return readObject(jsonValue, new JohnzonParameterizedType(asClass, Object.class), applyObjectConverter, skippedConverters);
                 }
             }
             if (ParameterizedType.class.isInstance(targetType)) {
@@ -256,7 +260,7 @@ public class MappingParserImpl implements MappingParser {
 
 
     private Object buildObject(final Type inType, final JsonObject object, final boolean applyObjectConverter,
-                               final JsonPointerTracker jsonPointer) {
+                               final JsonPointerTracker jsonPointer, final Collection<Class<?>> skippedConverters) {
         Type type = inType;
         if (inType == Object.class) {
             type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
@@ -268,9 +272,16 @@ public class MappingParserImpl implements MappingParser {
                 throw new MapperException("ObjectConverters are only supported for Classes not Types");
             }
 
-            ObjectConverter.Reader objectConverter = config.findObjectConverterReader((Class) type);
-            if (objectConverter != null) {
-                return objectConverter.fromJson(object, type, new SuppressConversionMappingParser(this, object));
+            final Class clazz = (Class) type;
+            if (skippedConverters == null || !skippedConverters.contains(clazz)) {
+                ObjectConverter.Reader objectConverter = config.findObjectConverterReader(clazz);
+                if (objectConverter != null) {
+                    final Collection<Class<?>> skipped = skippedConverters == null ? new ArrayList<>() : skippedConverters;
+                    skipped.add(clazz);
+                    return objectConverter.fromJson(
+                            object, type,
+                            new SuppressConversionMappingParser(this, object, skipped));
+                }
             }
         }
 
@@ -280,7 +291,7 @@ public class MappingParserImpl implements MappingParser {
                 final String discriminator = object.getString(config.getDiscriminator());
                 final Class<?> nestedType = config.getTypeLoader().apply(discriminator);
                 if (nestedType != null && nestedType != inType) {
-                    return buildObject(nestedType, object, applyObjectConverter, jsonPointer);
+                    return buildObject(nestedType, object, applyObjectConverter, jsonPointer, skippedConverters);
                 }
             }
         }
@@ -346,8 +357,12 @@ public class MappingParserImpl implements MappingParser {
             throw new MapperException("Can't map " + type);
         }
 
-        if (applyObjectConverter && classMapping.reader != null) {
-            return classMapping.reader.fromJson(object, type, new SuppressConversionMappingParser(this, object));
+        if (applyObjectConverter && classMapping.reader != null && (skippedConverters == null || !skippedConverters.contains(type))) {
+            final Collection<Class<?>> skipped = skippedConverters == null ? new ArrayList<>() : skippedConverters;
+            if (Class.class.isInstance(type)) { // more than likely, drop this check?
+                skipped.add(Class.class.cast(type));
+            }
+            return classMapping.reader.fromJson(object, type, new SuppressConversionMappingParser(this, object, skipped));
         }
         /* doesn't work yet
         if (classMapping.adapter != null) {
@@ -502,7 +517,7 @@ public class MappingParserImpl implements MappingParser {
             final Object param;
             try {
                 Type to = key.getTo();
-                param = buildObject(to, JsonObject.class.cast(jsonValue), to instanceof Class, jsonPointer);
+                param = buildObject(to, JsonObject.class.cast(jsonValue), to instanceof Class, jsonPointer, getSkippedConverters());
             } catch (final Exception e) {
                 throw new MapperException(e);
             }
@@ -648,7 +663,7 @@ public class MappingParserImpl implements MappingParser {
                     baseInstance != null ? baseInstance.getClass() : (
                             typedAdapter ? TypeAwareAdapter.class.cast(itemConverter).getTo() : type),
                     JsonObject.class.cast(jsonValue), type instanceof Class,
-                    jsonPointer);
+                    jsonPointer, getSkippedConverters());
             return typedAdapter ? itemConverter.to(object) : object;
         } else if (JsonArray.class.isInstance(jsonValue)) {
             if (JsonArray.class == type || JsonStructure.class == type || JsonValue.class == type) {
@@ -1151,24 +1166,35 @@ public class MappingParserImpl implements MappingParser {
     private static class SuppressConversionMappingParser implements MappingParser {
         private final MappingParserImpl delegate;
         private final JsonObject suppressConversionFor;
+        private final Collection<Class<?>> skippedConverters;
 
-        public SuppressConversionMappingParser(MappingParserImpl delegate, JsonObject suppressConversionFor) {
+        public SuppressConversionMappingParser(final MappingParserImpl delegate, final JsonObject suppressConversionFor,
+                                               final Collection<Class<?>> skippedConverters) {
             this.delegate = delegate;
             this.suppressConversionFor = suppressConversionFor;
+            this.skippedConverters = skippedConverters;
         }
 
         @Override
-        public <T> T readObject(Type targetType) {
+        public Collection<Class<?>> getSkippedConverters() {
+            return skippedConverters;
+        }
+
+        @Override
+        public <T> T readObject(final Type targetType) {
             return delegate.readObject(targetType);
         }
 
         @Override
-        public <T> T readObject(JsonValue jsonValue, Type targetType) {
+        public <T> T readObject(final JsonValue jsonValue, final Type targetType) {
+            final Collection<Class<?>> skippedConverters = getSkippedConverters();
             if (suppressConversionFor == jsonValue) {
-                return delegate.readObject(jsonValue, targetType, false);
+                return delegate.readObject(jsonValue, targetType, false, skippedConverters);
             }
-            return delegate.readObject(jsonValue, targetType);
+            final boolean useConverters = (Class.class.isInstance(targetType) &&
+                    (skippedConverters == null || skippedConverters.stream().noneMatch(it -> it.isAssignableFrom(Class.class.cast(targetType))))) ||
+                    ParameterizedType.class.isInstance(targetType);
+            return delegate.readObject(jsonValue, targetType, useConverters, skippedConverters);
         }
     }
-
 }

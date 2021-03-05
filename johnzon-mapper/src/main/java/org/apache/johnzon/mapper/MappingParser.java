@@ -20,14 +20,18 @@ package org.apache.johnzon.mapper;
 
 import javax.json.JsonValue;
 import java.lang.reflect.Type;
+import java.util.Collection;
 
 /**
  * Handles reading Json for Objects.
- *
  */
 public interface MappingParser {
 
     <T> T readObject(Type targetType);
 
     <T> T readObject(JsonValue jsonValue, Type targetType);
+
+    default Collection<Class<?>> getSkippedConverters() {
+        return null;
+    }
 }
