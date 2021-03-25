@@ -307,7 +307,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         Stream.of(clazz.getDeclaredMethods()),
                         clazz.getSuperclass() == null || clazz.getSuperclass() == Object.class || clazz.getSuperclass() == clazz ?
                                 Stream.empty() :
-                                findPotentialFactoryMethods(clazz)));
+                                findPotentialFactoryMethods(clazz.getSuperclass())));
     }
 
     private Factory methodFactory(final Class<?> clazz, final Method finalFactory,

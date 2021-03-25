@@ -268,8 +268,8 @@ public abstract class BaseAccessMode implements AccessMode {
         };
     }
 
-    private Constructor<?> findRecordConstructor(Class<?> clazz) {
-        return Stream.of(clazz.getConstructors())
+    private Constructor<?> findRecordConstructor(final Class<?> clazz) {
+        return Stream.of(clazz.getDeclaredConstructors())
                 .max(comparing(Constructor::getParameterCount))
                 .map(c -> {
                     if (!c.isAccessible()) {
