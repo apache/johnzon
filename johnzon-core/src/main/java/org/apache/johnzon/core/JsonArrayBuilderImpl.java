@@ -35,6 +35,7 @@ import java.util.Map;
 import org.apache.johnzon.core.util.ArrayUtil;
 
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
+    private RejectDuplicateKeysMode rejectDuplicateKeysMode;
     private List<JsonValue> tmpList;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
 
@@ -43,13 +44,17 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     }
 
     public JsonArrayBuilderImpl(final JsonArray initialData,
-                                final BufferStrategy.BufferProvider<char[]> provider) {
+                                final BufferStrategy.BufferProvider<char[]> provider,
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
         this.tmpList = new ArrayList<>(initialData);
         this.bufferProvider = provider;
+        this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
     }
 
-    public JsonArrayBuilderImpl(final Collection<?> initialData, final BufferStrategy.BufferProvider<char[]> provider) {
+    public JsonArrayBuilderImpl(final Collection<?> initialData, final BufferStrategy.BufferProvider<char[]> provider,
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
         this.bufferProvider = provider;
+        this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
         this.tmpList = new ArrayList<>();
         if (!initialData.isEmpty()) {
             for (Object initialValue : initialData) {
@@ -220,12 +225,12 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         } else if (value instanceof String) {
             add((String) value);
         } else if (value instanceof Map) {
-            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider).build());
+            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, rejectDuplicateKeysMode).build());
         } else if (value instanceof Collection) {
-            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider).build());
+            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, rejectDuplicateKeysMode).build());
         } else if (value.getClass().isArray()) {
             final Collection<Object> collection = ArrayUtil.newCollection(value);
-            add(new JsonArrayBuilderImpl(collection, bufferProvider).build());
+            add(new JsonArrayBuilderImpl(collection, bufferProvider, rejectDuplicateKeysMode).build());
         } else {
             throw new JsonException("Illegal JSON type! type=" + value.getClass());
         }

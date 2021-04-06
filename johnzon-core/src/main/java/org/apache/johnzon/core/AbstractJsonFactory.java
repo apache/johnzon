@@ -32,11 +32,11 @@ public abstract class AbstractJsonFactory implements Serializable {
     
     protected final Map<String, Object> internalConfig = new HashMap<String, Object>();
     
-    protected AbstractJsonFactory(final Map<String, ?> config, Collection<String> supportedConfigKeys, Collection<String> defaultSupportedConfigKeys) {
-        if(config != null && config.size() > 0) {
-            
+    protected AbstractJsonFactory(final Map<String, ?> config, Collection<String> supportedConfigKeys,
+                                  final Collection<String> defaultSupportedConfigKeys) {
+        if(config != null && !config.isEmpty()) {
             if(defaultSupportedConfigKeys != null) {
-                supportedConfigKeys = new ArrayList<String>(supportedConfigKeys);
+                supportedConfigKeys = new ArrayList<>(supportedConfigKeys);
                 supportedConfigKeys.addAll(defaultSupportedConfigKeys);
             }
             

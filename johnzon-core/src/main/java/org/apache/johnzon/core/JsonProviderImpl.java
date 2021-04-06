@@ -68,7 +68,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
     private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
     private final Supplier<JsonBuilderFactory> builderFactory = new Cached<>(() ->
-            new JsonBuilderFactoryImpl(null, bufferProvider.get()));
+            new JsonBuilderFactoryImpl(null, bufferProvider.get(), RejectDuplicateKeysMode.DEFAULT));
     private final JsonPointerFactory jsonPointerFactory;
 
     public JsonProviderImpl() {
@@ -201,7 +201,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
         final JsonBuilderFactory builderFactory = this.builderFactory.get();
         return (config == null || config.isEmpty()) ?
-                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get());
+                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get(), RejectDuplicateKeysMode.from(config));
     }
 
     @Override

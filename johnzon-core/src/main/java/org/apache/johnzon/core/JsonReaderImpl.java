@@ -36,12 +36,14 @@ import static java.util.Collections.emptyMap;
 public class JsonReaderImpl implements JsonReader {
     private final JohnzonJsonParser parser;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private final RejectDuplicateKeysMode rejectDuplicateKeysMode;
     private boolean closed = false;
 
     private boolean subStreamReader;
 
-    public JsonReaderImpl(final JsonParser parser, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
-        this(parser, false, bufferProvider);
+    public JsonReaderImpl(final JsonParser parser, final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                          final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
+        this(parser, false, bufferProvider, rejectDuplicateKeysMode);
     }
 
     /**
@@ -51,7 +53,8 @@ public class JsonReaderImpl implements JsonReader {
      * @param bufferProvider buffer provider for toString of created instances.
      */
     public JsonReaderImpl(final JsonParser parser, boolean subStreamReader,
-                          final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+                          final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                          final RejectDuplicateKeysMode rejectDuplicateKeys) {
         this.bufferProvider = bufferProvider;
         if (parser instanceof JohnzonJsonParser) {
             this.parser = (JohnzonJsonParser) parser;
@@ -60,6 +63,7 @@ public class JsonReaderImpl implements JsonReader {
         }
 
         this.subStreamReader = subStreamReader;
+        this.rejectDuplicateKeysMode = rejectDuplicateKeys;
     }
 
     @Override
@@ -85,14 +89,14 @@ public class JsonReaderImpl implements JsonReader {
 
         switch (next) {
             case START_OBJECT:
-                final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
+                final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode);
                 parseObject(objectBuilder);
                 if (!subStreamReader && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
                 return objectBuilder.build();
             case START_ARRAY:
-                final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl(emptyList(), bufferProvider);
+                final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode);
                 parseArray(arrayBuilder);
                 if (!subStreamReader && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
@@ -178,13 +182,13 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case START_OBJECT:
-                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
+                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode);
                     parseObject(subObject);
                     builder.add(key, subObject);
                     break;
 
                 case START_ARRAY:
-                    JsonArrayBuilder subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider);
+                    JsonArrayBuilder subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode);
                     parseArray(subArray);
                     builder.add(key, subArray);
                     break;
@@ -238,14 +242,14 @@ public class JsonReaderImpl implements JsonReader {
                     break;
 
                 case START_OBJECT:
-                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
+                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode);
                     parseObject(subObject);
                     builder.add(subObject);
                     break;
 
                 case START_ARRAY:
                     JsonArrayBuilder subArray = null;
-                    parseArray(subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider));
+                    parseArray(subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode));
                     builder.add(subArray);
                     break;
 

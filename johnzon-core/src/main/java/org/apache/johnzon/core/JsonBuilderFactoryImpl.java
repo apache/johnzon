@@ -18,8 +18,12 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
+import javax.json.JsonBuilderFactory;
+import javax.json.JsonObject;
+import javax.json.JsonObjectBuilder;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -27,32 +31,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
+    private RejectDuplicateKeysMode rejectDuplicateKeysMode;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
-    private static final String[] SUPPORTED_CONFIG_KEYS = new String[] {
-        // nothing yet
-    };
+    private static final List<String> SUPPORTED_CONFIG_KEYS = RejectDuplicateKeysMode.CONFIG_KEYS;
 
     protected JsonBuilderFactoryImpl() {
         // no-op: serialization
     }
 
-    JsonBuilderFactoryImpl(final Map<String, ?> config, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+    JsonBuilderFactoryImpl(final Map<String, ?> config, final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                           final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
         this.bufferProvider = bufferProvider;
-        if (config != null && config.size() > 0) {
-            final List<String> supportedConfigKeys = Arrays.asList(SUPPORTED_CONFIG_KEYS);
+        this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
+        if (config != null && !config.isEmpty()) {
             for (String configKey : config.keySet()) {
-                if(supportedConfigKeys.contains(configKey)) {
+                if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
                     internalConfig.put(configKey, config.get(configKey));
                 } else {
                     Logger.getLogger(this.getClass().getName())
@@ -64,28 +62,28 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
 
     @Override
     public JsonObjectBuilder createObjectBuilder() {
-        return new JsonObjectBuilderImpl(emptyMap(), bufferProvider);
+        return new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode);
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder(JsonObject initialData) {
-        return new JsonObjectBuilderImpl(initialData, bufferProvider);
+        return new JsonObjectBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder() {
-        return new JsonArrayBuilderImpl(emptyList(), bufferProvider);
+        return new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode);
     }
 
 
     @Override
     public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
-        return new JsonArrayBuilderImpl(initialData, bufferProvider);
+        return new JsonArrayBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
-        return new JsonArrayBuilderImpl(initialData, bufferProvider);
+        return new JsonArrayBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode);
     }
 
     @Override
@@ -95,7 +93,7 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
 
     @Override
     public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
-        return new JsonObjectBuilderImpl(initialValues, bufferProvider);
+        return new JsonObjectBuilderImpl(initialValues, bufferProvider, rejectDuplicateKeysMode);
     }
 
 }

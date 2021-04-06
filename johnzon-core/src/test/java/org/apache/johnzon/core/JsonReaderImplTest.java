@@ -19,6 +19,7 @@
 package org.apache.johnzon.core;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -36,6 +37,7 @@ import java.util.Map;
 
 import javax.json.Json;
 import javax.json.JsonArray;
+import javax.json.JsonException;
 import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -62,6 +64,14 @@ public class JsonReaderImplTest {
     @SuppressWarnings("unchecked")
     protected Map<String, ?> getFactoryConfig() {
         return Collections.EMPTY_MAP;
+    }
+
+    @Test(expected = JsonException.class)
+    public void rejectedKeys() {
+        Json.createReaderFactory(singletonMap("johnzon.rejectDuplicateKeys", true)).createReader(new StringReader("{" +
+                "\"a\":1," +
+                "\"a\":2" +
+                "}")).readObject();
     }
 
     @Test(expected = JsonParsingException.class)

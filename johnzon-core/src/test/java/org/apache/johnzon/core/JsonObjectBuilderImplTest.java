@@ -28,6 +28,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 import javax.json.Json;
+import javax.json.JsonException;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonValue;
@@ -36,6 +37,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class JsonObjectBuilderImplTest {
+    @Test(expected = JsonException.class)
+    public void rejectedKeys() {
+        Json.createBuilderFactory(singletonMap("johnzon.rejectDuplicateKeys", true))
+                .createObjectBuilder()
+                .add("foo", 1)
+                .add("foo", 2);
+    }
+
     @Test
     public void createObjectBuilderMapSupport() {
         final Map<String, Object> initial = new HashMap<>();
