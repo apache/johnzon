@@ -126,6 +126,10 @@
                     <pattern>javax.json</pattern>
                     <shadedPattern>jakarta.json</shadedPattern>
                   </relocation>
+                  <relocation>
+                    <pattern>javax.websocket</pattern>
+                    <shadedPattern>jakarta.websocket</shadedPattern>
+                  </relocation>
                 </relocations>
               </configuration>
             </execution>
