@@ -16,32 +16,33 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.websocket.mapper;
+package org.apache.johnzon.websocket.internal.servlet;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.websocket.internal.mapper.MapperLocator;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import java.util.function.Supplier;
 
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
-import java.io.IOException;
-import java.io.Writer;
+public class IgnoreIfMissing implements ServletContextListener {
+    private final Supplier<ServletContextListener> delegate;
+    private boolean skipped;
 
-public class JohnzonTextEncoder implements Encoder.TextStream<Object> {
-    private Mapper mapper;
-
-    @Override
-    public void init(final EndpointConfig endpointConfig) {
-        mapper = Mapper.class.cast(MapperLocator.locate());
+    public IgnoreIfMissing(final Supplier<ServletContextListener> delegate) {
+        this.delegate = delegate;
     }
 
     @Override
-    public void destroy() {
-        // no-op
+    public void contextInitialized(final ServletContextEvent sce) {
+        try {
+            delegate.get().contextInitialized(sce);
+        } catch (final Error | RuntimeException re) {
+            skipped = true;
+        }
     }
 
     @Override
-    public void encode(final Object object, final Writer writer) throws EncodeException, IOException {
-        mapper.writeObject(object, writer);
+    public void contextDestroyed(final ServletContextEvent sce) {
+        if (!skipped) {
+            delegate.get().contextDestroyed(sce);
+        }
     }
 }

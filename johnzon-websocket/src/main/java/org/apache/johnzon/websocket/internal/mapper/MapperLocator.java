@@ -18,45 +18,17 @@
  */
 package org.apache.johnzon.websocket.internal.mapper;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.websocket.internal.servlet.IgnoreIfMissing;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 
-@WebListener
-public class MapperLocator implements ServletContextListener {
-    private static final Map<ClassLoader, Mapper> MAPPER_BY_LOADER = new ConcurrentHashMap<ClassLoader, Mapper>();
-    private static final String ATTRIBUTE = MapperLocator.class.getName() + ".mapper";
-
-    @Override
-    public void contextInitialized(final ServletContextEvent servletContextEvent) {
-        final Mapper build = newMapper();
-        MAPPER_BY_LOADER.put(servletContextEvent.getServletContext().getClassLoader(), build);
-        servletContextEvent.getServletContext().setAttribute(ATTRIBUTE, build);
+@WebListener // since people move to json-b we make this init lazy
+public class MapperLocator extends IgnoreIfMissing {
+    public MapperLocator() {
+        super(() -> new MapperLocatorDelegate());
     }
 
-    @Override
-    public void contextDestroyed(final ServletContextEvent servletContextEvent) {
-        MAPPER_BY_LOADER.remove(servletContextEvent.getServletContext().getClassLoader());
-    }
-
-    public static Mapper locate() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        if (loader == null) {
-            loader = MapperLocator.class.getClassLoader();
-        }
-        final Mapper mapper = MAPPER_BY_LOADER.get(loader);
-        if (mapper == null) {
-            return newMapper();
-        }
-        return mapper;
-    }
-
-    private static Mapper newMapper() {
-        return new MapperBuilder().build();
+    public static Object locate() {
+        return MapperLocatorDelegate.locate();
     }
 }

@@ -16,51 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.websocket.mapper;
+package org.apache.johnzon.websocket.internal;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.websocket.internal.mapper.MapperLocator;
-
-import javax.websocket.DecodeException;
-import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 import javax.websocket.OnMessage;
 import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpointConfig;
-import java.io.Reader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 
-public class JohnzonTextDecoder implements Decoder.TextStream<Object> {
-    protected Mapper mapper;
+public abstract class TypeAwareDecoder {
     protected Type type;
 
-    public JohnzonTextDecoder() {
+    public TypeAwareDecoder() {
         // no-op
     }
 
-    // for client side no way to guess the type so let the user provide it easily
-    public JohnzonTextDecoder(final Type type) {
-        this(null, type);
-    }
-
-    public JohnzonTextDecoder(final Mapper mapper, final Type type) {
-        this.mapper = mapper;
+    public TypeAwareDecoder(final Type type) {
         this.type = type;
     }
 
-    @Override
-    public Object decode(final Reader stream) throws DecodeException {
-        return mapper.readObject(stream, type);
-    }
-
-    @Override
-    public void init(final EndpointConfig endpointConfig) {
-        if (mapper == null) {
-            mapper = Mapper.class.cast(MapperLocator.locate());
-        }
+    protected void init(final EndpointConfig endpointConfig) {
         if (type != null) {
             return;
         }
@@ -101,10 +79,5 @@ public class JohnzonTextDecoder implements Decoder.TextStream<Object> {
                 throw new IllegalArgumentException("didn't find johnzon.websocket.message.type");
             }
         }
-    }
-
-    @Override
-    public void destroy() {
-        // no-op
     }
 }

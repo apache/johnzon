@@ -16,23 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.websocket.mapper;
+package org.apache.johnzon.websocket.jsonb;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.websocket.internal.mapper.MapperLocator;
-
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbException;
 import javax.websocket.EncodeException;
 import javax.websocket.Encoder;
 import javax.websocket.EndpointConfig;
-import java.io.IOException;
 import java.io.Writer;
 
-public class JohnzonTextEncoder implements Encoder.TextStream<Object> {
-    private Mapper mapper;
+public class JsonbTextEncoder implements Encoder.TextStream<Object> {
+    private Jsonb jsonb;
 
     @Override
     public void init(final EndpointConfig endpointConfig) {
-        mapper = Mapper.class.cast(MapperLocator.locate());
+        jsonb = JsonbLocatorDelegate.locate();
     }
 
     @Override
@@ -41,7 +39,11 @@ public class JohnzonTextEncoder implements Encoder.TextStream<Object> {
     }
 
     @Override
-    public void encode(final Object object, final Writer writer) throws EncodeException, IOException {
-        mapper.writeObject(object, writer);
+    public void encode(final Object object, final Writer writer) throws EncodeException {
+        try {
+            jsonb.toJson(object, writer);
+        } catch (final JsonbException je) {
+            throw new EncodeException(object, je.getMessage(), je);
+        }
     }
 }

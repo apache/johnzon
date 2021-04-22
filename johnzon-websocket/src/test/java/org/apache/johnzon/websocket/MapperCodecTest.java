@@ -26,6 +26,8 @@ import org.apache.johnzon.websocket.endpoint.Message;
 import org.apache.johnzon.websocket.endpoint.ServerEndpointImpl;
 import org.apache.johnzon.websocket.endpoint.ServerReport;
 import org.apache.johnzon.websocket.internal.mapper.MapperLocator;
+import org.apache.johnzon.websocket.internal.mapper.MapperLocatorDelegate;
+import org.apache.johnzon.websocket.internal.servlet.IgnoreIfMissing;
 import org.apache.johnzon.websocket.mapper.JohnzonTextDecoder;
 import org.apache.johnzon.websocket.mapper.JohnzonTextEncoder;
 import org.apache.openejb.arquillian.common.IO;
@@ -58,7 +60,7 @@ public class MapperCodecTest {
                 .addClasses(ServerEndpointImpl.class, ServerReport.class, Message.class)
                 .addAsLibrary(
                         ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
-                            .addClasses(MapperLocator.class, JohnzonTextDecoder.class, JohnzonTextEncoder.class)
+                            .addClasses(MapperLocator.class, MapperLocatorDelegate.class, IgnoreIfMissing.class, JohnzonTextDecoder.class, JohnzonTextEncoder.class)
                             .addPackages(true, JsonProviderImpl.class.getPackage())
                             .addPackages(true, Mapper.class.getPackage()))
                 .addAsLibrary(jarLocation(Json.class));

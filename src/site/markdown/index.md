@@ -391,6 +391,13 @@ Integration is at codec level (encoder/decoder). There are two families of codec
 * The ones based on JSON-P (JsonObject, JsonArray, JsonStructure)
 * The ones based on Johnzon Mapper
 
+Note that if you want to control the Mapper or JSON-B instance used by decoders you can set up the associated servlet listeners:
+
+* org.apache.johnzon.websocket.internal.mapper.MapperLocator for johnzon-mapper
+* org.apache.johnzon.websocket.jsonb.JsonbLocator for JSON-B
+
+if you write in the servlet context an attribute named `org.apache.johnzon.websocket.internal.mapper.MapperLocator.mapper` (it is a `Supplier<Mapper>`) or `org.apache.johnzon.websocket.jsonb.JsonbLocator.jsonb` (depending the implementation you use) it will be used instead of the default instance.
+
 #### JSON-P integration
 
 Encoders:
@@ -414,6 +421,16 @@ Encoder:
 Decoder:
 
 *  `org.apache.johnzon.websocket.mapper.JohnzonTextDecoder`
+
+#### JSON-B integration
+
+Encoder:
+
+*  `org.apache.johnzon.websocket.jsonb.JsonbTextEncoder`
+
+Decoder:
+
+*  `org.apache.johnzon.websocket.jsonb.JsonbTextDecoder`
 
 #### Sample
 

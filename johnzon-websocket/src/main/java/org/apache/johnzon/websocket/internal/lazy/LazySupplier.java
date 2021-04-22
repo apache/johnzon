@@ -16,32 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.websocket.mapper;
+package org.apache.johnzon.websocket.internal.lazy;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.websocket.internal.mapper.MapperLocator;
+import java.util.function.Supplier;
 
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
-import java.io.IOException;
-import java.io.Writer;
+public class LazySupplier<T> implements Supplier<T> {
+    private Supplier<T> delegate;
+    private volatile T instance;
 
-public class JohnzonTextEncoder implements Encoder.TextStream<Object> {
-    private Mapper mapper;
-
-    @Override
-    public void init(final EndpointConfig endpointConfig) {
-        mapper = Mapper.class.cast(MapperLocator.locate());
+    public LazySupplier(final Supplier<T> provider) {
+        this.delegate = provider;
     }
 
     @Override
-    public void destroy() {
-        // no-op
+    public T get() {
+        if (instance == null) {
+            synchronized (this) {
+                if (instance == null) {
+                    instance = delegate.get();
+                    delegate = null;
+                }
+            }
+        }
+        return instance;
     }
 
-    @Override
-    public void encode(final Object object, final Writer writer) throws EncodeException, IOException {
-        mapper.writeObject(object, writer);
+    public T getInstance() {
+        return instance;
     }
 }
