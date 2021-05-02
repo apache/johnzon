@@ -41,16 +41,16 @@ Apache Johnzon 1.1.x implements the JSON-P 1.1 and JSON-B 1.0 specifications whi
 #### Binaries
 The binary distribution contains all Johnzon modules.
 
-* [apache-johnzon-1.2.10-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.10/apache-johnzon-1.2.10-bin.zip)
-* [apache-johnzon-1.2.10-bin.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.2.10/apache-johnzon-1.2.10-bin.zip.sha1)
-* [apache-johnzon-1.2.10-bin.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.2.10/apache-johnzon-1.2.10-bin.zip.asc)
+* [apache-johnzon-1.2.11-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.11/apache-johnzon-1.2.11-bin.zip)
+* [apache-johnzon-1.2.11-bin.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.2.11/apache-johnzon-1.2.11-bin.zip.sha1)
+* [apache-johnzon-1.2.11-bin.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.2.11/apache-johnzon-1.2.11-bin.zip.asc)
 
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
 
-* [johnzon-1.2.10-source-release.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.10/johnzon-1.2.10-source-release.zip)
-* [johnzon-1.2.10-source-release.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.2.10/johnzon-1.2.10-source-release.zip.sha1)
-* [johnzon-1.2.10-source-release.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.2.10/johnzon-1.2.10-source-release.zip.asc)
+* [johnzon-1.2.11-source-release.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.11/johnzon-1.2.11-source-release.zip)
+* [johnzon-1.2.11-source-release.zip.sha1](https://www.apache.org/dist/johnzon/johnzon-1.2.11/johnzon-1.2.11-source-release.zip.sha1)
+* [johnzon-1.2.11-source-release.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.2.11/johnzon-1.2.11-source-release.zip.asc)
 
 
 ## Johnzon-1.0.x
