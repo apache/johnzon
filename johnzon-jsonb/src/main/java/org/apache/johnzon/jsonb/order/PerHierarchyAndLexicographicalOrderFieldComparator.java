@@ -19,9 +19,12 @@
 package org.apache.johnzon.jsonb.order;
 
 import java.util.Comparator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PerHierarchyAndLexicographicalOrderFieldComparator implements Comparator<String> {
     private final Class<?> clazz;
+    private final Map<String, Integer> distances = new ConcurrentHashMap<>();
 
     public PerHierarchyAndLexicographicalOrderFieldComparator(final Class<?> clazz) {
         this.clazz = clazz;
@@ -29,6 +32,9 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
 
     @Override
     public int compare(final String o1, final String o2) {
+        if (o1.equals(o2)) {
+            return 0;
+        }
         final int d1 = distance(o1);
         final int d2 = distance(o2);
         final int res = d2 - d1; // reversed!
@@ -39,6 +45,10 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
     }
 
     private int distance(final String o1) {
+        return distances.computeIfAbsent(o1, this::slowDistance);
+    }
+
+    private int slowDistance(String o1) {
         Class<?> current = clazz;
         int i = 0;
         while (current != null && current != Object.class) {
