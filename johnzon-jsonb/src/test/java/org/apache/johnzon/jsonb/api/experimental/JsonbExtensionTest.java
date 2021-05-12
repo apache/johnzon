@@ -18,19 +18,36 @@
  */
 package org.apache.johnzon.jsonb.api.experimental;
 
-import static org.junit.Assert.assertEquals;
-
-import java.util.Collection;
-import java.util.List;
-
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-
 import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 import org.junit.Rule;
 import org.junit.Test;
+
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
+import javax.json.JsonWriter;
+import javax.json.JsonWriterFactory;
+import javax.json.stream.JsonGenerator;
+import java.io.Serializable;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
+
+import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
+import static org.junit.Assert.assertEquals;
 
 public class JsonbExtensionTest {
     @Rule
@@ -79,6 +96,108 @@ public class JsonbExtensionTest {
     @Test
     public void toJsonValue2() {
         assertEquals(defaultValue, jsonb.toJsonValue(new Value("ok", 1), Value.class));
+    }
+
+    @Test
+    public void localTime() {
+        final LocalDate date = LocalDate.of(2021, Month.valueOf("MAY"), 12);
+        final LocalTime time = LocalTime.of(1, 2, 0, 0);
+        final OffsetDateTime offsetDateTime = OffsetDateTime.of(date, time, ZoneOffset.UTC);
+        final LocalDateTime localDateTime = LocalDateTime.of(date, time);
+
+        final Sink attribs = new Sink();
+        attribs.add("ldateTime", singletonList(offsetDateTime));
+        attribs.add("llocalDate", singletonList(date));
+        attribs.add("llocalTime", singletonList(time));
+        attribs.add("llocalDateTime", singletonList(localDateTime));
+
+        final String json = jsonb.toJson(attribs);
+        assertJsonEquals("" +
+                        "{\"attributes\":{" +
+                        "\"ldateTime\":{\"value\":[\"2021-05-12T01:02Z\"]}" +
+                        ",\"llocalDate\":{\"value\":[\"2021-05-12\"]}" +
+                        ",\"llocalDateTime\":{\"value\":[\"2021-05-12T01:02\"]}" +
+                        ",\"llocalTime\":{\"value\":[\"01:02\"]}" +
+                        "}}",
+                json);
+
+        final Sink deserialized = jsonb.fromJson(json, Sink.class);
+        assertEquals(attribs, deserialized);
+    }
+
+    // assumes json are valid but enables nicer diff
+    private void assertJsonEquals(final String expected, final String actual) {
+        final JsonWriterFactory writerFactory = Json.createWriterFactory(singletonMap(JsonGenerator.PRETTY_PRINTING, true));
+        final StringWriter s1 = new StringWriter();
+        final StringWriter s2 = new StringWriter();
+        try (final JsonReader r1 = Json.createReader(new StringReader(expected));
+             final JsonReader r2 = Json.createReader(new StringReader(expected));
+             final JsonWriter w1 = writerFactory.createWriter(s1);
+             final JsonWriter w2 = writerFactory.createWriter(s2)) {
+            w1.write(r1.readValue());
+            w2.write(r2.readValue());
+        }
+        assertEquals(s1.toString(), s2.toString());
+    }
+
+    public static class Wrapper {
+        public Object value;
+
+        public Wrapper() {
+            // no-op
+        }
+
+        public Wrapper(final Object value) {
+            this.value = value;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(final Object obj) { // for test
+            return Wrapper.class.isInstance(obj) &&
+                    // Object so deserialization of times will be a string
+                    String.valueOf(Wrapper.class.cast(obj).value).equals(String.valueOf(value));
+        }
+
+        @Override
+        public int hashCode() { // for test
+            return super.hashCode();
+        }
+    }
+
+    public static class Sink implements Serializable {
+        private Map<String, Wrapper> attributes = new TreeMap<>();
+
+        public Sink add(final String name, final Object value) {
+            attributes.put(name, new Wrapper(value));
+            return this;
+        }
+
+        public Object get(final String name) {
+            final Wrapper att = attributes.get(name);
+            return att != null ? att.getValue() : null;
+        }
+
+        public void setAttributes(final Map<String, Wrapper> attributes) {
+            this.attributes = attributes;
+        }
+
+        public Map<String, Wrapper> getAttributes() {
+            return attributes;
+        }
+
+        @Override
+        public boolean equals(final Object obj) { // for test
+            return Sink.class.isInstance(obj) && Objects.equals(Sink.class.cast(obj).attributes, attributes);
+        }
+
+        @Override
+        public int hashCode() { // for test
+            return super.hashCode();
+        }
     }
 
     public static class Value {

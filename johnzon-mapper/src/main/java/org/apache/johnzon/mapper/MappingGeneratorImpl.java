@@ -159,10 +159,18 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
 
             final Mappings.ClassMapping classMapping = mappings.getClassMapping(objectClass); // don't create here!
-            if (classMapping != null && classMapping.adapter != null) {
-                final Object result = classMapping.adapter.from(object);
-                doWriteObject(result, generator, writeBody, ignoredProperties, jsonPointer);
-                return;
+            if (classMapping != null) {
+                if (classMapping.adapter != null) {
+                    final Object result = classMapping.adapter.from(object);
+                    doWriteObject(result, generator, writeBody, ignoredProperties, jsonPointer);
+                    return;
+                }
+            } else {
+                final Adapter adapter = config.findAdapter(objectClass);
+                if (adapter != null) {
+                    doWriteObject(adapter.from(object), generator, writeBody, ignoredProperties, jsonPointer);
+                    return;
+                }
             }
 
             ObjectConverter.Writer objectConverter = config.findObjectConverterWriter(objectClass);
