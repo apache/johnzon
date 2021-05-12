@@ -29,16 +29,25 @@ import javax.json.JsonReader;
 import javax.json.JsonValue;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
+import javax.json.bind.annotation.JsonbTypeDeserializer;
+import javax.json.bind.annotation.JsonbTypeSerializer;
+import javax.json.bind.serializer.DeserializationContext;
+import javax.json.bind.serializer.JsonbDeserializer;
+import javax.json.bind.serializer.JsonbSerializer;
+import javax.json.bind.serializer.SerializationContext;
 import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonParser;
 import java.io.Serializable;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.reflect.Type;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -99,7 +108,7 @@ public class JsonbExtensionTest {
     }
 
     @Test
-    public void localTime() {
+    public void listInAdapter() {
         final LocalDate date = LocalDate.of(2021, Month.valueOf("MAY"), 12);
         final LocalTime time = LocalTime.of(1, 2, 0, 0);
         final OffsetDateTime offsetDateTime = OffsetDateTime.of(date, time, ZoneOffset.UTC);
@@ -122,6 +131,33 @@ public class JsonbExtensionTest {
                 json);
 
         final Sink deserialized = jsonb.fromJson(json, Sink.class);
+        assertEquals(attribs, deserialized);
+    }
+
+    @Test
+    public void complexDeserializer() {
+        final LocalDate date = LocalDate.of(2021, Month.valueOf("MAY"), 12);
+        final LocalTime time = LocalTime.of(1, 2, 0, 0);
+        final OffsetDateTime offsetDateTime = OffsetDateTime.of(date, time, ZoneOffset.UTC);
+        final LocalDateTime localDateTime = LocalDateTime.of(date, time);
+
+        final Sink2 attribs = new Sink2();
+        attribs.attributes.put("ldateTime", new Wrapper2(singletonList(offsetDateTime)));
+        attribs.attributes.put("llocalDate", new Wrapper2(singletonList(date)));
+        attribs.attributes.put("llocalTime", new Wrapper2(singletonList(time)));
+        attribs.attributes.put("llocalDateTime", new Wrapper2(singletonList(localDateTime)));
+
+        final String json = jsonb.toJson(attribs);
+        assertJsonEquals("" +
+                        "{\"attributes\":{" +
+                        "\"ldateTime\":{\"value\":[\"2021-05-12T01:02Z\"]}" +
+                        ",\"llocalDate\":{\"value\":[\"2021-05-12\"]}" +
+                        ",\"llocalDateTime\":{\"value\":[\"2021-05-12T01:02\"]}" +
+                        ",\"llocalTime\":{\"value\":[\"01:02\"]}" +
+                        "}}",
+                json);
+
+        final Sink2 deserialized = jsonb.fromJson(json, Sink2.class);
         assertEquals(attribs, deserialized);
     }
 
@@ -165,6 +201,183 @@ public class JsonbExtensionTest {
         @Override
         public int hashCode() { // for test
             return super.hashCode();
+        }
+    }
+
+    @JsonbTypeSerializer(WrapperCodec.class)
+    @JsonbTypeDeserializer(WrapperCodec.class)
+    public static class Wrapper2 {
+        public Object value;
+
+        public Wrapper2() {
+            // no-op
+        }
+
+        public Wrapper2(final Object value) {
+            this.value = value;
+        }
+
+        public Object getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(final Object obj) { // for test
+            return Wrapper2.class.isInstance(obj) &&
+                    // Object so deserialization of times will be a string
+                    String.valueOf(Wrapper2.class.cast(obj).value).equals(String.valueOf(value));
+        }
+
+        @Override
+        public int hashCode() { // for test
+            return super.hashCode();
+        }
+    }
+
+    public static class Sink2 implements Serializable {
+        private Map<String, Wrapper2> attributes = new TreeMap<>();
+
+        public Object get(final String name) {
+            final Wrapper2 att = attributes.get(name);
+            return att != null ? att.getValue() : null;
+        }
+
+        public void setAttributes(final Map<String, Wrapper2> attributes) {
+            this.attributes = attributes;
+        }
+
+        public Map<String, Wrapper2> getAttributes() {
+            return attributes;
+        }
+
+        @Override
+        public boolean equals(final Object obj) { // for test
+            return Sink2.class.isInstance(obj) && Objects.equals(Sink2.class.cast(obj).attributes, attributes);
+        }
+
+        @Override
+        public int hashCode() { // for test
+            return super.hashCode();
+        }
+    }
+
+    public static class WrapperCodec implements JsonbDeserializer<Wrapper2>, JsonbSerializer<Wrapper2> {
+        @Override
+        public void serialize(final Wrapper2 wrapper, final JsonGenerator generator, final SerializationContext ctx) {
+            final Object value = wrapper.getValue();
+            if (value == null) {
+                return;
+            }
+            if (value instanceof List) {
+                final List<Object> list = (List<Object>) value;
+                if (!list.isEmpty()) {
+                    generator.writeStartObject();
+                    writeArray(generator, list);
+                    generator.writeEnd();
+                }
+            } else if (value instanceof String) {
+                generator.write(markerFor(value), (String) value);
+            } else {
+                throw new IllegalArgumentException(value.toString());
+            }
+        }
+
+        private void writeArray(final JsonGenerator generator, final List<Object> list) {
+            generator.writeStartArray("a" + markerFor(list.get(0)));
+            for (final Object o : list) {
+                generator.write(o.toString());
+            }
+            generator.writeEnd();
+        }
+
+        private String markerFor(final Object value) {
+            if (value instanceof String) {
+                return "s";
+            }
+            if (value instanceof OffsetDateTime) {
+                return "dt";
+            }
+            if (value instanceof LocalDate) {
+                return "ld";
+            }
+            if (value instanceof LocalTime) {
+                return "lt";
+            }
+            if (value instanceof LocalDateTime) {
+                return "ldt";
+            }
+            throw new IllegalArgumentException(value.toString());
+        }
+
+        @Override
+        public Wrapper2 deserialize(final JsonParser parser, final DeserializationContext ctx, final Type rtType) {
+            if (parser.next() == JsonParser.Event.START_OBJECT &&
+                    parser.next() == JsonParser.Event.KEY_NAME) {
+                final String marker = parser.getString();
+                final Wrapper2 wrapper = new Wrapper2(getValue(parser, marker));
+                // close the object
+                parser.next();
+                if (wrapper != null) {
+                    return wrapper;
+                }
+            }
+            throw new IllegalStateException("Not a valid wrapper");
+        }
+
+        private Object getValue(final JsonParser parser, final String marker) {
+            final JsonParser.Event valueType = parser.next();
+            if (valueType == JsonParser.Event.VALUE_NULL) {
+                return null;
+            }
+            if (valueType == JsonParser.Event.VALUE_STRING) {
+                final String strVal = parser.getString();
+                if ("s".equals(marker)) {
+                    return strVal;
+                }
+                if ("dt".equals(marker)) {
+                    return OffsetDateTime.parse(strVal);
+                }
+                if ("ld".equals(marker)) {
+                    return LocalDate.parse(strVal);
+                }
+                if ("lt".equals(marker)) {
+                    return LocalTime.parse(strVal);
+                }
+                if ("ldt".equals(marker)) {
+                    return LocalDateTime.parse(strVal);
+                }
+                throw new IllegalStateException("Unknown type info: " + marker);
+            }
+            if (valueType == JsonParser.Event.VALUE_TRUE) {
+                return Boolean.TRUE;
+            }
+            if (valueType == JsonParser.Event.VALUE_FALSE) {
+                return Boolean.FALSE;
+            }
+            if (valueType == JsonParser.Event.START_ARRAY) {
+                return parseArrayListJson(marker, parser);
+            }
+            if (valueType == JsonParser.Event.END_ARRAY) {
+                return null;
+            }
+            throw new IllegalStateException("Unknown JSON valueType " + valueType);
+        }
+
+        private List<?> parseArrayListJson(final String arrayTypeInfo, final JsonParser parser) {
+            if (!arrayTypeInfo.startsWith("a")) {
+                throw new IllegalStateException("Unknown type: " + arrayTypeInfo);
+            }
+            final String typeInfo = arrayTypeInfo.substring(1);
+            final List<Object> content = new ArrayList<>();
+            do {
+                final Object val = getValue(parser, typeInfo);
+                if (val != null) {
+                    content.add(val);
+                } else {
+                    break;
+                }
+            } while (true);
+            return content;
         }
     }
 
