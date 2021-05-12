@@ -161,6 +161,33 @@ public class JsonbExtensionTest {
         assertEquals(attribs, deserialized);
     }
 
+    @Test
+    public void complexNoOpenCloseDeserializer() {
+        final LocalDate date = LocalDate.of(2021, Month.valueOf("MAY"), 12);
+        final LocalTime time = LocalTime.of(1, 2, 0, 0);
+        final OffsetDateTime offsetDateTime = OffsetDateTime.of(date, time, ZoneOffset.UTC);
+        final LocalDateTime localDateTime = LocalDateTime.of(date, time);
+
+        final Sink3 attribs = new Sink3();
+        attribs.attributes.put("ldateTime", new Wrapper3(singletonList(offsetDateTime)));
+        attribs.attributes.put("llocalDate", new Wrapper3(singletonList(date)));
+        attribs.attributes.put("llocalTime", new Wrapper3(singletonList(time)));
+        attribs.attributes.put("llocalDateTime", new Wrapper3(singletonList(localDateTime)));
+
+        final String json = jsonb.toJson(attribs);
+        assertJsonEquals("" +
+                        "{\"attributes\":{" +
+                        "\"ldateTime\":{\"value\":[\"2021-05-12T01:02Z\"]}" +
+                        ",\"llocalDate\":{\"value\":[\"2021-05-12\"]}" +
+                        ",\"llocalDateTime\":{\"value\":[\"2021-05-12T01:02\"]}" +
+                        ",\"llocalTime\":{\"value\":[\"01:02\"]}" +
+                        "}}",
+                json);
+
+        final Sink3 deserialized = jsonb.fromJson(json, Sink3.class);
+        assertEquals(attribs, deserialized);
+    }
+
     // assumes json are valid but enables nicer diff
     private void assertJsonEquals(final String expected, final String actual) {
         final JsonWriterFactory writerFactory = Json.createWriterFactory(singletonMap(JsonGenerator.PRETTY_PRINTING, true));
@@ -261,6 +288,57 @@ public class JsonbExtensionTest {
         }
     }
 
+    @JsonbTypeSerializer(OpenWrapperCodec.class)
+    @JsonbTypeDeserializer(OpenWrapperCodec.class)
+    public static class Wrapper3 extends Wrapper2 {
+        public Wrapper3() {
+            super();
+        }
+
+        public Wrapper3(final Object value) {
+            super(value);
+        }
+    }
+
+    public static class Sink3 implements Serializable {
+        private Map<String, Wrapper3> attributes = new TreeMap<>();
+
+        public Object get(final String name) {
+            final Wrapper3 att = attributes.get(name);
+            return att != null ? att.getValue() : null;
+        }
+
+        public void setAttributes(final Map<String, Wrapper3> attributes) {
+            this.attributes = attributes;
+        }
+
+        public Map<String, Wrapper3> getAttributes() {
+            return attributes;
+        }
+
+        @Override
+        public boolean equals(final Object obj) { // for test
+            return Sink3.class.isInstance(obj) && Objects.equals(Sink3.class.cast(obj).attributes, attributes);
+        }
+
+        @Override
+        public int hashCode() { // for test
+            return super.hashCode();
+        }
+    }
+
+    public static class OpenWrapperCodec extends WrapperCodec {
+        @Override
+        protected void afterList(final JsonGenerator generator) {
+            // no-op
+        }
+
+        @Override
+        protected void beforeList(final JsonGenerator generator) {
+            // no-op
+        }
+    }
+
     public static class WrapperCodec implements JsonbDeserializer<Wrapper2>, JsonbSerializer<Wrapper2> {
         @Override
         public void serialize(final Wrapper2 wrapper, final JsonGenerator generator, final SerializationContext ctx) {
@@ -271,15 +349,23 @@ public class JsonbExtensionTest {
             if (value instanceof List) {
                 final List<Object> list = (List<Object>) value;
                 if (!list.isEmpty()) {
-                    generator.writeStartObject();
+                    beforeList(generator);
                     writeArray(generator, list);
-                    generator.writeEnd();
+                    afterList(generator);
                 }
             } else if (value instanceof String) {
                 generator.write(markerFor(value), (String) value);
             } else {
                 throw new IllegalArgumentException(value.toString());
             }
+        }
+
+        protected void afterList(final JsonGenerator generator) {
+            generator.writeEnd();
+        }
+
+        protected void beforeList(final JsonGenerator generator) {
+            generator.writeStartObject();
         }
 
         private void writeArray(final JsonGenerator generator, final List<Object> list) {

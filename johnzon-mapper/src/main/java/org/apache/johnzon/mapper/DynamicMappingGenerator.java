@@ -92,6 +92,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
         private final String keyIfNoObject;
         private WritingState state = WritingState.NONE; // todo: we need a stack (linkedlist) here to be accurate
         private int nested = 0;
+        private boolean implicitStart;
 
         private InObjectOrPrimitiveJsonGenerator(final JsonGenerator generator, final Runnable writeStart,
                                                  final String keyName, final Runnable writeEnd) {
@@ -148,6 +149,10 @@ public class DynamicMappingGenerator implements MappingGenerator {
 
         @Override
         public JsonGenerator writeStartArray(final String name) {
+            if (state == WritingState.NONE && !implicitStart) { // force an enclosing object since we write in an object (we have a key)
+                writeStartObject();
+                implicitStart = true;
+            }
             if (state != WritingState.NONE) {
                 nested++;
             }
@@ -337,7 +342,11 @@ public class DynamicMappingGenerator implements MappingGenerator {
 
         @Override
         public JsonGenerator writeEnd() {
-            return doWriteEnd(false);
+            final JsonGenerator generator = doWriteEnd(false);
+            if (nested == 0 && implicitStart) {
+                doWriteEnd(false);
+            }
+            return generator;
         }
 
         private JsonGenerator doWriteEnd(final boolean useDelegate) {
@@ -561,6 +570,10 @@ public class DynamicMappingGenerator implements MappingGenerator {
         @Override
         public JsonGenerator writeEnd() {
             if (level > 0) {
+                delegate.writeEnd();
+            } else if (level == 0 &&
+                    InObjectOrPrimitiveJsonGenerator.class.isInstance(delegate) && // normally always true
+                    InObjectOrPrimitiveJsonGenerator.class.cast(delegate).implicitStart) {
                 delegate.writeEnd();
             }
             level--;
