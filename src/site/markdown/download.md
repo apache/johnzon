@@ -34,9 +34,9 @@ Read more about [how we sign Apache Releases](http://www.apache.org/info/verific
 
 ----------
 
-## Johnzon-1.1.x
+## Johnzon-1.2.x
 
-Apache Johnzon 1.1.x implements the JSON-P 1.1 and JSON-B 1.0 specifications which on a level of JavaEE 8.
+Apache Johnzon 1.2.x implements the JSON-P 1.1 and JSON-B 1.0 specifications which on a level of JavaEE 8.
 
 #### Binaries
 The binary distribution contains all Johnzon modules.
