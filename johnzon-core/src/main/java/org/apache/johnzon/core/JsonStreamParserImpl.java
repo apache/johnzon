@@ -197,7 +197,9 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         final char[] newArray = new char[fallBackCopyBuffer.length + Math.max(getBufferExtends(fallBackCopyBuffer.length), length)];
         // TODO: log to adjust size once?
         System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
-        System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
+        if (startOfValueInBuffer != -1) {
+            System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
+        }
         if (releaseFallBackCopyBufferLength) {
             bufferProvider.release(fallBackCopyBuffer);
             releaseFallBackCopyBufferLength = false;
