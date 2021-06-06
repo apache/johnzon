@@ -163,7 +163,7 @@ public class Mapper implements Closeable {
         }
         final JsonObjectGenerator objectGenerator = new JsonObjectGenerator(builderFactory);
         writeObject(object, objectGenerator, null,
-                isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+                isDedup(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
         return objectGenerator.getResult();
     }
 
@@ -193,19 +193,7 @@ public class Mapper implements Closeable {
 
     public void writeObjectWithGenerator(final Object object, final JsonGenerator generator) {
         writeObject(object, generator, null,
-                isDeduplicateObjects(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
-    }
-
-    private boolean isDeduplicateObjects(Class<?> rootType) {
-        Boolean dedup = config.isDeduplicateObjects();
-        if (dedup == null) {
-            Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(rootType);
-            if (classMapping != null) {
-                dedup = classMapping.isDeduplicateObjects();
-            }
-        }
-
-        return dedup != null ? dedup : false;
+                isDedup(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
@@ -389,7 +377,17 @@ public class Mapper implements Closeable {
         if (clazz instanceof Class &&
                 JsonValue.class != clazz && JsonStructure.class != clazz &&
                 JsonObject.class != clazz && JsonArray.class != clazz) {
-            return isDeduplicateObjects((Class) clazz);
+            Boolean dedup = config.isDeduplicateObjects();
+            if (dedup == null) {
+                // TODO: never call it more than once per clazz, should be done after once ClassMapping is obtained, not here!
+                //       -> revisit org.apache.johnzon.mapper.Mappings.findOrCreateClassMapping (isPrimitive should drop)
+                //       -> revisit org.apache.johnzon.mapper.access.FieldAccessMode.isIgnored(java.lang.String, java.lang.Class<?>)
+                Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(clazz);
+                if (classMapping != null) {
+                    dedup = classMapping.isDeduplicateObjects();
+                }
+            }
+            return dedup != null ? dedup : false;
         }
         return false;
     }

@@ -408,6 +408,9 @@ public class Mappings {
     }
 
     public ClassMapping findOrCreateClassMapping(final Type clazz) {
+        if (isPrimitive(clazz)) {
+            return null;
+        }
         return doFindOrCreateClassMapping(clazz, emptyMap(), false);
     }
 

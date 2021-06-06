@@ -23,6 +23,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.johnzon.mapper.Adapter;
@@ -41,7 +42,7 @@ public class FieldAccessMode extends BaseAccessMode {
         final Map<String, Reader> readers = new HashMap<String, Reader>();
         for (final Map.Entry<String, Field> f : fields(clazz, true).entrySet()) {
             final String key = f.getKey();
-            if (isIgnored(key) || Meta.getAnnotation(f.getValue(), JohnzonAny.class) != null) {
+            if (isIgnored(key, f.getValue().getDeclaringClass()) || Meta.getAnnotation(f.getValue(), JohnzonAny.class) != null) {
                 continue;
             }
 
@@ -56,7 +57,7 @@ public class FieldAccessMode extends BaseAccessMode {
         final Map<String, Writer> writers = new HashMap<String, Writer>();
         for (final Map.Entry<String, Field> f : fields(clazz, false).entrySet()) {
             final String key = f.getKey();
-            if (isIgnored(key)) {
+            if (isIgnored(key, f.getValue().getDeclaringClass())) {
                 continue;
             }
 
@@ -69,6 +70,10 @@ public class FieldAccessMode extends BaseAccessMode {
     private String extractKey(final Field f, final String key) {
         final JohnzonProperty property = Meta.getAnnotation(f, JohnzonProperty.class);
         return property != null ? property.value() : key;
+    }
+
+    protected boolean isIgnored(final String key, final Class<?> clazz) {
+        return isIgnored(key) || (clazz.getName().startsWith("java.") && (Map.class.isAssignableFrom(clazz) || List.class.isAssignableFrom(clazz)));
     }
 
     protected boolean isIgnored(final String key) {
