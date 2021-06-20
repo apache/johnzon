@@ -18,52 +18,39 @@
  */
 package org.apache.johnzon.jsonb;
 
-import static java.util.Arrays.asList;
-import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
-import static org.apache.johnzon.mapper.reflection.Converters.matches;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.GenericArrayType;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Stream;
+import org.apache.johnzon.core.Types;
+import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
+import org.apache.johnzon.jsonb.converter.JsonbDateConverter;
+import org.apache.johnzon.jsonb.converter.JsonbLocalDateConverter;
+import org.apache.johnzon.jsonb.converter.JsonbLocalDateTimeConverter;
+import org.apache.johnzon.jsonb.converter.JsonbNumberConverter;
+import org.apache.johnzon.jsonb.converter.JsonbOffsetDateTimeConverter;
+import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
+import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
+import org.apache.johnzon.jsonb.order.PerHierarchyAndLexicographicalOrderFieldComparator;
+import org.apache.johnzon.jsonb.reflect.GenericArrayTypeImpl;
+import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
+import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
+import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
+import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.JohnzonAny;
+import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.JohnzonRecord;
+import org.apache.johnzon.mapper.MapperConverter;
+import org.apache.johnzon.mapper.MappingGenerator;
+import org.apache.johnzon.mapper.MappingParser;
+import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.TypeAwareAdapter;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.BaseAccessMode;
+import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
+import org.apache.johnzon.mapper.access.Meta;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.ReversedAdapter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
 
 import javax.json.JsonBuilderFactory;
 import javax.json.JsonValue;
@@ -87,38 +74,58 @@ import javax.json.bind.serializer.JsonbSerializer;
 import javax.json.spi.JsonProvider;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParserFactory;
+import java.io.Closeable;
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
 
-import org.apache.johnzon.core.Types;
-import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
-import org.apache.johnzon.jsonb.converter.JsonbDateConverter;
-import org.apache.johnzon.jsonb.converter.JsonbLocalDateConverter;
-import org.apache.johnzon.jsonb.converter.JsonbLocalDateTimeConverter;
-import org.apache.johnzon.jsonb.converter.JsonbNumberConverter;
-import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
-import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
-import org.apache.johnzon.jsonb.order.PerHierarchyAndLexicographicalOrderFieldComparator;
-import org.apache.johnzon.jsonb.reflect.GenericArrayTypeImpl;
-import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
-import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
-import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.Converter;
-import org.apache.johnzon.mapper.JohnzonAny;
-import org.apache.johnzon.mapper.JohnzonConverter;
-import org.apache.johnzon.mapper.MapperConverter;
-import org.apache.johnzon.mapper.MappingGenerator;
-import org.apache.johnzon.mapper.MappingParser;
-import org.apache.johnzon.mapper.ObjectConverter;
-import org.apache.johnzon.mapper.TypeAwareAdapter;
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.access.BaseAccessMode;
-import org.apache.johnzon.mapper.access.FieldAccessMode;
-import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
-import org.apache.johnzon.mapper.access.Meta;
-import org.apache.johnzon.mapper.access.MethodAccessMode;
-import org.apache.johnzon.mapper.converter.ReversedAdapter;
-import org.apache.johnzon.mapper.internal.AdapterKey;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import static java.util.Arrays.asList;
+import static java.util.Comparator.comparing;
+import static java.util.Optional.ofNullable;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import static org.apache.johnzon.mapper.reflection.Records.isRecord;
 
 public class JsonbAccessMode implements AccessMode, Closeable {
     private final PropertyNamingStrategy naming;
@@ -210,6 +217,10 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             }
             factory = m;
         }
+        final boolean record = isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null;
+        if (constructor == null && record) {
+            constructor = findRecordConstructor(clazz).orElse(null);
+        }
         if (constructor == null && factory == null) {
             invalidConstructorForDeserialization = Stream.of(clazz.getDeclaredConstructors())
                     .anyMatch(it -> it.getParameterCount() == 0 &&
@@ -223,7 +234,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         throw new JsonbException("Missing @JsonbCreator argument");
                     }
                 } :
-                args -> {};
+                args -> {
+                };
         final Type[] types;
         final String[] params;
         final Adapter<?, ?>[] converters;
@@ -239,7 +251,13 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             int i = 0;
             for (final Parameter parameter : (finalConstructor == null ? finalFactory : finalConstructor).getParameters()) {
                 final JsonbProperty property = getAnnotation(parameter, JsonbProperty.class);
-                params[i] = property != null ? property.value() : parameter.getName();
+                params[i] = property != null ?
+                        property.value() :
+                        (record ?
+                                ofNullable(parameter.getAnnotation(JohnzonRecord.Name.class))
+                                        .map(JohnzonRecord.Name::value)
+                                        .orElseGet(parameter::getName) :
+                                parameter.getName());
 
                 final JsonbTypeAdapter adapter = getAnnotation(parameter, JsonbTypeAdapter.class);
                 final JsonbDateFormat dateFormat = getAnnotation(parameter, JsonbDateFormat.class);
@@ -252,7 +270,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                     validateAnnotations(parameter, adapter, dateFormat, numberFormat, johnzonConverter);
 
                     try {
-                        if (adapter != null) {
+                        if (adapter != null || dateFormat != null || numberFormat != null) {
                             final Adapter converter = toConverter(
                                     this.types, parameter.getType(), adapter, dateFormat, numberFormat);
                             if (matches(parameter.getParameterizedType(), converter)) {
@@ -282,10 +300,11 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
         if (constructor == null && factory == null && !invalidConstructorForDeserialization) {
             final Stream<Function<AnnotatedElement, String>> jsonbFn = Stream.of(this::getJsonbProperty);
-            return delegate.findFactory(
+            final Factory delegateFactory = delegate.findFactory(
                     clazz,
                     (parameterNameExtractors == null ?
-                        jsonbFn : Stream.concat(jsonbFn, Stream.of(parameterNameExtractors))).toArray(Function[]::new));
+                            jsonbFn : Stream.concat(jsonbFn, Stream.of(parameterNameExtractors))).toArray(Function[]::new));
+            return delegateFactory;
         }
         if (constructor != null || invalidConstructorForDeserialization) {
             return constructorFactory(finalConstructor, invalidConstructorForDeserialization ? (Consumer<Object[]>) objects -> {
@@ -293,6 +312,17 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             } : factoryValidator, types, params, converters, itemConverters, objectConverters);
         }
         return methodFactory(clazz, finalFactory, factoryValidator, types, params, converters, itemConverters, objectConverters);
+    }
+
+    private Optional<Constructor<?>> findRecordConstructor(final Class<?> clazz) {
+        return Stream.of(clazz.getDeclaredConstructors())
+                .max(comparing(Constructor::getParameterCount))
+                .map(c -> {
+                    if (!c.isAccessible()) {
+                        c.setAccessible(true);
+                    }
+                    return c;
+                });
     }
 
     private String getJsonbProperty(final AnnotatedElement a) {
@@ -448,6 +478,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 converter = new ConverterAdapter<>(new JsonbLocalDateConverter(dateFormat), LocalDate.class);
             } else if (ZonedDateTime.class == type) {
                 converter = new ConverterAdapter<>(new JsonbZonedDateTimeConverter(dateFormat), ZonedDateTime.class);
+            } else if (OffsetDateTime.class == type) {
+                converter = new ConverterAdapter<>(new JsonbOffsetDateTimeConverter(dateFormat), OffsetDateTime.class);
             } else { // can happen if set on the class, todo: refine the checks
                 converter = null; // todo: should we fallback on numberformat?
             }
@@ -467,15 +499,54 @@ public class JsonbAccessMode implements AccessMode, Closeable {
     public Map<String, Reader> findReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = delegate.findReaders(clazz);
 
+        final boolean record = isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null;
+        final Map<String, Parameter> recordParams = record ?
+                findRecordConstructor(clazz)
+                        .map(c -> Stream.of(c.getParameters())
+                                .collect(toMap(p -> ofNullable(p.getAnnotation(JohnzonRecord.Name.class))
+                                        .map(JohnzonRecord.Name::value)
+                                        .orElseGet(p::getName), identity())))
+                        .orElseGet(Collections::emptyMap) :
+                null;
         final Comparator<String> keyComparator = fieldComparator(clazz);
         final Map<String, Reader> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Reader> entry : readers.entrySet()) {
             final Reader initialReader = entry.getValue();
+            final DecoratedType annotations = record ? new DecoratedType() {
+                private final Parameter parameter = recordParams.get(entry.getKey());
+
+                @Override
+                public Type getType() {
+                    return initialReader.getType();
+                }
+
+                @Override
+                public <T extends Annotation> T getAnnotation(final Class<T> clazz) {
+                    final T annotation = initialReader.getAnnotation(clazz);
+                    return annotation == null && parameter != null ? parameter.getAnnotation(clazz) : annotation;
+                }
+
+                @Override
+                public <T extends Annotation> T getClassOrPackageAnnotation(final Class<T> clazz) {
+                    final T annotation = parameter == null ? null : parameter.getAnnotation(clazz);
+                    return annotation == null ? initialReader.getClassOrPackageAnnotation(clazz) : annotation;
+                }
+
+                @Override
+                public Adapter<?, ?> findConverter() {
+                    return initialReader.findConverter();
+                }
+
+                @Override
+                public boolean isNillable(final boolean globalConfig) {
+                    return initialReader.isNillable(globalConfig);
+                }
+            } : initialReader;
             if (isTransient(initialReader, visibility)) {
                 validateAnnotationsOnTransientField(initialReader);
                 continue;
             }
-            if (initialReader.getAnnotation(JohnzonAny.class) != null) {
+            if (annotations.getAnnotation(JohnzonAny.class) != null) {
                 continue;
             }
 
@@ -524,18 +595,18 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                     final Object[] optionals = Object[].class.cast(finalReader.read(i));
                     return optionals == null ?
                             null : Stream.of(optionals)
-                                .map(Optional.class::cast)
-                                .map(o -> o.orElse(null))
-                                .toArray();
+                            .map(Optional.class::cast)
+                            .map(o -> o.orElse(null))
+                            .toArray();
                 };
             } else {
                 type = readerType;
                 reader = finalReader::read;
             }
 
-            final WriterConverters writerConverters = new WriterConverters(initialReader, types);
-            final JsonbProperty property = initialReader.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = initialReader.getClassOrPackageAnnotation(JsonbNillable.class);
+            final WriterConverters writerConverters = new WriterConverters(annotations, types);
+            final JsonbProperty property = annotations.getAnnotation(JsonbProperty.class);
+            final JsonbNillable nillable = annotations.getClassOrPackageAnnotation(JsonbNillable.class);
             final boolean isNillable = isNillable(property, nillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Reader() {
@@ -642,8 +713,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 writer = (i, value) -> {
                     if (value != null) {
                         finalWriter.write(i, Stream.of(Object[].class.cast(value))
-                            .map(Optional::ofNullable)
-                            .toArray(Optional[]::new));
+                                .map(Optional::ofNullable)
+                                .toArray(Optional[]::new));
                     }
                 };
             } else {
@@ -960,8 +1031,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                                                 Set.class.isAssignableFrom(
                                                         types.asClass(parameterizedType.getRawType())) ? toSet() : toList();
                                         fn = (json, mp) -> json.asJsonArray().stream()
-                                               .map(i -> mapItem(i, paramType, mp, jsonbDeserializer))
-                                               .collect(collector);
+                                                .map(i -> mapItem(i, paramType, mp, jsonbDeserializer))
+                                                .collect(collector);
                                     }
                                 }
                             }
@@ -1045,7 +1116,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 try {
                     MapperConverter mapperConverter = johnzonConverter.value().newInstance();
                     if (mapperConverter instanceof Converter) {
-                        converter = new ConverterAdapter<>((Converter) mapperConverter, reader.getType()) ;
+                        converter = new ConverterAdapter<>((Converter) mapperConverter, reader.getType());
                     } else if (mapperConverter instanceof ObjectConverter.Writer) {
                         writer = (ObjectConverter.Writer) mapperConverter;
                     }
@@ -1074,8 +1145,8 @@ public class JsonbAccessMode implements AccessMode, Closeable {
 
     private boolean hasRawType(final Type type) {
         return Class.class.isInstance(type) ||
-            (ParameterizedType.class.isInstance(type) &&
-                    Class.class.isInstance(ParameterizedType.class.cast(type).getRawType()));
+                (ParameterizedType.class.isInstance(type) &&
+                        Class.class.isInstance(ParameterizedType.class.cast(type).getRawType()));
     }
 
     private Class<?> getRawType(final Type type) { // only intended to be used after hasRawType check
