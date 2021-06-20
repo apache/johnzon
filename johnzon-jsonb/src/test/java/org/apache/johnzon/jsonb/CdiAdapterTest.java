@@ -18,55 +18,112 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.jsonb.cdi.JohnzonCdiExtension;
 import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.config.WebBeansFinder;
+import org.apache.webbeans.corespi.DefaultSingletonService;
+import org.apache.webbeans.corespi.scanner.xbean.CdiArchive;
 import org.apache.webbeans.corespi.se.DefaultScannerService;
 import org.apache.webbeans.lifecycle.StandaloneLifeCycle;
 import org.apache.webbeans.proxy.OwbNormalScopeProxy;
+import org.apache.webbeans.service.ClassLoaderProxyService;
+import org.apache.webbeans.spi.BeanArchiveService;
 import org.apache.webbeans.spi.ContainerLifecycle;
+import org.apache.webbeans.spi.DefiningClassService;
+import org.apache.webbeans.spi.LoaderService;
+import org.apache.webbeans.spi.ResourceInjectionService;
 import org.apache.webbeans.spi.ScannerService;
+import org.apache.webbeans.spi.api.ResourceReference;
 import org.apache.webbeans.util.WebBeansUtil;
-import org.apache.xbean.finder.AnnotationFinder;
-import org.apache.xbean.finder.archive.ClassesArchive;
+import org.apache.webbeans.xml.DefaultBeanArchiveInformation;
 import org.junit.Test;
 
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.spi.Extension;
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.bind.annotation.JsonbTypeAdapter;
+import java.lang.annotation.Annotation;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
-import static java.util.Collections.singletonMap;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class CdiAdapterTest {
     @Test
-    public void run() {
-        WebBeansFinder.clearInstances(WebBeansUtil.getCurrentClassLoader());
-        final ContainerLifecycle testLifecycle = new StandaloneLifeCycle();
-        new WebBeansContext(singletonMap(
-                ScannerService.class, new DefaultScannerService() {
-                    @Override
-                    protected AnnotationFinder initFinder() {
-                        return new AnnotationFinder(new ClassesArchive(Service.class, ModelAdapter.class));
-                    }
-                }), new Properties());
-        testLifecycle.startApplication(null);
-        try {
-            Jsonb jsonb = JsonbBuilder.create();
-            assertEquals("{\"model\":\"5\"}", jsonb.toJson(new Root(new Model(5))));
-            try {
-                AutoCloseable.class.cast(jsonb).close();
-            } catch (final Exception e) {
-                fail(e.getMessage());
+    public void run() throws Exception {
+        final ClassLoader currentClassLoader = WebBeansUtil.getCurrentClassLoader();
+        WebBeansFinder.clearInstances(currentClassLoader);
+        final Map<Class<?>, Object> services = new HashMap<>();
+        services.put(ScannerService.class, new DefaultScannerService() {
+            @Override
+            protected void configure() {
+                initFinder();
+                final DefaultBeanArchiveInformation information = new DefaultBeanArchiveInformation("file://foo");
+                information.setBeanDiscoveryMode(BeanArchiveService.BeanDiscoveryMode.ALL);
+                try {
+                    archive.classesByUrl().put(information.getBdaUrl(), new CdiArchive.FoundClasses(
+                            URI.create(information.getBdaUrl()).toURL(), asList(
+                            Service.class.getName(), ModelAdapter.class.getName()),
+                            information));
+                } catch (final MalformedURLException e) {
+                    throw new IllegalStateException(e);
+                }
             }
+        });
+        services.put(ResourceInjectionService.class, new ResourceInjectionService() {
+            @Override
+            public void injectJavaEEResources(final Object managedBeanInstance) {
+                System.out.println();
+            }
+
+            @Override
+            public <X, T extends Annotation> X getResourceReference(final ResourceReference<X, T> resourceReference) {
+                return null;
+            }
+
+            @Override
+            public void clear() {
+                // no-op
+            }
+        });
+        services.put(LoaderService.class, new LoaderService() {
+            @Override
+            public <T> List<T> load(final Class<T> serviceType, final ClassLoader loader) {
+                if (Extension.class == serviceType) {
+                    return singletonList(serviceType.cast(new JohnzonCdiExtension()));
+                }
+                return Collections.emptyList();
+            }
+
+            @Override
+            public <T> List<T> load(final Class<T> serviceType) {
+                return emptyList();
+            }
+        });
+        final Properties properties = new Properties();
+        properties.setProperty(DefiningClassService.class.getName(), ClassLoaderProxyService.class.getName());
+        final WebBeansContext webBeansContext = new WebBeansContext(services, properties);
+        DefaultSingletonService.class.cast(WebBeansFinder.getSingletonService()).register(
+                currentClassLoader, webBeansContext);
+        final ContainerLifecycle testLifecycle = new StandaloneLifeCycle();
+        testLifecycle.startApplication(null);
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            assertEquals("{\"model\":\"5\"}", jsonb.toJson(new Root(new Model(5))));
         } finally {
             testLifecycle.stopApplication(null);
-            WebBeansFinder.clearInstances(WebBeansUtil.getCurrentClassLoader());
+            WebBeansFinder.clearInstances(currentClassLoader);
         }
     }
 

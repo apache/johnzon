@@ -20,6 +20,7 @@ package org.apache.johnzon.mapper;
 
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.junit.Test;
@@ -42,13 +43,13 @@ public class CircularObjectsTest {
         john.setMarriedTo(marry);
         marry.setMarriedTo(john);
 
-        Mapper mapper = new MapperBuilder().setAccessModeName("field").setDeduplicateObjects(true).build();
+        Mapper mapper = new MapperBuilder()
+                .setAccessModeName("field")
+                .setDeduplicateObjects(true)
+                .setAttributeOrder(Comparator.naturalOrder())
+                .build();
         String ser = mapper.writeObjectAsString(john);
-
-        assertNotNull(ser);
-        assertTrue(ser.contains("\"name\":\"John\""));
-        assertTrue(ser.contains("\"marriedTo\":\"/\""));
-        assertTrue(ser.contains("\"name\":\"Marry\""));
+        assertEquals("{\"kids\":[],\"marriedTo\":{\"kids\":[],\"marriedTo\":\"/\",\"name\":\"Marry\"},\"name\":\"John\"}", ser);
 
         // and now de-serialise it back
         Person john2 = mapper.readObject(ser, Person.class);
@@ -164,7 +165,12 @@ public class CircularObjectsTest {
         sue.setFather(karl);
         sue.setMother(andrea);
 
-        Mapper mapper = new MapperBuilder().setAccessModeName("field").setDeduplicateObjects(true).build();
+        Mapper mapper = new MapperBuilder()
+                .setAccessModeName("field")
+                .setDeduplicateObjects(true)
+                .setAttributeOrder(Comparator.naturalOrder())
+                .setPretty(true)
+                .build();
 
         // test deep array
         Person[] people = new Person[4];

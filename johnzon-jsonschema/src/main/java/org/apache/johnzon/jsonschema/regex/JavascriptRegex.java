@@ -18,12 +18,11 @@
  */
 package org.apache.johnzon.jsonschema.regex;
 
-import java.util.function.Predicate;
-
 import javax.script.Bindings;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+import java.util.function.Predicate;
 
 public class JavascriptRegex implements Predicate<CharSequence> {
 

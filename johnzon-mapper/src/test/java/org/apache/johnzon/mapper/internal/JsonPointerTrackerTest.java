@@ -26,7 +26,7 @@ public class JsonPointerTrackerTest {
 
     @Test
     public void testJsonPointerTracker() {
-        JsonPointerTracker jptRoot = new JsonPointerTracker(null, "/");
+        JsonPointerTracker jptRoot = JsonPointerTracker.ROOT;
 
         Assert.assertEquals("/", jptRoot.toString());
 

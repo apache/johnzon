@@ -412,8 +412,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         return useBigDecimalForFloats;
     }
 
-    public Boolean isDeduplicateObjects() {
-        return deduplicateObjects;
+    public boolean isDeduplicateObjects() {
+        return Boolean.TRUE.equals(deduplicateObjects);
     }
 
     public boolean isSupportEnumContainerDeserialization() {

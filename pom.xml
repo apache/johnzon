@@ -49,7 +49,7 @@
     <checkstyle.version>2.15</checkstyle.version> <!-- checkstyle > 2.15 version do not support java 6 -->
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
-    <owb.version>2.0.20</owb.version>
+    <owb.version>2.0.23</owb.version>
   </properties>
 
   <modules>

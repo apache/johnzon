@@ -27,6 +27,13 @@ import org.apache.johnzon.core.JsonPointerUtil;
  * For use in recursive generator and parser method calls to defer string operations.
  */
 public class JsonPointerTracker {
+    public static final JsonPointerTracker ROOT = new JsonPointerTracker(null, null) {
+        @Override
+        public String toString() {
+            return "/";
+        }
+    };
+
     private final JsonPointerTracker parent;
     private final String currentNode;
 
@@ -55,13 +62,13 @@ public class JsonPointerTracker {
     public String toString() {
         if (jsonPointer == null) {
             if (parent != null) {
-                if (parent.parent == null) {
+                jsonPointer = (parent != ROOT ? parent + "/" : "/") + JsonPointerUtil.encode(currentNode);
+            } else {
+                if (currentNode != null) {
                     jsonPointer = "/" + JsonPointerUtil.encode(currentNode);
                 } else {
-                    jsonPointer = parent.toString() + "/" + JsonPointerUtil.encode(currentNode);
+                    jsonPointer = "/";
                 }
-            } else {
-                jsonPointer = "/";
             }
         }
 

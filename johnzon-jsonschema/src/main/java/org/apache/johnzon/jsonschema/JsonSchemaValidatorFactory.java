@@ -36,6 +36,7 @@ import java.util.stream.StreamSupport;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 
+import org.apache.johnzon.jsonschema.regex.JavaRegex;
 import org.apache.johnzon.jsonschema.regex.JavascriptRegex;
 import org.apache.johnzon.jsonschema.spi.ValidationContext;
 import org.apache.johnzon.jsonschema.spi.ValidationExtension;
@@ -76,7 +77,15 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
     private final List<ValidationExtension> extensions = new ArrayList<>();
 
     // js is closer to default and actually most used in the industry
-    private final AtomicReference<Function<String, Predicate<CharSequence>>> regexFactory = new AtomicReference<>(JavascriptRegex::new);
+    private final AtomicReference<Function<String, Predicate<CharSequence>>> regexFactory = new AtomicReference<>(this::newRegexFactory);
+
+    private Predicate<CharSequence> newRegexFactory(final String regex) {
+        try {
+            return new JavascriptRegex(regex);
+        } catch (final RuntimeException re) {
+            return new JavaRegex(regex);
+        }
+    }
 
     public JsonSchemaValidatorFactory() {
         extensions.addAll(createDefaultValidations());

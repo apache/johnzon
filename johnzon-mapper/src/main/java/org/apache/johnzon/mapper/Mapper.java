@@ -114,8 +114,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeArray(final Collection<T> object, final Writer stream) {
         try (final JsonGenerator generator = generatorFactory.createGenerator(stream(stream))) {
-            boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
-            writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
+            writeObject(object, generator, null, config.isDeduplicateObjects() ? JsonPointerTracker.ROOT : null);
         }
     }
 
@@ -125,8 +124,7 @@ public class Mapper implements Closeable {
 
     public <T> void writeIterable(final Iterable<T> object, final Writer stream) {
         try (final JsonGenerator generator = generatorFactory.createGenerator(stream(stream))) {
-            boolean dedup = Boolean.TRUE.equals(config.isDeduplicateObjects());
-            writeObject(object, generator, null, dedup ? new JsonPointerTracker(null, "/") : null);
+            writeObject(object, generator, null, config.isDeduplicateObjects() ? JsonPointerTracker.ROOT : null);
         }
     }
 
@@ -162,8 +160,7 @@ public class Mapper implements Closeable {
             return provider.createValue(BigInteger.class.cast(object));
         }
         final JsonObjectGenerator objectGenerator = new JsonObjectGenerator(builderFactory);
-        writeObject(object, objectGenerator, null,
-                isDedup(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+        writeObject(object, objectGenerator, null, null);
         return objectGenerator.getResult();
     }
 
@@ -192,8 +189,7 @@ public class Mapper implements Closeable {
     }
 
     public void writeObjectWithGenerator(final Object object, final JsonGenerator generator) {
-        writeObject(object, generator, null,
-                isDedup(object.getClass()) ? new JsonPointerTracker(null, "/") : null);
+        writeObject(object, generator, null, null);
     }
 
     public void writeObject(final Object object, final OutputStream stream) {
@@ -205,9 +201,10 @@ public class Mapper implements Closeable {
         writeObject(object, new OutputStreamWriter(stream, charset));
     }
 
-    private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored, JsonPointerTracker jsonPointer) {
-        final MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings, jsonPointer != null);
-        mappingGenerator.doWriteObject(object, generator, true, ignored, jsonPointer);
+    private void writeObject(final Object object, final JsonGenerator generator, final Collection<String> ignored,
+                             final JsonPointerTracker tracker) {
+        final MappingGeneratorImpl mappingGenerator = new MappingGeneratorImpl(config, generator, mappings);
+        mappingGenerator.doWriteObject(object, generator, true, ignored, tracker);
     }
 
     public String writeArrayAsString(final Collection<?> instance) {
@@ -263,7 +260,7 @@ public class Mapper implements Closeable {
             public void close() {
                 // no-op
             }
-        }, isDedup(clazz)).readObject(clazz);
+        }, null).readObject(clazz);
     }
 
     public <T> T readObject(final String string, final Type clazz) {
@@ -370,26 +367,7 @@ public class Mapper implements Closeable {
 
 
     private <T> T mapObject(final Type clazz, final JsonReader reader) {
-        return new MappingParserImpl(config, mappings, reader, isDedup(clazz)).readObject(clazz);
-    }
-
-    private boolean isDedup(final Type clazz) {
-        if (clazz instanceof Class &&
-                JsonValue.class != clazz && JsonStructure.class != clazz &&
-                JsonObject.class != clazz && JsonArray.class != clazz) {
-            Boolean dedup = config.isDeduplicateObjects();
-            if (dedup == null) {
-                // TODO: never call it more than once per clazz, should be done after once ClassMapping is obtained, not here!
-                //       -> revisit org.apache.johnzon.mapper.Mappings.findOrCreateClassMapping (isPrimitive should drop)
-                //       -> revisit org.apache.johnzon.mapper.access.FieldAccessMode.isIgnored(java.lang.String, java.lang.Class<?>)
-                Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(clazz);
-                if (classMapping != null) {
-                    dedup = classMapping.isDeduplicateObjects();
-                }
-            }
-            return dedup != null ? dedup : false;
-        }
-        return false;
+        return new MappingParserImpl(config, mappings, reader, null).readObject(clazz);
     }
 
 

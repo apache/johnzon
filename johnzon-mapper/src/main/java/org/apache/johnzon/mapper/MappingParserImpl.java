@@ -98,7 +98,6 @@ public class MappingParserImpl implements MappingParser {
 
     private final MapperConfig config;
     private final Mappings mappings;
-    private final boolean isDeduplicateObjects;
 
     private final JsonReader jsonReader;
 
@@ -110,19 +109,10 @@ public class MappingParserImpl implements MappingParser {
     private Map<String, Object> jsonPointers;
 
 
-    public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader, boolean isDeduplicateObjects) {
+    public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader, Map<String, Object> jsonPointers) {
         this.config = config;
         this.mappings = mappings;
-
         this.jsonReader = jsonReader;
-
-        this.isDeduplicateObjects = isDeduplicateObjects;
-
-        if (isDeduplicateObjects) {
-            jsonPointers = new HashMap<>();
-        } else {
-            jsonPointers = Collections.emptyMap();
-        }
     }
 
 
@@ -150,8 +140,7 @@ public class MappingParserImpl implements MappingParser {
         if (JsonObject.class.isInstance(jsonValue)) {
             return (T) buildObject(
                     targetType, JsonObject.class.cast(jsonValue), applyObjectConverter,
-                    isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null,
-                    skippedConverters);
+                    null, skippedConverters);
         }
         if (JsonString.class.isInstance(jsonValue)) {
             if ((targetType == String.class || targetType == Object.class)) {
@@ -222,7 +211,7 @@ public class MappingParserImpl implements MappingParser {
                 if (asClass.isArray()) {
                     final Class componentType = asClass.getComponentType();
                     return (T) buildArrayWithComponentType(jsonArray, componentType, config.findAdapter(componentType),
-                            isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
+                            isDedup() ? JsonPointerTracker.ROOT : null, Object.class);
                 }
                 if (Collection.class.isAssignableFrom(asClass)) {
                     return readObject(jsonValue, new JohnzonParameterizedType(asClass, Object.class), applyObjectConverter, skippedConverters);
@@ -238,11 +227,11 @@ public class MappingParserImpl implements MappingParser {
 
                 final Type arg = pt.getActualTypeArguments()[0];
                 return (T) mapCollection(mapping, jsonArray, Class.class.isInstance(arg) ? config.findAdapter(Class.class.cast(arg)) : null,
-                        null, isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class);
+                        null, isDedup() ? JsonPointerTracker.ROOT : null, Object.class);
             }
             if (Object.class == targetType) {
                 return (T) new ArrayList(asList(Object[].class.cast(buildArrayWithComponentType(jsonArray, Object.class, null,
-                        isDeduplicateObjects ? new JsonPointerTracker(null, "/") : null, Object.class))));
+                        isDedup() ? JsonPointerTracker.ROOT : null, Object.class))));
             }
         }
         if (NULL == valueType) {
@@ -258,6 +247,9 @@ public class MappingParserImpl implements MappingParser {
         throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);
     }
 
+    private boolean isDedup() {
+        return jsonPointers != Collections.<String, Object>emptyMap();
+    }
 
     private Object buildObject(final Type inType, final JsonObject object, final boolean applyObjectConverter,
                                final JsonPointerTracker jsonPointer, final Collection<Class<?>> skippedConverters) {
@@ -389,8 +381,15 @@ public class MappingParserImpl implements MappingParser {
             t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
         }
         // store the new object under it's jsonPointer in case it gets referenced later
-        if (isDeduplicateObjects) {
-            jsonPointers.put(jsonPointer.toString(), t);
+        if (jsonPointers == null) {
+            if (classMapping.deduplicateObjects || config.isDeduplicateObjects()) {
+                jsonPointers = new HashMap<>();
+                jsonPointers.put(jsonPointer == null ? "/" : jsonPointer.toString(), t);
+            } else {
+                jsonPointers = Collections.emptyMap();
+            }
+        } else if (isDedup()) {
+            jsonPointers.put(jsonPointer == null ? "/" : jsonPointer.toString(), t);
         }
 
         for (final Map.Entry<String, JsonValue> jsonEntry : object.entrySet()) {
@@ -428,7 +427,7 @@ public class MappingParserImpl implements MappingParser {
                 final Object convertedValue = toValue(
                         existingInstance, jsonValue, value.converter, value.itemConverter,
                         value.paramType, value.objectConverter,
-                        new JsonPointerTracker(jsonPointer, jsonEntry.getKey()), inType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType);
                 if (convertedValue != null) {
                     setterMethod.write(t, convertedValue);
                 }
@@ -442,7 +441,7 @@ public class MappingParserImpl implements MappingParser {
                         classMapping.anySetter.invoke(t, key,
                                 toValue(null, entry.getValue(), null, null,
                                         classMapping.anySetter.getGenericParameterTypes()[1], null,
-                                isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type));
+                                isDedup() ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type));
                     } catch (final IllegalAccessException e) {
                         throw new IllegalStateException(e);
                     } catch (final InvocationTargetException e) {
@@ -457,7 +456,7 @@ public class MappingParserImpl implements MappingParser {
                     .filter(it -> !classMapping.setters.containsKey(it.getKey()))
                     .collect(toMap(Map.Entry::getKey, e -> toValue(null, e.getValue(), null, null,
                             ParameterizedType.class.cast(classMapping.anyField.getGenericType()).getActualTypeArguments()[1], null,
-                            isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, e.getKey()) : null, tRef))));
+                            isDedup() ? new JsonPointerTracker(jsonPointer, e.getKey()) : null, tRef))));
             } catch (final IllegalAccessException e) {
                 throw new IllegalStateException(e);
             }
@@ -724,16 +723,15 @@ public class MappingParserImpl implements MappingParser {
             final String string = JsonString.class.cast(jsonValue).getString();
             if (itemConverter == null) {
                 // check whether we have a jsonPointer to a previously deserialised object
-                if (!String.class.equals(type)) {
-                    Object o = jsonPointers.get(string);
+                if (isDedup() && !String.class.equals(type)) {
+                    Object o = jsonPointers == null ? null : jsonPointers.get(string);
                     if (o != null) {
                         return o;
                     }
                 }
                 return convertTo(type, string);
-            } else {
-                return itemConverter.to(string);
             }
+            return itemConverter.to(string);
         }
 
         throw new MapperException("Unable to parse " + jsonValue + " to " + type);
@@ -810,7 +808,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (boolean) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -820,7 +818,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (byte) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -830,7 +828,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (char) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -840,7 +838,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (short) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -850,7 +848,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (int) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -860,7 +858,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (long) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -870,7 +868,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (float) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -880,7 +878,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (double) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -892,7 +890,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Boolean) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -902,7 +900,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Byte) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -912,7 +910,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Character) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -922,7 +920,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Short) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -932,7 +930,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Integer) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -942,7 +940,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Long) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -952,7 +950,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Float) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -962,7 +960,7 @@ public class MappingParserImpl implements MappingParser {
             int i = 0;
             for (final JsonValue value : jsonArray) {
                 array[i] = (Double) toObject(null, value, componentType, itemConverter,
-                        isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                        isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
                 i++;
             }
             return array;
@@ -973,7 +971,7 @@ public class MappingParserImpl implements MappingParser {
         int i = 0;
         for (final JsonValue value : jsonArray) {
             Array.set(array, i, toObject(null, value, componentType, itemConverter,
-                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
+                    isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
             i++;
         }
         return array;
@@ -1009,7 +1007,7 @@ public class MappingParserImpl implements MappingParser {
             collection.add(JsonValue.NULL.equals(value)
                     ? null
                     : toValue(null, value, null, itemConverter, mapping.arg, objectConverter,
-                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
+                    isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
             i++;
         }
 
@@ -1045,7 +1043,7 @@ public class MappingParserImpl implements MappingParser {
                     mapping.factory.getParameterItemConverter()[i],
                     parameterType,
                     mapping.factory.getObjectConverter()[i],
-                    isDeduplicateObjects ? new JsonPointerTracker(jsonPointer, paramName) : null,
+                    isDedup() ? new JsonPointerTracker(jsonPointer, paramName) : null,
                     mapping.clazz); //X TODO ObjectConverter in @JohnzonConverter with Constructors!
             if (objects[i] == null) {
                 objects[i] = getPrimitiveDefault(parameterType);

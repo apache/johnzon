@@ -76,10 +76,7 @@ public class Mappings {
         public final Field anyField;
         public final Method mapAdder;
         public final Class<?> mapAdderType;
-
-
-        private Boolean deduplicateObjects;
-        private boolean deduplicationEvaluated = false;
+        public boolean deduplicateObjects;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
@@ -99,17 +96,15 @@ public class Mappings {
             this.anyField = anyField;
             this.mapAdder = mapAdder;
             this.mapAdderType = mapAdder == null ? null : mapAdder.getParameterTypes()[1];
+            this.deduplicateObjects = isDeduplicateObjects();
         }
 
-        public Boolean isDeduplicateObjects() {
-            if (!deduplicationEvaluated) {
-                JohnzonDeduplicateObjects jdo = clazz.getAnnotation(JohnzonDeduplicateObjects.class);
-                if (jdo != null){
-                    deduplicateObjects = jdo.value();
-                }
-                deduplicationEvaluated = true;
+        private Boolean isDeduplicateObjects() {
+            final JohnzonDeduplicateObjects jdo = clazz.getAnnotation(JohnzonDeduplicateObjects.class);
+            if (jdo != null){
+                return jdo.value();
             }
-            return deduplicateObjects;
+            return false;
         }
 
     }
