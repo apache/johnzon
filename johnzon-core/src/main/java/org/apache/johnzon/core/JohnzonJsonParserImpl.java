@@ -17,9 +17,15 @@
 package org.apache.johnzon.core;
 
 
+import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -134,18 +140,57 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
     @Override
     public Stream<JsonValue> getArrayStream() {
-        //X TODO this implementation is very simplistic
-        //X I find it unintuitive what the spec intends here
-        //X we probably need to improve this
-        return getArray().stream();
+        Event current = current();
+        if (current != Event.START_ARRAY) {
+            throw new IllegalStateException(current + " doesn't support getArrayStream()");
+        }
+
+        Spliterator<JsonValue> arraySpliterator = new Spliterators.AbstractSpliterator<JsonValue>(
+                Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED) {
+
+            @Override
+            public boolean tryAdvance(Consumer<? super JsonValue> action) {
+                Event next = next();
+
+                if (next == Event.END_ARRAY) {
+                    return false;
+                } else {
+                    action.accept(getValue());
+                    return true;
+                }
+            }
+        };
+
+        return StreamSupport.stream(arraySpliterator, false);
     }
 
     @Override
     public Stream<Map.Entry<String, JsonValue>> getObjectStream() {
-        //X TODO this implementation is very simplistic
-        //X I find it unintuitive what the spec intends here
-        //X we probably need to improve this
-        return getObject().entrySet().stream();
+        Event current = current();
+        if (current != Event.START_OBJECT) {
+            throw new IllegalStateException(current + " doesn't support getObjectStream()");
+        }
+
+        Spliterator<Map.Entry<String, JsonValue>> objectSpliterator = new Spliterators.AbstractSpliterator<Map.Entry<String,JsonValue>>(
+                Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED) {
+
+            @Override
+            public boolean tryAdvance(Consumer<? super Entry<String, JsonValue>> action) {
+                Event next = next();
+                
+                if (next == Event.END_OBJECT) {
+                    return false;
+                } else {
+                    String key = getString();
+                    next();
+                    JsonValue value = getValue();
+                    action.accept(new AbstractMap.SimpleImmutableEntry<>(key, value));
+                    return true;
+                }
+            }
+        };
+
+        return StreamSupport.stream(objectSpliterator, false);
     }
 
     @Override
