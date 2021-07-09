@@ -18,20 +18,25 @@
  */
 package org.apache.johnzon.core;
 
-import org.junit.Test;
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
 
-import javax.json.Json;
-import javax.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
+import javax.json.Json;
+import javax.json.JsonNumber;
+import javax.json.JsonString;
+import javax.json.stream.JsonParser;
+
+import org.junit.Test;
 
 public class JsonParserStreamingTest {
     @Test
@@ -120,5 +125,37 @@ public class JsonParserStreamingTest {
                 .map(v -> v.toString())
                 .collect(Collectors.joining(","));
         return sum;
+    }
+
+    @Test
+    public void testGetArrayStream() {
+        StringReader sr = new StringReader("[1,2,3,4,5,6]");
+        JsonParser jsonParser = Json.createParser(sr);
+
+        JsonParser.Event firstEvent = jsonParser.next();
+        assertEquals(JsonParser.Event.START_ARRAY, firstEvent);
+
+        int sum = jsonParser.getArrayStream()
+                .mapToInt(v -> ((JsonNumber)v).intValue())
+                .sum();
+        assertEquals(21, sum);
+    }
+
+    @Test
+    public void testGetObjectStream() {
+        StringReader sr = new StringReader("{\"foo\":\"bar\",\"baz\":\"quux\",\"something\":\"else\"}");
+        JsonParser jsonParser = Json.createParser(sr);
+
+        JsonParser.Event firstEvent = jsonParser.next();
+        assertEquals(JsonParser.Event.START_OBJECT, firstEvent);
+
+        Map<String, String> mappings = jsonParser.getObjectStream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> ((JsonString)e.getValue()).getString()));
+
+        Map<String, String> expectedMappings = new HashMap<>();
+        expectedMappings.put("foo", "bar");
+        expectedMappings.put("baz", "quux");
+        expectedMappings.put("something", "else");
+        assertEquals(expectedMappings, mappings);
     }
 }
