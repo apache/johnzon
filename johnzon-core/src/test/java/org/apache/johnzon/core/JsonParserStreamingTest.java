@@ -35,6 +35,7 @@ import javax.json.Json;
 import javax.json.JsonNumber;
 import javax.json.JsonString;
 import javax.json.stream.JsonParser;
+import javax.json.stream.JsonParsingException;
 
 import org.junit.Test;
 
@@ -141,6 +142,17 @@ public class JsonParserStreamingTest {
         assertEquals(21, sum);
     }
 
+    @Test(expected = JsonParsingException.class)
+    public void testParseErrorInGetArrayStream() {
+        StringReader sr = new StringReader("[\"this is\":\"not an object\"]");
+        JsonParser jsonParser = Json.createParser(sr);
+
+        JsonParser.Event firstEvent = jsonParser.next();
+        assertEquals(JsonParser.Event.START_ARRAY, firstEvent);
+
+        jsonParser.getArrayStream().forEach(dummy -> {});
+    }
+
     @Test
     public void testGetObjectStream() {
         StringReader sr = new StringReader("{\"foo\":\"bar\",\"baz\":\"quux\",\"something\":\"else\"}");
@@ -158,4 +170,16 @@ public class JsonParserStreamingTest {
         expectedMappings.put("something", "else");
         assertEquals(expectedMappings, mappings);
     }
+
+    @Test(expected = JsonParsingException.class)
+    public void testParseErrorInGetObjectStream() {
+        StringReader sr = new StringReader("{42}");
+        JsonParser jsonParser = Json.createParser(sr);
+
+        JsonParser.Event firstEvent = jsonParser.next();
+        assertEquals(JsonParser.Event.START_OBJECT, firstEvent);
+
+        jsonParser.getObjectStream().forEach(dummy -> {});
+    }
+
 }
