@@ -48,8 +48,9 @@ public class JsonParserStreamingTest {
                 "\t\"}").getBytes(StandardCharsets.UTF_8);
 
         final BufferStrategy.BufferProvider<char[]> bs = BufferStrategyFactory.valueOf("QUEUE").newCharProvider(len);
-        try (final InputStream stream = new ByteArrayInputStream(bytes)) {
-            final JsonStreamParserImpl impl = new JsonStreamParserImpl(stream, len, bs, bs, false);
+        try (final InputStream stream = new ByteArrayInputStream(bytes);
+                final JsonStreamParserImpl impl = new JsonStreamParserImpl(stream, len, bs, bs, false)) {
+
             while (impl.hasNext()) {
                 impl.next();
             }
@@ -120,66 +121,71 @@ public class JsonParserStreamingTest {
 
     private String parserAndConcat(String json) {
         StringReader sr = new StringReader(json);
-        JsonParser jsonParser = Json.createParser(sr);
 
-        String sum = jsonParser.getValueStream()
-                .map(v -> v.toString())
-                .collect(Collectors.joining(","));
-        return sum;
+        try (JsonParser jsonParser = Json.createParser(sr)) {
+            String sum = jsonParser.getValueStream()
+                    .map(v -> v.toString())
+                    .collect(Collectors.joining(","));
+            return sum;
+        }
     }
 
     @Test
     public void testGetArrayStream() {
         StringReader sr = new StringReader("[1,2,3,4,5,6]");
-        JsonParser jsonParser = Json.createParser(sr);
 
-        JsonParser.Event firstEvent = jsonParser.next();
-        assertEquals(JsonParser.Event.START_ARRAY, firstEvent);
+        try (JsonParser jsonParser = Json.createParser(sr)) {
+            JsonParser.Event firstEvent = jsonParser.next();
+            assertEquals(JsonParser.Event.START_ARRAY, firstEvent);
 
-        int sum = jsonParser.getArrayStream()
-                .mapToInt(v -> ((JsonNumber)v).intValue())
-                .sum();
-        assertEquals(21, sum);
+            int sum = jsonParser.getArrayStream()
+                    .mapToInt(v -> ((JsonNumber)v).intValue())
+                    .sum();
+            assertEquals(21, sum);
+        }
     }
 
     @Test(expected = JsonParsingException.class)
     public void testParseErrorInGetArrayStream() {
         StringReader sr = new StringReader("[\"this is\":\"not an object\"]");
-        JsonParser jsonParser = Json.createParser(sr);
 
-        JsonParser.Event firstEvent = jsonParser.next();
-        assertEquals(JsonParser.Event.START_ARRAY, firstEvent);
+        try (JsonParser jsonParser = Json.createParser(sr)) {
+            JsonParser.Event firstEvent = jsonParser.next();
+            assertEquals(JsonParser.Event.START_ARRAY, firstEvent);
 
-        jsonParser.getArrayStream().forEach(dummy -> {});
+            jsonParser.getArrayStream().forEach(dummy -> {});
+        }
     }
 
     @Test
     public void testGetObjectStream() {
         StringReader sr = new StringReader("{\"foo\":\"bar\",\"baz\":\"quux\",\"something\":\"else\"}");
-        JsonParser jsonParser = Json.createParser(sr);
 
-        JsonParser.Event firstEvent = jsonParser.next();
-        assertEquals(JsonParser.Event.START_OBJECT, firstEvent);
+        try (JsonParser jsonParser = Json.createParser(sr)) {
+            JsonParser.Event firstEvent = jsonParser.next();
+            assertEquals(JsonParser.Event.START_OBJECT, firstEvent);
 
-        Map<String, String> mappings = jsonParser.getObjectStream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> ((JsonString)e.getValue()).getString()));
+            Map<String, String> mappings = jsonParser.getObjectStream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> ((JsonString)e.getValue()).getString()));
 
-        Map<String, String> expectedMappings = new HashMap<>();
-        expectedMappings.put("foo", "bar");
-        expectedMappings.put("baz", "quux");
-        expectedMappings.put("something", "else");
-        assertEquals(expectedMappings, mappings);
+            Map<String, String> expectedMappings = new HashMap<>();
+            expectedMappings.put("foo", "bar");
+            expectedMappings.put("baz", "quux");
+            expectedMappings.put("something", "else");
+            assertEquals(expectedMappings, mappings);
+        }
     }
 
     @Test(expected = JsonParsingException.class)
     public void testParseErrorInGetObjectStream() {
         StringReader sr = new StringReader("{42}");
-        JsonParser jsonParser = Json.createParser(sr);
 
-        JsonParser.Event firstEvent = jsonParser.next();
-        assertEquals(JsonParser.Event.START_OBJECT, firstEvent);
+        try (JsonParser jsonParser = Json.createParser(sr)) {
+            JsonParser.Event firstEvent = jsonParser.next();
+            assertEquals(JsonParser.Event.START_OBJECT, firstEvent);
 
-        jsonParser.getObjectStream().forEach(dummy -> {});
+            jsonParser.getObjectStream().forEach(dummy -> {});
+        }
     }
 
 }
