@@ -154,10 +154,11 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
                 if (next == Event.END_ARRAY) {
                     return false;
-                } else {
-                    action.accept(getValue());
-                    return true;
                 }
+
+                action.accept(getValue());
+                return true;
+
             }
         };
 
@@ -177,16 +178,17 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             @Override
             public boolean tryAdvance(Consumer<? super Entry<String, JsonValue>> action) {
                 Event next = next();
-                
+
                 if (next == Event.END_OBJECT) {
                     return false;
-                } else {
-                    String key = getString();
-                    next();
-                    JsonValue value = getValue();
-                    action.accept(new AbstractMap.SimpleImmutableEntry<>(key, value));
-                    return true;
                 }
+
+                String key = getString();
+                next();
+                JsonValue value = getValue();
+                action.accept(new AbstractMap.SimpleImmutableEntry<>(key, value));
+                return true;
+
             }
         };
 
