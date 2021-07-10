@@ -187,6 +187,10 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
                 return false;
             }
 
+            if (next != Event.KEY_NAME) {
+                throw new IllegalStateException("Expected key name event but got " + next + " instead.");
+            }
+
             String key = parser.getString();
             parser.next();
             JsonValue value = parser.getValue();
