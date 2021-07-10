@@ -138,6 +138,28 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         }
     }
 
+    private static class ArrayStreamSpliterator extends Spliterators.AbstractSpliterator<JsonValue> {
+
+        private final JohnzonJsonParserImpl parser;
+
+        ArrayStreamSpliterator(JohnzonJsonParserImpl parser) {
+            super(Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED);
+            this.parser = parser;
+        }
+
+        @Override
+        public boolean tryAdvance(Consumer<? super JsonValue> action) {
+            Event next = parser.next();
+
+            if (next == Event.END_ARRAY) {
+                return false;
+            }
+
+            action.accept(parser.getValue());
+            return true;
+        }
+    }
+
     @Override
     public Stream<JsonValue> getArrayStream() {
         Event current = current();
@@ -145,24 +167,33 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getArrayStream()");
         }
 
-        Spliterator<JsonValue> arraySpliterator = new Spliterators.AbstractSpliterator<JsonValue>(
-                Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED) {
+        return StreamSupport.stream(new ArrayStreamSpliterator(this), false);
+    }
 
-            @Override
-            public boolean tryAdvance(Consumer<? super JsonValue> action) {
-                Event next = next();
+    private static class ObjectStreamSpliterator extends Spliterators.AbstractSpliterator<Map.Entry<String,JsonValue>> {
+        
+        private final JohnzonJsonParserImpl parser;
 
-                if (next == Event.END_ARRAY) {
-                    return false;
-                }
+        ObjectStreamSpliterator(JohnzonJsonParserImpl parser) {
+            super(Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED);
+            this.parser = parser;
+        }
 
-                action.accept(getValue());
-                return true;
+        @Override
+        public boolean tryAdvance(Consumer<? super Entry<String, JsonValue>> action) {
+            Event next = parser.next();
 
+            if (next == Event.END_OBJECT) {
+                return false;
             }
-        };
 
-        return StreamSupport.stream(arraySpliterator, false);
+            String key = parser.getString();
+            parser.next();
+            JsonValue value = parser.getValue();
+            action.accept(new AbstractMap.SimpleImmutableEntry<>(key, value));
+            return true;
+        }
+
     }
 
     @Override
@@ -172,27 +203,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getObjectStream()");
         }
 
-        Spliterator<Map.Entry<String, JsonValue>> objectSpliterator = new Spliterators.AbstractSpliterator<Map.Entry<String,JsonValue>>(
-                Long.MAX_VALUE, Spliterator.IMMUTABLE | Spliterator.NONNULL | Spliterator.ORDERED) {
-
-            @Override
-            public boolean tryAdvance(Consumer<? super Entry<String, JsonValue>> action) {
-                Event next = next();
-
-                if (next == Event.END_OBJECT) {
-                    return false;
-                }
-
-                String key = getString();
-                next();
-                JsonValue value = getValue();
-                action.accept(new AbstractMap.SimpleImmutableEntry<>(key, value));
-                return true;
-
-            }
-        };
-
-        return StreamSupport.stream(objectSpliterator, false);
+        return StreamSupport.stream(new ObjectStreamSpliterator(this), false);
     }
 
     @Override
