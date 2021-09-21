@@ -30,7 +30,6 @@ import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.spi.JsonbProvider;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
