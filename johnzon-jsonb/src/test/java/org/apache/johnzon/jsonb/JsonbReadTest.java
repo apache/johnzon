@@ -30,6 +30,7 @@ import javax.json.bind.config.BinaryDataStrategy;
 import javax.json.bind.spi.JsonbProvider;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -48,6 +49,25 @@ public class JsonbReadTest {
         final List<String> expectedResult = asList("Test String");
         try (final Jsonb jsonb = JsonbBuilder.create()) {
             final Object unmarshalledObject = jsonb.fromJson("[ \"Test String\" ]", (Type) List.class);
+            assertEquals(expectedResult, unmarshalledObject);
+        }
+    }
+
+    @Test
+    public void simpleArrayMappingReader() throws Exception {
+        final List<String> expectedResult = asList("Test String");
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final Object unmarshalledObject = jsonb.fromJson(new StringReader("[ \"Test String\" ]"), (Type) List.class);
+            assertEquals(expectedResult, unmarshalledObject);
+        }
+    }
+
+    @Test
+    public void simpleArrayMappingInputStream() throws Exception {
+        final List<String> expectedResult = asList("Test String");
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final Object unmarshalledObject = jsonb.fromJson(new ByteArrayInputStream("[ \"Test String\" ]".getBytes(
+                StandardCharsets.UTF_8)), (Type) List.class);
             assertEquals(expectedResult, unmarshalledObject);
         }
     }

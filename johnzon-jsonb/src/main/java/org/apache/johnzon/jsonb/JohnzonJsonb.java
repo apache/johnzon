@@ -197,7 +197,7 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             } else if (JsonArray.class == runtimeType) {
                 return (T) delegate.readJsonArray(reader);
             } else if (isCollection(runtimeType)) {
-                return (T) delegate.readCollection(reader, ParameterizedType.class.cast(runtimeType));
+                return (T) delegate.readCollection(reader, toCollectionType(runtimeType));
             }
             final Type mappingType = unwrapPrimitiveOptional(runtimeType);
             final Object object = delegate.readObject(reader, mappingType);
@@ -240,7 +240,7 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
             } else if (JsonArray.class == runtimeType) {
                 return (T) delegate.readJsonArray(stream);
             } else if (isCollection(runtimeType)) {
-                return (T) delegate.readCollection(stream, ParameterizedType.class.cast(runtimeType));
+                return (T) delegate.readCollection(stream, toCollectionType(runtimeType));
             }
 
             final Type mappingType = unwrapPrimitiveOptional(runtimeType);
