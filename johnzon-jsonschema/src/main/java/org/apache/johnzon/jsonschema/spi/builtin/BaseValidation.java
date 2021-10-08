@@ -29,13 +29,13 @@ import javax.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.ValidationResult;
 
-abstract class BaseValidation implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
+public abstract class BaseValidation implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
     protected final String pointer;
     protected final Function<JsonValue, JsonValue> extractor;
     private final JsonValue.ValueType validType;
     private final boolean rootCanBeNull;
 
-    BaseValidation(final String pointer, final Function<JsonValue, JsonValue> extractor, final JsonValue.ValueType validType) {
+    public BaseValidation(final String pointer, final Function<JsonValue, JsonValue> extractor, final JsonValue.ValueType validType) {
         this.pointer = pointer;
         this.extractor = extractor != null ? extractor : v -> v;
         this.rootCanBeNull = extractor != null;

@@ -37,15 +37,17 @@ public class EnumValidation implements ValidationExtension {
         return ofNullable(model.getSchema().get("enum"))
                 .filter(it -> it.getValueType() == JsonValue.ValueType.ARRAY)
                 .map(JsonValue::asJsonArray)
-                .map(values -> new Impl(values, model.getValueProvider(), model.toPointer()));
+                .map(values -> new Impl(values, model.getValueProvider(), model.toPointer(), JsonValue.TRUE.equals(model.getSchema().get("nullable"))));
     }
 
     private static class Impl extends BaseValidation {
         private final Collection<JsonValue> valid;
+        private final boolean nullable;
 
-        private Impl(final Collection<JsonValue> valid, final Function<JsonValue, JsonValue> extractor, final String pointer) {
+        private Impl(final Collection<JsonValue> valid, final Function<JsonValue, JsonValue> extractor, final String pointer, final boolean nullable) {
             super(pointer, extractor, JsonValue.ValueType.OBJECT /* ignored */);
             this.valid = valid;
+            this.nullable = nullable;
         }
 
         @Override
@@ -54,7 +56,7 @@ public class EnumValidation implements ValidationExtension {
                 return Stream.empty();
             }
             final JsonValue value = extractor.apply(root);
-            if (value != null && JsonValue.ValueType.NULL != value.getValueType()) {
+            if (nullable && (value == null || JsonValue.ValueType.NULL == value.getValueType())) {
                 return Stream.empty();
             }
             if (valid.contains(value)) {

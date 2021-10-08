@@ -208,7 +208,7 @@ public class JsonSchemaValidatorTest {
         final ValidationResult failure = validator.apply(jsonFactory.createObjectBuilder().add("name", 5).build());
         assertFalse(failure.isSuccess());
         final Collection<ValidationResult.ValidationError> errors = failure.getErrors();
-        assertEquals(1, errors.size());
+        assertEquals(2, errors.size());
         final ValidationResult.ValidationError error = errors.iterator().next();
         assertEquals("/name", error.getField());
         assertEquals("Expected [NULL, STRING] but got NUMBER", error.getMessage());
