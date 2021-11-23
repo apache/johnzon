@@ -977,7 +977,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final boolean hasRawType = hasRawType(annotationHolder.getType());
             final JsonbTypeDeserializer deserializer = annotationHolder.getAnnotation(JsonbTypeDeserializer.class);
             final JsonbTypeAdapter adapter = annotationHolder.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbTypeAdapter typeAdapter = hasRawType ? getRawType(annotationHolder.getType()).getDeclaredAnnotation(JsonbTypeAdapter.class) : null;
+            final JsonbTypeAdapter typeAdapter = hasRawType ? getRawTargetType(annotationHolder.getType()).getDeclaredAnnotation(JsonbTypeAdapter.class) : null;
             JsonbDateFormat dateFormat = dateType ? annotationHolder.getAnnotation(JsonbDateFormat.class) : null;
             JsonbNumberFormat numberFormat = numberType ? annotationHolder.getAnnotation(JsonbNumberFormat.class) : null;
             final JohnzonConverter johnzonConverter = annotationHolder.getAnnotation(JohnzonConverter.class);
@@ -1077,7 +1077,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             final boolean hasRawType = hasRawType(reader.getType());
             final JsonbTypeSerializer serializer = reader.getAnnotation(JsonbTypeSerializer.class);
             final JsonbTypeAdapter adapter = reader.getAnnotation(JsonbTypeAdapter.class);
-            final JsonbTypeAdapter typeAdapter = hasRawType ? getRawType(reader.getType()).getDeclaredAnnotation(JsonbTypeAdapter.class) : null;
+            final JsonbTypeAdapter typeAdapter = hasRawType ? getRawTargetType(reader.getType()).getDeclaredAnnotation(JsonbTypeAdapter.class) : null;
             JsonbDateFormat dateFormat = dateType ? reader.getAnnotation(JsonbDateFormat.class) : null;
             JsonbNumberFormat numberFormat = numberType ? reader.getAnnotation(JsonbNumberFormat.class) : null;
             final JohnzonConverter johnzonConverter = reader.getAnnotation(JohnzonConverter.class);
@@ -1149,12 +1149,20 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                         Class.class.isInstance(ParameterizedType.class.cast(type).getRawType()));
     }
 
-    private Class<?> getRawType(final Type type) { // only intended to be used after hasRawType check
+    private Class<?> getRawTargetType(final Type type) { // only intended to be used after hasRawType check
         if (Class.class.isInstance(type)) {
             return Class.class.cast(type);
         }
-        // ParameterizedType + Class raw type
-        return Class.class.cast(ParameterizedType.class.cast(type).getRawType());
+        ParameterizedType parameterizedType = ParameterizedType.class.cast(type);
+        Class<?> rawType = Class.class.cast(parameterizedType.getRawType());
+        if (Collection.class.isAssignableFrom(rawType) || Map.class.isAssignableFrom(rawType)) {
+            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+            Type itemType = actualTypeArguments[actualTypeArguments.length - 1];
+            if (Class.class.isInstance(itemType)) {
+                return Class.class.cast(itemType);
+            }
+        }
+        return rawType;
     }
 
     private static class ClassDecoratedType implements DecoratedType {
