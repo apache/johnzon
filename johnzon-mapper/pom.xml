@@ -70,7 +70,6 @@
   <properties>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
-  <packaging>bundle</packaging>
 
   <build>
     <plugins>

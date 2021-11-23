@@ -222,9 +222,12 @@ public class JohnzonBuilder implements JsonbBuilder {
                         config.getProperty("johnzon.accessModeDelegate")
                                 .map(this::toAccessMode)
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, true)),
+                        // this changes in v3 of the spec so let's use this behavior which makes everyone happy by default
                         config.getProperty("johnzon.failOnMissingCreatorValues")
                                 .map(this::toBool)
-                                .orElse(true) /*spec 1.0 requirement*/,
+                                .orElseGet(() -> config.getProperty("jsonb.creator-parameters-required")
+                                        .map(this::toBool)
+                                        .orElse(false)),
                         isNillable,
                         config.getProperty("johnzon.supportsPrivateAccess")
                                 .map(this::toBool)

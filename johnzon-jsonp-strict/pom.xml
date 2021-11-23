@@ -27,7 +27,7 @@
 
   <artifactId>johnzon-jsonp-strict</artifactId>
   <name>Johnzon :: JSON-P Strict JSON Pointer Implementation (spec compliant)</name>
-  <packaging>bundle</packaging>
+
 
   <properties>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>

@@ -27,7 +27,7 @@
 
   <artifactId>johnzon-jsonlogic</artifactId>
   <name>Johnzon :: JSON Logic</name>
-  <packaging>bundle</packaging>
+
 
   <dependencies>
     <dependency>

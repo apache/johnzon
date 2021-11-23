@@ -56,7 +56,7 @@ public class DynamicBufferResizingTest {
 
     @Test(expected = JsonbException.class)
     public void failOnMissingProp() throws Exception {
-        try (final Jsonb jsonb = JsonbBuilder.create()) {
+        try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig().setProperty("jsonb.creator-parameters-required", true))) {
             jsonb.fromJson(jsonb.toJson(new Request("Screenshot.png", null, null)), Request.class);
         }
     }
