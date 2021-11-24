@@ -167,6 +167,46 @@ public class AdapterTest {
         assertEquals(22, Bar2.class.cast(read.bars.get(1)).value2);
     }
 
+    @Test
+    public void adaptCollectionValue() {
+        final Jsonb jsonb = JsonbBuilder.create();
+
+        Bar bar = new Bar();
+        bar.value = 42;
+        BarCollection barCollection = new BarCollection();
+        barCollection.collection = new ArrayList<Bar>();
+        barCollection.collection.add(bar);
+
+        String barCollectionJson = jsonb.toJson(barCollection);
+        assertTrue(barCollectionJson.contains("42"));
+
+        BarCollection adaptedBarCollection = jsonb.fromJson(barCollectionJson, BarCollection.class);
+        assertEquals(1, adaptedBarCollection.collection.size());
+        assertEquals(42, adaptedBarCollection.collection.get(0).value);
+
+        Baz baz = new Baz();
+        baz.value = "42";
+        BazCollection bazCollection = new BazCollection();
+        bazCollection.collection = new ArrayList<Baz>();
+        bazCollection.collection.add(baz);
+
+        String bazCollectionJson = jsonb.toJson(bazCollection);
+        assertTrue(bazCollectionJson.contains("42"));
+
+        BazCollection adaptedBazCollection = jsonb.fromJson(bazCollectionJson, BazCollection.class);
+        assertEquals(1, adaptedBazCollection.collection.size());
+        assertEquals("42", adaptedBazCollection.collection.get(0).value);
+    }
+
+    public static class BarCollection {
+        @JsonbTypeAdapter(BarAdapter.class)
+        public List<Bar> collection;
+    }
+
+    public static class BazCollection {
+        public List<Baz> collection;
+    }
+
     public static class Polymorphism {
         @JsonbTypeAdapter(PolyBarAdapter.class)
         public List<Bar> bars;
