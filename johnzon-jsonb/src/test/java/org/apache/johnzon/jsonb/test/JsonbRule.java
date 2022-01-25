@@ -18,11 +18,10 @@
  */
 package org.apache.johnzon.jsonb.test;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
-import java.lang.reflect.Type;
+import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runners.model.Statement;
 
 import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
@@ -31,11 +30,11 @@ import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
-
-import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Reader;
+import java.io.Writer;
+import java.lang.reflect.Type;
 
 public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
     private Jsonb jsonb;
@@ -44,6 +43,11 @@ public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
 
     public JsonbRule withPropertyOrderStrategy(final String propertyOrderStrategy) {
         config.withPropertyOrderStrategy(propertyOrderStrategy);
+        return this;
+    }
+
+    public JsonbRule withFormatting(final boolean format) {
+        config.withFormatting(format);
         return this;
     }
 

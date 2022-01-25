@@ -34,11 +34,12 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+    private static final Charset UTF8_CHARSET = StandardCharsets.UTF_8;
 
     private final transient Writer writer;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -184,20 +185,17 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         switch (value.getValueType()) {
             case ARRAY:
                 writeStartArray(name);
-                final JsonArray array = JsonArray.class.cast(value);
-                final Iterator<JsonValue> ait = array.iterator();
-                while (ait.hasNext()) {
-                    write(ait.next());
+                final JsonArray array = value.asJsonArray();
+                for (final JsonValue jsonValue : array) {
+                    write(jsonValue);
                 }
                 writeEnd();
 
                 break;
             case OBJECT:
                 writeStartObject(name);
-                final JsonObject object = JsonObject.class.cast(value);
-                final Iterator<Map.Entry<String, JsonValue>> oit = object.entrySet().iterator();
-                while (oit.hasNext()) {
-                    final Map.Entry<String, JsonValue> keyval = oit.next();
+                final JsonObject object = value.asJsonObject();
+                for (final Map.Entry<String, JsonValue> keyval : object.entrySet()) {
                     write(keyval.getKey(), keyval.getValue());
                 }
                 writeEnd();
@@ -828,5 +826,4 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             }
         }
      */
-
 }

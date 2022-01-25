@@ -362,6 +362,7 @@ public class DynamicMappingGenerator implements MappingGenerator {
                 if (nested == 0) {
                     final JsonGenerator unwrap = unwrap(delegate);
                     unwrap.writeEnd();
+                    implicitStart = false;
                 } else {
                     delegate.writeEnd();
                 }
