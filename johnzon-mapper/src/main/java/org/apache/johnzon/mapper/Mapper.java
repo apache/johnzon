@@ -79,6 +79,22 @@ public class Mapper implements Closeable {
         this.charset = config.getEncoding();
     }
 
+    public Mappings getMappings() {
+        return mappings;
+    }
+
+    public JsonReaderFactory getReaderFactory() {
+        return readerFactory;
+    }
+
+    public JsonGeneratorFactory getGeneratorFactory() {
+        return generatorFactory;
+    }
+
+    public Charset getCharset() {
+        return charset;
+    }
+
     public <T> void writeArray(final Object object, final OutputStream stream) {
         if (object instanceof short[]) {
             writeObject(ArrayUtil.asList((short[]) object), stream);

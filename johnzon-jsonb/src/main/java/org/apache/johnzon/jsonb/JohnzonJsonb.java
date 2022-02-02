@@ -69,6 +69,10 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
         this.onClose = onClose;
     }
 
+    public Mapper getDelegate() {
+        return delegate;
+    }
+
     @Override
     public <T> T fromJson(final String str, final Class<T> type) throws JsonbException {
         try {
