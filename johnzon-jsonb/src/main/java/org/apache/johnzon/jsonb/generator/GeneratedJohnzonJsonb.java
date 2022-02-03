@@ -20,6 +20,9 @@ package org.apache.johnzon.jsonb.generator;
 
 import org.apache.johnzon.jsonb.JohnzonJsonb;
 
+import javax.json.JsonNumber;
+import javax.json.JsonString;
+import javax.json.JsonValue;
 import java.io.Reader;
 import java.io.Writer;
 
@@ -33,4 +36,24 @@ public abstract class GeneratedJohnzonJsonb {
     public abstract <T> T fromJson(Reader reader);
 
     public abstract void toJson(Object object, Writer writer);
+
+    protected static String json2String(final JsonValue value) {
+        switch (value.getValueType()) {
+            case STRING:
+                return JsonString.class.cast(value).getString();
+            case NULL:
+                return null;
+            default:
+                throw new IllegalArgumentException("expected a string, got " + value.getValueType());
+        }
+    }
+
+    protected static int json2Int(final JsonValue value) {
+        switch (value.getValueType()) {
+            case NUMBER:
+                return JsonNumber.class.cast(value).intValue();
+            default:
+                throw new IllegalArgumentException("expected an int, got " + value.getValueType());
+        }
+    }
 }

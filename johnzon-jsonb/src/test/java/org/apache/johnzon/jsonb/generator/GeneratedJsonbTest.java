@@ -45,7 +45,30 @@ public class GeneratedJsonbTest {
         final Path result = output.resolve("org/apache/johnzon/jsonb/generator/GeneratedJsonbTest$Empty$$JohnzonJsonb.class");
         assertTrue(Files.exists(result));
         assertEquals("" +
-                "" +
+                "package org.apache.johnzon.jsonb.generator;\n" +
+                "\n" +
+                "import org.apache.johnzon.jsonb.generator.GeneratedJohnzonJsonb;\n" +
+                "import org.apache.johnzon.jsonb.JohnzonJsonb;\n" +
+                "import javax.json.JsonGenerator;\n" +
+                "import javax.json.JsonReader;\n" +
+                "import javax.json.JsonValue;\n" +
+                "\n" +
+                "public class Empty$$JohnzonJsonb implements GeneratedJohnzonJsonb {\n" +
+                "    public Empty$$JohnzonJsonb(final JohnzonJsonb root) {\n" +
+                "        super(root);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public <T> T fromJson(final Reader reader) {\n" +
+                "        return JsonValue.EMPTY_JSON_OBJECT;\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void toJson(final Object object, final Writer writer) {\n" +
+                "        writer.write(\"{}\");\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
                 "", new String(Files.readAllBytes(result), UTF_8));
     }
 
@@ -59,7 +82,67 @@ public class GeneratedJsonbTest {
         final Path result = output.resolve("org/apache/johnzon/jsonb/generator/GeneratedJsonbTest$Simple$$JohnzonJsonb.class");
         assertTrue(Files.exists(result));
         assertEquals("" +
-                "" +
+                "package org.apache.johnzon.jsonb.generator;\n" +
+                "\n" +
+                "import org.apache.johnzon.jsonb.generator.GeneratedJohnzonJsonb;\n" +
+                "import org.apache.johnzon.jsonb.JohnzonJsonb;\n" +
+                "import javax.json.JsonGenerator;\n" +
+                "import javax.json.JsonReader;\n" +
+                "import javax.json.JsonValue;\n" +
+                "\n" +
+                "public class Simple$$JohnzonJsonb implements GeneratedJohnzonJsonb {\n" +
+                "    public Simple$$JohnzonJsonb(final JohnzonJsonb root) {\n" +
+                "        super(root);\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public <T> T fromJson(final Reader reader) {\n" +
+                "        try (final JsonReader reader = root.getMapper().getReaderFactory().createReader(reader)) {\n" +
+                "            final JsonValue value = reader.readValue();\n" +
+                "            switch (value.getValueType()) {\n" +
+                "                case OBJECT: {\n" +
+                "                    final Simple$$JohnzonJsonb instance = new Simple$$JohnzonJsonb();\n" +
+                "                    {\n" +
+                "                        final JsonValue value = instance.get(\"age\");\n" +
+                "                        if (value != null) {\n" +
+                "                            instance.setAge(json2Int(value));\n" +
+                "                        }\n" +
+                "                    }\n" +
+                "                    {\n" +
+                "                        final JsonValue value = instance.get(\"name\");\n" +
+                "                        if (value != null) {\n" +
+                "                            instance.setName(json2String(value));\n" +
+                "                        }\n" +
+                "                    }\n" +
+                "                    return instance;\n" +
+                "                }\n" +
+                "                case NULL:\n" +
+                "                    return null;\n" +
+                "                default:\n" +
+                "                    throw new IllegalStateException(\"invalid value type: '\" + value.getValueType() + \"'\");\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "\n" +
+                "    @Override\n" +
+                "    public void toJson(final Object object, final Writer writer) {\n" +
+                "        try (final JsonGenerator generator = root.getDelegate().getGeneratorFactory().createGenerator(writer)) {\n" +
+                "            {\n" +
+                "                final int value = instance.getAge();\n" +
+                "                if (value != null) {\n" +
+                "                    generator.write(\"age\", value);\n" +
+                "                }\n" +
+                "            }\n" +
+                "            {\n" +
+                "                final String value = instance.getName();\n" +
+                "                if (value != null) {\n" +
+                "                    generator.write(\"name\", value);\n" +
+                "                }\n" +
+                "            }\n" +
+                "        }\n" +
+                "    }\n" +
+                "}\n" +
+                "\n" +
                 "", new String(Files.readAllBytes(result), UTF_8));
     }
 

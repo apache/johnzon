@@ -29,9 +29,13 @@ import javax.json.bind.JsonbConfig;
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -95,18 +99,14 @@ public class JsonbMapperGenerator implements Runnable {
                     out.append("                    final ").append(clazz.getSimpleName()).append(suffix).append(" instance = new ")
                             .append(clazz.getSimpleName()).append(suffix).append("();\n");
                     out.append(mapping.setters.entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey())
                             .map(setter -> toSetter(setter.getValue(), setter.getKey()))
                             .collect(joining("\n", "", "\n")));
-                    out.append("                    return null;\n");
+                    out.append("                    return instance;\n");
                     out.append("                }\n");
                     out.append("                case NULL:\n");
-                    out.append("                case ARRAY:\n");
-                    out.append("                case STRING:\n");
-                    out.append("                case NUMBER:\n");
-                    out.append("                case TRUE:\n");
-                    out.append("                case FALSE:\n");
+                    out.append("                    return null;\n");
                     out.append("                default:\n");
-                    // todo: check if there is an adapter or alike
                     out.append("                    throw new IllegalStateException(\"invalid value type: '\" + value.getValueType() + \"'\");\n");
                     out.append("            }\n");
                     out.append("        }\n");
@@ -115,8 +115,17 @@ public class JsonbMapperGenerator implements Runnable {
                 out.append("\n");
                 out.append("    @Override\n");
                 out.append("    public void toJson(final Object object, final Writer writer) {\n");
-                // todo: use mappings.setters and expose with getters jsonb.getMapper().getJsongeneratorFactory()
-                out.append("        // TBD\n");
+                if (mapping.getters.isEmpty()) { // will always be empty
+                    out.append("        writer.write(\"{}\");\n");
+                } else {
+                    out.append("        try (final JsonGenerator generator = root.getDelegate().getGeneratorFactory().createGenerator(writer)) {\n");
+                    out.append(mapping.getters.entrySet().stream()
+                            .sorted(Map.Entry.comparingByKey())
+                            .map(setter -> toGetter(setter.getValue(), setter.getKey()))
+                            .collect(joining("\n", "", "\n")));
+                    out.append("        }\n");
+                }
+                // root.getDelegate().getGeneratorFactory().createGenerator()
                 out.append("    }\n");
                 out.append("}\n\n");
 
@@ -152,7 +161,7 @@ public class JsonbMapperGenerator implements Runnable {
         }
     }
 
-    private String toGetter(final Mappings.Getter value) {
+    private String toGetter(final Mappings.Getter value, final String name) {
         try {
             final Field reader = value.getClass().getDeclaredField("reader");
             if (!reader.isAccessible()) {
@@ -168,24 +177,35 @@ public class JsonbMapperGenerator implements Runnable {
                     })
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException("No finalReader field in " + wrapped));
-            return toGetter(AccessMode.Reader.class.cast(finalReader.get(wrapped)));
+            return toGetter(AccessMode.Reader.class.cast(finalReader.get(wrapped)), name);
         } catch (final IllegalAccessException | NoSuchFieldException nsfe) {
             throw new IllegalArgumentException("Unsupported getter: " + value, nsfe);
         }
     }
 
-    private String toGetter(final MethodAccessMode.MethodReader reader) {
-        return "instance." + reader.getMethod().getName() + "();";
+    private String toGetter(final MethodAccessMode.MethodReader reader, final String name) {
+        final Type type = reader.getType();
+        if (type == String.class || type == int.class || type == long.class || type == boolean.class || type == double.class
+                || type == BigDecimal.class || type == BigInteger.class) {
+            return "" +
+                    "            {\n" +
+                    "                final " + Class.class.cast(type).getSimpleName() + " value = instance." + reader.getMethod().getName() + "();\n" +
+                    "                if (value != null) {\n" +
+                    "                    generator.write(\"" + name + "\", value);\n" +
+                    "                }\n" +
+                    "            }" +
+                    "";
+        }
+        throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
-    private String toGetter(final AccessMode.Reader reader) {
+    private String toGetter(final AccessMode.Reader reader, final String name) {
         if (FieldAndMethodAccessMode.CompositeReader.class.isInstance(reader)) {
             final MethodAccessMode.MethodReader mr = MethodAccessMode.MethodReader.class.cast(
-                    FieldAndMethodAccessMode.CompositeReader.class.cast(reader).getType2());
-            return toGetter(mr);
+                    FieldAndMethodAccessMode.CompositeReader.class.cast(reader).getType1());
+            return toGetter(mr, name);
         } else if (MethodAccessMode.MethodReader.class.isInstance(reader)) {
-            final MethodAccessMode.MethodReader mr = MethodAccessMode.MethodReader.class.cast(reader);
-            return toGetter(mr);
+            return toGetter(MethodAccessMode.MethodReader.class.cast(reader), name);
         }
         throw new IllegalArgumentException("Unsupported reader: " + reader);
     }
@@ -194,13 +214,23 @@ public class JsonbMapperGenerator implements Runnable {
     private String toSetter(final MethodAccessMode.MethodWriter reader, final String name) {
         return "" +
                 "                    {\n" +
-                "                        final JsonValue value = instance.get(\""+name+"\");\n" +
+                "                        final JsonValue value = instance.get(\"" + name + "\");\n" +
                 "                        if (value != null) {\n" +
-                "                            final Object coerced = coerce(value);\n" +
-                "                            instance." + reader.getMethod().getName() + "(coerced);\n" +
+                "                            instance." + reader.getMethod().getName() + "(" +
+                coerceFunction(reader.getMethod().getGenericParameterTypes()[0]) + "(value));\n" +
                 "                        }\n" +
                 "                    }" +
                 "";
+    }
+
+    private String coerceFunction(final Type type) {
+        if (type == String.class) {
+            return "json2String";
+        }
+        if (type == int.class) {
+            return "json2Int";
+        }
+        throw new IllegalArgumentException("Unsupported type: " + type);
     }
 
     private String toSetter(final AccessMode.Writer writer, final String setter) {
@@ -209,8 +239,7 @@ public class JsonbMapperGenerator implements Runnable {
                     FieldAndMethodAccessMode.CompositeWriter.class.cast(writer).getType1());
             return toSetter(mr, setter);
         } else if (MethodAccessMode.MethodWriter.class.isInstance(writer)) {
-            final MethodAccessMode.MethodWriter mr = MethodAccessMode.MethodWriter.class.cast(writer);
-            return toSetter(mr, setter);
+            return toSetter(MethodAccessMode.MethodWriter.class.cast(writer), setter);
         }
         throw new IllegalArgumentException("Unsupported writer: " + writer);
     }
