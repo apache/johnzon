@@ -27,7 +27,7 @@
 
   <artifactId>johnzon-osgi</artifactId>
   <name>Johnzon :: Support for OSGI Jaxrs Whiteboard</name>
-
+  <packaging>bundle</packaging>
 
   <dependencies>
     <dependency>
