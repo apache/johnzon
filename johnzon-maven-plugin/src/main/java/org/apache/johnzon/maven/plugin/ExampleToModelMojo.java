@@ -129,10 +129,10 @@ public class ExampleToModelMojo extends AbstractMojo {
             }
 
             if (useRecord) {
-                writer.write("public record " + javaName + "(\n");
+                writer.write("public record " + javaName + "(");
                 writer.write(memBuffer.toString());
             } else {
-                writer.write("public class " + javaName + " {\n");
+                writer.write("public class " + javaName + " {");
                 writer.write(memBuffer.toString());
             }
             writer.write("}\n");
@@ -146,6 +146,9 @@ public class ExampleToModelMojo extends AbstractMojo {
         final Map<String, JsonObject> nestedTypes = new TreeMap<>();
         {
             final Iterator<Map.Entry<String, JsonValue>> iterator = object.entrySet().iterator();
+            if (!object.isEmpty()) {
+                writer.write("\n");
+            }
             while (iterator.hasNext()) {
                 final Map.Entry<String, JsonValue> entry = iterator.next();
                 final String key = entry.getKey();
@@ -190,6 +193,14 @@ public class ExampleToModelMojo extends AbstractMojo {
             }
         }
 
+        if (object.isEmpty()) {
+            if (useRecord) {
+                writer.write(") {\n");
+            } else {
+                writer.write("\n");
+            }
+        }
+
         if (!object.isEmpty() && !nestedTypes.isEmpty()) {
             writer.write("\n");
         }
@@ -198,9 +209,9 @@ public class ExampleToModelMojo extends AbstractMojo {
         while (entries.hasNext()) {
             final Map.Entry<String, JsonObject> entry = entries.next();
             if (useRecord) {
-                writer.write(prefix + "public static record " + entry.getKey() + "(\n");
+                writer.write(prefix + "public static record " + entry.getKey() + "(");
             } else {
-                writer.write(prefix + "public static class " + entry.getKey() + " {\n");
+                writer.write(prefix + "public static class " + entry.getKey() + " {");
             }
             generateFieldsAndMethods(writer, entry.getValue(), "    " + prefix, imports);
             writer.write(prefix + "}\n");

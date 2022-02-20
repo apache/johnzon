@@ -55,6 +55,6 @@ public record SomeValue(
         }
     }
 
-    public static record SecondaryMetrics(
+    public static record SecondaryMetrics() {
     }
 }
