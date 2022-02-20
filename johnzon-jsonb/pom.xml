@@ -134,13 +134,6 @@
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=javax.json.bind.spi.JsonbProvider</Provide-Capability>
           </instructions>
         </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>biz.aQute.bnd</groupId>
-            <artifactId>biz.aQute.bndlib</artifactId>
-            <version>4.3.1</version>
-          </dependency>
-        </dependencies>
       </plugin>
     </plugins>
   </build>
