@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.maven.plugin;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -32,9 +33,10 @@ import javax.json.JsonReaderFactory;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.Collection;
@@ -342,7 +344,7 @@ public class ExampleToModelMojo extends AbstractMojo {
         final File outputFile = new File(target, jsonToClass.replace('.', '/') + ".java");
 
         outputFile.getParentFile().mkdirs();
-        try (final FileWriter writer = new FileWriter(outputFile)) {
+        try (final OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(outputFile), UTF_8.name())) {
             generate(readerFactory, source, writer, javaName);
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);

@@ -18,15 +18,18 @@
  */
 package org.apache.johnzon.maven.plugin;
 
+import static java.util.stream.Collectors.joining;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.codehaus.plexus.util.IOUtil;
 import org.junit.Test;
 
+import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -110,9 +113,21 @@ public class ExampleToModelMojoTest {
 
         final File output = new File(targetFolder, "org/test/apache/johnzon/mojo/SomeValue.java");
         assertTrue(output.isFile());
-        assertEquals(
-            new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"))),
-            new String(IOUtil.toByteArray(new FileReader(output))).replace(File.separatorChar, '/'));
+
+        try (
+            BufferedReader expectedBR = new BufferedReader(
+                new InputStreamReader(
+                    Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.java"),
+                    StandardCharsets.UTF_8));
+            BufferedReader resultBR = new BufferedReader(
+                new InputStreamReader(
+                    new FileInputStream(output), StandardCharsets.UTF_8))) {
+
+            String expected = expectedBR.lines().collect(joining("\n")).trim();
+            String result = resultBR.lines().collect(joining("\n")).trim();
+
+            assertEquals(expected, result);
+        }
     }
 
     @Test
@@ -195,8 +210,20 @@ public class ExampleToModelMojoTest {
 
         final File output = new File(targetFolder, "org/test/apache/johnzon/mojo/SomeValue.java");
         assertTrue(output.isFile());
-        assertEquals(
-            new String(IOUtil.toByteArray(Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.record.java"))),
-            new String(IOUtil.toByteArray(new FileReader(output))).replace(File.separatorChar, '/'));
+
+        try (
+            BufferedReader expectedBR = new BufferedReader(
+                new InputStreamReader(
+                    Thread.currentThread().getContextClassLoader().getResourceAsStream("SomeValue.record.java"),
+                    StandardCharsets.UTF_8));
+            BufferedReader resultBR = new BufferedReader(
+                new InputStreamReader(
+                    new FileInputStream(output), StandardCharsets.UTF_8))) {
+
+            String expected = expectedBR.lines().collect(joining("\n")).trim();
+            String result = resultBR.lines().collect(joining("\n")).trim();
+
+            assertEquals(expected, result);
+        }
     }
 }
