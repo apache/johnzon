@@ -125,20 +125,26 @@
                 </artifactSet>
                 <relocations>
                   <relocation>
-                    <pattern>javax.json</pattern>
-                    <shadedPattern>jakarta.json</shadedPattern>
-                  </relocation>
-                  <relocation>
                     <pattern>javax.annotation</pattern>
                     <shadedPattern>jakarta.annotation</shadedPattern>
+                    <excludes>
+                      <exclude>javax.annotation.processing.**</exclude>
+                    </excludes>
+                  </relocation>
+                  <relocation>
+                    <pattern>javax.enterprise</pattern>
+                    <shadedPattern>jakarta.enterprise</shadedPattern>
+                    <excludes>
+                      <exclude>javax.enterprise.deploy.**</exclude>
+                    </excludes>
                   </relocation>
                   <relocation>
                     <pattern>javax.inject</pattern>
                     <shadedPattern>jakarta.inject</shadedPattern>
                   </relocation>
                   <relocation>
-                    <pattern>javax.enterprise</pattern>
-                    <shadedPattern>jakarta.enterprise</shadedPattern>
+                    <pattern>javax.json</pattern>
+                    <shadedPattern>jakarta.json</shadedPattern>
                   </relocation>
                   <relocation>
                     <pattern>javax.servlet</pattern>
@@ -147,6 +153,10 @@
                   <relocation>
                     <pattern>javax.websocket</pattern>
                     <shadedPattern>jakarta.websocket</shadedPattern>
+                  </relocation>
+                  <relocation>
+                    <pattern>javax.ws.rs</pattern>
+                    <shadedPattern>jakarta.ws.rs</shadedPattern>
                   </relocation>
                 </relocations>
               </configuration>
