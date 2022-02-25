@@ -35,12 +35,13 @@ public class JsonbVisitilityTest {
     @Test
     public void testJsonVisibilityAllFields() {
         MyDataVisibility data = new MyDataVisibility();
+        data.setTestKey("yolo");
         data.put("x", "a");
         data.put("y", "b");
 
         Jsonb jsonb = JsonbProvider.provider().create().build();
         String json = jsonb.toJson(data);
-        Assert.assertEquals("{\"attribs\":{\"x\":\"a\",\"y\":\"b\"}}", json);
+        Assert.assertEquals("{\"attribs\":{\"x\":\"a\",\"y\":\"b\"},\"testKey\":\"yolo\"}", json);
 
         MyDataVisibility dataBack = jsonb.fromJson(json, MyDataVisibility.class);
         Assert.assertEquals("a", dataBack.get("x"));
@@ -67,12 +68,24 @@ public class JsonbVisitilityTest {
     public static class MyDataVisibility {
         private Map<String, String> attribs = new HashMap<>();
 
+        private String testKey;
+
         public void put(String key, String value) {
             attribs.put(key, value);
         }
 
         public String get(String key) {
             return attribs.get(key);
+        }
+
+        // intentionally protected!
+        protected String getTestKey() {
+            return testKey;
+        }
+
+        // intentionally protected!
+        protected void setTestKey(String testKey) {
+            this.testKey = testKey;
         }
     }
 

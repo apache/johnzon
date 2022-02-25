@@ -24,7 +24,7 @@ import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-public class HiddingPublicFieldTest {
+public class HidingPublicFieldTest {
     @Rule
     public final JsonbRule jsonb = new JsonbRule();
 
@@ -38,6 +38,15 @@ public class HiddingPublicFieldTest {
     public static class Model {
         public String value;
 
+        /**
+         * As of section 3.7.1 of the JSON-B spec a private method 'hides' fields
+         * The rules are as following:
+         * <ul>
+         *     <li>if public setter/getter exists -> take that</li>
+         *     <li>if non public setter/getter exists -> ignore</li>
+         *     <li>OTHERWISE (no setter/getter at all) -> use fields</li>
+         * </ul>
+         */
         private String getValue() {
             return value;
         }
