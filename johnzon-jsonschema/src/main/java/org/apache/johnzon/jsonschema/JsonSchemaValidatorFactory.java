@@ -60,6 +60,10 @@ import org.apache.johnzon.jsonschema.spi.builtin.RequiredValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.TypeValidation;
 import org.apache.johnzon.jsonschema.spi.builtin.UniqueItemsValidation;
 
+import aQute.bnd.annotation.Resolution;
+import aQute.bnd.annotation.spi.ServiceConsumer;
+
+@ServiceConsumer(value = ValidationExtension.class, resolution = Resolution.OPTIONAL)
 public class JsonSchemaValidatorFactory implements AutoCloseable {
     private static final String[] ROOT_PATH = new String[0];
     private static final Function<JsonValue, Stream<ValidationResult.ValidationError>> NO_VALIDATION = new Function<JsonValue, Stream<ValidationResult.ValidationError>>() {

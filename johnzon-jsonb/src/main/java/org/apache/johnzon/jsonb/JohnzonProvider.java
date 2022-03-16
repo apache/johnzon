@@ -21,6 +21,9 @@ package org.apache.johnzon.jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.spi.JsonbProvider;
 
+import aQute.bnd.annotation.spi.ServiceProvider;
+
+@ServiceProvider(value = JsonbProvider.class, attribute = { "service.vendor:String='org.apache.johnzon'" })
 public class JohnzonProvider extends JsonbProvider {
     @Override
     public JsonbBuilder create() {

@@ -20,14 +20,18 @@ package org.apache.johnzon.jsonb.cdi;
 
 import org.apache.johnzon.jsonb.JohnzonJsonb;
 
+import aQute.bnd.annotation.spi.ServiceProvider;
+
 import javax.enterprise.event.Observes;
 import javax.enterprise.inject.spi.BeforeBeanDiscovery;
 import javax.enterprise.inject.spi.BeforeShutdown;
 import javax.enterprise.inject.spi.Extension;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.concurrent.locks.ReentrantLock;
 
+@ServiceProvider(value = Extension.class, attribute = { "service.vendor:String='org.apache.johnzon'" })
 public class JohnzonCdiExtension implements Extension {
     private final Collection<JohnzonJsonb> jsonbs = new ArrayList<>();
     private final ReentrantLock lock = new ReentrantLock();

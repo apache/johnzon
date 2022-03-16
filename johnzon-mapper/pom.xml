@@ -70,17 +70,19 @@
   <properties>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
-  <packaging>bundle</packaging>
 
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
         <configuration>
-          <instructions>
-            <Export-Package>{local-packages};-split-package:=error,org.apache.johnzon.mapper.internal</Export-Package>
-          </instructions>
+          <bnd><![CDATA[
+            Export-Package: \
+              !org.apache.johnzon.mapper.internal,\
+              org.apache.johnzon.mapper.*
+
+          ]]></bnd>
         </configuration>
       </plugin>
       <plugin>

@@ -20,6 +20,10 @@ package org.apache.johnzon.core;
 
 import org.apache.johnzon.core.spi.JsonPointerFactory;
 
+import aQute.bnd.annotation.Resolution;
+import aQute.bnd.annotation.spi.ServiceConsumer;
+import aQute.bnd.annotation.spi.ServiceProvider;
+
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -58,6 +62,8 @@ import javax.json.stream.JsonParserFactory;
 
 import static java.util.Comparator.comparing;
 
+@ServiceProvider(value = JsonProvider.class, attribute = { "service.vendor:String='org.apache.johnzon'" })
+@ServiceConsumer(value = JsonPointerFactory.class, resolution = Resolution.OPTIONAL)
 public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))

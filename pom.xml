@@ -42,9 +42,8 @@
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
-    <felix.plugin.version>5.1.4</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
-    <bnd.version>6.1.0</bnd.version>
+    <bnd.version>6.2.0</bnd.version>
     <java-compile.version>1.8</java-compile.version>
     <cxf.version>3.4.1</cxf.version>
     <checkstyle.version>2.15</checkstyle.version> <!-- checkstyle > 2.15 version do not support java 6 -->
@@ -99,6 +98,32 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <version>${bnd.version}</version>
+        <extensions>true</extensions>
+        <executions>
+          <execution>
+            <id>jar</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+       	 </execution>
+    	</executions>
+        <configuration>
+          <skipIfEmpty>true</skipIfEmpty>
+          <bnd><![CDATA[
+            Bundle-SymbolicName: org.apache.${replacestring;${project.artifactId};-;.}
+            -removeheaders: Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool
+            -reproducible: true
+            -noextraheaders: true
+            -contract: *
+            -versionpolicy: ${bnd.version.policy}
+
+          ]]></bnd>
+        </configuration>
+      </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
@@ -366,15 +391,6 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>2.5</version>
-        <configuration>
-          <skipIfEmpty>true</skipIfEmpty>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
         <version>3.2.0</version>
         <executions>
@@ -443,29 +459,6 @@
         <version>3.0.1</version>
         <configuration>
         </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <version>${felix.plugin.version}</version>
-        <inherited>true</inherited>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <_contract>*</_contract>
-            <_removeheaders>Private-Package,Include-Resource,Embed-Dependency,Created-By,Bnd-LastModified,Built-By,Tool</_removeheaders>
-            <_versionpolicy>${bnd.version.policy}</_versionpolicy>
-            <Bundle-DocURL>http://johnzon.apache.org/</Bundle-DocURL>
-          </instructions>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>biz.aQute.bnd</groupId>
-            <artifactId>biz.aQute.bndlib</artifactId>
-            <version>${bnd.version}</version>
-          </dependency>
-        </dependencies>
       </plugin>
 
       <plugin>

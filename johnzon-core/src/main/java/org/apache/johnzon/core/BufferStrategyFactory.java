@@ -19,14 +19,20 @@ package org.apache.johnzon.core;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.StreamSupport;
 
 import org.apache.johnzon.core.util.ClassUtil;
 
+import aQute.bnd.annotation.Resolution;
+import aQute.bnd.annotation.spi.ServiceConsumer;
+
+@ServiceConsumer(value = BufferStrategy.class, resolution = Resolution.OPTIONAL)
 public class BufferStrategyFactory {
     private static final Map<String, BufferStrategy> DEFAULT_STRATEGIES;
     static {
-        DEFAULT_STRATEGIES = new HashMap<>();
+        DEFAULT_STRATEGIES = new HashMap<>(4);
 
         DEFAULT_STRATEGIES.put("BY_INSTANCE", CharBufferByInstanceProvider::new);
         DEFAULT_STRATEGIES.put("THREAD_LOCAL", CharBufferThreadLocalProvider::new);
@@ -53,8 +59,17 @@ public class BufferStrategyFactory {
      *
      * @throws IllegalArgumentException if the given strategyName does not resolve to a BufferStrategy.
      */
-    public static BufferStrategy valueOf(String strategyName) {
+    public static BufferStrategy valueOf(final String strategyName) {
         BufferStrategy bufferStrategy = DEFAULT_STRATEGIES.get(strategyName.toUpperCase(Locale.ENGLISH));
+        
+        if (bufferStrategy == null) {
+            // try to load the BufferStrategy via ServiceLoader
+            bufferStrategy = StreamSupport.stream(ServiceLoader.load(BufferStrategy.class).spliterator(), false)
+                     .filter(bS -> strategyName.equals(bS.getClass().getName()))
+                     .findFirst()
+                     .orElse(null);
+        }
+        
         if (bufferStrategy == null) {
             // try to load the BufferStrategy via reflection
             Class<?> bsClass = ClassUtil.loadClassOptional(strategyName, false);

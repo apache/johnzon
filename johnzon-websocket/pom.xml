@@ -141,6 +141,18 @@
           </configuration>
         </plugin>
       <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+        <configuration>
+          <bnd><![CDATA[
+            Export-Package: \
+              !org.apache.johnzon.websocket.internal,\
+              org.apache.johnzon.websocket.*
+
+          ]]></bnd>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.2.2</version>
@@ -176,5 +188,4 @@
       </plugin>
     </plugins>
   </build>
-  <packaging>bundle</packaging>
 </project>

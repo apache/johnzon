@@ -18,16 +18,20 @@
  */
 package org.apache.johnzon.jsonp.strict;
 
+import javax.json.JsonPointer;
+import javax.json.spi.JsonProvider;
+
 import org.apache.johnzon.core.JsonPointerImpl;
 import org.apache.johnzon.core.spi.JsonPointerFactory;
 
-import javax.json.JsonPointer;
-import javax.json.spi.JsonProvider;
+import aQute.bnd.annotation.spi.ServiceProvider;
 
 /**
  * This aims at replacing the {@link org.apache.johnzon.core.DefaultJsonPointerFactory} in order to force Johnzon
  * to comply with the specification and pass the TCK.
  */
+@ServiceProvider(value = JsonPointerFactory.class, attribute = { "service.vendor:String='org.apache.johnzon'",
+  "type:String='strict'" })
 public class StrictJsonPointerFactory implements JsonPointerFactory {
 
     @Override

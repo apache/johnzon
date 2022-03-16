@@ -27,7 +27,6 @@
 
   <artifactId>johnzon-osgi</artifactId>
   <name>Johnzon :: Support for OSGI Jaxrs Whiteboard</name>
-  <packaging>bundle</packaging>
 
   <dependencies>
     <dependency>
@@ -116,14 +115,14 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
         <configuration>
-          <instructions>
-            <Import-Package>
-                javax.enterprise.inject.spi.*;resolution:=optional,*
-            </Import-Package>
-          </instructions>
+           <bnd><![CDATA[
+              Import-Package: \
+                javax.enterprise.inject.spi.*;resolution:=optional,\
+                *
+            ]]></bnd>
         </configuration>
       </plugin>
     </plugins>

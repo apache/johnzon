@@ -48,6 +48,11 @@ public class BufferStrategyFactoryTest {
     public void testFqcnBufferStrategy() {
         verify(BufferStrategyFactory.valueOf(DummyBufferStrategy.class.getName()));
     }
+    
+    @Test
+    public void testFqcnBufferStrategyServiceLoader() {
+        verify(BufferStrategyFactory.valueOf(ServiceLoaderDummyBufferStrategy.class.getName()));
+    }
 
     @Test
     public void testJsonGeneratorStrategyFromClass() {
@@ -75,8 +80,8 @@ public class BufferStrategyFactoryTest {
         assertNotNull(bufferStrategy);
         assertTrue(bufferStrategy instanceof BufferStrategy);
     }
-
-    public static final class DummyBufferStrategy implements BufferStrategy {
+    
+    public static class DummyBufferStrategy implements BufferStrategy {
         private static AtomicInteger counter = new AtomicInteger(0);
         private BufferStrategy delegate = BufferStrategyFactory.valueOf("BY_INSTANCE");
 
@@ -86,4 +91,8 @@ public class BufferStrategyFactoryTest {
             return delegate.newCharProvider(size);
         }
     }
+    
+    public static final class ServiceLoaderDummyBufferStrategy extends DummyBufferStrategy{
+    }
+    
 }

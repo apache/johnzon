@@ -66,6 +66,10 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>biz.aQute.bnd</groupId>
+        <artifactId>bnd-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.2.2</version>
@@ -76,5 +80,4 @@
   <properties>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
-  <packaging>bundle</packaging>
 </project>
