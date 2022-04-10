@@ -470,59 +470,65 @@ public class Mappings {
         final Map<String, Getter> getters = fieldComparator == null ? newOrderedMap(Getter.class) : new TreeMap<>(fieldComparator);
         final Map<String, Setter> setters = fieldComparator == null ? newOrderedMap(Setter.class) : new TreeMap<>(fieldComparator);
 
-        final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
-        final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
+        try {
+            final Map<String, AccessMode.Reader> readers = accessMode.findReaders(clazz);
+            final Map<String, AccessMode.Writer> writers = accessMode.findWriters(clazz);
 
-        final Collection<String> virtualFields = new HashSet<String>();
-        {
-            final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
-            if (virtualObjects != null) {
-                for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
+            final Collection<String> virtualFields = new HashSet<String>();
+            {
+                final JohnzonVirtualObjects virtualObjects = clazz.getAnnotation(JohnzonVirtualObjects.class);
+                if (virtualObjects != null) {
+                    for (final JohnzonVirtualObject virtualObject : virtualObjects.value()) {
+                        handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
+                    }
+                }
+
+                final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
+                if (virtualObject != null) {
                     handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
                 }
             }
 
-            final JohnzonVirtualObject virtualObject = clazz.getAnnotation(JohnzonVirtualObject.class);
-            if (virtualObject != null) {
-                handleVirtualObject(virtualFields, virtualObject, getters, setters, readers, writers, copyDate, clazz);
+            for (final Map.Entry<String, AccessMode.Reader> reader : readers.entrySet()) {
+                final String key = reader.getKey();
+                if (virtualFields.contains(key)) {
+                    continue;
+                }
+                addGetterIfNeeded(getters, key, reader.getValue(), copyDate, resolvedTypes);
+            }
+
+            for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
+                final String key = writer.getKey();
+                if (virtualFields.contains(key)) {
+                    continue;
+                }
+                addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz, resolvedTypes);
+            }
+
+            final Method anyGetter = accessMode.findAnyGetter(clazz);
+            final Field anyField = accessMode.findAnyField(clazz);
+            final ClassMapping mapping = new ClassMapping(
+                    clazz, accessMode.findFactory(clazz), getters, setters,
+                    accessMode.findAdapter(clazz),
+                    accessMode.findReader(clazz),
+                    accessMode.findWriter(clazz),
+                    anyGetter != null ? new Getter(
+                            new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
+                            false,false, false, false, true, null, null, -1, null) :
+                            (anyField != null ? new Getter(new FieldAccessMode.FieldReader(anyField, anyField.getGenericType()),
+                            false,false, false, false, true, null, null, -1, null) : null),
+                    accessMode.findAnySetter(clazz),
+                    anyField,
+                    Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
+
+            accessMode.afterParsed(clazz);
+
+            return mapping;
+        } finally {
+            if (Cleanable.class.isInstance(accessMode)) {
+                ((Cleanable<Class<?>>) accessMode).clean(clazz);
             }
         }
-
-        for (final Map.Entry<String, AccessMode.Reader> reader : readers.entrySet()) {
-            final String key = reader.getKey();
-            if (virtualFields.contains(key)) {
-                continue;
-            }
-            addGetterIfNeeded(getters, key, reader.getValue(), copyDate, resolvedTypes);
-        }
-
-        for (final Map.Entry<String, AccessMode.Writer> writer : writers.entrySet()) {
-            final String key = writer.getKey();
-            if (virtualFields.contains(key)) {
-                continue;
-            }
-            addSetterIfNeeded(setters, key, writer.getValue(), copyDate, clazz, resolvedTypes);
-        }
-
-        final Method anyGetter = accessMode.findAnyGetter(clazz);
-        final Field anyField = accessMode.findAnyField(clazz);
-        final ClassMapping mapping = new ClassMapping(
-                clazz, accessMode.findFactory(clazz), getters, setters,
-                accessMode.findAdapter(clazz),
-                accessMode.findReader(clazz),
-                accessMode.findWriter(clazz),
-                anyGetter != null ? new Getter(
-                        new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                        false,false, false, false, true, null, null, -1, null) :
-                        (anyField != null ? new Getter(new FieldAccessMode.FieldReader(anyField, anyField.getGenericType()),
-                        false,false, false, false, true, null, null, -1, null) : null),
-                accessMode.findAnySetter(clazz),
-                anyField,
-                Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
-
-        accessMode.afterParsed(clazz);
-
-        return mapping;
     }
 
     protected Class<?> findModelClass(final Class<?> inClazz) {

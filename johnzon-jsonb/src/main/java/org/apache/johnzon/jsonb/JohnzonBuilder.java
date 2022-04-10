@@ -221,7 +221,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                         factory, jsonp, builderFactorySupplier, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
                                 .map(this::toAccessMode)
-                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false)),
+                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, false, true)),
                         // this changes in v3 of the spec so let's use this behavior which makes everyone happy by default
                         config.getProperty("johnzon.failOnMissingCreatorValues")
                                 .map(this::toBool)

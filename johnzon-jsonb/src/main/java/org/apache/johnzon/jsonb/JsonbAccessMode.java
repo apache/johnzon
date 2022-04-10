@@ -33,6 +33,7 @@ import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
 import org.apache.johnzon.mapper.Adapter;
+import org.apache.johnzon.mapper.Cleanable;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonConverter;
@@ -127,7 +128,7 @@ import static java.util.stream.Collectors.toSet;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 import static org.apache.johnzon.mapper.reflection.Records.isRecord;
 
-public class JsonbAccessMode implements AccessMode, Closeable {
+public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?>> {
     private final PropertyNamingStrategy naming;
     private final String order;
     private final PropertyVisibilityStrategy visibility;
@@ -542,7 +543,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                     return initialReader.isNillable(globalConfig);
                 }
             } : initialReader;
-            if (isTransient(initialReader, visibility)) {
+            if (isTransient(initialReader, visibility, clazz, true)) {
                 validateAnnotationsOnTransientField(initialReader);
                 continue;
             }
@@ -670,7 +671,7 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         final Map<String, Writer> result = keyComparator == null ? new HashMap<>() : new TreeMap<>(keyComparator);
         for (final Map.Entry<String, Writer> entry : writers.entrySet()) {
             Writer initialWriter = entry.getValue();
-            if (isTransient(initialWriter, visibility)) {
+            if (isTransient(initialWriter, visibility, clazz, false)) {
                 validateAnnotationsOnTransientField(initialWriter);
                 continue;
             }
@@ -860,17 +861,17 @@ public class JsonbAccessMode implements AccessMode, Closeable {
                 isOptional(GenericArrayType.class.cast(value.getType()).getGenericComponentType());
     }
 
-    private boolean isTransient(final DecoratedType dt, final PropertyVisibilityStrategy visibility) {
+    private boolean isTransient(final DecoratedType dt, final PropertyVisibilityStrategy visibility, final Class<?> root, final boolean read) {
         if (!FieldAndMethodAccessMode.CompositeDecoratedType.class.isInstance(dt)) {
-            return isTransient(dt) || shouldSkip(visibility, dt);
+            return isTransient(dt) || shouldSkip(visibility, dt, root, read);
         }
         final FieldAndMethodAccessMode.CompositeDecoratedType cdt = FieldAndMethodAccessMode.CompositeDecoratedType.class.cast(dt);
         return isTransient(cdt.getType1()) || isTransient(cdt.getType2()) ||
-                (shouldSkip(visibility, cdt.getType1()) && shouldSkip(visibility, cdt.getType2()));
+                (shouldSkip(visibility, cdt.getType1(), root, read) && shouldSkip(visibility, cdt.getType2(), root, read));
     }
 
-    private boolean shouldSkip(final PropertyVisibilityStrategy visibility, final DecoratedType t) {
-        return isNotVisible(visibility, t);
+    private boolean shouldSkip(final PropertyVisibilityStrategy visibility, final DecoratedType t, final Class<?> root, final boolean read) {
+        return isNotVisible(visibility, t, root, read);
     }
 
     private boolean isTransient(final DecoratedType t) {
@@ -885,11 +886,22 @@ public class JsonbAccessMode implements AccessMode, Closeable {
         return false;
     }
 
-    private boolean isNotVisible(PropertyVisibilityStrategy visibility, DecoratedType t) {
-        return !(FieldAccessMode.FieldDecoratedType.class.isInstance(t) ?
-                visibility.isVisible(FieldAccessMode.FieldDecoratedType.class.cast(t).getField())
-                : (MethodAccessMode.MethodDecoratedType.class.isInstance(t) &&
-                visibility.isVisible(MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod())));
+    private boolean isNotVisible(final PropertyVisibilityStrategy visibility,
+                                 final DecoratedType t,
+                                 final Class<?> root,
+                                 final boolean read) {
+        if (FieldAccessMode.FieldDecoratedType.class.isInstance(t)) {
+            final Field field = FieldAccessMode.FieldDecoratedType.class.cast(t).getField();
+            if (DefaultPropertyVisibilityStrategy.class.isInstance(visibility)) {
+                return !DefaultPropertyVisibilityStrategy.class.cast(visibility).isVisible(field, root, read);
+            }
+            return !visibility.isVisible(field);
+        }
+        if (MethodAccessMode.MethodDecoratedType.class.isInstance(t)) {
+            final Method method = MethodAccessMode.MethodDecoratedType.class.cast(t).getMethod();
+            return !visibility.isVisible(method);
+        }
+        return false;
     }
 
     private Comparator<String> orderComparator(final Class<?> clazz) {
@@ -965,6 +977,13 @@ public class JsonbAccessMode implements AccessMode, Closeable {
             return annotation;
         }
         return Meta.findMeta(param.getAnnotations(), api);
+    }
+
+    @Override
+    public void clean(final Class<?> value) {
+        if (Cleanable.class.isInstance(visibility)) {
+            Cleanable.class.cast(visibility).clean(value);
+        }
     }
 
     private class ReaderConverters {

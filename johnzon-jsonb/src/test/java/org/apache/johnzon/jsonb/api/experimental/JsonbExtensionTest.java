@@ -218,10 +218,6 @@ public class JsonbExtensionTest {
             return value;
         }
 
-        public void setValue(Object value) {
-            this.value = value;
-        }
-
         @Override
         public boolean equals(final Object obj) { // for test
             return Wrapper.class.isInstance(obj) &&

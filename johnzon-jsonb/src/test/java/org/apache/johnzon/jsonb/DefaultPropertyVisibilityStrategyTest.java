@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Field;
@@ -26,6 +27,7 @@ import java.lang.reflect.Method;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.annotation.JsonbProperty;
+import javax.json.bind.annotation.JsonbTransient;
 import javax.json.bind.annotation.JsonbVisibility;
 
 import org.junit.Test;
@@ -47,6 +49,26 @@ public class DefaultPropertyVisibilityStrategyTest {
         }
     }
 
+    @Test
+    public void hiddenGetter() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            assertFalse(jsonb.fromJson("{\"foo\":true}", HideAllModel.class).isFoo());
+            assertFalse(jsonb.fromJson("{\"foo\":true}", HideAllDefaultModel.class).isFoo());
+        }
+    }
+
+    public static class HideAll extends DefaultPropertyVisibilityStrategy {
+        @Override
+        public boolean isVisible(final Field field) {
+            return false;
+        }
+
+        @Override
+        public boolean isVisible(final Method method) {
+            return false;
+        }
+    }
+
     public static class MyVisibility extends DefaultPropertyVisibilityStrategy {
         @Override
         public boolean isVisible(final Field field) {
@@ -64,7 +86,7 @@ public class DefaultPropertyVisibilityStrategyTest {
         @JsonbProperty
         private boolean foo;
 
-        public final boolean isFoo() {
+        public boolean isFoo() {
             return foo;
         }
     }
@@ -73,7 +95,26 @@ public class DefaultPropertyVisibilityStrategyTest {
         @JsonbProperty
         private boolean foo;
 
-        public final boolean isFoo() {
+        public boolean isFoo() {
+            return foo;
+        }
+    }
+
+    @JsonbVisibility(HideAll.class)
+    public static final class HideAllModel {
+        protected boolean foo;
+
+        @JsonbTransient
+        public boolean isFoo() {
+            return foo;
+        }
+    }
+
+    public static final class HideAllDefaultModel {
+        protected boolean foo;
+
+        @JsonbTransient
+        public boolean isFoo() {
             return foo;
         }
     }

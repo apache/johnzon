@@ -29,6 +29,7 @@ import java.beans.Introspector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -38,12 +39,31 @@ import java.util.Map;
 public class FieldAndMethodAccessMode extends BaseAccessMode {
     private final FieldAccessMode fields;
     private final MethodAccessMode methods;
+    private final boolean alwaysPreferMethodVisibility;
+    private final boolean ignoreVisibilityFilter;
 
     public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor,
-                                    final boolean useGettersAsWriter) {
+                                    final boolean useGettersAsWriter, final boolean alwaysPreferMethodVisibility,
+                                    final boolean ignoreVisibilityFilter) {
         super(useConstructor, acceptHiddenConstructor);
         this.fields = new FieldAccessMode(useConstructor, acceptHiddenConstructor);
-        this.methods = new MethodAccessMode(useConstructor, acceptHiddenConstructor, useGettersAsWriter);
+        this.methods = new MethodAccessMode(
+                useConstructor, acceptHiddenConstructor, useGettersAsWriter);
+        this.alwaysPreferMethodVisibility = alwaysPreferMethodVisibility;
+        this.ignoreVisibilityFilter = ignoreVisibilityFilter;
+    }
+
+    @Deprecated // backward compat
+    public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor,
+                                    final boolean useGettersAsWriter, final boolean alwaysPreferMethodVisibility) {
+        this(useConstructor, acceptHiddenConstructor, useGettersAsWriter, alwaysPreferMethodVisibility, false);
+    }
+
+    // backward compatibility, don't delete since it can be used from user code in jsonb delegate access mode property
+    @Deprecated
+    public FieldAndMethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor,
+                                    final boolean useGettersAsWriter) {
+        this(useConstructor, acceptHiddenConstructor, useGettersAsWriter, true, false);
     }
 
 
@@ -67,7 +87,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
                 m = getMethod("is" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz);
             }
             boolean skip = false;
-            if (m != null) {
+            if (m != null && (ignoreVisibilityFilter || Modifier.isPublic(m.getModifiers()))) {
                 for (final Reader w : methodReaders.values()) {
                     if (MethodAccessMode.MethodDecoratedType.class.cast(w).getMethod().equals(m)) {
                         if (w.getAnnotation(JohnzonProperty.class) != null || w.getAnnotation(JohnzonIgnore.class) != null) {
@@ -76,6 +96,8 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
                         break;
                     }
                 }
+            } else if (!ignoreVisibilityFilter && m != null) {
+                continue;
             }
             if (skip) {
                 continue;
@@ -123,8 +145,18 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
     private Method getMethod(final String methodName, final Class<?> type, final Class<?>... args) {
         try {
+            if (alwaysPreferMethodVisibility) {
+                return type.getDeclaredMethod(methodName, args);
+            }
             return type.getMethod(methodName, args);
         } catch (final NoSuchMethodException e) {
+            if (alwaysPreferMethodVisibility) {
+                try {
+                    return type.getMethod(methodName, args);
+                } catch (final NoSuchMethodException e2) {
+                    // no-op
+                }
+            }
             return null;
         }
     }
@@ -153,7 +185,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
             final String key = entry.getKey();
             final Method m = getMethod("set" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz, toType(entry.getValue().getType()));
             boolean skip = false;
-            if (m != null) {
+            if (m != null && (ignoreVisibilityFilter || Modifier.isPublic(m.getModifiers()))) {
                 for (final Writer w : metodWriters.values()) {
                     if (MethodAccessMode.MethodDecoratedType.class.cast(w).getMethod().equals(m)) {
                         if (w.getAnnotation(JohnzonProperty.class) != null) {
@@ -162,6 +194,8 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
                         break;
                     }
                 }
+            } else if (!ignoreVisibilityFilter && m != null) {
+                continue;
             }
             if (skip) {
                 continue;

@@ -18,64 +18,96 @@
  */
 package org.apache.johnzon.jsonb;
 
-import static java.util.Optional.ofNullable;
-
-import java.beans.Introspector;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import org.apache.johnzon.mapper.Cleanable;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbVisibility;
 import javax.json.bind.config.PropertyVisibilityStrategy;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
-class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.PropertyVisibilityStrategy {
+import static java.util.Optional.ofNullable;
+
+class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.PropertyVisibilityStrategy, Cleanable<Class<?>> {
     private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Class<?>, List<String>> getters = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, Map<String, Boolean>> getters = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class<?>, Map<String, Boolean>> setters = new ConcurrentHashMap<>();
 
     private volatile boolean skipGetpackage;
 
     @Override
     public boolean isVisible(final Field field) {
+        return isVisible(field, field.getDeclaringClass(), true);
+    }
+
+    public boolean isVisible(final Field field, final Class<?> root, final boolean useGetter) {
         if (field.getAnnotation(JsonbProperty.class) != null) {
             return true;
         }
-        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(
-                field.getDeclaringClass(), this::visibilityStrategy);
-        return strategy == this ? isFieldVisible(field) : strategy.isVisible(field);
+        final PropertyVisibilityStrategy strategy = strategies.computeIfAbsent(root, this::visibilityStrategy);
+        return strategy == this ? isFieldVisible(field, root, useGetter) : strategy.isVisible(field);
     }
 
-    private boolean isFieldVisible(Field field) {
+    private boolean isFieldVisible(final Field field, final Class<?> root, final boolean useGetter) {
         if (!Modifier.isPublic(field.getModifiers())) {
             return false;
         }
-        // also check if there is any setter, in which case the field should be treated as non-visible as well.
-        return !getters.computeIfAbsent(field.getDeclaringClass(), this::calculateGetters).contains(field.getName());
+        // 3.7.1. Scope and Field access strategy
+        // note: we should bind the class since a field of a parent class can have a getter in a child
+        if (!useGetter) {
+            return setters.computeIfAbsent(root, this::calculateSetters).getOrDefault(field.getName(), true);
+        }
+        return getters.computeIfAbsent(root, this::calculateGetters).getOrDefault(field.getName(), true);
     }
 
     /**
      * Calculate all the getters of the given class.
      */
-    private List<String> calculateGetters(Class<?> clazz) {
-        List<String> getters = new ArrayList<>();
-        for (Method m : clazz.getDeclaredMethods()) {
-            if (m.getParameterCount() == 0) {
-                if (m.getName().startsWith("get")) {
-                    getters.add(Introspector.decapitalize(m.getName().substring(3)));
-                } else if (m.getName().startsWith("is")) {
-                    getters.add(Introspector.decapitalize(m.getName().substring(2)));
-                }
+    private Map<String, Boolean> calculateGetters(final Class<?> clazz) {
+        final Map<String, Boolean> getters = new HashMap<>();
+        for (final Method m : clazz.getDeclaredMethods()) {
+            if (m.getParameterCount() > 0) {
+                continue;
+            }
+            if (m.getName().startsWith("get") && m.getName().length() > 3) {
+                getters.put(
+                        Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4),
+                        Modifier.isPublic(m.getModifiers()));
+            } else if (m.getName().startsWith("is") && m.getName().length() > 2) {
+                getters.put(
+                        Character.toLowerCase(m.getName().charAt(2)) + m.getName().substring(3),
+                        Modifier.isPublic(m.getModifiers()));
+            }
+        }
+        final Class<?> superclass = clazz.getSuperclass();
+        if (superclass != Object.class && superclass != null && !"java.lang.Record".equals(superclass.getName())) {
+            calculateGetters(superclass).forEach(getters::putIfAbsent); // don't override child getter if exists
+        }
+        return getters.isEmpty() ? Collections.emptyMap() : getters;
+    }
+
+    private Map<String, Boolean> calculateSetters(final Class<?> clazz) {
+        final Map<String, Boolean> result = new HashMap<>();
+        for (final Method m : clazz.getDeclaredMethods()) {
+            if (m.getParameterCount() != 1) {
+                continue;
+            }
+            if (m.getName().startsWith("set") && m.getName().length() > 3) {
+                result.put(
+                        Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4),
+                        Modifier.isPublic(m.getModifiers()));
             }
         }
         if (clazz.getSuperclass() != Object.class) {
-            getters.addAll(calculateGetters(clazz.getSuperclass()));
+            calculateSetters(clazz.getSuperclass()).forEach(result::putIfAbsent);
         }
-        return getters.isEmpty() ? Collections.emptyList() : getters;
+        return result.isEmpty() ? Collections.emptyMap() : result;
     }
 
     @Override
@@ -120,13 +152,21 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
             }
             if (p == null) {
                 try {
-                    p = ofNullable(type.getClassLoader()).orElseGet(ClassLoader::getSystemClassLoader)
-                                                         .loadClass(parentPack + ".package-info").getPackage();
+                    p = ofNullable(type.getClassLoader())
+                            .orElseGet(ClassLoader::getSystemClassLoader)
+                             .loadClass(parentPack + ".package-info").getPackage();
                 } catch (final ClassNotFoundException e) {
                     // no-op
                 }
             }
         }
         return this;
+    }
+
+    @Override
+    public void clean(final Class<?> clazz) {
+        getters.remove(clazz);
+        setters.remove(clazz);
+        strategies.remove(clazz);
     }
 }
