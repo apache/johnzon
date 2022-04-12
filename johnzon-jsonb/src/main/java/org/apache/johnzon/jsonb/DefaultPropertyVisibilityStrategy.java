@@ -27,9 +27,6 @@ import javax.json.bind.config.PropertyVisibilityStrategy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -79,49 +76,7 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
         }
     }
 
-    /**
-     * Calculate all the getters of the given class.
-     */
-    private Map<String, Boolean> calculateGetters(final Class<?> clazz) {
-        final Map<String, Boolean> getters = new HashMap<>();
-        for (final Method m : clazz.getDeclaredMethods()) {
-            if (m.getParameterCount() > 0) {
-                continue;
-            }
-            if (m.getName().startsWith("get") && m.getName().length() > 3) {
-                getters.put(
-                        Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4),
-                        Modifier.isPublic(m.getModifiers()));
-            } else if (m.getName().startsWith("is") && m.getName().length() > 2) {
-                getters.put(
-                        Character.toLowerCase(m.getName().charAt(2)) + m.getName().substring(3),
-                        Modifier.isPublic(m.getModifiers()));
-            }
-        }
-        final Class<?> superclass = clazz.getSuperclass();
-        if (superclass != Object.class && superclass != null && !"java.lang.Record".equals(superclass.getName())) {
-            calculateGetters(superclass).forEach(getters::putIfAbsent); // don't override child getter if exists
-        }
-        return getters.isEmpty() ? Collections.emptyMap() : getters;
-    }
 
-    private Map<String, Boolean> calculateSetters(final Class<?> clazz) {
-        final Map<String, Boolean> result = new HashMap<>();
-        for (final Method m : clazz.getDeclaredMethods()) {
-            if (m.getParameterCount() != 1) {
-                continue;
-            }
-            if (m.getName().startsWith("set") && m.getName().length() > 3) {
-                result.put(
-                        Character.toLowerCase(m.getName().charAt(3)) + m.getName().substring(4),
-                        Modifier.isPublic(m.getModifiers()));
-            }
-        }
-        if (clazz.getSuperclass() != Object.class) {
-            calculateSetters(clazz.getSuperclass()).forEach(result::putIfAbsent);
-        }
-        return result.isEmpty() ? Collections.emptyMap() : result;
-    }
 
     @Override
     public boolean isVisible(final Method method) {
