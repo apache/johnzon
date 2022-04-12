@@ -58,4 +58,36 @@ public final class ClassUtil {
         }
     }
 
+    /**
+     * Calculate the name of a getter based on the name of it's field and the type
+     *
+     * @param fieldName
+     * @param type      of the field
+     * @return "get" or "is" method name for the field
+     */
+    public static String getterName(String fieldName, Class<?> type) {
+        StringBuilder sb = new StringBuilder(50);
+        sb.append(type == Boolean.class || type == boolean.class ? "is" : "get");
+        sb.append(Character.toUpperCase(fieldName.charAt(0))).append(fieldName.substring(1));
+        return sb.toString();
+    }
+
+    /**
+     * Calculate the name of a setter based on the name of it's field
+     *
+     * @param fieldName
+     * @return "set" method name for the field
+     */
+    public static String setterName(String fieldName) {
+        StringBuilder sb = new StringBuilder(50);
+        sb.append("set");
+        sb.append(Character.toUpperCase(fieldName.charAt(0))).append(fieldName.substring(1));
+        return sb.toString();
+    }
+
+    public static String capitalizeName(String fieldName) {
+        StringBuilder sb = new StringBuilder(50);
+        sb.append(Character.toUpperCase(fieldName.charAt(0))).append(fieldName.substring(1));
+        return sb.toString();
+    }
 }

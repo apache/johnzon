@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.core.util.ClassUtil;
 import org.apache.johnzon.mapper.Cleanable;
 
 import javax.json.bind.annotation.JsonbProperty;
@@ -36,8 +37,6 @@ import static java.util.Optional.ofNullable;
 
 class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.PropertyVisibilityStrategy, Cleanable<Class<?>> {
     private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Class<?>, Map<String, Boolean>> getters = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Class<?>, Map<String, Boolean>> setters = new ConcurrentHashMap<>();
 
     private volatile boolean skipGetpackage;
 
@@ -61,9 +60,23 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
         // 3.7.1. Scope and Field access strategy
         // note: we should bind the class since a field of a parent class can have a getter in a child
         if (!useGetter) {
-            return setters.computeIfAbsent(root, this::calculateSetters).getOrDefault(field.getName(), true);
+            return !hasMethod(root, ClassUtil.setterName(field.getName()));
         }
-        return getters.computeIfAbsent(root, this::calculateGetters).getOrDefault(field.getName(), true);
+        final String capitalizedName = ClassUtil.capitalizeName(field.getName());
+        return !hasMethod(root, "get" + capitalizedName) ||  hasMethod(root, "is" + capitalizedName);
+    }
+
+    private boolean hasMethod(Class<?> clazz, String methodName, Class<?>... paramTypes) {
+        try {
+            clazz.getDeclaredMethod(methodName, paramTypes);
+            return true;
+        } catch (NoSuchMethodException e) {
+            final Class<?> superclass = clazz.getSuperclass();
+            if (superclass == Object.class) {
+                return false;
+            }
+            return hasMethod(superclass, methodName, paramTypes);
+        }
     }
 
     /**
@@ -165,8 +178,6 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
 
     @Override
     public void clean(final Class<?> clazz) {
-        getters.remove(clazz);
-        setters.remove(clazz);
         strategies.remove(clazz);
     }
 }
