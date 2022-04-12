@@ -14,25 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.core;
+package org.apache.johnzon.mapper.internal;
 
-import org.apache.johnzon.core.util.ClassUtil;
+import org.apache.johnzon.mapper.util.BeanUtil;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class ClassUtilTest {
+public class BeanUtilTest {
 
     @Test
     public void testGetterNames() {
-        assertEquals("getMyName", ClassUtil.getterName("myName", Integer.class));
-        assertEquals("isEnabled", ClassUtil.getterName("enabled", Boolean.class));
-        assertEquals("isEnabled", ClassUtil.getterName("enabled", boolean.class));
+        assertEquals("getMyName", BeanUtil.getterName("myName", Integer.class));
+        assertEquals("isEnabled", BeanUtil.getterName("enabled", Boolean.class));
+        assertEquals("isEnabled", BeanUtil.getterName("enabled", boolean.class));
     }
 
     @Test
     public void testSetterNames() {
-        assertEquals("setMyName", ClassUtil.setterName("myName"));
-        assertEquals("setEnabled", ClassUtil.setterName("enabled"));
+        assertEquals("setMyName", BeanUtil.setterName("myName"));
+        assertEquals("setEnabled", BeanUtil.setterName("enabled"));
+    }
+
+    @Test
+    public void testCapitalize() {
+        assertEquals("Enabled", BeanUtil.capitalize("enabled"));
+        assertEquals("URL", BeanUtil.capitalize("URL"));
+        assertEquals("Url", BeanUtil.capitalize("url"));
+    }
+
+    @Test
+    public void testDecapitalize() {
+        assertEquals("enabled", BeanUtil.decapitalize("Enabled"));
+        assertEquals("URL", BeanUtil.decapitalize("URL"));
     }
 }

@@ -18,8 +18,8 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.core.util.ClassUtil;
 import org.apache.johnzon.mapper.Cleanable;
+import org.apache.johnzon.mapper.util.BeanUtil;
 
 import javax.json.bind.annotation.JsonbProperty;
 import javax.json.bind.annotation.JsonbVisibility;
@@ -60,9 +60,9 @@ class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.Proper
         // 3.7.1. Scope and Field access strategy
         // note: we should bind the class since a field of a parent class can have a getter in a child
         if (!useGetter) {
-            return !hasMethod(root, ClassUtil.setterName(field.getName()));
+            return !hasMethod(root, BeanUtil.setterName(field.getName()));
         }
-        final String capitalizedName = ClassUtil.capitalizeName(field.getName());
+        final String capitalizedName = BeanUtil.capitalize(field.getName());
         return !hasMethod(root, "get" + capitalizedName) ||  hasMethod(root, "is" + capitalizedName);
     }
 

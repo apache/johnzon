@@ -24,8 +24,8 @@ import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonIgnore;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.util.BeanUtil;
 
-import java.beans.Introspector;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -109,7 +109,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
             final Method mr = MethodAccessMode.MethodDecoratedType.class.cast(entry.getValue()).getMethod();
             final String fieldName = record ?
                     mr.getName() :
-                    Introspector.decapitalize(mr.getName().startsWith("is") ?
+                    BeanUtil.decapitalize(mr.getName().startsWith("is") ?
                             mr.getName().substring(2) : mr.getName().substring(3));
             final Field f = getField(fieldName, clazz);
             boolean skip = false;
@@ -205,7 +205,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
 
         for (final Map.Entry<String, Writer> entry : metodWriters.entrySet()) {
             final Method mr = MethodAccessMode.MethodDecoratedType.class.cast(entry.getValue()).getMethod();
-            final String fieldName = Introspector.decapitalize(mr.getName().startsWith("is") ? mr.getName().substring(2) : mr.getName().substring(3));
+            final String fieldName = BeanUtil.decapitalize(mr.getName().startsWith("is") ? mr.getName().substring(2) : mr.getName().substring(3));
             final Field f = getField(fieldName, clazz);
             boolean skip = false;
             if (f != null) {
