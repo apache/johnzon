@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.core.Snippet;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
@@ -34,7 +33,6 @@ import javax.json.JsonReader;
 import javax.json.JsonString;
 import javax.json.JsonStructure;
 import javax.json.JsonValue;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.InvocationTargetException;
@@ -108,7 +106,6 @@ public class MappingParserImpl implements MappingParser {
      * value: already deserialised Object
      */
     private Map<String, Object> jsonPointers;
-
 
     public MappingParserImpl(MapperConfig config, Mappings mappings, JsonReader jsonReader, Map<String, Object> jsonPointers) {
         this.config = config;
@@ -347,7 +344,7 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (classMapping == null) {
-            throw new MapperException("Can't map JSON Object to " + type + ": " + new Snippet(50).of(object));
+            throw new MapperException("Can't map JSON Object to " + type + ": " + config.getSnippet().of(object));
         }
 
         if (applyObjectConverter && classMapping.reader != null && (skippedConverters == null || !skippedConverters.contains(type))) {

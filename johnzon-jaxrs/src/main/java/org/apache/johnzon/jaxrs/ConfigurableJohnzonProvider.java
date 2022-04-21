@@ -108,6 +108,10 @@ public class ConfigurableJohnzonProvider<T> implements MessageBodyWriter<T>, Mes
         instance().writeTo(t, rawType, genericType, annotations, mediaType, httpHeaders, entityStream);
     }
 
+    public void setSnippetMaxLength(final int value) {
+        builder.setSnippetMaxLength(value);
+    }
+
     public void setUseJsRange(final boolean value) {
         builder.setUseJsRange(value);
     }
