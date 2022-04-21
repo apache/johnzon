@@ -347,7 +347,7 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (classMapping == null) {
-            throw new MapperException("Can't map JSON Object to " + type + ": " + Snippet.of(object));
+            throw new MapperException("Can't map JSON Object to " + type + ": " + new Snippet(50).of(object));
         }
 
         if (applyObjectConverter && classMapping.reader != null && (skippedConverters == null || !skippedConverters.contains(type))) {
