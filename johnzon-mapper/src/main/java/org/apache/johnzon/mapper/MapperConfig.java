@@ -18,11 +18,13 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.core.Snippet;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.map.LazyConverterMap;
 
+import javax.json.Json;
 import javax.json.JsonValue;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
@@ -36,6 +38,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -94,6 +97,42 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     private final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory;
 
+    private final Snippet snippet;
+
+    //CHECKSTYLE:OFF
+    @Deprecated
+    public MapperConfig(final LazyConverterMap adapters,
+                        final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriters,
+                        final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaders,
+                        final int version, final boolean close,
+                        final boolean skipNull, final boolean skipEmptyArray,
+                        final boolean treatByteArrayAsBase64, final boolean treatByteArrayAsBase64URL,
+                        final boolean readAttributeBeforeWrite,
+                        final AccessMode accessMode, final Charset encoding,
+                        final Comparator<String> attributeOrder,
+                        final boolean failOnUnknown,
+                        final SerializeValueFilter serializeValueFilter,
+                        final boolean useBigDecimalForFloats,
+                        final Boolean deduplicateObjects,
+                        final Map<Class<?>, Class<?>> interfaceImplementationMapping,
+                        final boolean useJsRange,
+                        final boolean useBigDecimalForObjectNumbers,
+                        final boolean supportEnumMapDeserialization,
+                        final Function<String, Class<?>> typeLoader,
+                        final Function<Class<?>, String> discriminatorMapper,
+                        final String discriminator,
+                        final Predicate<Class<?>> deserializationPredicate,
+                        final Predicate<Class<?>> serializationPredicate,
+                        final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory) {
+        //CHECKSTYLE:ON
+        this(adapters, objectConverterWriters, objectConverterReaders, version, close, skipNull, skipEmptyArray,
+                treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite, accessMode, encoding,
+                attributeOrder, failOnUnknown, serializeValueFilter, useBigDecimalForFloats, deduplicateObjects, interfaceImplementationMapping,
+                useJsRange, useBigDecimalForObjectNumbers, supportEnumMapDeserialization, typeLoader,
+                discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
+                new Snippet(50, Json.createGeneratorFactory(emptyMap())));
+    }
+
     //disable checkstyle for 10+ parameters
     //CHECKSTYLE:OFF
     public MapperConfig(final LazyConverterMap adapters,
@@ -118,7 +157,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final String discriminator,
                         final Predicate<Class<?>> deserializationPredicate,
                         final Predicate<Class<?>> serializationPredicate,
-                        final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory) {
+                        final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory,
+                        final Snippet snippet) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -156,6 +196,11 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.objectConverterReaderCache = new HashMap<>(objectConverterReaders.size());
         this.useBigDecimalForFloats = useBigDecimalForFloats;
         this.deduplicateObjects = deduplicateObjects;
+        this.snippet = snippet;
+    }
+
+    public Snippet getSnippet() {
+        return snippet;
     }
 
     public Function<Class<?>, CustomEnumConverter<?>> getEnumConverterFactory() {
