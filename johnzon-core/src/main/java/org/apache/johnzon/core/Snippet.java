@@ -21,146 +21,168 @@ import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.Map;
 
-public class Snippet implements Flushable, Closeable {
+public class Snippet {
 
-    private final JsonGenerator generator;
-    private final SnippetOutputStream snippet;
+    private final int max;
+    private final JsonGeneratorFactory generatorFactory;
 
-    private Snippet(final int max) {
-        this.snippet = new SnippetOutputStream(max);
-        this.generator = Json.createGenerator(snippet);
+    public Snippet(final int max) {
+        this(max, Json.createGeneratorFactory(Collections.EMPTY_MAP));
     }
 
-    private void write(final JsonValue value) {
-        if (snippet.isComplete()) {
-            return;
-        }
+    public Snippet(final int max, final JsonGeneratorFactory generatorFactory) {
+        this.max = max;
+        this.generatorFactory = generatorFactory;
+    }
 
+    public String of(final JsonValue value) {
         switch (value.getValueType()) {
-            case ARRAY: {
-                write(value.asJsonArray());
-                break;
-            }
-            case OBJECT: {
-                write(value.asJsonObject());
-                break;
-            }
+            case TRUE: return "true";
+            case FALSE: return "false";
+            case NULL: return "null";
             default: {
-                generator.write(value);
-            }
-        }
-    }
-
-    private void write(final JsonArray array) {
-        if (snippet.isComplete()) {
-            return;
-        }
-
-        if (array.isEmpty()) {
-            generator.write(array);
-            return;
-        }
-
-        generator.writeStartArray();
-        for (final JsonValue jsonValue : array) {
-            if (snippet.isComplete()) {
-                break;
-            }
-            write(jsonValue);
-        }
-        generator.writeEnd();
-    }
-
-    private void write(final JsonObject object) {
-        if (snippet.isComplete()) {
-            return;
-        }
-
-        if (object.isEmpty()) {
-            generator.write(object);
-            return;
-        }
-
-        generator.writeStartObject();
-        for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
-            if (snippet.isComplete()) {
-                break;
-            }
-            write(entry.getKey(), entry.getValue());
-        }
-        generator.writeEnd();
-    }
-
-    private void write(final String name, final JsonValue value) {
-        if (snippet.isComplete()) {
-            return;
-        }
-
-        switch (value.getValueType()) {
-            case ARRAY:
-                generator.writeStartArray(name);
-                final JsonArray array = value.asJsonArray();
-                for (final JsonValue jsonValue : array) {
-                    write(jsonValue);
+                try (final Buffer buffer = new Buffer()) {
+                    buffer.write(value);
+                    return buffer.get();
                 }
-                generator.writeEnd();
-
-                break;
-            case OBJECT:
-                generator.writeStartObject(name);
-                final JsonObject object = value.asJsonObject();
-                for (final Map.Entry<String, JsonValue> keyval : object.entrySet()) {
-                    write(keyval.getKey(), keyval.getValue());
-                }
-                generator.writeEnd();
-
-                break;
-            default: generator.write(name, value);
+            }
         }
-    }
-
-    private String get() {
-        generator.close();
-        return snippet.get();
-    }
-
-    @Override
-    public void close() {
-        generator.close();
-    }
-
-    @Override
-    public void flush() {
-        generator.flush();
-    }
-
-    public static String of(final JsonValue object) {
-        return of(object, 50);
     }
 
     public static String of(final JsonValue value, final int max) {
-        try (final Snippet snippet = new Snippet(max)){
+        return new Snippet(max).of(value);
+    }
+
+    class Buffer implements Flushable, Closeable {
+        private final JsonGenerator generator;
+        private final SnippetOutputStream snippet;
+
+        private Buffer() {
+            this.snippet = new SnippetOutputStream(max);
+            this.generator = generatorFactory.createGenerator(snippet);
+        }
+
+        private void write(final JsonValue value) {
+            if (snippet.isComplete()) {
+                return;
+            }
+
             switch (value.getValueType()) {
-                case TRUE: return "true";
-                case FALSE: return "false";
-                case NULL: return "null";
+                case ARRAY: {
+                    write(value.asJsonArray());
+                    break;
+                }
+                case OBJECT: {
+                    write(value.asJsonObject());
+                    break;
+                }
                 default: {
-                    snippet.write(value);
-                    return snippet.get();
+                    generator.write(value);
                 }
             }
         }
+
+        private void write(final JsonArray array) {
+            if (snippet.isComplete()) {
+                return;
+            }
+
+            if (array.isEmpty()) {
+                generator.write(array);
+                return;
+            }
+
+            generator.writeStartArray();
+            for (final JsonValue jsonValue : array) {
+                if (snippet.isComplete()) {
+                    break;
+                }
+                write(jsonValue);
+            }
+            generator.writeEnd();
+        }
+
+        private void write(final JsonObject object) {
+            if (snippet.isComplete()) {
+                return;
+            }
+
+            if (object.isEmpty()) {
+                generator.write(object);
+                return;
+            }
+
+            generator.writeStartObject();
+            for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
+                if (snippet.isComplete()) {
+                    break;
+                }
+                write(entry.getKey(), entry.getValue());
+            }
+            generator.writeEnd();
+        }
+
+        private void write(final String name, final JsonValue value) {
+            if (snippet.isComplete()) {
+                return;
+            }
+
+            switch (value.getValueType()) {
+                case ARRAY:
+                    generator.writeStartArray(name);
+                    final JsonArray array = value.asJsonArray();
+                    for (final JsonValue jsonValue : array) {
+                        if (snippet.isComplete()) {
+                            break;
+                        }
+                        write(jsonValue);
+                    }
+                    generator.writeEnd();
+
+                    break;
+                case OBJECT:
+                    generator.writeStartObject(name);
+                    final JsonObject object = value.asJsonObject();
+                    for (final Map.Entry<String, JsonValue> keyval : object.entrySet()) {
+                        if (snippet.isComplete()) {
+                            break;
+                        }
+                        write(keyval.getKey(), keyval.getValue());
+                    }
+                    generator.writeEnd();
+
+                    break;
+                default: generator.write(name, value);
+            }
+        }
+
+        private String get() {
+            generator.close();
+            return snippet.get();
+        }
+
+        @Override
+        public void close() {
+            generator.close();
+        }
+
+        @Override
+        public void flush() {
+            generator.flush();
+        }
     }
 
-    private static class SnippetOutputStream extends OutputStream {
+    static class SnippetOutputStream extends OutputStream {
 
         private final ByteArrayOutputStream buffer;
         private OutputStream mode;
