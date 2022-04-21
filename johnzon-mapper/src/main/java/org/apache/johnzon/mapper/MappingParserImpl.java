@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.core.Snippet;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
@@ -346,7 +347,7 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (classMapping == null) {
-            throw new MapperException("Can't map " + type);
+            throw new MapperException("Can't map JSON Object to " + type + ": " + Snippet.of(object));
         }
 
         if (applyObjectConverter && classMapping.reader != null && (skippedConverters == null || !skippedConverters.contains(type))) {
