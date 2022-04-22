@@ -126,6 +126,10 @@ public class WildcardConfigurableJohnzonProvider<T> implements MessageBodyWriter
         }
     }
 
+    public void setSnippetMaxLength(final int value) {
+        builder.setSnippetMaxLength(value);
+    }
+
     public void setFailOnUnknownProperties(final boolean active) {
         builder.setFailOnUnknownProperties(active);
     }
