@@ -24,7 +24,6 @@ import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
-import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -63,13 +62,22 @@ public class Snippet {
         return new Snippet(max).of(value);
     }
 
-    class Buffer implements Flushable, Closeable {
+    class Buffer implements Closeable {
         private final JsonGenerator generator;
         private final SnippetOutputStream snippet;
+        private Runnable close;
 
         private Buffer() {
             this.snippet = new SnippetOutputStream(max);
             this.generator = generatorFactory.createGenerator(snippet);
+            this.close = () -> {
+                try {
+                    generator.close();
+                } finally {
+                    this.close = () -> {
+                    };
+                }
+            };
         }
 
         private void write(final JsonValue value) {
@@ -167,18 +175,14 @@ public class Snippet {
         }
 
         private String get() {
-            generator.close();
+            // If close is not called the string may be empty
+            close();
             return snippet.get();
         }
 
         @Override
         public void close() {
-            generator.close();
-        }
-
-        @Override
-        public void flush() {
-            generator.flush();
+            close.run();
         }
     }
 
