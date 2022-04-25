@@ -26,7 +26,7 @@
     <exclude-unlisted-classes>true</exclude-unlisted-classes>
     <properties>
       <property name="javax.persistence.jdbc.driver" value="org.h2.Driver" />
-      <property name="javax.persistence.jdbc.url" value="jdbc:h2:target/h2-3" />
+      <property name="javax.persistence.jdbc.url" value="jdbc:h2:mem:jpa;DB_CLOSE_DELAY=-1" />
       <property name="javax.persistence.jdbc.user" value="sa" />
       <property name="openjpa.RuntimeUnenhancedClasses" value="supported" />
       <property name="openjpa.jdbc.SynchronizeMappings" value="buildSchema(ForeignKeys=true)"/>
