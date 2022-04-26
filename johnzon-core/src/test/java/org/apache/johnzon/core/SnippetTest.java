@@ -216,27 +216,27 @@ public class SnippetTest {
     public void trueValue() {
         final JsonValue value = parse("true");
 
-        assertOptimizedSnippet(value, "true", 50);
+        assertSnippet(value, "true", 50);
         // we don't trim 'true' -- showing users something like 't...' doesn't make much sense
-        assertOptimizedSnippet(value, "true", 1);
+        assertSnippet(value, "t...", 1);
     }
 
     @Test
     public void falseValue() {
         final JsonValue value = parse("false");
 
-        assertOptimizedSnippet(value, "false", 50);
+        assertSnippet(value, "false", 50);
         // we don't trim 'false' -- showing users something like 'f...' doesn't make much sense
-        assertOptimizedSnippet(value, "false", 1);
+        assertSnippet(value, "f...", 1);
     }
 
     @Test
     public void nullValue() {
         final JsonValue value = parse("null");
 
-        assertOptimizedSnippet(value, "null", 50);
+        assertSnippet(value, "null", 50);
         // we don't trim 'null' -- showing users something like 'n...' doesn't make much sense
-        assertOptimizedSnippet(value, "null", 1);
+        assertSnippet(value, "n...", 1);
     }
 
     private JsonValue parse(final String json) {
@@ -294,25 +294,6 @@ public class SnippetTest {
             }
         }
         return false;
-    }
-
-    /**
-     * We assert that a plain string was returned for a null, true or false
-     * and no JsonGenerator was created.  These values should also not be
-     * truncated.
-     */
-    private void assertOptimizedSnippet(final JsonValue object, final String expected, final int i) {
-        final TrackingJsonGeneratorFactory factory = new TrackingJsonGeneratorFactory();
-        final String actual = new Snippet(i, factory).of(object);
-
-        // Assert the resulting string contents
-        assertEquals(expected, actual);
-
-        /*
-         * We should not be constructing or using a JsonGenerator
-         * for these basic types which are effectively constants
-         */
-        assertEquals(0, factory.calls.size());
     }
 
     /**
@@ -526,7 +507,7 @@ public class SnippetTest {
              * json to be written even if we need a small chunk.
              */
             private void assertJsonType(final JsonValue value) {
-                if (isType(value, ARRAY, OBJECT)){
+                if (isType(value, ARRAY, OBJECT)) {
                     fail("should never be called");
                 }
             }

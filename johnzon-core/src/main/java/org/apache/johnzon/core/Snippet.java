@@ -25,7 +25,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -76,21 +75,14 @@ public class Snippet {
      * Truncated text appears with a suffix of "..."
      *
      * This method is thread safe.
-     * 
+     *
      * @param value the JsonValue to be serialized as json text
      * @return a potentially truncated json text
      */
     public String of(final JsonValue value) {
-        switch (value.getValueType()) {
-            case TRUE: return "true";
-            case FALSE: return "false";
-            case NULL: return "null";
-            default: {
-                try (final Buffer buffer = new Buffer()) {
-                    buffer.write(value);
-                    return buffer.get();
-                }
-            }
+        try (final Buffer buffer = new Buffer()) {
+            buffer.write(value);
+            return buffer.get();
         }
     }
 
@@ -333,14 +325,6 @@ public class Snippet {
         @Override
         public void close() throws IOException {
             mode.close();
-        }
-
-        public void print(final String string) {
-            try {
-                mode.write(string.getBytes());
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
         }
 
         class Writing extends OutputStream {
