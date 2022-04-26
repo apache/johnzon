@@ -20,6 +20,7 @@ package org.apache.johnzon.core;
 
 import static java.util.Arrays.asList;
 
+import java.io.Flushable;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.nio.charset.Charset;
@@ -39,7 +40,8 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
     );
     //key caching currently disabled
     private final boolean pretty;
-    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private final Buffer buffer;
+    private volatile Buffer customBuffer;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
         
@@ -52,26 +54,54 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
               throw new IllegalArgumentException("buffer length must be greater than zero");
           }
 
-          this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
+          this.buffer = new Buffer(getBufferProvider().newCharProvider(bufferSize), bufferSize);
     }
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorImpl(writer, bufferProvider, pretty);
+        return new JsonGeneratorImpl(writer, getBufferProvider(writer), pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return new JsonGeneratorImpl(out, bufferProvider, pretty);
+        return new JsonGeneratorImpl(out, getBufferProvider(out), pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        return new JsonGeneratorImpl(out,charset, bufferProvider, pretty);
+        return new JsonGeneratorImpl(out,charset, getBufferProvider(out), pretty);
+    }
+
+    private BufferStrategy.BufferProvider<char[]> getBufferProvider(final Flushable flushable) {
+        if (!(flushable instanceof Buffered)) {
+            return buffer.provider;
+        }
+
+        final int bufferSize = Buffered.class.cast(flushable).bufferSize();
+
+        if (customBuffer != null && customBuffer.size == bufferSize) {
+            return customBuffer.provider;
+        }
+
+        synchronized (this) {
+            customBuffer = new Buffer(getBufferProvider().newCharProvider(bufferSize), bufferSize);
+            return customBuffer.provider;
+        }
     }
 
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
+    }
+
+    private static final class Buffer {
+        private final BufferStrategy.BufferProvider<char[]> provider;
+        private final int size;
+
+        private Buffer(final BufferStrategy.BufferProvider<char[]>
+ bufferProvider, final int bufferSize) {
+            this.provider = bufferProvider;
+            this.size = bufferSize;
+        }
     }
 }
