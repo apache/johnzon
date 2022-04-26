@@ -131,7 +131,7 @@ public class Snippet {
         }
 
         private void write(final JsonValue value) {
-            if (snippet.terminate()) {
+            if (terminate()) {
                 return;
             }
 
@@ -146,96 +146,77 @@ public class Snippet {
                 }
                 default: {
                     generator.write(value);
-                    generator.flush();
                 }
             }
         }
 
         private void write(final JsonArray array) {
-            if (snippet.terminate()) {
-                return;
-            }
-
             if (array.isEmpty()) {
                 generator.write(array);
-                generator.flush();
                 return;
             }
 
             generator.writeStartArray();
-            generator.flush();
             for (final JsonValue jsonValue : array) {
-                if (snippet.terminate()) {
+                if (terminate()) {
                     break;
                 }
                 write(jsonValue);
             }
             generator.writeEnd();
-            generator.flush();
         }
 
         private void write(final JsonObject object) {
-            if (snippet.terminate()) {
-                return;
-            }
-
             if (object.isEmpty()) {
                 generator.write(object);
-                generator.flush();
                 return;
             }
 
             generator.writeStartObject();
-            generator.flush();
             for (final Map.Entry<String, JsonValue> entry : object.entrySet()) {
-                if (snippet.terminate()) {
+                if (terminate()) {
                     break;
                 }
                 write(entry.getKey(), entry.getValue());
             }
             generator.writeEnd();
-            generator.flush();
         }
 
         private void write(final String name, final JsonValue value) {
-            if (snippet.terminate()) {
-                return;
-            }
-
             switch (value.getValueType()) {
                 case ARRAY:
                     generator.writeStartArray(name);
-                    generator.flush();
                     final JsonArray array = value.asJsonArray();
                     for (final JsonValue jsonValue : array) {
-                        if (snippet.terminate()) {
+                        if (terminate()) {
                             break;
                         }
                         write(jsonValue);
                     }
                     generator.writeEnd();
-                    generator.flush();
 
                     break;
                 case OBJECT:
                     generator.writeStartObject(name);
-                    generator.flush();
                     final JsonObject object = value.asJsonObject();
                     for (final Map.Entry<String, JsonValue> keyval : object.entrySet()) {
-                        if (snippet.terminate()) {
+                        if (terminate()) {
                             break;
                         }
                         write(keyval.getKey(), keyval.getValue());
                     }
                     generator.writeEnd();
-                    generator.flush();
 
                     break;
                 default: {
                     generator.write(name, value);
-                    generator.flush();
                 }
             }
+        }
+
+        private boolean terminate() {
+            generator.flush();
+            return snippet.terminate();
         }
 
         private String get() {
