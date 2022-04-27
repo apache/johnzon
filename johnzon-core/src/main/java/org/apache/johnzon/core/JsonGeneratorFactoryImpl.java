@@ -18,6 +18,8 @@
  */
 package org.apache.johnzon.core;
 
+import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
+
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
@@ -35,21 +37,24 @@ import javax.json.stream.JsonGeneratorFactory;
 
 public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {    
     public static final String GENERATOR_BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
+    public static final String BOUNDED_OUTPUT_STREAM_WRITER_LEN = "org.apache.johnzon.boundedoutputstreamwriter";
     public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
    
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING
+        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING, BOUNDED_OUTPUT_STREAM_WRITER_LEN
     );
 
     private final Charset defaultEncoding;
 
     //key caching currently disabled
     private final boolean pretty;
+    private final int boundedOutputStreamWriter;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
         super(config, SUPPORTED_CONFIG_KEYS, null);
         this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
+        this.boundedOutputStreamWriter = getInt(BOUNDED_OUTPUT_STREAM_WRITER_LEN, -1);
         this.defaultEncoding = ofNullable(getString(ENCODING, null))
                 .map(Charset::forName)
                 .orElse(UTF_8);
@@ -68,12 +73,21 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return new JsonGeneratorImpl(new OutputStreamWriter(out, defaultEncoding), bufferProvider, pretty);
+        return new JsonGeneratorImpl(
+                boundedOutputStreamWriter <= 0 ?
+                        new OutputStreamWriter(out, defaultEncoding) :
+                        new BoundedOutputStreamWriter(out, defaultEncoding, boundedOutputStreamWriter),
+                bufferProvider, pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        return new JsonGeneratorImpl(out,charset, bufferProvider, pretty);
+        final Charset cs = charset == null ? defaultEncoding : charset;
+        return new JsonGeneratorImpl(
+                boundedOutputStreamWriter <= 0 ?
+                        new OutputStreamWriter(out, cs) :
+                        new BoundedOutputStreamWriter(out, cs, boundedOutputStreamWriter),
+                bufferProvider, pretty);
     }
 
     @Override

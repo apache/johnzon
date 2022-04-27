@@ -27,13 +27,10 @@ import javax.json.JsonValue;
 import javax.json.stream.JsonGenerationException;
 import javax.json.stream.JsonGenerator;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -70,16 +67,10 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     JsonGeneratorImpl(final Writer writer, final BufferStrategy.BufferProvider<char[]> bufferProvider,
                       final boolean prettyPrint) {
         this.writer = writer;
-        //this.cache = cache;
         this.buffer = bufferProvider.newBuffer();
         this.bufferProvider = bufferProvider;
         this.prettyPrint = prettyPrint;
         state.push(GeneratorState.INITIAL);
-    }
-
-    JsonGeneratorImpl(final OutputStream out, final Charset encoding, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                      final boolean prettyPrint) {
-        this(new OutputStreamWriter(out, encoding), bufferProvider, prettyPrint);
     }
 
     private void writeEol() {
