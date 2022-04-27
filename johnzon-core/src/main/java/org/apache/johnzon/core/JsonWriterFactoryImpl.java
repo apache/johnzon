@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.core;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 
 import java.io.OutputStream;
@@ -33,7 +34,6 @@ import javax.json.JsonWriterFactory;
 import javax.json.stream.JsonGeneratorFactory;
 
 class JsonWriterFactoryImpl extends AbstractJsonFactory implements JsonWriterFactory{
-    private static final Charset UTF8_CHARSET = Charset.forName("UTF-8");
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
 
     );
@@ -51,7 +51,7 @@ class JsonWriterFactoryImpl extends AbstractJsonFactory implements JsonWriterFac
 
     @Override
     public JsonWriter createWriter(final OutputStream out) {
-        return createWriter(new OutputStreamWriter(out, UTF8_CHARSET));
+        return createWriter(new OutputStreamWriter(out, UTF_8));
     }
 
     @Override

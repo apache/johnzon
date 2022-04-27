@@ -41,7 +41,6 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
     public static final int DEFAULT_BUFFER_LENGTH = Integer.getInteger(BUFFER_LENGTH, 64 * 1024); //64k
     
     public static final String SUPPORTS_COMMENTS = "org.apache.johnzon.supports-comments";
-    public static final String ENCODING = "org.apache.johnzon.encoding";
     public static final boolean DEFAULT_SUPPORTS_COMMENT = Boolean.getBoolean(SUPPORTS_COMMENTS); //default is false;
 
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(

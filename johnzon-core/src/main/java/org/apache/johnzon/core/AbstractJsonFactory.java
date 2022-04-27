@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 public abstract class AbstractJsonFactory implements Serializable {
-
+    public static final String ENCODING = "org.apache.johnzon.encoding";
     public static final String BUFFER_STRATEGY = "org.apache.johnzon.buffer-strategy";
     public static final BufferStrategy DEFAULT_BUFFER_STRATEGY = BufferStrategyFactory.valueOf(System.getProperty(BUFFER_STRATEGY, "QUEUE"));
     

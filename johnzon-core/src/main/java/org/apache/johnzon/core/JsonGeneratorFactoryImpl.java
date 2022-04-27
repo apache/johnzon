@@ -18,9 +18,12 @@
  */
 package org.apache.johnzon.core;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -35,24 +38,27 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
     public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
    
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY
+        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING
     );
+
+    private final Charset defaultEncoding;
+
     //key caching currently disabled
     private final boolean pretty;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
-        
-          super(config, SUPPORTED_CONFIG_KEYS, null); 
-          
-          this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
-          
-          final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
-          if (bufferSize <= 0) {
-              throw new IllegalArgumentException("buffer length must be greater than zero");
-          }
+        super(config, SUPPORTED_CONFIG_KEYS, null);
+        this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
+        this.defaultEncoding = ofNullable(getString(ENCODING, null))
+                .map(Charset::forName)
+                .orElse(UTF_8);
 
-          this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
+        final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("buffer length must be greater than zero");
+        }
+        this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
     }
 
     @Override
@@ -62,7 +68,7 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return new JsonGeneratorImpl(out, bufferProvider, pretty);
+        return new JsonGeneratorImpl(new OutputStreamWriter(out, defaultEncoding), bufferProvider, pretty);
     }
 
     @Override

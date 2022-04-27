@@ -34,13 +34,10 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Map;
 
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
-    private static final Charset UTF8_CHARSET = StandardCharsets.UTF_8;
-
     private final transient Writer writer;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final char[] buffer;
@@ -78,11 +75,6 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         this.bufferProvider = bufferProvider;
         this.prettyPrint = prettyPrint;
         state.push(GeneratorState.INITIAL);
-    }
-
-    JsonGeneratorImpl(final OutputStream out, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                      final boolean prettyPrint) {
-        this(new OutputStreamWriter(out, UTF8_CHARSET), bufferProvider, prettyPrint);
     }
 
     JsonGeneratorImpl(final OutputStream out, final Charset encoding, final BufferStrategy.BufferProvider<char[]> bufferProvider,

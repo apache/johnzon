@@ -127,6 +127,9 @@ public class MapperBuilder {
             if (bufferStrategy != null) {
                 config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
             }
+            if (encoding != null) {
+                config.put("org.apache.johnzon.encoding", encoding.name());
+            }
 
             if (generatorFactory == null) {
                 if (pretty) {
@@ -148,9 +151,6 @@ public class MapperBuilder {
                 }
                 if (autoAdjustStringBuffers) {
                     config.put("org.apache.johnzon.auto-adjust-buffer", true);
-                }
-                if (encoding != null) {
-                    config.put("org.apache.johnzon.encoding", encoding.name());
                 }
                 readerFactory = provider.createReaderFactory(config);
             }
