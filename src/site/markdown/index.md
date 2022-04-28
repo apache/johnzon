@@ -52,6 +52,17 @@ You'll surely want to add the API as dependency too:
 </dependency>
 ]]></pre>
 
+#### Johnzon Factory Configurations
+
+##### JsonGeneratorFactory
+
+The generator factory supports the standard properties (pretty one for example) but also:
+
+* `org.apache.johnzon.encoding`: encoding to use for the generator when converting an OutputStream to a Writer.
+* `org.apache.johnzon.buffer-strategy`: how to get buffers (char buffer), default strategy is a queue/pool based one but you can switch it to a `THREAD_LOCAL` one. `BY_INSTANCE` (per call/prototype) and `SINGLETON` (single instance) are also supported but first one is generally slower and last one does not enable overflows.  
+* `org.apache.johnzon.default-char-buffer-generator` (int): buffer size of the generator, it enables to work in memory to flush less often (for performances).
+* `org.apache.johnzon.boundedoutputstreamwriter` (int): when converting an `OuputStream` to a `Writer` it defines the buffer size (if > 0) +- 2 charaters (for the encoding logic). It enables a faster flushing to the actual underlying output stream combined with `org.apache.johnzon.default-char-buffer-generator`.
+
 ### JSON-P Strict Compliance (stable)
 
 <pre class="prettyprint linenums"><![CDATA[

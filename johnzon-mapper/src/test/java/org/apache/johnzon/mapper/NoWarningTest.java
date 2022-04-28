@@ -19,29 +19,68 @@
 package org.apache.johnzon.mapper;
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import javax.json.Json;
 
-import org.junit.Rule;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.contrib.java.lang.system.StandardErrorStreamLog;
-import org.junit.contrib.java.lang.system.StandardOutputStreamLog;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 public class NoWarningTest {
-    
-    @Rule
-    public final StandardOutputStreamLog out = new StandardOutputStreamLog();
+    public ByteArrayOutputStream out;
+    public ByteArrayOutputStream err;
+    private PrintStream oldOut;
+    private PrintStream oldErr;
+    private Handler handler;
 
-    @Rule
-    public final StandardErrorStreamLog err = new StandardErrorStreamLog();
+    @Before
+    public void capture() {
+        out = new ByteArrayOutputStream();
+        err = new ByteArrayOutputStream();
+        oldOut = System.out;
+        oldErr = System.err;
+        System.setOut(new PrintStream(out));
+        final PrintStream stderr = new PrintStream(err);
+        System.setErr(stderr);
+        handler = new Handler() {
+            @Override
+            public void publish(final LogRecord record) {
+                stderr.println(record.getMessage());
+                oldErr.println(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+                // no-op
+            }
+
+            @Override
+            public void close() throws SecurityException {
+                flush();
+            }
+        };
+        Logger.getLogger("").addHandler(handler);
+    }
+
+    @After
+    public void reset() {
+        System.setOut(oldOut);
+        System.setErr(oldErr);
+        Logger.getLogger("").removeHandler(handler);
+    }
 
     @Test
-    public void noWarn() {
+    public void noWarn() throws UnsupportedEncodingException {
         new MapperBuilder()
                 .setEncoding("UTF-8")
                 .setSupportConstructors(true)
@@ -52,19 +91,23 @@ public class NoWarningTest {
                 .setMaxSize(789465)
                 .setSkipNull(true)
                 .setSupportsComments(true)
-                .build();
+                .build()
+                .close();
         // no warn log
-        assertTrue(out.getLog().isEmpty());
-        assertTrue(err.getLog().isEmpty());
+        assertTrue(out.toString("UTF-8").isEmpty());
+        assertTrue(err.toString("UTF-8").isEmpty());
     }
     
     @Test
-    public void warn() {
+    public void warn() throws UnsupportedEncodingException {
         Map<String, Object> unsupportedConfig = new HashMap<String, Object>();
         unsupportedConfig.put("xxx.yyy.zzz", "");
-        Json.createGeneratorFactory(unsupportedConfig).createGenerator(new ByteArrayOutputStream());
+        Json.createGeneratorFactory(unsupportedConfig)
+                .createGenerator(new ByteArrayOutputStream())
+                .write(0)
+                .close();
         //warn log
-        String log = out.getLog()+err.getLog();
+        String log = out.toString("UTF-8") + err.toString("UTF-8");
         assertFalse(log.isEmpty());
         assertTrue(log.contains("xxx.yyy.zzz"));
     }

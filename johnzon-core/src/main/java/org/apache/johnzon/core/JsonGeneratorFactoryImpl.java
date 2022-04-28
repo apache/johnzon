@@ -18,10 +18,15 @@
  */
 package org.apache.johnzon.core;
 
+import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 
 import java.io.Flushable;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -33,28 +38,34 @@ import javax.json.stream.JsonGeneratorFactory;
 
 public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {    
     public static final String GENERATOR_BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
+    public static final String BOUNDED_OUTPUT_STREAM_WRITER_LEN = "org.apache.johnzon.boundedoutputstreamwriter";
     public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
    
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY
+        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING, BOUNDED_OUTPUT_STREAM_WRITER_LEN
     );
+
+    private final Charset defaultEncoding;
+
     //key caching currently disabled
     private final boolean pretty;
     private final Buffer buffer;
     private volatile Buffer customBuffer;
+    private final int boundedOutputStreamWriter;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
-        
-          super(config, SUPPORTED_CONFIG_KEYS, null); 
-          
-          this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
-          
-          final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
-          if (bufferSize <= 0) {
-              throw new IllegalArgumentException("buffer length must be greater than zero");
-          }
+        super(config, SUPPORTED_CONFIG_KEYS, null);
+        this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
+        this.boundedOutputStreamWriter = getInt(BOUNDED_OUTPUT_STREAM_WRITER_LEN, -1);
+        this.defaultEncoding = ofNullable(getString(ENCODING, null))
+                .map(Charset::forName)
+                .orElse(UTF_8);
 
-          this.buffer = new Buffer(getBufferProvider().newCharProvider(bufferSize), bufferSize);
+        final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
+        if (bufferSize <= 0) {
+            throw new IllegalArgumentException("buffer length must be greater than zero");
+        }
+        this.buffer = new Buffer(getBufferProvider().newCharProvider(bufferSize), bufferSize);
     }
 
     @Override
@@ -64,12 +75,21 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        return new JsonGeneratorImpl(out, getBufferProvider(out), pretty);
+        return new JsonGeneratorImpl(
+                boundedOutputStreamWriter <= 0 ?
+                        new OutputStreamWriter(out, defaultEncoding) :
+                        new BoundedOutputStreamWriter(out, defaultEncoding, boundedOutputStreamWriter),
+                getBufferProvider(out), pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        return new JsonGeneratorImpl(out,charset, getBufferProvider(out), pretty);
+        final Charset cs = charset == null ? defaultEncoding : charset;
+        return new JsonGeneratorImpl(
+                boundedOutputStreamWriter <= 0 ?
+                        new OutputStreamWriter(out, cs) :
+                        new BoundedOutputStreamWriter(out, cs, boundedOutputStreamWriter),
+                getBufferProvider(out), pretty);
     }
 
     private BufferStrategy.BufferProvider<char[]> getBufferProvider(final Flushable flushable) {

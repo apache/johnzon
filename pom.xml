@@ -29,7 +29,7 @@
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon</artifactId>
   <packaging>pom</packaging>
-  <version>1.2.17-SNAPSHOT</version>
+  <version>1.2.18-SNAPSHOT</version>
   <name>Apache Johnzon</name>
   <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
@@ -51,7 +51,7 @@
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
     <owb.version>2.0.23</owb.version>
-    <arquillian.jvm.args></arquillian.jvm.args>
+    <arquillian.jvm.args />
   </properties>
 
   <modules>
@@ -91,7 +91,7 @@
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.12</version>
+      <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
