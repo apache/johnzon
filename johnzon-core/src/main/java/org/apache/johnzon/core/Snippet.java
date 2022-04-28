@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -176,6 +177,7 @@ public class Snippet {
     private class Buffer implements Closeable {
         private final JsonGenerator generator;
         private final SnippetWriter snippet;
+        private Runnable flush;
 
         private Buffer() {
             this.snippet = new SnippetWriter(max);
@@ -267,6 +269,7 @@ public class Snippet {
         }
 
         private boolean terminate() {
+            flush.run();
             return snippet.terminate();
         }
 
@@ -296,6 +299,7 @@ public class Snippet {
             private final ByteArrayOutputStream buffer;
             private final int max;
             private PassthroughWriter mode;
+            private Supplier<Integer> bufferSize;
 
             public SnippetWriter(final int max) {
                 this.max = max;
@@ -306,6 +310,21 @@ public class Snippet {
                                 JsonGeneratorFactoryImpl.class.cast(generatorFactory).getDefaultEncoding() :
                                 UTF_8,
                         max));
+
+                /*
+                 * The first time the buffer size is requested, disable flushing
+                 * as we know our requested buffer size will be respected
+                 */
+                this.bufferSize = () -> {
+                    // disable flushing
+                    flush = () -> {
+                        // no-op
+                    };
+                    // future calls can just return the size
+                    bufferSize = () -> max;
+                    return max;
+                };
+
             }
 
             public String get() {
@@ -314,7 +333,7 @@ public class Snippet {
 
             @Override
             public int bufferSize() {
-                return max;
+                return bufferSize.get();
             }
 
             /**
