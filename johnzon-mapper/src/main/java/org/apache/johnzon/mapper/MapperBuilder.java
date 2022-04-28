@@ -23,7 +23,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Locale.ROOT;
 
 // import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
-import org.apache.johnzon.core.Snippet;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -130,7 +129,7 @@ public class MapperBuilder {
                 config.put("org.apache.johnzon.buffer-strategy", bufferStrategy);
             }
             if (encoding != null) {
-                config.put("org.apache.johnzon.encoding", encoding.name());
+                config.put("org.apache.johnzon.encoding", encoding);
             }
 
             if (generatorFactory == null) {
@@ -239,7 +238,7 @@ public class MapperBuilder {
                         typeLoader, discriminatorMapper, discriminator,
                         deserializationPredicate, serializationPredicate,
                         enumConverterFactory,
-                        new Snippet(snippetMaxLength, generatorFactory)),
+                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory)),
                 closeables);
     }
 

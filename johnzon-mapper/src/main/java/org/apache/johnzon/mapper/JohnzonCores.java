@@ -18,14 +18,15 @@
  */
 package org.apache.johnzon.mapper;
 
-import static java.util.Optional.ofNullable;
-
+import javax.json.JsonReader;
+import javax.json.JsonReaderFactory;
+import javax.json.JsonValue;
+import javax.json.stream.JsonGeneratorFactory;
+import javax.json.stream.JsonParser;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.stream.JsonParser;
+import static java.util.Optional.ofNullable;
 
 public final class JohnzonCores {
     private static final Method CREATE_READER;
@@ -50,13 +51,34 @@ public final class JohnzonCores {
         // no-op
     }
 
+    public static SnippetFactory snippetFactory(final int max, final JsonGeneratorFactory factory) {
+        if (CREATE_READER == null) {
+            return JsonValue::toString;
+        }
+        return Snippets.of(max, factory);
+    }
+
     public static JsonReader map(final JsonParser parser, final JsonReaderFactory readerFactory) {
+        if (CREATE_READER == null) {
+            throw new IllegalStateException("Ensure to use johnzon-core as JSON-P provider for johnzon-mapper");
+        }
         try {
             return JsonReader.class.cast(CREATE_READER.invoke(readerFactory, parser));
         } catch (final IllegalAccessException e) {
             throw new IllegalStateException(e);
         } catch (final InvocationTargetException e) {
             throw new IllegalStateException(e.getTargetException());
+        }
+    }
+
+    // indirection (for classloading)
+    private static class Snippets {
+        private Snippets() {
+            // no-op
+        }
+
+        private static SnippetFactory of(final int max, final JsonGeneratorFactory factory) {
+            return new org.apache.johnzon.core.Snippet(max, factory)::of;
         }
     }
 }

@@ -16,6 +16,8 @@
  */
 package org.apache.johnzon.core;
 
+import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -25,13 +27,11 @@ import javax.json.stream.JsonGeneratorFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
-import static org.apache.johnzon.core.JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * Constructs short snippets of serialized JSON text representations of
@@ -42,27 +42,9 @@ import static org.apache.johnzon.core.JsonGeneratorFactoryImpl.GENERATOR_BUFFER_
  * is therefore safe to use regardless of the size of the JsonValue.
  */
 public class Snippet {
-
     private final int max;
     private final JsonGeneratorFactory generatorFactory;
 
-    /**
-     * This constructor should be used only in static or other scenarios were
-     * there is no JsonGeneratorFactory instance in scope.
-     *
-     * This constructor must not be used in Johnzon project.  It is only here
-     * for convenience for integrators.  Using it disables several Johnzon
-     * features.
-     *
-     * @param max the maximum length of the serialized json produced via of()
-     */
-    public Snippet(final int max) {
-        this(max, Json.createGeneratorFactory(new HashMap<String, Object>() {
-            {
-                this.put(GENERATOR_BUFFER_LENGTH, max);
-            }
-        }));
-    }
 
     /**
      * This is the preferred approach to using Snippet in any context where
@@ -87,10 +69,27 @@ public class Snippet {
      * @return a potentially truncated json text
      */
     public String of(final JsonValue value) {
-        try (final Buffer buffer = new Buffer()) {
-            buffer.write(value);
-            return buffer.get();
+        final Buffer buffer = new Buffer();
+        try (final Buffer b = buffer) {
+            b.write(value);
         }
+        return buffer.get();
+    }
+
+    // IMPORTANT: should NOT be used inside johnzon project itself which should *always*
+    //            use a contextual JsonGeneratorFactory - keep in mind we are not johnzon-core dependent
+    //            not JSON dependent (some JsonGeneratorFactory can issue yaml or binary for ex)
+    /**
+     * This factory should be used only in static or other scenarios were
+     * there is no JsonGeneratorFactory instance in scope - ie external code.
+     *
+     * @param max the maximum length of the serialized json produced via of()
+     */
+    public static Snippet of(final int max) {
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("org.apache.johnzon.default-char-buffer-generator", max);
+        properties.put("org.apache.johnzon.boundedoutputstreamwriter", max);
+        return new Snippet(max, Json.createGeneratorFactory(properties));
     }
 
     /**
@@ -104,12 +103,58 @@ public class Snippet {
      * is a JsonGeneratorFactory instance in scope. For those scenarios
      * use the constructor that accepts a JsonGeneratorFactory instead.
      *
-     * @param value the JsonValue to be serialized as json text
      * @param max the maximum length of the serialized json text
+     * @param value the JsonValue to be serialized as json text
      * @return a potentially truncated json text
      */
-    public static String of(final JsonValue value, final int max) {
-        return new Snippet(max).of(value);
+    public static String of(final int max, final JsonValue value) {
+        return of(max).of(value);
+    }
+
+    // skips some methods using a buffer
+    private static abstract class PassthroughWriter extends Writer {
+        @Override
+        public void write(final char[] cbuf) throws IOException {
+            write(cbuf, 0, cbuf.length);
+        }
+
+        @Override
+        public void write(final String str) throws IOException {
+            write(str.toCharArray(), 0, str.length());
+        }
+
+        @Override
+        public void write(final String str, final int off, final int len) throws IOException {
+            write(str.toCharArray(), 0, len);
+        }
+
+        @Override
+        public Writer append(final CharSequence csq) throws IOException {
+            write(csq.toString().toCharArray(), 0, csq.length());
+            return this;
+        }
+
+        @Override
+        public Writer append(final CharSequence csq, final int start, final int end) throws IOException {
+            write(csq.toString().toCharArray(), start, end);
+            return this;
+        }
+
+        @Override
+        public Writer append(final char c) throws IOException {
+            write(new char[]{c}, 0, 1);
+            return this;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            // no-op
+        }
+
+        @Override
+        public void close() throws IOException {
+            // no-op
+        }
     }
 
     /**
@@ -128,15 +173,13 @@ public class Snippet {
      * need 50 bytes.  We could potentially optimize this code so the
      * buffer held by JsonGeneratorImpl is also the maxSnippetLength.
      */
-    class Buffer implements Closeable {
+    private class Buffer implements Closeable {
         private final JsonGenerator generator;
         private final SnippetWriter snippet;
-        private Runnable flush;
 
         private Buffer() {
             this.snippet = new SnippetWriter(max);
             this.generator = generatorFactory.createGenerator(snippet);
-            this.flush = generator::flush;
         }
 
         private void write(final JsonValue value) {
@@ -224,13 +267,11 @@ public class Snippet {
         }
 
         private boolean terminate() {
-            flush.run();
             return snippet.terminate();
         }
 
         private String get() {
-            generator.flush();
-            return snippet.isTruncated() ? snippet.get() + "..." : snippet.get();
+            return snippet.get() + (snippet.isTruncated() ? "..." : "");
         }
 
         @Override
@@ -251,31 +292,20 @@ public class Snippet {
          * If the last write brought us over the max length, the
          * state will be Truncated.
          */
-        class SnippetWriter extends Writer implements Buffered {
-
+        class SnippetWriter extends PassthroughWriter implements Buffered {
             private final ByteArrayOutputStream buffer;
-            private Mode mode;
-            private Supplier<Integer> bufferSize;
+            private final int max;
+            private PassthroughWriter mode;
 
             public SnippetWriter(final int max) {
-                final int size = Math.min(max, 8192);
-
-                this.buffer = new ByteArrayOutputStream(size);
-                this.mode = new Writing(max, new OutputStreamWriter(buffer));
-
-                /*
-                 * The first time the buffer size is requested, disable flushing
-                 * as we know our requested buffer size will be respected
-                 */
-                this.bufferSize = () -> {
-                    // disable flushing
-                    flush = () -> {
-                        // no-op
-                    };
-                    // future calls can just return the size
-                    bufferSize = () -> size;
-                    return size;
-                };
+                this.max = max;
+                this.buffer = new ByteArrayOutputStream(max);
+                this.mode = new Writing(max, new BoundedOutputStreamWriter(
+                        buffer,
+                        JsonGeneratorFactoryImpl.class.isInstance(generatorFactory) ?
+                                JsonGeneratorFactoryImpl.class.cast(generatorFactory).getDefaultEncoding() :
+                                UTF_8,
+                        max));
             }
 
             public String get() {
@@ -284,7 +314,7 @@ public class Snippet {
 
             @Override
             public int bufferSize() {
-                return bufferSize.get();
+                return max;
             }
 
             /**
@@ -328,19 +358,7 @@ public class Snippet {
                 mode.close();
             }
 
-            abstract class Mode extends Writer {
-                @Override
-                public void flush() throws IOException {
-                    // no-op
-                }
-
-                @Override
-                public void close() throws IOException {
-                    // no-op
-                }
-            }
-
-            class Writing extends Mode {
+            class Writing extends PassthroughWriter {
                 private final int max;
                 private int count;
                 private final Writer writer;
@@ -386,7 +404,7 @@ public class Snippet {
                     writer.close();
                 }
 
-                private void maxReached(final Mode mode) throws IOException {
+                private void maxReached(final PassthroughWriter mode) throws IOException {
                     SnippetWriter.this.mode = mode;
                     writer.flush();
                     writer.close();
@@ -397,8 +415,7 @@ public class Snippet {
              * Signifies the last write was fully written, but there is
              * no more space for future writes.
              */
-            class Completed extends Mode {
-
+            class Completed extends PassthroughWriter {
                 @Override
                 public void write(final char[] cbuf, final int off, final int len) throws IOException {
                     if (len > 0) {
@@ -411,7 +428,7 @@ public class Snippet {
              * Signifies the last write was not completely written and there was
              * no more space for this or future writes.
              */
-            class Truncated extends Mode {
+            class Truncated extends PassthroughWriter {
                 @Override
                 public void write(final char[] cbuf, final int off, final int len) throws IOException {
                     // no-op

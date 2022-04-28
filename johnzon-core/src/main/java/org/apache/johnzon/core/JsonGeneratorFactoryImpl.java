@@ -20,10 +20,8 @@ package org.apache.johnzon.core;
 
 import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
-import static java.util.Optional.ofNullable;
-
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
 import java.io.Flushable;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -33,32 +31,34 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 
-public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {    
+public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {
     public static final String GENERATOR_BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
     public static final String BOUNDED_OUTPUT_STREAM_WRITER_LEN = "org.apache.johnzon.boundedoutputstreamwriter";
-    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
-   
+    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH = Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
+
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING, BOUNDED_OUTPUT_STREAM_WRITER_LEN
+            JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING, BOUNDED_OUTPUT_STREAM_WRITER_LEN
     );
 
     private final Charset defaultEncoding;
 
     //key caching currently disabled
     private final boolean pretty;
+    private final int boundedOutputStreamWriter;
     private final Buffer buffer;
     private volatile Buffer customBuffer;
-    private final int boundedOutputStreamWriter;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
         super(config, SUPPORTED_CONFIG_KEYS, null);
         this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
         this.boundedOutputStreamWriter = getInt(BOUNDED_OUTPUT_STREAM_WRITER_LEN, -1);
-        this.defaultEncoding = ofNullable(getString(ENCODING, null))
-                .map(Charset::forName)
+        this.defaultEncoding = ofNullable(config)
+                .map(c -> c.get(ENCODING))
+                .map(it -> Charset.class.isInstance(it) ? Charset.class.cast(it) : Charset.forName(it.toString()))
                 .orElse(UTF_8);
 
         final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
@@ -92,6 +92,15 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
                 getBufferProvider(out), pretty);
     }
 
+    @Override
+    public Map<String, ?> getConfigInUse() {
+        return Collections.unmodifiableMap(internalConfig);
+    }
+
+    public Charset getDefaultEncoding() {
+        return defaultEncoding;
+    }
+
     private BufferStrategy.BufferProvider<char[]> getBufferProvider(final Flushable flushable) {
         if (!(flushable instanceof Buffered)) {
             return buffer.provider;
@@ -109,17 +118,12 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
         }
     }
 
-    @Override
-    public Map<String, ?> getConfigInUse() {
-        return Collections.unmodifiableMap(internalConfig);
-    }
-
     private static final class Buffer {
         private final BufferStrategy.BufferProvider<char[]> provider;
         private final int size;
 
         private Buffer(final BufferStrategy.BufferProvider<char[]>
- bufferProvider, final int bufferSize) {
+                               bufferProvider, final int bufferSize) {
             this.provider = bufferProvider;
             this.size = bufferSize;
         }

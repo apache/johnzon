@@ -26,7 +26,7 @@ package org.apache.johnzon.core;
  *
  * @since 1.2.17
  */
-public interface Buffered {
+public interface Buffered { // https://github.com/apache/johnzon/pull/84#discussion_r860563179 for the naming ;)
 
     /**
      * The buffer size used by this stream while reading input or before writing

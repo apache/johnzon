@@ -18,15 +18,12 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.core.AbstractJsonFactory;
-import org.apache.johnzon.core.JsonGeneratorFactoryImpl;
-import org.apache.johnzon.core.JsonParserFactoryImpl;
-import org.apache.johnzon.core.Types;
 import org.apache.johnzon.jsonb.adapter.JsonbEnumAdapter;
 import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
 import org.apache.johnzon.jsonb.cdi.CDIs;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
+import org.apache.johnzon.jsonb.reflect.Types;
 import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
@@ -442,8 +439,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (config == null) {
             return map;
         }
-        config.getProperty(JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH).ifPresent(b -> map.put(JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH, b));
-        config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
+        config.getProperty("org.apache.johnzon.default-char-buffer-generator").ifPresent(b -> map.put("org.apache.johnzon.default-char-buffer-generator", b));
+        config.getProperty("org.apache.johnzon.boundedoutputstreamwriter").ifPresent(b -> map.put("org.apache.johnzon.boundedoutputstreamwriter", b));
+        config.getProperty("org.apache.johnzon.buffer-strategy").ifPresent(b -> map.put("org.apache.johnzon.buffer-strategy", b));
         config.getProperty(JsonbConfig.FORMATTING).ifPresent(b -> map.put(JsonGenerator.PRETTY_PRINTING, b));
         return map;
     }
@@ -453,10 +451,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (config == null) {
             return map;
         }
-        config.getProperty(JsonParserFactoryImpl.BUFFER_LENGTH).ifPresent(b -> map.put(JsonParserFactoryImpl.BUFFER_LENGTH, b));
-        config.getProperty(JsonParserFactoryImpl.MAX_STRING_LENGTH).ifPresent(b -> map.put(JsonParserFactoryImpl.MAX_STRING_LENGTH, b));
-        config.getProperty(JsonParserFactoryImpl.SUPPORTS_COMMENTS).ifPresent(b -> map.put(JsonParserFactoryImpl.SUPPORTS_COMMENTS, b));
-        config.getProperty(AbstractJsonFactory.BUFFER_STRATEGY).ifPresent(b -> map.put(AbstractJsonFactory.BUFFER_STRATEGY, b));
+        config.getProperty("org.apache.johnzon.default-char-buffer").ifPresent(b -> map.put("org.apache.johnzon.default-char-buffer", b));
+        config.getProperty("org.apache.johnzon.max-string-length").ifPresent(b -> map.put("org.apache.johnzon.max-string-length", b));
+        config.getProperty("org.apache.johnzon.supports-comments").ifPresent(b -> map.put("org.apache.johnzon.supports-comments", b));
+        config.getProperty("org.apache.johnzon.buffer-strategy").ifPresent(b -> map.put("org.apache.johnzon.buffer-strategy", b));
         return map;
     }
 
