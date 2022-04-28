@@ -24,9 +24,11 @@ import javax.json.stream.JsonGeneratorFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static org.apache.johnzon.core.JsonGeneratorFactoryImpl.GENERATOR_BUFFER_LENGTH;
 
@@ -123,11 +125,13 @@ public class Snippet {
      */
     class Buffer implements Closeable {
         private final JsonGenerator generator;
-        private final SnippetOutputStream snippet;
+        private final SnippetWriter snippet;
+        private Runnable flush;
 
         private Buffer() {
-            this.snippet = new SnippetOutputStream(max);
+            this.snippet = new SnippetWriter(max);
             this.generator = generatorFactory.createGenerator(snippet);
+            this.flush = generator::flush;
         }
 
         private void write(final JsonValue value) {
@@ -215,7 +219,7 @@ public class Snippet {
         }
 
         private boolean terminate() {
-            generator.flush();
+            flush.run();
             return snippet.terminate();
         }
 
@@ -228,172 +232,181 @@ public class Snippet {
         public void close() {
             generator.close();
         }
-    }
-
-    /**
-     * Specialized OutputStream with three internal states:
-     * Writing, Completed, Truncated.
-     *
-     * When there is still space left for more json, the
-     * state will be Writing
-     *
-     * If the last write brought is exactly to the end of
-     * the max length, the state will be Completed.
-     *
-     * If the last write brought us over the max length, the
-     * state will be Truncated.
-     */
-    static class SnippetOutputStream extends OutputStream {
-
-        private final ByteArrayOutputStream buffer;
-        private OutputStream mode;
-
-        public SnippetOutputStream(final int max) {
-            this.buffer = new ByteArrayOutputStream(Math.min(max, 8192));
-            this.mode = new Writing(max, buffer);
-        }
-
-        public String get() {
-            return buffer.toString();
-        }
 
         /**
-         * Calling this method implies the need to continue
-         * writing and a question on if that is ok.
+         * Specialized Writer with three internal states:
+         * Writing, Completed, Truncated.
          *
-         * It impacts internal state in the same way as
-         * calling a write method.
+         * When there is still space left for more json, the
+         * state will be Writing
          *
-         * @return true if no more writes are possible
+         * If the last write brought is exactly to the end of
+         * the max length, the state will be Completed.
+         *
+         * If the last write brought us over the max length, the
+         * state will be Truncated.
          */
-        public boolean terminate() {
-            if (mode instanceof Truncated) {
-                return true;
+        class SnippetWriter extends Writer implements Buffered {
+
+            private final ByteArrayOutputStream buffer;
+            private Mode mode;
+            private Supplier<Integer> bufferSize;
+
+            public SnippetWriter(final int max) {
+                final int size = Math.min(max, 8192);
+
+                this.buffer = new ByteArrayOutputStream(size);
+                this.mode = new Writing(max, new OutputStreamWriter(buffer));
+
+                /*
+                 * The first time the buffer size is requested, disable flushing
+                 * as we know our requested buffer size will be respected
+                 */
+                this.bufferSize = () -> {
+                    // disable flushing
+                    flush = () -> {
+                    };
+                    // future calls can just return the size
+                    bufferSize = () -> size;
+                    return size;
+                };
             }
 
-            if (mode instanceof Completed) {
-                mode = new Truncated();
-                return true;
-            }
-
-            return false;
-        }
-
-        public boolean isTruncated() {
-            return mode instanceof Truncated;
-        }
-
-        @Override
-        public void write(final int b) throws IOException {
-            mode.write(b);
-        }
-
-        @Override
-        public void write(final byte[] b) throws IOException {
-            mode.write(b);
-        }
-
-        @Override
-        public void write(final byte[] b, final int off, final int len) throws IOException {
-            mode.write(b, off, len);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            mode.flush();
-        }
-
-        @Override
-        public void close() throws IOException {
-            mode.close();
-        }
-
-        class Writing extends OutputStream {
-            private final int max;
-            private int count;
-            private final OutputStream out;
-
-            public Writing(final int max, final OutputStream out) {
-                this.max = max;
-                this.out = out;
+            public String get() {
+                return buffer.toString();
             }
 
             @Override
-            public void write(final int b) throws IOException {
-                if (++count < max) {
-                    out.write(b);
-                } else {
-                    maxReached(new Truncated());
+            public int bufferSize() {
+                return bufferSize.get();
+            }
+
+            /**
+             * Calling this method implies the need to continue
+             * writing and a question on if that is ok.
+             *
+             * It impacts internal state in the same way as
+             * calling a write method.
+             *
+             * @return true if no more writes are possible
+             */
+            public boolean terminate() {
+                if (mode instanceof Truncated) {
+                    return true;
+                }
+
+                if (mode instanceof Completed) {
+                    mode = new Truncated();
+                    return true;
+                }
+
+                return false;
+            }
+
+            public boolean isTruncated() {
+                return mode instanceof Truncated;
+            }
+
+            @Override
+            public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                mode.write(cbuf, off, len);
+            }
+
+            @Override
+            public void flush() throws IOException {
+                mode.flush();
+            }
+
+            @Override
+            public void close() throws IOException {
+                mode.close();
+            }
+
+            abstract class Mode extends Writer {
+                @Override
+                public void flush() throws IOException {
+                }
+
+                @Override
+                public void close() throws IOException {
                 }
             }
 
-            @Override
-            public void write(final byte[] b) throws IOException {
-                write(b, 0, b.length);
-            }
+            class Writing extends Mode {
+                private final int max;
+                private int count;
+                private final Writer writer;
 
-            @Override
-            public void write(final byte[] b, final int off, final int len) throws IOException {
-                final int remaining = max - count;
+                public Writing(final int max, final Writer writer) {
+                    this.max = max;
+                    this.writer = writer;
+                }
 
-                if (remaining <= 0) {
+                @Override
+                public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                    final int remaining = max - count;
 
-                    maxReached(new Truncated());
+                    if (remaining <= 0) {
 
-                } else if (len == remaining) {
+                        maxReached(new Truncated());
 
-                    count += len;
-                    out.write(b, off, remaining);
-                    maxReached(new Completed());
+                    } else if (len == remaining) {
 
-                } else if (len > remaining) {
+                        count += len;
+                        writer.write(cbuf, off, remaining);
+                        maxReached(new Completed());
 
-                    count += len;
-                    out.write(b, off, remaining);
-                    maxReached(new Truncated());
+                    } else if (len > remaining) {
 
-                } else {
-                    count += len;
-                    out.write(b, off, len);
+                        count += len;
+                        writer.write(cbuf, off, remaining);
+                        maxReached(new Truncated());
+
+                    } else {
+                        count += len;
+                        writer.write(cbuf, off, len);
+                    }
+                }
+
+                @Override
+                public void flush() throws IOException {
+                    writer.flush();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    writer.close();
+                }
+
+                private void maxReached(final Mode mode) throws IOException {
+                    SnippetWriter.this.mode = mode;
+                    writer.flush();
+                    writer.close();
                 }
             }
 
-            private void maxReached(final OutputStream mode) throws IOException {
-                SnippetOutputStream.this.mode = mode;
-                out.flush();
-                out.close();
-            }
-        }
+            /**
+             * Signifies the last write was fully written, but there is
+             * no more space for future writes.
+             */
+            class Completed extends Mode {
 
-        /**
-         * Signifies the last write was fully written, but there is
-         * no more space for future writes.
-         */
-        class Completed extends OutputStream {
-            @Override
-            public void write(final int b) throws IOException {
-                SnippetOutputStream.this.mode = new Truncated();
-            }
-
-            @Override
-            public void write(final byte[] b, final int off, final int len) throws IOException {
-                if (len > 0) {
-                    SnippetOutputStream.this.mode = new Truncated();
+                @Override
+                public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                    if (len > 0) {
+                        SnippetWriter.this.mode = new Truncated();
+                    }
                 }
             }
-        }
 
-        /**
-         * Signifies the last write was not completely written and there was
-         * no more space for this or future writes.
-         */
-        static class Truncated extends OutputStream {
-            @Override
-            public void write(final int b) throws IOException {
-            }
-
-            @Override
-            public void write(final byte[] b, final int off, final int len) throws IOException {
+            /**
+             * Signifies the last write was not completely written and there was
+             * no more space for this or future writes.
+             */
+            class Truncated extends Mode {
+                @Override
+                public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                }
             }
         }
     }

@@ -20,10 +20,9 @@ package org.apache.johnzon.core;
 
 import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.Arrays.asList;
-import static java.util.Optional.ofNullable;
-
+import javax.json.stream.JsonGenerator;
+import javax.json.stream.JsonGeneratorFactory;
+import java.io.Flushable;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -32,16 +31,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.asList;
+import static java.util.Optional.ofNullable;
 
-public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {    
+public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements JsonGeneratorFactory {
     public static final String GENERATOR_BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer-generator";
     public static final String BOUNDED_OUTPUT_STREAM_WRITER_LEN = "org.apache.johnzon.boundedoutputstreamwriter";
-    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH =  Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
-   
+    public static final int DEFAULT_GENERATOR_BUFFER_LENGTH = Integer.getInteger(GENERATOR_BUFFER_LENGTH, 64 * 1024); //64k
+
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING, BOUNDED_OUTPUT_STREAM_WRITER_LEN
+            JsonGenerator.PRETTY_PRINTING, GENERATOR_BUFFER_LENGTH, BUFFER_STRATEGY, ENCODING, BOUNDED_OUTPUT_STREAM_WRITER_LEN
     );
 
     private final Charset defaultEncoding;
@@ -49,7 +49,8 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
     //key caching currently disabled
     private final boolean pretty;
     private final int boundedOutputStreamWriter;
-    private final BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private final Buffer buffer;
+    private volatile Buffer customBuffer;
 
     public JsonGeneratorFactoryImpl(final Map<String, ?> config) {
         super(config, SUPPORTED_CONFIG_KEYS, null);
@@ -63,12 +64,12 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
         if (bufferSize <= 0) {
             throw new IllegalArgumentException("buffer length must be greater than zero");
         }
-        this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
+        this.buffer = new Buffer(getBufferProvider().newCharProvider(bufferSize), bufferSize);
     }
 
     @Override
     public JsonGenerator createGenerator(final Writer writer) {
-        return new JsonGeneratorImpl(writer, bufferProvider, pretty);
+        return new JsonGeneratorImpl(writer, getBufferProvider(writer), pretty);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
                 boundedOutputStreamWriter <= 0 ?
                         new OutputStreamWriter(out, defaultEncoding) :
                         new BoundedOutputStreamWriter(out, defaultEncoding, boundedOutputStreamWriter),
-                bufferProvider, pretty);
+                getBufferProvider(out), pretty);
     }
 
     @Override
@@ -87,11 +88,39 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
                 boundedOutputStreamWriter <= 0 ?
                         new OutputStreamWriter(out, cs) :
                         new BoundedOutputStreamWriter(out, cs, boundedOutputStreamWriter),
-                bufferProvider, pretty);
+                getBufferProvider(out), pretty);
     }
 
     @Override
     public Map<String, ?> getConfigInUse() {
         return Collections.unmodifiableMap(internalConfig);
+    }
+
+    private BufferStrategy.BufferProvider<char[]> getBufferProvider(final Flushable flushable) {
+        if (!(flushable instanceof Buffered)) {
+            return buffer.provider;
+        }
+
+        final int bufferSize = Buffered.class.cast(flushable).bufferSize();
+
+        if (customBuffer != null && customBuffer.size == bufferSize) {
+            return customBuffer.provider;
+        }
+
+        synchronized (this) {
+            customBuffer = new Buffer(getBufferProvider().newCharProvider(bufferSize), bufferSize);
+            return customBuffer.provider;
+        }
+    }
+
+    private static final class Buffer {
+        private final BufferStrategy.BufferProvider<char[]> provider;
+        private final int size;
+
+        private Buffer(final BufferStrategy.BufferProvider<char[]>
+                               bufferProvider, final int bufferSize) {
+            this.provider = bufferProvider;
+            this.size = bufferSize;
+        }
     }
 }
