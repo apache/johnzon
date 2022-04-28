@@ -234,6 +234,12 @@ public class JohnzonBuilder implements JsonbBuilder {
                                 .orElse(false)));
         builder.setAccessMode(accessMode);
 
+        config.getProperty("johnzon.snippetMaxLength")
+                .map(it -> Number.class.isInstance(it)?
+                        Number.class.cast(it).intValue() :
+                        Integer.parseInt(it.toString()))
+                .ifPresent(builder::setSnippetMaxLength);
+
         // user adapters
         config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter -> {
             final ParameterizedType pt = ParameterizedType.class.cast(

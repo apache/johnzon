@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Locale.ROOT;
 
 // import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
+import org.apache.johnzon.core.Snippet;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -81,6 +82,7 @@ public class MapperBuilder {
     private boolean pretty;
     private final Collection<Closeable> closeables = new ArrayList<Closeable>();
     private int version = -1;
+    private int snippetMaxLength = 50;
     private boolean close;
     private boolean skipNull = true;
     private boolean skipEmptyArray;
@@ -236,7 +238,8 @@ public class MapperBuilder {
                         supportEnumContainerDeserialization,
                         typeLoader, discriminatorMapper, discriminator,
                         deserializationPredicate, serializationPredicate,
-                        enumConverterFactory),
+                        enumConverterFactory,
+                        new Snippet(snippetMaxLength, generatorFactory)),
                 closeables);
     }
 
@@ -246,6 +249,11 @@ public class MapperBuilder {
 
     public ConcurrentHashMap<AdapterKey, Adapter<?,?>> getAdapters() {
         return adapters;
+    }
+
+    public MapperBuilder setSnippetMaxLength(final int snippetMaxLength) {
+        this.snippetMaxLength = snippetMaxLength;
+        return this;
     }
 
     public MapperBuilder setUseShortISO8601Format(final boolean useShortISO8601Format) {
