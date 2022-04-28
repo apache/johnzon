@@ -16,6 +16,7 @@
  */
 package org.apache.johnzon.core;
 
+import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
@@ -49,10 +50,14 @@ public class Snippet {
      * This constructor should be used only in static or other scenarios were
      * there is no JsonGeneratorFactory instance in scope.
      *
+     * This constructor must not be used in Johnzon project.  It is only here
+     * for convenience for integrators.  Using it disables several Johnzon
+     * features.
+     *
      * @param max the maximum length of the serialized json produced via of()
      */
     public Snippet(final int max) {
-        this(max, new JsonGeneratorFactoryImpl(new HashMap<String, Object>() {
+        this(max, Json.createGeneratorFactory(new HashMap<String, Object>() {
             {
                 this.put(GENERATOR_BUFFER_LENGTH, max);
             }
@@ -265,6 +270,7 @@ public class Snippet {
                 this.bufferSize = () -> {
                     // disable flushing
                     flush = () -> {
+                        // no-op
                     };
                     // future calls can just return the size
                     bufferSize = () -> size;
@@ -325,10 +331,12 @@ public class Snippet {
             abstract class Mode extends Writer {
                 @Override
                 public void flush() throws IOException {
+                    // no-op
                 }
 
                 @Override
                 public void close() throws IOException {
+                    // no-op
                 }
             }
 
@@ -406,6 +414,7 @@ public class Snippet {
             class Truncated extends Mode {
                 @Override
                 public void write(final char[] cbuf, final int off, final int len) throws IOException {
+                    // no-op
                 }
             }
         }
