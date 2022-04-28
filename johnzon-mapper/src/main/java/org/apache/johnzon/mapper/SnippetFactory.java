@@ -18,34 +18,8 @@
  */
 package org.apache.johnzon.mapper;
 
-import java.lang.annotation.Inherited;
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
+import javax.json.JsonValue;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.RUNTIME;
-
-/**
-  * Example: @JohnzonVirtualObject(path = {"nested", "nested-again"}, field = { "a", "b" })
-  * will generate {"nested":{"nested-again":{"a":"xxx", "b": "yyy"}}}
-  */
-@Target(TYPE)
-@Retention(RUNTIME)
-@Inherited
-public @interface JohnzonVirtualObject {
-    /**
-     * @return the virtual object(s) path.
-     */
-    String[] path();
-
-    /**
-     * @return the list of fields to consider.
-     */
-    Field[] fields();
-
-    @interface Field {
-        String value();
-        boolean read() default true;
-        boolean write() default true;
-    }
+public interface SnippetFactory {
+    String of(JsonValue value);
 }

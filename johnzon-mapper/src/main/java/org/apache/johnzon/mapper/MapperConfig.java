@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.core.Snippet;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
@@ -97,7 +96,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     private final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory;
 
-    private final Snippet snippet;
+    private final SnippetFactory snippet;
 
     //CHECKSTYLE:OFF
     @Deprecated
@@ -130,7 +129,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                 attributeOrder, failOnUnknown, serializeValueFilter, useBigDecimalForFloats, deduplicateObjects, interfaceImplementationMapping,
                 useJsRange, useBigDecimalForObjectNumbers, supportEnumMapDeserialization, typeLoader,
                 discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
-                new Snippet(50, Json.createGeneratorFactory(emptyMap())));
+                JohnzonCores.snippetFactory(50, Json.createGeneratorFactory(emptyMap())));
     }
 
     //disable checkstyle for 10+ parameters
@@ -158,7 +157,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final Predicate<Class<?>> deserializationPredicate,
                         final Predicate<Class<?>> serializationPredicate,
                         final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory,
-                        final Snippet snippet) {
+                        final SnippetFactory snippet) {
     //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -199,7 +198,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.snippet = snippet;
     }
 
-    public Snippet getSnippet() {
+    public SnippetFactory getSnippet() {
         return snippet;
     }
 

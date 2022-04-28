@@ -18,21 +18,14 @@
  */
 package org.apache.johnzon.mapper.internal;
 
-import org.apache.johnzon.core.JsonPointerUtil;
-
 /**
  * Internal class to easily collect information about the 'depth' of a json object
  * without having to eagerly construct it.
- *
+ * <p>
  * For use in recursive generator and parser method calls to defer string operations.
  */
 public class JsonPointerTracker {
-    public static final JsonPointerTracker ROOT = new JsonPointerTracker(null, null) {
-        @Override
-        public String toString() {
-            return "/";
-        }
-    };
+    public static final JsonPointerTracker ROOT = new JsonPointerTracker(null, null);
 
     private final JsonPointerTracker parent;
     private final String currentNode;
@@ -41,7 +34,7 @@ public class JsonPointerTracker {
 
 
     /**
-     * @param parent or {@code null} if this is the root object
+     * @param parent      or {@code null} if this is the root object
      * @param currentNode the name of the attribute or "/" for the root object
      */
     public JsonPointerTracker(JsonPointerTracker parent, String currentNode) {
@@ -51,28 +44,44 @@ public class JsonPointerTracker {
 
     /**
      * For Arrays and Lists.
+     *
      * @param jsonPointer
-     * @param i current counter number
+     * @param i           current counter number
      */
     public JsonPointerTracker(JsonPointerTracker jsonPointer, int i) {
-       this(jsonPointer, Integer.toString(i));
+        this(jsonPointer, Integer.toString(i));
     }
 
     @Override
     public String toString() {
-        if (jsonPointer == null) {
-            if (parent != null) {
-                jsonPointer = (parent != ROOT ? parent + "/" : "/") + JsonPointerUtil.encode(currentNode);
-            } else {
-                if (currentNode != null) {
-                    jsonPointer = "/" + JsonPointerUtil.encode(currentNode);
-                } else {
-                    jsonPointer = "/";
-                }
-            }
+        if (jsonPointer != null) {
+            return jsonPointer;
         }
-
-        return jsonPointer;
+        if (parent != null) {
+            return jsonPointer = (parent != ROOT ? parent + "/" : "/") + encode(currentNode);
+        }
+        if (currentNode != null) {
+            return jsonPointer = "/" + encode(currentNode);
+        }
+        return jsonPointer = "/";
     }
 
+    // from org.apache.johnzon.mapper.internal.JsonPointerTracker to not depend on johnzon-core
+    private static String encode(final String s) {
+        if (s == null || s.isEmpty()) {
+            return s;
+        }
+        return replace(replace(s, "~", "~0"), "/", "~1");
+    }
+
+    private static String replace(final String src, final String from, final String to) {
+        if (src.isEmpty()) {
+            return src;
+        }
+        final int start = src.indexOf(from);
+        if (start >= 0) {
+            return src.substring(0, start) + to + replace(src.substring(start + from.length()), from, to);
+        }
+        return src;
+    }
 }

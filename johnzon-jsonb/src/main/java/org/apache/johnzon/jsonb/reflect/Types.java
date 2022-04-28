@@ -16,36 +16,35 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.core;
-    
+package org.apache.johnzon.jsonb.reflect;
+
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.Arrays;
 
+// forked from johnzon-core to ensure the independency without creating a new module just for that
 public class Types {
-
-    /**
-     * This method helps reconstructing the resulting ParameterizedType for a specific generic type across its hierarchy.
-     *
-     * Example: Let's create some interface Converter[X, Y] and try to determine the actual type arguments for that
-     * interface from classes/interfaces which inherit from it (directly or indirectly).
-     *
-     * <ul>
-     * <li>Converter[X, Y] will yield Converter[X, Y]</li>
-     * <li>StringConverter[Z] extends Converter[Z, String] will yield Converter[Z, String]</li>
-     * <li>AbstractStringConverter[A] implements StringConverter[A] will yield Converter[A, String]</li>
-     * <li>UUIDStringConverter extends AbstractStringConverter[UUID] will yield Converter[UUID, String]</li>
-     * </ul>
-     *
-     * For the last example (UUIDStringConverter), nowhere in its hierarchy is a type directly implementing
-     * Converter[UUID, String] but this method is capable of reconstructing that information.
-     */
-    public ParameterizedType findParameterizedType(Class<?> klass, Class<?> parameterizedClass) {
+    public ParameterizedType findParameterizedType(final Class<?> klass, final Class<?> parameterizedClass) {
         return new ParameterizedTypeImpl(parameterizedClass, resolveArgumentTypes(klass, parameterizedClass));
     }
 
-    private Type[] resolveArgumentTypes(Type type, Class<?> parameterizedClass) {
+    public Class<?> findParamType(final ParameterizedType type, final Class<?> expectedWrapper) {
+        if (type.getActualTypeArguments().length != 1) {
+            return null;
+        }
+        final Class<?> asClass = asClass(type.getRawType());
+        if (asClass == null || !expectedWrapper.isAssignableFrom(asClass)) {
+            return null;
+        }
+        return asClass(type.getActualTypeArguments()[0]);
+    }
+
+    public Class<?> asClass(final Type type) {
+        return Class.class.isInstance(type) ? Class.class.cast(type) : null;
+    }
+
+    private Type[] resolveArgumentTypes(final Type type, final Class<?> parameterizedClass) {
         if (type instanceof Class<?>) {
             return resolveArgumentTypes((Class<?>) type, parameterizedClass);
         }
@@ -55,7 +54,7 @@ public class Types {
         throw new IllegalArgumentException("Cannot resolve argument types from " + type.getClass().getSimpleName());
     }
 
-    private Type[] resolveArgumentTypes(Class<?> type, Class<?> parameterizedClass) {
+    private Type[] resolveArgumentTypes(final Class<?> type, final Class<?> parameterizedClass) {
         if (parameterizedClass.equals(type)) {
             // May return Class[] instead of Type[], so copy it as a Type[] to avoid
             // problems in visit(ParameterizedType)
@@ -74,10 +73,10 @@ public class Types {
         throw new IllegalArgumentException(String.format("%s is not assignable from %s", type, parameterizedClass));
     }
 
-    private Type[] resolveArgumentTypes(ParameterizedType type, Class<?> parameterizedClass) {
-        Class<?> rawType = (Class<?>) type.getRawType(); // always a Class
-        TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
-        Type[] types = resolveArgumentTypes(rawType, parameterizedClass);
+    private Type[] resolveArgumentTypes(final ParameterizedType type, final Class<?> parameterizedClass) {
+        final Class<?> rawType = (Class<?>) type.getRawType(); // always a Class
+        final TypeVariable<?>[] typeVariables = rawType.getTypeParameters();
+        final Type[] types = resolveArgumentTypes(rawType, parameterizedClass);
         for (int i = 0; i < types.length; i++) {
             if (types[i] instanceof TypeVariable<?>) {
                 TypeVariable<?> typeVariable = (TypeVariable<?>) types[i];
@@ -92,7 +91,6 @@ public class Types {
     }
 
     private static class ParameterizedTypeImpl implements ParameterizedType {
-
         private final Type rawType;
         private final Type[] arguments;
 
@@ -125,15 +123,15 @@ public class Types {
         public boolean equals(final Object obj) {
             if (this == obj) {
                 return true;
-            } else if (obj instanceof ParameterizedType) {
+            }
+            if (obj instanceof ParameterizedType) {
                 final ParameterizedType that = (ParameterizedType) obj;
                 final Type thatRawType = that.getRawType();
                 return that.getOwnerType() == null
                         && (rawType == null ? thatRawType == null : rawType.equals(thatRawType))
                         && Arrays.equals(arguments, that.getActualTypeArguments());
-            } else {
-                return false;
             }
+            return false;
         }
 
         @Override

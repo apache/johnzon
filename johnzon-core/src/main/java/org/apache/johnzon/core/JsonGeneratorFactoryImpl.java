@@ -56,8 +56,9 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
         super(config, SUPPORTED_CONFIG_KEYS, null);
         this.pretty = getBool(JsonGenerator.PRETTY_PRINTING, false);
         this.boundedOutputStreamWriter = getInt(BOUNDED_OUTPUT_STREAM_WRITER_LEN, -1);
-        this.defaultEncoding = ofNullable(getString(ENCODING, null))
-                .map(Charset::forName)
+        this.defaultEncoding = ofNullable(config)
+                .map(c -> c.get(ENCODING))
+                .map(it -> Charset.class.isInstance(it) ? Charset.class.cast(it) : Charset.forName(it.toString()))
                 .orElse(UTF_8);
 
         final int bufferSize = getInt(GENERATOR_BUFFER_LENGTH, DEFAULT_GENERATOR_BUFFER_LENGTH);
@@ -96,12 +97,16 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
         return Collections.unmodifiableMap(internalConfig);
     }
 
+    public Charset getDefaultEncoding() {
+        return defaultEncoding;
+    }
+
     private BufferStrategy.BufferProvider<char[]> getBufferProvider(final Flushable flushable) {
-        if (!(flushable instanceof IODescriptor)) {
+        if (!(flushable instanceof Buffered)) {
             return buffer.provider;
         }
 
-        final int bufferSize = IODescriptor.class.cast(flushable).bufferSize();
+        final int bufferSize = Buffered.class.cast(flushable).bufferSize();
 
         if (customBuffer != null && customBuffer.size == bufferSize) {
             return customBuffer.provider;

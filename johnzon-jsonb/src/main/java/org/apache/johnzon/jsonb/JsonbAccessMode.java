@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.core.Types;
 import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
 import org.apache.johnzon.jsonb.converter.JsonbDateConverter;
 import org.apache.johnzon.jsonb.converter.JsonbLocalDateConverter;
@@ -29,6 +28,7 @@ import org.apache.johnzon.jsonb.converter.JsonbValueConverter;
 import org.apache.johnzon.jsonb.converter.JsonbZonedDateTimeConverter;
 import org.apache.johnzon.jsonb.order.PerHierarchyAndLexicographicalOrderFieldComparator;
 import org.apache.johnzon.jsonb.reflect.GenericArrayTypeImpl;
+import org.apache.johnzon.jsonb.reflect.Types;
 import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
 import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
 import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;

@@ -277,7 +277,7 @@ public class SnippetTest {
              * Serialize the json value, truncating nothing
              */
             final TrackingJsonGeneratorFactory full = new TrackingJsonGeneratorFactory();
-            new Snippet(Integer.MAX_VALUE, full).of(object);
+            new Snippet(8192, full).of(object);
 
             /*
              * Assert that the calls made in truncated version are less
