@@ -97,11 +97,11 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
     }
 
     private BufferStrategy.BufferProvider<char[]> getBufferProvider(final Flushable flushable) {
-        if (!(flushable instanceof Buffered)) {
+        if (!(flushable instanceof IODescriptor)) {
             return buffer.provider;
         }
 
-        final int bufferSize = Buffered.class.cast(flushable).bufferSize();
+        final int bufferSize = IODescriptor.class.cast(flushable).bufferSize();
 
         if (customBuffer != null && customBuffer.size == bufferSize) {
             return customBuffer.provider;

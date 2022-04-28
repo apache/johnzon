@@ -45,6 +45,9 @@ public class Snippet {
     private final int max;
     private final JsonGeneratorFactory generatorFactory;
 
+    // IMPORTANT: should NOT be used inside johnzon project itself which should *always*
+    //            use a contextual JsonGeneratorFactory - keep in mind we are not johnzon-core dependent
+    //            not JSON dependent (some JsonGeneratorFactory can issue yaml or binary for ex)
     /**
      * This constructor should be used only in static or other scenarios were
      * there is no JsonGeneratorFactory instance in scope.
@@ -246,7 +249,7 @@ public class Snippet {
          * If the last write brought us over the max length, the
          * state will be Truncated.
          */
-        class SnippetWriter extends Writer implements Buffered {
+        class SnippetWriter extends Writer implements IODescriptor {
 
             private final ByteArrayOutputStream buffer;
             private Mode mode;

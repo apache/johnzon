@@ -26,7 +26,7 @@ package org.apache.johnzon.core;
  *
  * @since 1.2.17
  */
-public interface Buffered {
+public interface IODescriptor {
 
     /**
      * The buffer size used by this stream while reading input or before writing
