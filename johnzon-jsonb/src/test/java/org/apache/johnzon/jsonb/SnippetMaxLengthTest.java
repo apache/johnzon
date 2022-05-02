@@ -38,7 +38,9 @@ public class SnippetMaxLengthTest {
             jsonb.fromJson(s, Person.class);
             fail();
         } catch (JsonbException e) {
-            assertEquals("Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"last\":\"Brown\"}", e.getMessage());
+            assertMessage("Person property 'name' of type String cannot be mapped to json object value: " +
+                    "{\"first\":\"Charlie\",\"last\":\"Brown\"}\n" +
+                    "Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"last\":\"Brown\"}", e.getMessage());
         }
     }
 
@@ -49,8 +51,9 @@ public class SnippetMaxLengthTest {
             jsonb.fromJson(s, Person.class);
             fail();
         } catch (JsonbException e) {
-            assertEquals("Can't map JSON Object to class java.lang.String: " +
-                    "{\"first\":\"Charlie\",\"last\":\"Brown\",\"age\":\"8.5\",\"dog...", e.getMessage());
+            assertMessage("Person property 'name' of type String cannot be mapped to json object value:" +
+                    " {\"first\":\"Charlie\",\"last\":\"Brown\",\"age\":\"8.5\",\"dog...\n" +
+                    "Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"last\":\"Brown\",\"age\":\"8.5\",\"dog...", e.getMessage());
         }
     }
 
@@ -63,10 +66,19 @@ public class SnippetMaxLengthTest {
             jsonb.fromJson(s, Person.class);
             fail();
         } catch (JsonbException e) {
-            assertEquals("Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"...", e.getMessage());
+            assertMessage("Person property 'name' of type String cannot be mapped to json object value:" +
+                    " {\"first\":\"Charlie\",\"...\n" +
+                    "Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"...", e.getMessage());
         }
     }
 
+    private void assertMessage(final String expected, final String actual) {
+        assertEquals(normalize(expected), normalize(actual));
+    }
+
+    private String normalize(final String message) {
+        return message.replace("\r\n", "\n");
+    }
 
     @Test
     public void testSetAsString() throws Exception {
@@ -77,7 +89,9 @@ public class SnippetMaxLengthTest {
             jsonb.fromJson(s, Person.class);
             fail();
         } catch (JsonbException e) {
-            assertEquals("Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"...", e.getMessage());
+            assertMessage("Person property 'name' of type String cannot be mapped to json object value:" +
+                    " {\"first\":\"Charlie\",\"...\n" +
+                    "Can't map JSON Object to class java.lang.String: {\"first\":\"Charlie\",\"...", e.getMessage());
         }
     }
 

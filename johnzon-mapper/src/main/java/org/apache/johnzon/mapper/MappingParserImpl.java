@@ -399,36 +399,43 @@ public class MappingParserImpl implements MappingParser {
             final JsonValue jsonValue = jsonEntry.getValue();
             final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
 
-            if (JsonValue.class == value.paramType) {
-                value.writer.write(t, jsonValue);
-                continue;
-            }
-            if (jsonValue == null) {
-                continue;
-            }
+            try {
+                if (JsonValue.class == value.paramType) {
+                    value.writer.write(t, jsonValue);
+                    continue;
+                }
+                if (jsonValue == null) {
+                    continue;
+                }
 
-            final AccessMode.Writer setterMethod = value.writer;
-            if (NULL == valueType) { // forced
-                setterMethod.write(t, null);
-            } else {
-                Object existingInstance = null;
-                if (config.isReadAttributeBeforeWrite()) {
-                    final Mappings.Getter getter = classMapping.getters.get(jsonEntry.getKey());
-                    if (getter != null) {
-                        try {
-                            existingInstance = getter.reader.read(t);
-                        } catch (final RuntimeException re) {
-                            // backward compatibility
+                final AccessMode.Writer setterMethod = value.writer;
+                if (NULL == valueType) { // forced
+                    setterMethod.write(t, null);
+                } else {
+                    Object existingInstance = null;
+                    if (config.isReadAttributeBeforeWrite()) {
+                        final Mappings.Getter getter = classMapping.getters.get(jsonEntry.getKey());
+                        if (getter != null) {
+                            try {
+                                existingInstance = getter.reader.read(t);
+                            } catch (final RuntimeException re) {
+                                // backward compatibility
+                            }
                         }
                     }
+                    final Object convertedValue = toValue(
+                            existingInstance, jsonValue, value.converter, value.itemConverter,
+                            value.paramType, value.objectConverter,
+                            isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType);
+                    if (convertedValue != null) {
+                        setterMethod.write(t, convertedValue);
+                    }
                 }
-                final Object convertedValue = toValue(
-                        existingInstance, jsonValue, value.converter, value.itemConverter,
-                        value.paramType, value.objectConverter,
-                        isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType);
-                if (convertedValue != null) {
-                    setterMethod.write(t, convertedValue);
-                }
+            } catch (SetterMappingException alreadyHandled) {
+                throw alreadyHandled;
+            } catch (Exception e) {
+                final String snippet = jsonValue == null? "null": config.getSnippet().of(jsonValue);
+                throw new SetterMappingException(classMapping.clazz, jsonEntry.getKey(), value.writer.getType(), valueType, snippet, e);
             }
         }
         if (classMapping.anySetter != null) {
