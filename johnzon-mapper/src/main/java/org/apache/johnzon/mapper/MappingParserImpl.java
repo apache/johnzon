@@ -743,7 +743,9 @@ public class MappingParserImpl implements MappingParser {
             return itemConverter.to(string);
         }
 
-        throw new MapperException("Unable to parse " + jsonValue + " to " + type);
+        final String snippet = config.getSnippet().of(jsonValue);
+        final String description = ExceptionMessages.description(valueType);
+        throw new MapperException("Unable to parse " + description + " to " + type + ": " + snippet);
     }
 
     private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter,

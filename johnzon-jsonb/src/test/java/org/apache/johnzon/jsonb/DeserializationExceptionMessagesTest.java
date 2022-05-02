@@ -45,15 +45,16 @@ public class DeserializationExceptionMessagesTest {
     public void objectFromNumber() throws Exception {
         assertMessage("{ \"object\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'object' of type Color cannot be mapped to json numeric value: 122333444455555.6666." +
-                        "..\nUnable to parse 122333444455555.666666777777788888888 to class org.apache.johnzon.jsonb.Deseriali" +
-                        "zationExceptionMessagesTest$Color");
+                        "..\nUnable to parse json numeric value to class org.apache.johnzon.jsonb.DeserializationExceptionMess" +
+                        "agesTest$Color: 122333444455555.6666...");
     }
 
     @Test
     public void objectFromBoolean() throws Exception {
         assertMessage("{ \"object\" : true }",
                 "Widget property 'object' of type Color cannot be mapped to json boolean value: true\nUnable to parse " +
-                        "true to class org.apache.johnzon.jsonb.DeserializationExceptionMessagesTest$Color");
+                        "json boolean value to class org.apache.johnzon.jsonb.DeserializationExceptionMessagesTest$Color: tru" +
+                        "e");
     }
 
     @Test
@@ -130,7 +131,7 @@ public class DeserializationExceptionMessagesTest {
     public void numberFromBoolean() throws Exception {
         assertMessage("{ \"number\" : true }",
                 "Widget property 'number' of type Integer cannot be mapped to json boolean value: true\nUnable to pars" +
-                        "e true to class java.lang.Integer");
+                        "e json boolean value to class java.lang.Integer: true");
     }
 
     @Test
@@ -187,7 +188,7 @@ public class DeserializationExceptionMessagesTest {
     public void intPrimitiveFromBoolean() throws Exception {
         assertMessage("{ \"intPrimitive\" : true }",
                 "Widget property 'intPrimitive' of type int cannot be mapped to json boolean value: true\nUnable to pa" +
-                        "rse true to int");
+                        "rse json boolean value to int: true");
     }
 
     @Test
@@ -467,15 +468,16 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfObjectFromNumber() throws Exception {
         assertMessage("{ \"arrayOfObject\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'arrayOfObject' of type Color[] cannot be mapped to json numeric value: 122333444455" +
-                        "555.6666...\nUnable to parse 122333444455555.666666777777788888888 to class [Lorg.apache.johnzon.json" +
-                        "b.DeserializationExceptionMessagesTest$Color;");
+                        "555.6666...\nUnable to parse json numeric value to class [Lorg.apache.johnzon.jsonb.DeserializationEx" +
+                        "ceptionMessagesTest$Color;: 122333444455555.6666...");
     }
 
     @Test
     public void arrayOfObjectFromBoolean() throws Exception {
         assertMessage("{ \"arrayOfObject\" : true }",
                 "Widget property 'arrayOfObject' of type Color[] cannot be mapped to json boolean value: true\nUnable " +
-                        "to parse true to class [Lorg.apache.johnzon.jsonb.DeserializationExceptionMessagesTest$Color;");
+                        "to parse json boolean value to class [Lorg.apache.johnzon.jsonb.DeserializationExceptionMessagesTest" +
+                        "$Color;: true");
     }
 
     @Test
@@ -490,16 +492,16 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfObjectFromArrayOfNumber() throws Exception {
         assertMessage("{ \"arrayOfObject\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'arrayOfObject' of type Color[] cannot be mapped to json array value: [2,3,5,7,11,13" +
-                        ",17,19...\nUnable to parse 2 to class org.apache.johnzon.jsonb.DeserializationExceptionMessagesTest$C" +
-                        "olor");
+                        ",17,19...\nUnable to parse json numeric value to class org.apache.johnzon.jsonb.DeserializationExcept" +
+                        "ionMessagesTest$Color: 2");
     }
 
     @Test
     public void arrayOfObjectFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"arrayOfObject\" : [true,false,true,true,false] }",
                 "Widget property 'arrayOfObject' of type Color[] cannot be mapped to json array value: [true,false,tr" +
-                        "ue,tru...\nUnable to parse true to class org.apache.johnzon.jsonb.DeserializationExceptionMessagesTes" +
-                        "t$Color");
+                        "ue,tru...\nUnable to parse json boolean value to class org.apache.johnzon.jsonb.DeserializationExcept" +
+                        "ionMessagesTest$Color: true");
     }
 
     @Test
@@ -521,14 +523,15 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfStringFromNumber() throws Exception {
         assertMessage("{ \"arrayOfString\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'arrayOfString' of type String[] cannot be mapped to json numeric value: 12233344445" +
-                        "5555.6666...\nUnable to parse 122333444455555.666666777777788888888 to class [Ljava.lang.String;");
+                        "5555.6666...\nUnable to parse json numeric value to class [Ljava.lang.String;: 122333444455555.6666.." +
+                        ".");
     }
 
     @Test
     public void arrayOfStringFromBoolean() throws Exception {
         assertMessage("{ \"arrayOfString\" : true }",
                 "Widget property 'arrayOfString' of type String[] cannot be mapped to json boolean value: true\nUnable" +
-                        " to parse true to class [Ljava.lang.String;");
+                        " to parse json boolean value to class [Ljava.lang.String;: true");
     }
 
     @Test
@@ -542,14 +545,14 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfStringFromArrayOfNumber() throws Exception {
         assertMessage("{ \"arrayOfString\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'arrayOfString' of type String[] cannot be mapped to json array value: [2,3,5,7,11,1" +
-                        "3,17,19...\nUnable to parse 2 to class java.lang.String");
+                        "3,17,19...\nUnable to parse json numeric value to class java.lang.String: 2");
     }
 
     @Test
     public void arrayOfStringFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"arrayOfString\" : [true,false,true,true,false] }",
                 "Widget property 'arrayOfString' of type String[] cannot be mapped to json array value: [true,false,t" +
-                        "rue,tru...\nUnable to parse true to class java.lang.String");
+                        "rue,tru...\nUnable to parse json boolean value to class java.lang.String: true");
     }
 
     @Test
@@ -571,14 +574,15 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfNumberFromNumber() throws Exception {
         assertMessage("{ \"arrayOfNumber\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'arrayOfNumber' of type Number[] cannot be mapped to json numeric value: 12233344445" +
-                        "5555.6666...\nUnable to parse 122333444455555.666666777777788888888 to class [Ljava.lang.Number;");
+                        "5555.6666...\nUnable to parse json numeric value to class [Ljava.lang.Number;: 122333444455555.6666.." +
+                        ".");
     }
 
     @Test
     public void arrayOfNumberFromBoolean() throws Exception {
         assertMessage("{ \"arrayOfNumber\" : true }",
                 "Widget property 'arrayOfNumber' of type Number[] cannot be mapped to json boolean value: true\nUnable" +
-                        " to parse true to class [Ljava.lang.Number;");
+                        " to parse json boolean value to class [Ljava.lang.Number;: true");
     }
 
     @Test
@@ -600,7 +604,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfNumberFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"arrayOfNumber\" : [true,false,true,true,false] }",
                 "Widget property 'arrayOfNumber' of type Number[] cannot be mapped to json array value: [true,false,t" +
-                        "rue,tru...\nUnable to parse true to class java.lang.Number");
+                        "rue,tru...\nUnable to parse json boolean value to class java.lang.Number: true");
     }
 
     @Test
@@ -622,14 +626,15 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanFromNumber() throws Exception {
         assertMessage("{ \"arrayOfBoolean\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'arrayOfBoolean' of type Boolean[] cannot be mapped to json numeric value: 122333444" +
-                        "455555.6666...\nUnable to parse 122333444455555.666666777777788888888 to class [Ljava.lang.Boolean;");
+                        "455555.6666...\nUnable to parse json numeric value to class [Ljava.lang.Boolean;: 122333444455555.666" +
+                        "6...");
     }
 
     @Test
     public void arrayOfBooleanFromBoolean() throws Exception {
         assertMessage("{ \"arrayOfBoolean\" : true }",
                 "Widget property 'arrayOfBoolean' of type Boolean[] cannot be mapped to json boolean value: true\nUnab" +
-                        "le to parse true to class [Ljava.lang.Boolean;");
+                        "le to parse json boolean value to class [Ljava.lang.Boolean;: true");
     }
 
     @Test
@@ -672,14 +677,14 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanPrimitiveFromNumber() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json numeric value: " +
-                        "122333444455555.6666...\nUnable to parse 122333444455555.666666777777788888888 to class [Z");
+                        "122333444455555.6666...\nUnable to parse json numeric value to class [Z: 122333444455555.6666...");
     }
 
     @Test
     public void arrayOfBooleanPrimitiveFromBoolean() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : true }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json boolean value: " +
-                        "true\nUnable to parse true to class [Z");
+                        "true\nUnable to parse json boolean value to class [Z: true");
     }
 
     @Test
@@ -734,16 +739,16 @@ public class DeserializationExceptionMessagesTest {
     public void listOfObjectFromNumber() throws Exception {
         assertMessage("{ \"listOfObject\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'listOfObject' of type List<Color> cannot be mapped to json numeric value: 122333444" +
-                        "455555.6666...\nUnable to parse 122333444455555.666666777777788888888 to java.util.List<org.apache.jo" +
-                        "hnzon.jsonb.DeserializationExceptionMessagesTest$Color>");
+                        "455555.6666...\nUnable to parse json numeric value to java.util.List<org.apache.johnzon.jsonb.Deseria" +
+                        "lizationExceptionMessagesTest$Color>: 122333444455555.6666...");
     }
 
     @Test
     public void listOfObjectFromBoolean() throws Exception {
         assertMessage("{ \"listOfObject\" : true }",
                 "Widget property 'listOfObject' of type List<Color> cannot be mapped to json boolean value: true\nUnab" +
-                        "le to parse true to java.util.List<org.apache.johnzon.jsonb.DeserializationExceptionMessagesTest$Col" +
-                        "or>");
+                        "le to parse json boolean value to java.util.List<org.apache.johnzon.jsonb.DeserializationExceptionMe" +
+                        "ssagesTest$Color>: true");
     }
 
     @Test
@@ -758,16 +763,16 @@ public class DeserializationExceptionMessagesTest {
     public void listOfObjectFromArrayOfNumber() throws Exception {
         assertMessage("{ \"listOfObject\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'listOfObject' of type List<Color> cannot be mapped to json array value: [2,3,5,7,11" +
-                        ",13,17,19...\nUnable to parse 2 to class org.apache.johnzon.jsonb.DeserializationExceptionMessagesTes" +
-                        "t$Color");
+                        ",13,17,19...\nUnable to parse json numeric value to class org.apache.johnzon.jsonb.DeserializationExc" +
+                        "eptionMessagesTest$Color: 2");
     }
 
     @Test
     public void listOfObjectFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"listOfObject\" : [true,false,true,true,false] }",
                 "Widget property 'listOfObject' of type List<Color> cannot be mapped to json array value: [true,false" +
-                        ",true,tru...\nUnable to parse true to class org.apache.johnzon.jsonb.DeserializationExceptionMessages" +
-                        "Test$Color");
+                        ",true,tru...\nUnable to parse json boolean value to class org.apache.johnzon.jsonb.DeserializationExc" +
+                        "eptionMessagesTest$Color: true");
     }
 
     @Test
@@ -789,15 +794,15 @@ public class DeserializationExceptionMessagesTest {
     public void listOfStringFromNumber() throws Exception {
         assertMessage("{ \"listOfString\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'listOfString' of type List<String> cannot be mapped to json numeric value: 12233344" +
-                        "4455555.6666...\nUnable to parse 122333444455555.666666777777788888888 to java.util.List<java.lang.St" +
-                        "ring>");
+                        "4455555.6666...\nUnable to parse json numeric value to java.util.List<java.lang.String>: 122333444455" +
+                        "555.6666...");
     }
 
     @Test
     public void listOfStringFromBoolean() throws Exception {
         assertMessage("{ \"listOfString\" : true }",
                 "Widget property 'listOfString' of type List<String> cannot be mapped to json boolean value: true\nUna" +
-                        "ble to parse true to java.util.List<java.lang.String>");
+                        "ble to parse json boolean value to java.util.List<java.lang.String>: true");
     }
 
     @Test
@@ -811,14 +816,14 @@ public class DeserializationExceptionMessagesTest {
     public void listOfStringFromArrayOfNumber() throws Exception {
         assertMessage("{ \"listOfString\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'listOfString' of type List<String> cannot be mapped to json array value: [2,3,5,7,1" +
-                        "1,13,17,19...\nUnable to parse 2 to class java.lang.String");
+                        "1,13,17,19...\nUnable to parse json numeric value to class java.lang.String: 2");
     }
 
     @Test
     public void listOfStringFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"listOfString\" : [true,false,true,true,false] }",
                 "Widget property 'listOfString' of type List<String> cannot be mapped to json array value: [true,fals" +
-                        "e,true,tru...\nUnable to parse true to class java.lang.String");
+                        "e,true,tru...\nUnable to parse json boolean value to class java.lang.String: true");
     }
 
     @Test
@@ -840,15 +845,15 @@ public class DeserializationExceptionMessagesTest {
     public void listOfNumberFromNumber() throws Exception {
         assertMessage("{ \"listOfNumber\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'listOfNumber' of type List<Number> cannot be mapped to json numeric value: 12233344" +
-                        "4455555.6666...\nUnable to parse 122333444455555.666666777777788888888 to java.util.List<java.lang.Nu" +
-                        "mber>");
+                        "4455555.6666...\nUnable to parse json numeric value to java.util.List<java.lang.Number>: 122333444455" +
+                        "555.6666...");
     }
 
     @Test
     public void listOfNumberFromBoolean() throws Exception {
         assertMessage("{ \"listOfNumber\" : true }",
                 "Widget property 'listOfNumber' of type List<Number> cannot be mapped to json boolean value: true\nUna" +
-                        "ble to parse true to java.util.List<java.lang.Number>");
+                        "ble to parse json boolean value to java.util.List<java.lang.Number>: true");
     }
 
     @Test
@@ -870,7 +875,7 @@ public class DeserializationExceptionMessagesTest {
     public void listOfNumberFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"listOfNumber\" : [true,false,true,true,false] }",
                 "Widget property 'listOfNumber' of type List<Number> cannot be mapped to json array value: [true,fals" +
-                        "e,true,tru...\nUnable to parse true to class java.lang.Number");
+                        "e,true,tru...\nUnable to parse json boolean value to class java.lang.Number: true");
     }
 
     @Test
@@ -892,15 +897,15 @@ public class DeserializationExceptionMessagesTest {
     public void listOfBooleanFromNumber() throws Exception {
         assertMessage("{ \"listOfBoolean\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'listOfBoolean' of type List<Boolean> cannot be mapped to json numeric value: 122333" +
-                        "444455555.6666...\nUnable to parse 122333444455555.666666777777788888888 to java.util.List<java.lang." +
-                        "Boolean>");
+                        "444455555.6666...\nUnable to parse json numeric value to java.util.List<java.lang.Boolean>: 122333444" +
+                        "455555.6666...");
     }
 
     @Test
     public void listOfBooleanFromBoolean() throws Exception {
         assertMessage("{ \"listOfBoolean\" : true }",
                 "Widget property 'listOfBoolean' of type List<Boolean> cannot be mapped to json boolean value: true\nU" +
-                        "nable to parse true to java.util.List<java.lang.Boolean>");
+                        "nable to parse json boolean value to java.util.List<java.lang.Boolean>: true");
     }
 
     @Test
