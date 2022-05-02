@@ -229,70 +229,70 @@ public class DeserializationExceptionMessagesTest {
     public void booleanFromObject() throws Exception {
         assertMessage("{ \"bool\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json object value: {\"red\":255,\"green\":1.." +
-                        ".\nUnable to parse {\"red\":255,\"green\":165,\"blue\":0} to boolean");
+                        ".\nUnable to parse json object value to boolean: {\"red\":255,\"green\":1...");
     }
 
     @Test
     public void booleanFromString() throws Exception {
         assertMessage("{ \"bool\" : \"Supercalifragilisticexpialidocious\" }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json string value: \"Supercalifragilisti.." +
-                        ".\nUnable to parse \"Supercalifragilisticexpialidocious\" to boolean");
+                        ".\nUnable to parse json string value to boolean: \"Supercalifragilisti...");
     }
 
     @Test
     public void booleanFromNumber() throws Exception {
         assertMessage("{ \"bool\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json numeric value: 122333444455555.6666." +
-                        "..\nUnable to parse 122333444455555.666666777777788888888 to boolean");
+                        "..\nUnable to parse json numeric value to boolean: 122333444455555.6666...");
     }
 
     @Test
     public void booleanFromArrayOfObject() throws Exception {
         assertMessage("{ \"bool\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json array value: [{\"red\":255,\"green\":..." +
-                        "\nUnable to parse [{\"red\":255,\"green\":165,\"blue\":0},{\"red\":0,\"green\":45,\"blue\":127}] to boolean");
+                        "\nUnable to parse json array value to boolean: [{\"red\":255,\"green\":...");
     }
 
     @Test
     public void booleanFromArrayOfString() throws Exception {
         assertMessage("{ \"bool\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json array value: [\"Klaatu\",\"barada\",\"..." +
-                        "\nUnable to parse [\"Klaatu\",\"barada\",\"nikto\"] to boolean");
+                        "\nUnable to parse json array value to boolean: [\"Klaatu\",\"barada\",\"...");
     }
 
     @Test
     public void booleanFromArrayOfNumber() throws Exception {
         assertMessage("{ \"bool\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json array value: [2,3,5,7,11,13,17,19..." +
-                        "\nUnable to parse [2,3,5,7,11,13,17,19,23,29] to boolean");
+                        "\nUnable to parse json array value to boolean: [2,3,5,7,11,13,17,19...");
     }
 
     @Test
     public void booleanFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"bool\" : [true,false,true,true,false] }",
                 "Widget property 'bool' of type Boolean cannot be mapped to json array value: [true,false,true,tru..." +
-                        "\nUnable to parse [true,false,true,true,false] to boolean");
+                        "\nUnable to parse json array value to boolean: [true,false,true,tru...");
     }
 
     @Test
     public void boolPrimitiveFromObject() throws Exception {
         assertMessage("{ \"boolPrimitive\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json object value: {\"red\":255,\"g" +
-                        "reen\":1...\nUnable to parse {\"red\":255,\"green\":165,\"blue\":0} to boolean");
+                        "reen\":1...\nUnable to parse json object value to boolean: {\"red\":255,\"green\":1...");
     }
 
     @Test
     public void boolPrimitiveFromString() throws Exception {
         assertMessage("{ \"boolPrimitive\" : \"Supercalifragilisticexpialidocious\" }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json string value: \"Supercalifra" +
-                        "gilisti...\nUnable to parse \"Supercalifragilisticexpialidocious\" to boolean");
+                        "gilisti...\nUnable to parse json string value to boolean: \"Supercalifragilisti...");
     }
 
     @Test
     public void boolPrimitiveFromNumber() throws Exception {
         assertMessage("{ \"boolPrimitive\" : 122333444455555.666666777777788888888 }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json numeric value: 122333444455" +
-                        "555.6666...\nUnable to parse 122333444455555.666666777777788888888 to boolean");
+                        "555.6666...\nUnable to parse json numeric value to boolean: 122333444455555.6666...");
     }
 
     @Test
@@ -307,29 +307,28 @@ public class DeserializationExceptionMessagesTest {
     public void boolPrimitiveFromArrayOfObject() throws Exception {
         assertMessage("{ \"boolPrimitive\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json array value: [{\"red\":255,\"g" +
-                        "reen\":...\nUnable to parse [{\"red\":255,\"green\":165,\"blue\":0},{\"red\":0,\"green\":45,\"blue\":127}] to bool" +
-                        "ean");
+                        "reen\":...\nUnable to parse json array value to boolean: [{\"red\":255,\"green\":...");
     }
 
     @Test
     public void boolPrimitiveFromArrayOfString() throws Exception {
         assertMessage("{ \"boolPrimitive\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json array value: [\"Klaatu\",\"bar" +
-                        "ada\",\"...\nUnable to parse [\"Klaatu\",\"barada\",\"nikto\"] to boolean");
+                        "ada\",\"...\nUnable to parse json array value to boolean: [\"Klaatu\",\"barada\",\"...");
     }
 
     @Test
     public void boolPrimitiveFromArrayOfNumber() throws Exception {
         assertMessage("{ \"boolPrimitive\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json array value: [2,3,5,7,11,13" +
-                        ",17,19...\nUnable to parse [2,3,5,7,11,13,17,19,23,29] to boolean");
+                        ",17,19...\nUnable to parse json array value to boolean: [2,3,5,7,11,13,17,19...");
     }
 
     @Test
     public void boolPrimitiveFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"boolPrimitive\" : [true,false,true,true,false] }",
                 "Widget property 'boolPrimitive' of type boolean cannot be mapped to json array value: [true,false,tr" +
-                        "ue,tru...\nUnable to parse [true,false,true,true,false] to boolean");
+                        "ue,tru...\nUnable to parse json array value to boolean: [true,false,true,tru...");
     }
 
     @Test
@@ -637,21 +636,21 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanFromArrayOfObject() throws Exception {
         assertMessage("{ \"arrayOfBoolean\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'arrayOfBoolean' of type Boolean[] cannot be mapped to json array value: [{\"red\":255" +
-                        ",\"green\":...\nUnable to parse {\"red\":255,\"green\":165,\"blue\":0} to boolean");
+                        ",\"green\":...\nUnable to parse json object value to boolean: {\"red\":255,\"green\":1...");
     }
 
     @Test
     public void arrayOfBooleanFromArrayOfString() throws Exception {
         assertMessage("{ \"arrayOfBoolean\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'arrayOfBoolean' of type Boolean[] cannot be mapped to json array value: [\"Klaatu\",\"" +
-                        "barada\",\"...\nUnable to parse \"Klaatu\" to boolean");
+                        "barada\",\"...\nUnable to parse json string value to boolean: \"Klaatu\"");
     }
 
     @Test
     public void arrayOfBooleanFromArrayOfNumber() throws Exception {
         assertMessage("{ \"arrayOfBoolean\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'arrayOfBoolean' of type Boolean[] cannot be mapped to json array value: [2,3,5,7,11" +
-                        ",13,17,19...\nUnable to parse 2 to boolean");
+                        ",13,17,19...\nUnable to parse json numeric value to boolean: 2");
     }
 
     @Test
@@ -687,21 +686,21 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanPrimitiveFromArrayOfObject() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json array value: [{" +
-                        "\"red\":255,\"green\":...\nUnable to parse {\"red\":255,\"green\":165,\"blue\":0} to boolean");
+                        "\"red\":255,\"green\":...\nUnable to parse json object value to boolean: {\"red\":255,\"green\":1...");
     }
 
     @Test
     public void arrayOfBooleanPrimitiveFromArrayOfString() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json array value: [\"" +
-                        "Klaatu\",\"barada\",\"...\nUnable to parse \"Klaatu\" to boolean");
+                        "Klaatu\",\"barada\",\"...\nUnable to parse json string value to boolean: \"Klaatu\"");
     }
 
     @Test
     public void arrayOfBooleanPrimitiveFromArrayOfNumber() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json array value: [2" +
-                        ",3,5,7,11,13,17,19...\nUnable to parse 2 to boolean");
+                        ",3,5,7,11,13,17,19...\nUnable to parse json numeric value to boolean: 2");
     }
 
     @Ignore("JOHNZON-371")
@@ -908,21 +907,21 @@ public class DeserializationExceptionMessagesTest {
     public void listOfBooleanFromArrayOfObject() throws Exception {
         assertMessage("{ \"listOfBoolean\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'listOfBoolean' of type List<Boolean> cannot be mapped to json array value: [{\"red\":" +
-                        "255,\"green\":...\nUnable to parse {\"red\":255,\"green\":165,\"blue\":0} to boolean");
+                        "255,\"green\":...\nUnable to parse json object value to boolean: {\"red\":255,\"green\":1...");
     }
 
     @Test
     public void listOfBooleanFromArrayOfString() throws Exception {
         assertMessage("{ \"listOfBoolean\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'listOfBoolean' of type List<Boolean> cannot be mapped to json array value: [\"Klaatu" +
-                        "\",\"barada\",\"...\nUnable to parse \"Klaatu\" to boolean");
+                        "\",\"barada\",\"...\nUnable to parse json string value to boolean: \"Klaatu\"");
     }
 
     @Test
     public void listOfBooleanFromArrayOfNumber() throws Exception {
         assertMessage("{ \"listOfBoolean\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'listOfBoolean' of type List<Boolean> cannot be mapped to json array value: [2,3,5,7" +
-                        ",11,13,17,19...\nUnable to parse 2 to boolean");
+                        ",11,13,17,19...\nUnable to parse json numeric value to boolean: 2");
     }
 
     private void assertMessage(final String json, final String expected) throws Exception {

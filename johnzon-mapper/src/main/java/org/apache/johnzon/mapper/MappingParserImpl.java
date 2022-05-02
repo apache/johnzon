@@ -631,7 +631,9 @@ public class MappingParserImpl implements MappingParser {
             if (JsonValue.ValueType.FALSE == valueType) {
                 return false;
             }
-            throw new MapperException("Unable to parse " + jsonValue + " to boolean");
+            final String snippet = config.getSnippet().of(jsonValue);
+            final String description = ExceptionMessages.description(valueType);
+            throw new MapperException("Unable to parse " + description + " to boolean: " + snippet);
         }
 
         if (config.isTreatByteArrayAsBase64() && jsonValue.getValueType() == JsonValue.ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
