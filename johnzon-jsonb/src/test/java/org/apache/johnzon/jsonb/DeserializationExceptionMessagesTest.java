@@ -88,29 +88,28 @@ public class DeserializationExceptionMessagesTest {
     public void stringFromArrayOfObject() throws Exception {
         assertMessage("{ \"string\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'string' of type String cannot be mapped to json array value: [{\"red\":255,\"green\":.." +
-                        ".\nUnsupported [{\"red\":255,\"green\":165,\"blue\":0},{\"red\":0,\"green\":45,\"blue\":127}] for type class java" +
-                        ".lang.String");
+                        ".\nclass java.lang.String does not support json array value: [{\"red\":255,\"green\":...");
     }
 
     @Test
     public void stringFromArrayOfString() throws Exception {
         assertMessage("{ \"string\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'string' of type String cannot be mapped to json array value: [\"Klaatu\",\"barada\",\".." +
-                        ".\nUnsupported [\"Klaatu\",\"barada\",\"nikto\"] for type class java.lang.String");
+                        ".\nclass java.lang.String does not support json array value: [\"Klaatu\",\"barada\",\"...");
     }
 
     @Test
     public void stringFromArrayOfNumber() throws Exception {
         assertMessage("{ \"string\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'string' of type String cannot be mapped to json array value: [2,3,5,7,11,13,17,19.." +
-                        ".\nUnsupported [2,3,5,7,11,13,17,19,23,29] for type class java.lang.String");
+                        ".\nclass java.lang.String does not support json array value: [2,3,5,7,11,13,17,19...");
     }
 
     @Test
     public void stringFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"string\" : [true,false,true,true,false] }",
                 "Widget property 'string' of type String cannot be mapped to json array value: [true,false,true,tru.." +
-                        ".\nUnsupported [true,false,true,true,false] for type class java.lang.String");
+                        ".\nclass java.lang.String does not support json array value: [true,false,true,tru...");
     }
 
     @Test
@@ -368,29 +367,28 @@ public class DeserializationExceptionMessagesTest {
     public void enumFromArrayOfObject() throws Exception {
         assertMessage("{ \"unit\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'unit' of type TimeUnit cannot be mapped to json array value: [{\"red\":255,\"green\":.." +
-                        ".\nUnsupported [{\"red\":255,\"green\":165,\"blue\":0},{\"red\":0,\"green\":45,\"blue\":127}] for type class java" +
-                        ".lang.String");
+                        ".\nclass java.lang.String does not support json array value: [{\"red\":255,\"green\":...");
     }
 
     @Test
     public void enumFromArrayOfString() throws Exception {
         assertMessage("{ \"unit\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
                 "Widget property 'unit' of type TimeUnit cannot be mapped to json array value: [\"Klaatu\",\"barada\",\".." +
-                        ".\nUnsupported [\"Klaatu\",\"barada\",\"nikto\"] for type class java.lang.String");
+                        ".\nclass java.lang.String does not support json array value: [\"Klaatu\",\"barada\",\"...");
     }
 
     @Test
     public void enumFromArrayOfNumber() throws Exception {
         assertMessage("{ \"unit\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
                 "Widget property 'unit' of type TimeUnit cannot be mapped to json array value: [2,3,5,7,11,13,17,19.." +
-                        ".\nUnsupported [2,3,5,7,11,13,17,19,23,29] for type class java.lang.String");
+                        ".\nclass java.lang.String does not support json array value: [2,3,5,7,11,13,17,19...");
     }
 
     @Test
     public void enumFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"unit\" : [true,false,true,true,false] }",
                 "Widget property 'unit' of type TimeUnit cannot be mapped to json array value: [true,false,true,tru.." +
-                        ".\nUnsupported [true,false,true,true,false] for type class java.lang.String");
+                        ".\nclass java.lang.String does not support json array value: [true,false,true,tru...");
     }
 
     @Test
@@ -424,30 +422,29 @@ public class DeserializationExceptionMessagesTest {
     @Test
     public void dateFromArrayOfObject() throws Exception {
         assertMessage("{ \"date\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
-                "Widget property 'date' of type Date cannot be mapped to json array value: [{\"red\":255,\"green\":...\nUn" +
-                        "supported [{\"red\":255,\"green\":165,\"blue\":0},{\"red\":0,\"green\":45,\"blue\":127}] for type class java.lan" +
-                        "g.String");
+                "Widget property 'date' of type Date cannot be mapped to json array value: [{\"red\":255,\"green\":...\ncl" +
+                        "ass java.lang.String does not support json array value: [{\"red\":255,\"green\":...");
     }
 
     @Test
     public void dateFromArrayOfString() throws Exception {
         assertMessage("{ \"date\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
-                "Widget property 'date' of type Date cannot be mapped to json array value: [\"Klaatu\",\"barada\",\"...\nUn" +
-                        "supported [\"Klaatu\",\"barada\",\"nikto\"] for type class java.lang.String");
+                "Widget property 'date' of type Date cannot be mapped to json array value: [\"Klaatu\",\"barada\",\"...\ncl" +
+                        "ass java.lang.String does not support json array value: [\"Klaatu\",\"barada\",\"...");
     }
 
     @Test
     public void dateFromArrayOfNumber() throws Exception {
         assertMessage("{ \"date\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
-                "Widget property 'date' of type Date cannot be mapped to json array value: [2,3,5,7,11,13,17,19...\nUn" +
-                        "supported [2,3,5,7,11,13,17,19,23,29] for type class java.lang.String");
+                "Widget property 'date' of type Date cannot be mapped to json array value: [2,3,5,7,11,13,17,19...\ncl" +
+                        "ass java.lang.String does not support json array value: [2,3,5,7,11,13,17,19...");
     }
 
     @Test
     public void dateFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"date\" : [true,false,true,true,false] }",
-                "Widget property 'date' of type Date cannot be mapped to json array value: [true,false,true,tru...\nUn" +
-                        "supported [true,false,true,true,false] for type class java.lang.String");
+                "Widget property 'date' of type Date cannot be mapped to json array value: [true,false,true,tru...\ncl" +
+                        "ass java.lang.String does not support json array value: [true,false,true,tru...");
     }
 
     @Test

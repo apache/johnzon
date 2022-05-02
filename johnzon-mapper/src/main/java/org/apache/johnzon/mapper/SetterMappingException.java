@@ -17,15 +17,7 @@
 package org.apache.johnzon.mapper;
 
 import javax.json.JsonValue;
-import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-
-import static javax.json.JsonValue.ValueType.ARRAY;
-import static javax.json.JsonValue.ValueType.FALSE;
-import static javax.json.JsonValue.ValueType.NUMBER;
-import static javax.json.JsonValue.ValueType.OBJECT;
-import static javax.json.JsonValue.ValueType.STRING;
-import static javax.json.JsonValue.ValueType.TRUE;
 
 public class SetterMappingException extends MapperException {
 
@@ -40,49 +32,11 @@ public class SetterMappingException extends MapperException {
         return String.format("%s property '%s' of type %s cannot be mapped to %s: %s%n%s",
                 clazz.getSimpleName(),
                 entryName,
-                simpleName(type),
-                description(valueType),
+                ExceptionMessages.simpleName(type),
+                ExceptionMessages.description(valueType),
                 jsonValue,
                 cause.getMessage()
         );
     }
 
-    private static String simpleName(final Type type) {
-        if (type instanceof Class) {
-            final Class<?> clazz = (Class<?>) type;
-            return clazz.getSimpleName();
-        }
-        if (type instanceof ParameterizedType) {
-            final ParameterizedType parameterizedType = (ParameterizedType) type;
-            final StringBuilder sb = new StringBuilder();
-            sb.append(simpleName(parameterizedType.getRawType()));
-            sb.append("<");
-
-            final Type[] args = parameterizedType.getActualTypeArguments();
-            for (int i = 0; i < args.length; i++) {
-                final Type arg = args[i];
-                sb.append(simpleName(arg));
-                if (i < args.length - 1) {
-                    sb.append(",");
-                }
-            }
-            sb.append(">");
-            return sb.toString();
-        }
-        return type.getTypeName();
-    }
-
-    private static String description(final JsonValue.ValueType type) {
-        if (type == OBJECT || type == ARRAY || type == STRING) {
-            return "json " + type.toString().toLowerCase() + " value";
-        }
-        if (type == NUMBER) {
-            return "json numeric value";
-        }
-        if (type == TRUE || type == FALSE) {
-            return "json boolean value";
-        }
-
-        return "json value";
-    }
 }

@@ -242,7 +242,9 @@ public class MappingParserImpl implements MappingParser {
             return (T) Boolean.FALSE;
         }
 
-        throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);
+        final String snippet = config.getSnippet().of(jsonValue);
+        final String description = ExceptionMessages.description(valueType);
+        throw new IllegalArgumentException(targetType + " does not support " + description + ": " + snippet);
     }
 
     private boolean isDedup() {
