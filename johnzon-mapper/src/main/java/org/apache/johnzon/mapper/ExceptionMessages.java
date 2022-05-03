@@ -27,7 +27,7 @@ import static javax.json.JsonValue.ValueType.OBJECT;
 import static javax.json.JsonValue.ValueType.STRING;
 import static javax.json.JsonValue.ValueType.TRUE;
 
-public class ExceptionMessages {
+public final class ExceptionMessages {
 
     private ExceptionMessages() {
     }
