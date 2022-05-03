@@ -820,8 +820,12 @@ public class MappingParserImpl implements MappingParser {
             boolean[] array = new boolean[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (boolean) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to boolean[] has null value at index " + i);
+                }
+                array[i] = (boolean) object;
                 i++;
             }
             return array;
@@ -830,8 +834,12 @@ public class MappingParserImpl implements MappingParser {
             byte[] array = new byte[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (byte) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to byte[] has null value at index " + i);
+                }
+                array[i] = (byte) object;
                 i++;
             }
             return array;
@@ -840,8 +848,12 @@ public class MappingParserImpl implements MappingParser {
             char[] array = new char[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (char) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to char[] has null value at index " + i);
+                }
+                array[i] = (char) object;
                 i++;
             }
             return array;
@@ -850,8 +862,12 @@ public class MappingParserImpl implements MappingParser {
             short[] array = new short[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (short) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to short[] has null value at index " + i);
+                }
+                array[i] = (short) object;
                 i++;
             }
             return array;
@@ -860,8 +876,12 @@ public class MappingParserImpl implements MappingParser {
             int[] array = new int[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (int) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to int[] has null value at index " + i);
+                }
+                array[i] = (int) object;
                 i++;
             }
             return array;
@@ -870,8 +890,12 @@ public class MappingParserImpl implements MappingParser {
             long[] array = new long[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (long) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to long[] has null value at index " + i);
+                }
+                array[i] = (long) object;
                 i++;
             }
             return array;
@@ -880,8 +904,12 @@ public class MappingParserImpl implements MappingParser {
             float[] array = new float[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (float) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to float[] has null value at index " + i);
+                }
+                array[i] = (float) object;
                 i++;
             }
             return array;
@@ -890,8 +918,12 @@ public class MappingParserImpl implements MappingParser {
             double[] array = new double[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (double) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to double[] has null value at index " + i);
+                }
+                array[i] = (double) object;
                 i++;
             }
             return array;

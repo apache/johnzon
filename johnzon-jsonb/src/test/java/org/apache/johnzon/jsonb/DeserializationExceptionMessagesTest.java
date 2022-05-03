@@ -712,10 +712,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfIntFromArrayOfNull() throws Exception {
         assertMessage("{ \"arrayOfInt\" : [null,null,null,null,null,null] }",
                 "Widget property 'arrayOfInt' of type int[] cannot be mapped to json array value: [null,null,null,nul" +
-                        "l...\nCannot invoke \"java.lang.Integer.intValue()\" because the return value of \"org.apache.johnzon.ma" +
-                        "pper.MappingParserImpl.toObject(Object, javax.json.JsonValue, java.lang.reflect.Type, org.apache.joh" +
-                        "nzon.mapper.Adapter, org.apache.johnzon.mapper.internal.JsonPointerTracker, java.lang.reflect.Type)\"" +
-                        " is null");
+                        "l...\njson array mapped to int[] has null value at index 0");
     }
 
     @Test
@@ -1070,10 +1067,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanPrimitiveFromArrayOfNull() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : [null,null,null,null,null,null] }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json array value: [n" +
-                        "ull,null,null,null...\nCannot invoke \"java.lang.Boolean.booleanValue()\" because the return value of \"" +
-                        "org.apache.johnzon.mapper.MappingParserImpl.toObject(Object, javax.json.JsonValue, java.lang.reflect" +
-                        ".Type, org.apache.johnzon.mapper.Adapter, org.apache.johnzon.mapper.internal.JsonPointerTracker, jav" +
-                        "a.lang.reflect.Type)\" is null");
+                        "ull,null,null,null...\njson array mapped to boolean[] has null value at index 0");
     }
 
     @Test
