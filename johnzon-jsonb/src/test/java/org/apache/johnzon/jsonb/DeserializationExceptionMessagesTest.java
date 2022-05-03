@@ -16,6 +16,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.json.bind.Jsonb;
@@ -608,6 +609,7 @@ public class DeserializationExceptionMessagesTest {
                 "Unable to parse 2 to boolean");
     }
 
+    @Ignore("JOHNZON-371")
     @Test
     public void arrayOfBooleanPrimitiveFromArrayOfNull() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : [null,null,null,null,null,null] }",
