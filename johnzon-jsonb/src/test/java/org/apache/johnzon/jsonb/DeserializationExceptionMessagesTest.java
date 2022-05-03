@@ -117,7 +117,7 @@ public class DeserializationExceptionMessagesTest {
     public void numberFromObject() throws Exception {
         assertMessage("{ \"number\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'number' of type Integer cannot be mapped to json object value: {\"red\":255,\"green\":1" +
-                        "...\nCan't map JSON Object to class java.lang.Integer: {\"red\":255,\"green\":1...");
+                        "...\nUnable to map json object value to class java.lang.Integer: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -166,7 +166,7 @@ public class DeserializationExceptionMessagesTest {
     public void intPrimitiveFromObject() throws Exception {
         assertMessage("{ \"intPrimitive\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'intPrimitive' of type int cannot be mapped to json object value: {\"red\":255,\"green\"" +
-                        ":1...\nCan't map JSON Object to int: {\"red\":255,\"green\":1...");
+                        ":1...\nUnable to map json object value to int: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -336,7 +336,7 @@ public class DeserializationExceptionMessagesTest {
     public void enumFromObject() throws Exception {
         assertMessage("{ \"unit\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'unit' of type TimeUnit cannot be mapped to json object value: {\"red\":255,\"green\":1." +
-                        "..\nCan't map JSON Object to class java.lang.String: {\"red\":255,\"green\":1...");
+                        "..\nUnable to map json object value to class java.lang.String: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -394,8 +394,8 @@ public class DeserializationExceptionMessagesTest {
     @Test
     public void dateFromObject() throws Exception {
         assertMessage("{ \"date\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
-                "Widget property 'date' of type Date cannot be mapped to json object value: {\"red\":255,\"green\":1...\nC" +
-                        "an't map JSON Object to class java.lang.String: {\"red\":255,\"green\":1...");
+                "Widget property 'date' of type Date cannot be mapped to json object value: {\"red\":255,\"green\":1...\nU" +
+                        "nable to map json object value to class java.lang.String: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -538,7 +538,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfStringFromArrayOfObject() throws Exception {
         assertMessage("{ \"arrayOfString\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'arrayOfString' of type String[] cannot be mapped to json array value: [{\"red\":255,\"" +
-                        "green\":...\nCan't map JSON Object to class java.lang.String: {\"red\":255,\"green\":1...");
+                        "green\":...\nUnable to map json object value to class java.lang.String: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -723,8 +723,8 @@ public class DeserializationExceptionMessagesTest {
     public void listOfObjectFromObject() throws Exception {
         assertMessage("{ \"listOfObject\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'listOfObject' of type List<Color> cannot be mapped to json object value: {\"red\":255" +
-                        ",\"green\":1...\nCan't map JSON Object to java.util.List<org.apache.johnzon.jsonb.DeserializationExcept" +
-                        "ionMessagesTest$Color>: {\"red\":255,\"green\":1...");
+                        ",\"green\":1...\nUnable to map json object value to java.util.List<org.apache.johnzon.jsonb.Deserializa" +
+                        "tionExceptionMessagesTest$Color>: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -779,7 +779,8 @@ public class DeserializationExceptionMessagesTest {
     public void listOfStringFromObject() throws Exception {
         assertMessage("{ \"listOfString\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'listOfString' of type List<String> cannot be mapped to json object value: {\"red\":25" +
-                        "5,\"green\":1...\nCan't map JSON Object to java.util.List<java.lang.String>: {\"red\":255,\"green\":1...");
+                        "5,\"green\":1...\nUnable to map json object value to java.util.List<java.lang.String>: {\"red\":255,\"gree" +
+                        "n\":1...");
     }
 
     @Test
@@ -809,7 +810,7 @@ public class DeserializationExceptionMessagesTest {
     public void listOfStringFromArrayOfObject() throws Exception {
         assertMessage("{ \"listOfString\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'listOfString' of type List<String> cannot be mapped to json array value: [{\"red\":25" +
-                        "5,\"green\":...\nCan't map JSON Object to class java.lang.String: {\"red\":255,\"green\":1...");
+                        "5,\"green\":...\nUnable to map json object value to class java.lang.String: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -830,7 +831,8 @@ public class DeserializationExceptionMessagesTest {
     public void listOfNumberFromObject() throws Exception {
         assertMessage("{ \"listOfNumber\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'listOfNumber' of type List<Number> cannot be mapped to json object value: {\"red\":25" +
-                        "5,\"green\":1...\nCan't map JSON Object to java.util.List<java.lang.Number>: {\"red\":255,\"green\":1...");
+                        "5,\"green\":1...\nUnable to map json object value to java.util.List<java.lang.Number>: {\"red\":255,\"gree" +
+                        "n\":1...");
     }
 
     @Test
@@ -882,7 +884,8 @@ public class DeserializationExceptionMessagesTest {
     public void listOfBooleanFromObject() throws Exception {
         assertMessage("{ \"listOfBoolean\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'listOfBoolean' of type List<Boolean> cannot be mapped to json object value: {\"red\":" +
-                        "255,\"green\":1...\nCan't map JSON Object to java.util.List<java.lang.Boolean>: {\"red\":255,\"green\":1...");
+                        "255,\"green\":1...\nUnable to map json object value to java.util.List<java.lang.Boolean>: {\"red\":255,\"g" +
+                        "reen\":1...");
     }
 
     @Test
