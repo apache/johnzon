@@ -16,7 +16,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.json.bind.Jsonb;
@@ -659,6 +658,365 @@ public class DeserializationExceptionMessagesTest {
     }
 
     @Test
+    public void arrayOfIntFromObject() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json object value: {\"red\":255,\"green\"" +
+                        ":1...\nclass [I not instantiable");
+    }
+
+    @Test
+    public void arrayOfIntFromString() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json string value: \"Supercalifragilis" +
+                        "ti...\nMissing a Converter for type class [I to convert the JSON String 'Supercalifragilisticexpialid" +
+                        "ocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfIntFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json numeric value: 122333444455555.6" +
+                        "666...\nUnable to parse json numeric value to class [I: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfIntFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : true }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json boolean value: true\nUnable to pa" +
+                        "rse json boolean value to class [I: true");
+    }
+
+    @Test
+    public void arrayOfIntFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json array value: [{\"red\":255,\"green\"" +
+                        ":...\nUnable to map json object value to int: {\"red\":255,\"green\":1...");
+    }
+
+    @Test
+    public void arrayOfIntFromArrayOfString() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json array value: [\"Klaatu\",\"barada\"," +
+                        "\"...\nMissing a Converter for type int to convert the JSON String 'Klaatu' . Please register a custom" +
+                        " converter for it.");
+    }
+
+    @Test
+    public void arrayOfIntFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json array value: [true,false,true,tr" +
+                        "u...\nUnable to parse json boolean value to int: true");
+    }
+
+    @Test
+    public void arrayOfIntFromArrayOfNull() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : [null,null,null,null,null,null] }",
+                "Widget property 'arrayOfInt' of type int[] cannot be mapped to json array value: [null,null,null,nul" +
+                        "l...\nCannot invoke \"java.lang.Integer.intValue()\" because the return value of \"org.apache.johnzon.ma" +
+                        "pper.MappingParserImpl.toObject(Object, javax.json.JsonValue, java.lang.reflect.Type, org.apache.joh" +
+                        "nzon.mapper.Adapter, org.apache.johnzon.mapper.internal.JsonPointerTracker, java.lang.reflect.Type)\"" +
+                        " is null");
+    }
+
+    @Test
+    public void arrayOfByteFromObject() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json object value: {\"red\":255,\"gree" +
+                        "n\":1...\nclass [B not instantiable");
+    }
+
+    @Test
+    public void arrayOfByteFromString() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json string value: \"Supercalifragil" +
+                        "isti...\nMissing a Converter for type class [B to convert the JSON String 'Supercalifragilisticexpial" +
+                        "idocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfByteFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json numeric value: 122333444455555" +
+                        ".6666...\nUnable to parse json numeric value to class [B: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfByteFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : true }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json boolean value: true\nUnable to " +
+                        "parse json boolean value to class [B: true");
+    }
+
+    @Test
+    public void arrayOfByteFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json array value: [{\"red\":255,\"gree" +
+                        "n\":...\nUnable to map json object value to byte: {\"red\":255,\"green\":1...");
+    }
+
+    @Test
+    public void arrayOfByteFromArrayOfString() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json array value: [\"Klaatu\",\"barada" +
+                        "\",\"...\nMissing a Converter for type byte to convert the JSON String 'Klaatu' . Please register a cus" +
+                        "tom converter for it.");
+    }
+
+    @Test
+    public void arrayOfByteFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json array value: [true,false,true," +
+                        "tru...\nUnable to parse json boolean value to byte: true");
+    }
+
+    @Test
+    public void arrayOfCharFromObject() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfChar' of type char[] cannot be mapped to json object value: {\"red\":255,\"gree" +
+                        "n\":1...\nclass [C not instantiable");
+    }
+
+    @Test
+    public void arrayOfCharFromString() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfChar' of type char[] cannot be mapped to json string value: \"Supercalifragil" +
+                        "isti...\nMissing a Converter for type class [C to convert the JSON String 'Supercalifragilisticexpial" +
+                        "idocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfCharFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfChar' of type char[] cannot be mapped to json numeric value: 122333444455555" +
+                        ".6666...\nUnable to parse json numeric value to class [C: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfCharFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : true }",
+                "Widget property 'arrayOfChar' of type char[] cannot be mapped to json boolean value: true\nUnable to " +
+                        "parse json boolean value to class [C: true");
+    }
+
+    @Test
+    public void arrayOfCharFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfChar' of type char[] cannot be mapped to json array value: [{\"red\":255,\"gree" +
+                        "n\":...\nCannot cast org.apache.johnzon.core.JsonObjectImpl to javax.json.JsonString");
+    }
+
+    @Test
+    public void arrayOfCharFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfChar' of type char[] cannot be mapped to json array value: [true,false,true," +
+                        "tru...\nCannot cast javax.json.JsonValue$2 to javax.json.JsonString");
+    }
+
+    @Test
+    public void arrayOfShortFromObject() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json object value: {\"red\":255,\"gr" +
+                        "een\":1...\nclass [S not instantiable");
+    }
+
+    @Test
+    public void arrayOfShortFromString() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json string value: \"Supercalifrag" +
+                        "ilisti...\nMissing a Converter for type class [S to convert the JSON String 'Supercalifragilisticexpi" +
+                        "alidocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfShortFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json numeric value: 1223334444555" +
+                        "55.6666...\nUnable to parse json numeric value to class [S: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfShortFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : true }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json boolean value: true\nUnable t" +
+                        "o parse json boolean value to class [S: true");
+    }
+
+    @Test
+    public void arrayOfShortFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json array value: [{\"red\":255,\"gr" +
+                        "een\":...\nUnable to map json object value to short: {\"red\":255,\"green\":1...");
+    }
+
+    @Test
+    public void arrayOfShortFromArrayOfString() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json array value: [\"Klaatu\",\"bara" +
+                        "da\",\"...\nMissing a Converter for type short to convert the JSON String 'Klaatu' . Please register a " +
+                        "custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfShortFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfShort' of type short[] cannot be mapped to json array value: [true,false,tru" +
+                        "e,tru...\nUnable to parse json boolean value to short: true");
+    }
+
+    @Test
+    public void arrayOfLongFromObject() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json object value: {\"red\":255,\"gree" +
+                        "n\":1...\nclass [J not instantiable");
+    }
+
+    @Test
+    public void arrayOfLongFromString() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json string value: \"Supercalifragil" +
+                        "isti...\nMissing a Converter for type class [J to convert the JSON String 'Supercalifragilisticexpial" +
+                        "idocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfLongFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json numeric value: 122333444455555" +
+                        ".6666...\nUnable to parse json numeric value to class [J: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfLongFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : true }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json boolean value: true\nUnable to " +
+                        "parse json boolean value to class [J: true");
+    }
+
+    @Test
+    public void arrayOfLongFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json array value: [{\"red\":255,\"gree" +
+                        "n\":...\nUnable to map json object value to long: {\"red\":255,\"green\":1...");
+    }
+
+    @Test
+    public void arrayOfLongFromArrayOfString() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json array value: [\"Klaatu\",\"barada" +
+                        "\",\"...\nMissing a Converter for type long to convert the JSON String 'Klaatu' . Please register a cus" +
+                        "tom converter for it.");
+    }
+
+    @Test
+    public void arrayOfLongFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfLong' of type long[] cannot be mapped to json array value: [true,false,true," +
+                        "tru...\nUnable to parse json boolean value to long: true");
+    }
+
+    @Test
+    public void arrayOfFloatFromObject() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json object value: {\"red\":255,\"gr" +
+                        "een\":1...\nclass [F not instantiable");
+    }
+
+    @Test
+    public void arrayOfFloatFromString() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json string value: \"Supercalifrag" +
+                        "ilisti...\nMissing a Converter for type class [F to convert the JSON String 'Supercalifragilisticexpi" +
+                        "alidocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfFloatFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json numeric value: 1223334444555" +
+                        "55.6666...\nUnable to parse json numeric value to class [F: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfFloatFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : true }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json boolean value: true\nUnable t" +
+                        "o parse json boolean value to class [F: true");
+    }
+
+    @Test
+    public void arrayOfFloatFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json array value: [{\"red\":255,\"gr" +
+                        "een\":...\nUnable to map json object value to float: {\"red\":255,\"green\":1...");
+    }
+
+    @Test
+    public void arrayOfFloatFromArrayOfString() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json array value: [\"Klaatu\",\"bara" +
+                        "da\",\"...\nMissing a Converter for type float to convert the JSON String 'Klaatu' . Please register a " +
+                        "custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfFloatFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json array value: [true,false,tru" +
+                        "e,tru...\nUnable to parse json boolean value to float: true");
+    }
+
+    @Test
+    public void arrayOfDoubleFromObject() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json object value: {\"red\":255,\"" +
+                        "green\":1...\nclass [D not instantiable");
+    }
+
+    @Test
+    public void arrayOfDoubleFromString() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : \"Supercalifragilisticexpialidocious\" }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json string value: \"Supercalifr" +
+                        "agilisti...\nMissing a Converter for type class [D to convert the JSON String 'Supercalifragilisticex" +
+                        "pialidocious' . Please register a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfDoubleFromNumber() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : 122333444455555.666666777777788888888 }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json numeric value: 12233344445" +
+                        "5555.6666...\nUnable to parse json numeric value to class [D: 122333444455555.6666...");
+    }
+
+    @Test
+    public void arrayOfDoubleFromBoolean() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : true }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json boolean value: true\nUnable" +
+                        " to parse json boolean value to class [D: true");
+    }
+
+    @Test
+    public void arrayOfDoubleFromArrayOfObject() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json array value: [{\"red\":255,\"" +
+                        "green\":...\nUnable to map json object value to double: {\"red\":255,\"green\":1...");
+    }
+
+    @Test
+    public void arrayOfDoubleFromArrayOfString() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json array value: [\"Klaatu\",\"ba" +
+                        "rada\",\"...\nMissing a Converter for type double to convert the JSON String 'Klaatu' . Please register" +
+                        " a custom converter for it.");
+    }
+
+    @Test
+    public void arrayOfDoubleFromArrayOfBoolean() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : [true,false,true,true,false] }",
+                "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json array value: [true,false,t" +
+                        "rue,tru...\nUnable to parse json boolean value to double: true");
+    }
+
+    @Test
     public void arrayOfBooleanPrimitiveFromObject() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json object value: {" +
@@ -708,7 +1066,6 @@ public class DeserializationExceptionMessagesTest {
                         ",3,5,7,11,13,17,19...\nUnable to parse json numeric value to boolean: 2");
     }
 
-    @Ignore("JOHNZON-371")
     @Test
     public void arrayOfBooleanPrimitiveFromArrayOfNull() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : [null,null,null,null,null,null] }",
@@ -964,7 +1321,13 @@ public class DeserializationExceptionMessagesTest {
         private Color[] arrayOfObject;
         private String[] arrayOfString;
         private Number[] arrayOfNumber;
-        private int[] arrayOfint;
+        private int[] arrayOfInt;
+        private byte[] arrayOfByte;
+        private char[] arrayOfChar;
+        private short[] arrayOfShort;
+        private long[] arrayOfLong;
+        private float[] arrayOfFloat;
+        private double[] arrayOfDouble;
         private Boolean[] arrayOfBoolean;
         private boolean[] arrayOfBooleanPrimitive;
         private List<Color> listOfObject;
@@ -1004,12 +1367,60 @@ public class DeserializationExceptionMessagesTest {
             this.arrayOfNumber = arrayOfNumber;
         }
 
-        public int[] getArrayOfint() {
-            return arrayOfint;
+        public int[] getArrayOfInt() {
+            return arrayOfInt;
         }
 
-        public void setArrayOfint(final int[] arrayOfint) {
-            this.arrayOfint = arrayOfint;
+        public void setArrayOfInt(final int[] arrayOfInt) {
+            this.arrayOfInt = arrayOfInt;
+        }
+
+        public byte[] getArrayOfByte() {
+            return arrayOfByte;
+        }
+
+        public void setArrayOfByte(final byte[] arrayOfByte) {
+            this.arrayOfByte = arrayOfByte;
+        }
+
+        public char[] getArrayOfChar() {
+            return arrayOfChar;
+        }
+
+        public void setArrayOfChar(final char[] arrayOfChar) {
+            this.arrayOfChar = arrayOfChar;
+        }
+
+        public short[] getArrayOfShort() {
+            return arrayOfShort;
+        }
+
+        public void setArrayOfShort(final short[] arrayOfShort) {
+            this.arrayOfShort = arrayOfShort;
+        }
+
+        public long[] getArrayOfLong() {
+            return arrayOfLong;
+        }
+
+        public void setArrayOfLong(final long[] arrayOfLong) {
+            this.arrayOfLong = arrayOfLong;
+        }
+
+        public float[] getArrayOfFloat() {
+            return arrayOfFloat;
+        }
+
+        public void setArrayOfFloat(final float[] arrayOfFloat) {
+            this.arrayOfFloat = arrayOfFloat;
+        }
+
+        public double[] getArrayOfDouble() {
+            return arrayOfDouble;
+        }
+
+        public void setArrayOfDouble(final double[] arrayOfDouble) {
+            this.arrayOfDouble = arrayOfDouble;
         }
 
         public Boolean[] getArrayOfBoolean() {
@@ -1026,6 +1437,38 @@ public class DeserializationExceptionMessagesTest {
 
         public void setArrayOfBooleanPrimitive(final boolean[] arrayOfBooleanPrimitive) {
             this.arrayOfBooleanPrimitive = arrayOfBooleanPrimitive;
+        }
+
+        public List<Color> getListOfObject() {
+            return listOfObject;
+        }
+
+        public void setListOfObject(final List<Color> listOfObject) {
+            this.listOfObject = listOfObject;
+        }
+
+        public List<String> getListOfString() {
+            return listOfString;
+        }
+
+        public void setListOfString(final List<String> listOfString) {
+            this.listOfString = listOfString;
+        }
+
+        public List<Number> getListOfNumber() {
+            return listOfNumber;
+        }
+
+        public void setListOfNumber(final List<Number> listOfNumber) {
+            this.listOfNumber = listOfNumber;
+        }
+
+        public List<Boolean> getListOfBoolean() {
+            return listOfBoolean;
+        }
+
+        public void setListOfBoolean(final List<Boolean> listOfBoolean) {
+            this.listOfBoolean = listOfBoolean;
         }
 
         public Color getObject() {
@@ -1090,38 +1533,6 @@ public class DeserializationExceptionMessagesTest {
 
         public void setUnit(final TimeUnit unit) {
             this.unit = unit;
-        }
-
-        public List<Color> getListOfObject() {
-            return listOfObject;
-        }
-
-        public void setListOfObject(final List<Color> listOfObject) {
-            this.listOfObject = listOfObject;
-        }
-
-        public List<String> getListOfString() {
-            return listOfString;
-        }
-
-        public void setListOfString(final List<String> listOfString) {
-            this.listOfString = listOfString;
-        }
-
-        public List<Number> getListOfNumber() {
-            return listOfNumber;
-        }
-
-        public void setListOfNumber(final List<Number> listOfNumber) {
-            this.listOfNumber = listOfNumber;
-        }
-
-        public List<Boolean> getListOfBoolean() {
-            return listOfBoolean;
-        }
-
-        public void setListOfBoolean(final List<Boolean> listOfBoolean) {
-            this.listOfBoolean = listOfBoolean;
         }
     }
 
