@@ -27,7 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
-public class DeserializationUserExceptionMessagesTest {
+public class DeserializationUserExceptionsTest {
+
 
     @Test
     public void objectFromObject() throws Exception {
@@ -46,7 +47,8 @@ public class DeserializationUserExceptionMessagesTest {
     @Test
     public void numberFromNumber() throws Exception {
         assertMessage("{ \"number\" : 122333444455555.666666777777788888888 }",
-                "Not an int/long, use other value readers");
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setNumbe" +
+                        "r(java.lang.Double)");
     }
 
     @Test
@@ -117,7 +119,7 @@ public class DeserializationUserExceptionMessagesTest {
         private boolean[] arrayOfBooleanPrimitive;
         private Color object;
         private String string;
-        private Integer number;
+        private Double number;
         private int intPrimitive;
         private Boolean bool;
         private boolean boolPrimitive;
@@ -188,11 +190,11 @@ public class DeserializationUserExceptionMessagesTest {
             throw new RuntimeException("I am user, hear me roar");
         }
 
-        public Integer getNumber() {
+        public Double getNumber() {
             return number;
         }
 
-        public void setNumber(final Integer number) {
+        public void setNumber(final Double number) {
             throw new RuntimeException("I am user, hear me roar");
         }
 
