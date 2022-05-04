@@ -23,6 +23,7 @@ import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
@@ -52,10 +53,37 @@ public class DeserializationUserExceptionsTest {
     }
 
     @Test
+    public void intPrimitiveFromIntPrimitive() throws Exception {
+        assertMessage("{ \"intPrimitive\" : 42 }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setIntPr" +
+                        "imitive(int)");
+    }
+
+    @Test
     public void booleanFromBoolean() throws Exception {
         assertMessage("{ \"bool\" : true }",
                 "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setBool(" +
                         "java.lang.Boolean)");
+    }
+
+    @Test
+    public void boolPrimitiveFromBoolPrimitive() throws Exception {
+        assertMessage("{ \"boolPrimitive\" : true }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setBoolP" +
+                        "rimitive(boolean)");
+    }
+
+    @Test
+    public void enumFromEnum() throws Exception {
+        assertMessage("{ \"unit\" : \"SECONDS\" }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setUnit(" +
+                        "java.util.concurrent.TimeUnit)");
+    }
+
+    @Test
+    public void dateFromDate() throws Exception {
+        assertMessage("{ \"date\" : \"2022-05-03\" }",
+                "Text '2022-05-03' could not be parsed at index 10");
     }
 
     @Test
@@ -86,6 +114,90 @@ public class DeserializationUserExceptionsTest {
                         "OfBoolean(java.lang.Boolean[])");
     }
 
+    @Test
+    public void arrayOfIntFromArrayOfInt() throws Exception {
+        assertMessage("{ \"arrayOfInt\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfInt(int[])");
+    }
+
+    @Test
+    public void arrayOfByteFromArrayOfByte() throws Exception {
+        assertMessage("{ \"arrayOfByte\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfByte(byte[])");
+    }
+
+    @Test
+    public void arrayOfCharFromArrayOfChar() throws Exception {
+        assertMessage("{ \"arrayOfChar\" : [\"a\",\"a\",\"a\",\"a\",\"a\",\"a\",\"a\",\"a\"] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfChar(char[])");
+    }
+
+    @Test
+    public void arrayOfShortFromArrayOfShort() throws Exception {
+        assertMessage("{ \"arrayOfShort\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfShort(short[])");
+    }
+
+    @Test
+    public void arrayOfLongFromArrayOfLong() throws Exception {
+        assertMessage("{ \"arrayOfLong\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfLong(long[])");
+    }
+
+    @Test
+    public void arrayOfFloatFromArrayOfFloat() throws Exception {
+        assertMessage("{ \"arrayOfFloat\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfFloat(float[])");
+    }
+
+    @Test
+    public void arrayOfDoubleFromArrayOfDouble() throws Exception {
+        assertMessage("{ \"arrayOfDouble\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfDouble(double[])");
+    }
+
+    @Test
+    public void arrayOfBooleanPrimitiveFromArrayOfBooleanPrimitive() throws Exception {
+        assertMessage("{ \"arrayOfBooleanPrimitive\" : [true,false,true,true,false] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setArray" +
+                        "OfBooleanPrimitive(boolean[])");
+    }
+
+    @Test
+    public void listOfObjectFromListOfObject() throws Exception {
+        assertMessage("{ \"listOfObject\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setListO" +
+                        "fObject(java.util.List)");
+    }
+
+    @Test
+    public void listOfStringFromListOfString() throws Exception {
+        assertMessage("{ \"listOfString\" : [\"Klaatu\", \"barada\", \"nikto\"] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setListO" +
+                        "fString(java.util.List)");
+    }
+
+    @Test
+    public void listOfNumberFromListOfNumber() throws Exception {
+        assertMessage("{ \"listOfNumber\" : [2, 3, 5, 7, 11, 13, 17, 19, 23, 29] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setListO" +
+                        "fNumber(java.util.List)");
+    }
+
+    @Test
+    public void listOfBooleanFromListOfBoolean() throws Exception {
+        assertMessage("{ \"listOfBoolean\" : [true,false,true,true,false] }",
+                "Error calling public void org.apache.johnzon.jsonb.DeserializationUserExceptionsTest$Widget.setListO" +
+                        "fBoolean(java.util.List)");
+    }
+
     private void assertMessage(final String json, final String expected) throws Exception {
 
         final String message = getExceptionMessage(json);
@@ -114,9 +226,19 @@ public class DeserializationUserExceptionsTest {
         private Color[] arrayOfObject;
         private String[] arrayOfString;
         private Number[] arrayOfNumber;
-        private int[] arrayOfint;
+        private int[] arrayOfInt;
+        private byte[] arrayOfByte;
+        private char[] arrayOfChar;
+        private short[] arrayOfShort;
+        private long[] arrayOfLong;
+        private float[] arrayOfFloat;
+        private double[] arrayOfDouble;
         private Boolean[] arrayOfBoolean;
         private boolean[] arrayOfBooleanPrimitive;
+        private List<Color> listOfObject;
+        private List<String> listOfString;
+        private List<Number> listOfNumber;
+        private List<Boolean> listOfBoolean;
         private Color object;
         private String string;
         private Double number;
@@ -150,11 +272,11 @@ public class DeserializationUserExceptionsTest {
             throw new RuntimeException("I am user, hear me roar");
         }
 
-        public int[] getArrayOfint() {
-            return arrayOfint;
+        public int[] getArrayOfInt() {
+            return arrayOfInt;
         }
 
-        public void setArrayOfint(final int[] arrayOfint) {
+        public void setArrayOfInt(final int[] arrayOfint) {
             throw new RuntimeException("I am user, hear me roar");
         }
 
@@ -235,6 +357,86 @@ public class DeserializationUserExceptionsTest {
         }
 
         public void setUnit(final TimeUnit unit) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public byte[] getArrayOfByte() {
+            return arrayOfByte;
+        }
+
+        public void setArrayOfByte(final byte[] arrayOfByte) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public char[] getArrayOfChar() {
+            return arrayOfChar;
+        }
+
+        public void setArrayOfChar(final char[] arrayOfChar) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public short[] getArrayOfShort() {
+            return arrayOfShort;
+        }
+
+        public void setArrayOfShort(final short[] arrayOfShort) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public long[] getArrayOfLong() {
+            return arrayOfLong;
+        }
+
+        public void setArrayOfLong(final long[] arrayOfLong) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public float[] getArrayOfFloat() {
+            return arrayOfFloat;
+        }
+
+        public void setArrayOfFloat(final float[] arrayOfFloat) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public double[] getArrayOfDouble() {
+            return arrayOfDouble;
+        }
+
+        public void setArrayOfDouble(final double[] arrayOfDouble) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public List<Color> getListOfObject() {
+            return listOfObject;
+        }
+
+        public void setListOfObject(final List<Color> listOfObject) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public List<String> getListOfString() {
+            return listOfString;
+        }
+
+        public void setListOfString(final List<String> listOfString) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public List<Number> getListOfNumber() {
+            return listOfNumber;
+        }
+
+        public void setListOfNumber(final List<Number> listOfNumber) {
+            throw new RuntimeException("I am user, hear me roar");
+        }
+
+        public List<Boolean> getListOfBoolean() {
+            return listOfBoolean;
+        }
+
+        public void setListOfBoolean(final List<Boolean> listOfBoolean) {
             throw new RuntimeException("I am user, hear me roar");
         }
     }
