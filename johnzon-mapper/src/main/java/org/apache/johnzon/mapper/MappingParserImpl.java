@@ -365,7 +365,7 @@ public class MappingParserImpl implements MappingParser {
         */
 
         if (classMapping.factory == null) {
-            throw new MapperException(classMapping.clazz + " not instantiable");
+            throw new MissingFactoryException(classMapping.clazz, object, config.getSnippet().of(object));
         }
 
         if (config.isFailOnUnknown()) {
@@ -377,11 +377,20 @@ public class MappingParserImpl implements MappingParser {
         }
 
         Object t;
-        if (classMapping.factory.getParameterTypes() == null || classMapping.factory.getParameterTypes().length == 0) {
-            t = classMapping.factory.create(null);
-        } else {
-            t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
+        try {
+            if (classMapping.factory.getParameterTypes() == null || classMapping.factory.getParameterTypes().length == 0) {
+                t = classMapping.factory.create(null);
+            } else {
+                t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
+            }
+        } catch (Exception e) {
+            final String message = String.format("%s cannot be constructed to deserialize %s: %s%n%s",
+                    ExceptionMessages.simpleName(type), ExceptionMessages.description(object),
+                    config.getSnippet().of(object), e.getMessage()
+            );
+            throw new MapperException(message, e);
         }
+
         // store the new object under it's jsonPointer in case it gets referenced later
         if (jsonPointers == null) {
             if (classMapping.deduplicateObjects || config.isDeduplicateObjects()) {

@@ -450,8 +450,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfObjectFromObject() throws Exception {
         assertMessage("{ \"arrayOfObject\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfObject' of type Color[] cannot be mapped to json object value: {\"red\":255,\"g" +
-                        "reen\":1...\nclass [Lorg.apache.johnzon.jsonb.DeserializationExceptionMessagesTest$Color; not instanti" +
-                        "able");
+                        "reen\":1...\nColor[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -507,7 +506,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfStringFromObject() throws Exception {
         assertMessage("{ \"arrayOfString\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfString' of type String[] cannot be mapped to json object value: {\"red\":255,\"" +
-                        "green\":1...\nclass [Ljava.lang.String; not instantiable");
+                        "green\":1...\nString[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -558,7 +557,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfNumberFromObject() throws Exception {
         assertMessage("{ \"arrayOfNumber\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfNumber' of type Number[] cannot be mapped to json object value: {\"red\":255,\"" +
-                        "green\":1...\nclass [Ljava.lang.Number; not instantiable");
+                        "green\":1...\nNumber[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -588,7 +587,8 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfNumberFromArrayOfObject() throws Exception {
         assertMessage("{ \"arrayOfNumber\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'arrayOfNumber' of type Number[] cannot be mapped to json array value: [{\"red\":255,\"" +
-                        "green\":...\njava.lang.InstantiationException");
+                        "green\":...\nNumber cannot be constructed to deserialize json object value: {\"red\":255,\"green\":1...\nja" +
+                        "va.lang.InstantiationException");
     }
 
     @Test
@@ -610,7 +610,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanFromObject() throws Exception {
         assertMessage("{ \"arrayOfBoolean\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfBoolean' of type Boolean[] cannot be mapped to json object value: {\"red\":255" +
-                        ",\"green\":1...\nclass [Ljava.lang.Boolean; not instantiable");
+                        ",\"green\":1...\nBoolean[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -661,7 +661,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfIntFromObject() throws Exception {
         assertMessage("{ \"arrayOfInt\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfInt' of type int[] cannot be mapped to json object value: {\"red\":255,\"green\"" +
-                        ":1...\nclass [I not instantiable");
+                        ":1...\nint[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -719,7 +719,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfByteFromObject() throws Exception {
         assertMessage("{ \"arrayOfByte\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfByte' of type byte[] cannot be mapped to json object value: {\"red\":255,\"gree" +
-                        "n\":1...\nclass [B not instantiable");
+                        "n\":1...\nbyte[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -770,7 +770,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfCharFromObject() throws Exception {
         assertMessage("{ \"arrayOfChar\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfChar' of type char[] cannot be mapped to json object value: {\"red\":255,\"gree" +
-                        "n\":1...\nclass [C not instantiable");
+                        "n\":1...\nchar[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -813,7 +813,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfShortFromObject() throws Exception {
         assertMessage("{ \"arrayOfShort\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfShort' of type short[] cannot be mapped to json object value: {\"red\":255,\"gr" +
-                        "een\":1...\nclass [S not instantiable");
+                        "een\":1...\nshort[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -864,7 +864,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfLongFromObject() throws Exception {
         assertMessage("{ \"arrayOfLong\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfLong' of type long[] cannot be mapped to json object value: {\"red\":255,\"gree" +
-                        "n\":1...\nclass [J not instantiable");
+                        "n\":1...\nlong[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -915,7 +915,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfFloatFromObject() throws Exception {
         assertMessage("{ \"arrayOfFloat\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfFloat' of type float[] cannot be mapped to json object value: {\"red\":255,\"gr" +
-                        "een\":1...\nclass [F not instantiable");
+                        "een\":1...\nfloat[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -966,7 +966,7 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfDoubleFromObject() throws Exception {
         assertMessage("{ \"arrayOfDouble\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfDouble' of type double[] cannot be mapped to json object value: {\"red\":255,\"" +
-                        "green\":1...\nclass [D not instantiable");
+                        "green\":1...\ndouble[] array not a suitable datatype for json object value: {\"red\":255,\"green\":1...");
     }
 
     @Test
@@ -1017,7 +1017,8 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfBooleanPrimitiveFromObject() throws Exception {
         assertMessage("{ \"arrayOfBooleanPrimitive\" : {\"red\": 255, \"green\": 165, \"blue\":0} }",
                 "Widget property 'arrayOfBooleanPrimitive' of type boolean[] cannot be mapped to json object value: {" +
-                        "\"red\":255,\"green\":1...\nclass [Z not instantiable");
+                        "\"red\":255,\"green\":1...\nboolean[] array not a suitable datatype for json object value: {\"red\":255,\"gr" +
+                        "een\":1...");
     }
 
     @Test
@@ -1213,7 +1214,8 @@ public class DeserializationExceptionMessagesTest {
     public void listOfNumberFromArrayOfObject() throws Exception {
         assertMessage("{ \"listOfNumber\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'listOfNumber' of type List<Number> cannot be mapped to json array value: [{\"red\":25" +
-                        "5,\"green\":...\njava.lang.InstantiationException");
+                        "5,\"green\":...\nNumber cannot be constructed to deserialize json object value: {\"red\":255,\"green\":1..." +
+                        "\njava.lang.InstantiationException");
     }
 
     @Test

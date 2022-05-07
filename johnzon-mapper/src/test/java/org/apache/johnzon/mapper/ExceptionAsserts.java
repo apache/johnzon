@@ -17,6 +17,7 @@
 package org.apache.johnzon.mapper;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Type;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -54,6 +55,14 @@ public class ExceptionAsserts {
         return this;
     }
 
+    /**
+     * Useful for debugging tests
+     */
+    public ExceptionAsserts printStackTrace() {
+        throwable.printStackTrace();
+        return this;
+    }
+
     public Throwable getThrowable() {
         return throwable;
     }
@@ -72,7 +81,7 @@ public class ExceptionAsserts {
         }
     }
 
-    public static ExceptionAsserts fromMapperReadObject(final String json, final Class<?> clazz) {
+    public static ExceptionAsserts fromMapperReadObject(final String json, final Type clazz) {
         return from(() -> {
             try (final Mapper mapper = new MapperBuilder().setSnippetMaxLength(20).build()) {
                 mapper.readObject(json, clazz);
