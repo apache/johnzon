@@ -16,6 +16,8 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.junit.Assert;
+
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
 
@@ -38,6 +40,11 @@ public class ExceptionAsserts {
         return this;
     }
 
+    public ExceptionAsserts assertSame(final Throwable expected) {
+        Assert.assertSame(expected, throwable);
+        return this;
+    }
+    
     public ExceptionAsserts assertCauseChain(final Throwable expected) {
         Throwable cause = throwable;
         while ((cause = cause.getCause()) != null) {
