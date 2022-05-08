@@ -16,14 +16,11 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.mapper.MapperBuilder;
 import org.junit.Assert;
 
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
-import javax.json.bind.JsonbException;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
 import java.util.concurrent.Callable;
@@ -51,7 +48,7 @@ public class ExceptionAsserts {
         Assert.assertSame(expected, throwable);
         return this;
     }
-    
+
     public ExceptionAsserts assertCauseChain(final Throwable expected) {
         Throwable cause = throwable;
         while ((cause = cause.getCause()) != null) {
@@ -84,7 +81,7 @@ public class ExceptionAsserts {
     public static ExceptionAsserts from(final Runnable runnable) {
         return from(runnable);
     }
-    
+
     public static ExceptionAsserts from(final Callable<?> runnable) {
         try {
 
