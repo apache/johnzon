@@ -18,15 +18,10 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
 
 public class DeserializationExceptionMessagesTest {
 
@@ -1286,32 +1281,10 @@ public class DeserializationExceptionMessagesTest {
     }
 
     private void assertMessage(final String json, final String expected) throws Exception {
-
-        final String message = getExceptionMessage(json);
-        assertEquals(normalize(expected), normalize(message));
+        ExceptionAsserts.fromJson(json, Widget.class)
+                .assertInstanceOf(JsonbException.class)
+                .assertMessage(expected);
     }
-
-    private String normalize(final String message) {
-        return message.replace("\r\n", "\n");
-    }
-
-    public static String getExceptionMessage(final String json) {
-        final JsonbConfig config = new JsonbConfig();
-        config.setProperty("johnzon.snippetMaxLength", 20);
-
-        try (final Jsonb jsonb = JsonbBuilder.create(config)) {
-            final Widget widget = jsonb.fromJson(json, Widget.class);
-
-            throw new AssertionError("No exception occured");
-        } catch (JsonbException e) {
-            return e.getMessage();
-        } catch (AssertionError assertionError) {
-            throw assertionError;
-        } catch (Exception e) {
-            throw new AssertionError("Unexpected failure", e);
-        }
-    }
-
 
     public static class Widget {
         private Color[] arrayOfObject;
