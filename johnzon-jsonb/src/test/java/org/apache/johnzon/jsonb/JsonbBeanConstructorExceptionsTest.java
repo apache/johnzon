@@ -16,7 +16,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.mapper.MapperException;
 import org.junit.Test;
 
 import javax.json.bind.JsonbException;
