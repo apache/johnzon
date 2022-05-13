@@ -17,8 +17,10 @@
 package org.apache.johnzon.mapper;
 
 import javax.json.JsonValue;
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 
 import static javax.json.JsonValue.ValueType.ARRAY;
 import static javax.json.JsonValue.ValueType.FALSE;
@@ -37,23 +39,37 @@ public final class ExceptionMessages {
             final Class<?> clazz = (Class<?>) type;
             return clazz.getSimpleName();
         }
+        
         if (type instanceof ParameterizedType) {
             final ParameterizedType parameterizedType = (ParameterizedType) type;
-            final StringBuilder sb = new StringBuilder();
-            sb.append(simpleName(parameterizedType.getRawType()));
-            sb.append("<");
-
-            final Type[] args = parameterizedType.getActualTypeArguments();
-            for (int i = 0; i < args.length; i++) {
-                final Type arg = args[i];
-                sb.append(simpleName(arg));
-                if (i < args.length - 1) {
-                    sb.append(",");
-                }
-            }
-            sb.append(">");
-            return sb.toString();
+            return simpleName(parameterizedType.getRawType()) +
+                    "<" +
+                    join(",", parameterizedType.getActualTypeArguments()) +
+                    ">";
         }
+        
+        if (type instanceof GenericArrayType) {
+            final GenericArrayType genericArrayType = (GenericArrayType) type;
+            return simpleName(genericArrayType.getGenericComponentType()) + "[]";
+        }
+
+        if (type instanceof WildcardType) {
+            final WildcardType wildcardType = (WildcardType) type;
+
+            if (wildcardType.getLowerBounds().length > 0) {
+                return "? super " + join(" & ", wildcardType.getLowerBounds());
+            }
+
+            if (wildcardType.getUpperBounds().length > 0) {
+                return "? extends " + join(" & ", wildcardType.getUpperBounds());
+            }
+
+            // This should never happen, but it's always safe to fallback on getTypeName()
+            // so we do that instead of throwing an exception
+            return wildcardType.getTypeName();
+        }
+
+        // Some Type derivative we've never seen.  Fallback on getTypeName()
         return type.getTypeName();
     }
 
@@ -73,5 +89,20 @@ public final class ExceptionMessages {
         }
 
         return "json value";
+    }
+
+    private static String join(final String delimiter, final Type[] args) {
+        if (args.length == 0) {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder(simpleName(args[0]));
+
+        for (int i = 1; i < args.length; i++) {
+            sb.append(delimiter);
+            sb.append(simpleName(args[i]));
+        }
+
+        return sb.toString();
     }
 }
