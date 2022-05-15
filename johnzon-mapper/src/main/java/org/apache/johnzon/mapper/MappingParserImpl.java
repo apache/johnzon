@@ -383,12 +383,11 @@ public class MappingParserImpl implements MappingParser {
             } else {
                 t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
             }
+        } catch (FactoryCreateException e){
+            throw e;
         } catch (Exception e) {
-            final String message = String.format("%s cannot be constructed to deserialize %s: %s%n%s",
-                    ExceptionMessages.simpleName(type), ExceptionMessages.description(object),
-                    config.getSnippet().of(object), e.getMessage()
-            );
-            throw new MapperException(message, e);
+            final String snippet = config.getSnippet().of(object);
+            throw new FactoryCreateException(type, object, snippet, e);
         }
 
         // store the new object under it's jsonPointer in case it gets referenced later
