@@ -20,10 +20,49 @@ import org.junit.Test;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Spliterator;
+
+import static java.util.Spliterators.spliteratorUnknownSize;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class MapperBeanConstructorExceptionsTest {
 
     private static final RuntimeException USER_EXCEPTION = new RuntimeException("I am user, hear me roar");
+
+    @Test
+    public void singleExceptionMapperInCause() {
+        try (final Mapper mapper = new MapperBuilder().setSnippetMaxLength(20).build()) {
+            mapper.readObject("{ \"string\" : \"whatever\" }", Rectangle.class);
+            fail("should have failed");
+        } catch (final MapperException me) {
+            final Collection<Throwable> exceptionStack = stream(spliteratorUnknownSize(new Iterator<Throwable>() {
+                private Throwable current = me;
+
+                @Override
+                public boolean hasNext() {
+                    return current != null;
+                }
+
+                @Override
+                public Throwable next() {
+                    final Throwable throwable = current;
+                    current = current.getCause() == current ? null : current.getCause();
+                    return throwable;
+                }
+            }, Spliterator.IMMUTABLE), false).collect(toList());
+            assertEquals(3, exceptionStack.size());
+
+            // warn: this *must* be 1 which requires to ensure the MapperException thrown by
+            //       org.apache.johnzon.mapper.MappingParserImpl.toValue is mutable to add the context/right message
+            //       (no need to strip it, an alternative could be to use addSuppressed but it would keep creating stacks for nothing)
+            assertEquals(2, exceptionStack.stream().filter(MapperException.class::isInstance).count());
+        }
+    }
 
     @Test
     public void constructor() {
@@ -105,6 +144,23 @@ public class MapperBeanConstructorExceptionsTest {
         }
     }
 
+    public static class Rectangle {
+        private String string;
+
+        @ConstructorProperties({"string"})
+        public Rectangle(@JohnzonConverter(FailingConverter.class) final String string) {
+            fail("shouldn't be reached");
+        }
+
+        public String getString() {
+            return string;
+        }
+
+        public void setString(final String string) {
+            this.string = string;
+        }
+    }
+
     public static class Oval<T> {
         private String s;
 
@@ -128,5 +184,15 @@ public class MapperBeanConstructorExceptionsTest {
     public interface Sphere {
     }
 
+    public static class FailingConverter<T> implements Converter<T> {
+        @Override
+        public String toString(final T instance) {
+            throw USER_EXCEPTION;
+        }
 
+        @Override
+        public T fromString(final String text) {
+            throw USER_EXCEPTION;
+        }
+    }
 }
