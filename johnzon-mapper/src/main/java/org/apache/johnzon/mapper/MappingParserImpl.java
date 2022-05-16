@@ -242,7 +242,9 @@ public class MappingParserImpl implements MappingParser {
             return (T) Boolean.FALSE;
         }
 
-        throw new IllegalArgumentException("Unsupported " + jsonValue + " for type " + targetType);
+        final String snippet = config.getSnippet().of(jsonValue);
+        final String description = ExceptionMessages.description(valueType);
+        throw new IllegalArgumentException(targetType + " does not support " + description + ": " + snippet);
     }
 
     private boolean isDedup() {
@@ -344,7 +346,9 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (classMapping == null) {
-            throw new MapperException("Can't map JSON Object to " + type + ": " + config.getSnippet().of(object));
+            final String snippet = config.getSnippet().of(object);
+            final String description = ExceptionMessages.description(object);
+            throw new MapperException("Unable to map " + description + " to " + type + ": " + snippet);
         }
 
         if (applyObjectConverter && classMapping.reader != null && (skippedConverters == null || !skippedConverters.contains(type))) {
@@ -361,7 +365,7 @@ public class MappingParserImpl implements MappingParser {
         */
 
         if (classMapping.factory == null) {
-            throw new MapperException(classMapping.clazz + " not instantiable");
+            throw new MissingFactoryException(classMapping.clazz, object, config.getSnippet().of(object));
         }
 
         if (config.isFailOnUnknown()) {
@@ -373,11 +377,19 @@ public class MappingParserImpl implements MappingParser {
         }
 
         Object t;
-        if (classMapping.factory.getParameterTypes() == null || classMapping.factory.getParameterTypes().length == 0) {
-            t = classMapping.factory.create(null);
-        } else {
-            t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
+        try {
+            if (classMapping.factory.getParameterTypes() == null || classMapping.factory.getParameterTypes().length == 0) {
+                t = classMapping.factory.create(null);
+            } else {
+                t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
+            }
+        } catch (FactoryCreateException e){
+            throw e;
+        } catch (Exception e) {
+            final String snippet = config.getSnippet().of(object);
+            throw new FactoryCreateException(type, object, snippet, e);
         }
+
         // store the new object under it's jsonPointer in case it gets referenced later
         if (jsonPointers == null) {
             if (classMapping.deduplicateObjects || config.isDeduplicateObjects()) {
@@ -399,36 +411,43 @@ public class MappingParserImpl implements MappingParser {
             final JsonValue jsonValue = jsonEntry.getValue();
             final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
 
-            if (JsonValue.class == value.paramType) {
-                value.writer.write(t, jsonValue);
-                continue;
-            }
-            if (jsonValue == null) {
-                continue;
-            }
+            try {
+                if (JsonValue.class == value.paramType) {
+                    value.writer.write(t, jsonValue);
+                    continue;
+                }
+                if (jsonValue == null) {
+                    continue;
+                }
 
-            final AccessMode.Writer setterMethod = value.writer;
-            if (NULL == valueType) { // forced
-                setterMethod.write(t, null);
-            } else {
-                Object existingInstance = null;
-                if (config.isReadAttributeBeforeWrite()) {
-                    final Mappings.Getter getter = classMapping.getters.get(jsonEntry.getKey());
-                    if (getter != null) {
-                        try {
-                            existingInstance = getter.reader.read(t);
-                        } catch (final RuntimeException re) {
-                            // backward compatibility
+                final AccessMode.Writer setterMethod = value.writer;
+                if (NULL == valueType) { // forced
+                    setterMethod.write(t, null);
+                } else {
+                    Object existingInstance = null;
+                    if (config.isReadAttributeBeforeWrite()) {
+                        final Mappings.Getter getter = classMapping.getters.get(jsonEntry.getKey());
+                        if (getter != null) {
+                            try {
+                                existingInstance = getter.reader.read(t);
+                            } catch (final RuntimeException re) {
+                                // backward compatibility
+                            }
                         }
                     }
+                    final Object convertedValue = toValue(
+                            existingInstance, jsonValue, value.converter, value.itemConverter,
+                            value.paramType, value.objectConverter,
+                            isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType);
+                    if (convertedValue != null) {
+                        setterMethod.write(t, convertedValue);
+                    }
                 }
-                final Object convertedValue = toValue(
-                        existingInstance, jsonValue, value.converter, value.itemConverter,
-                        value.paramType, value.objectConverter,
-                        isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType);
-                if (convertedValue != null) {
-                    setterMethod.write(t, convertedValue);
-                }
+            } catch (SetterMappingException alreadyHandled) {
+                throw alreadyHandled;
+            } catch (Exception e) {
+                final String snippet = jsonValue == null? "null": config.getSnippet().of(jsonValue);
+                throw new SetterMappingException(classMapping.clazz, jsonEntry.getKey(), value.writer.getType(), valueType, snippet, e);
             }
         }
         if (classMapping.anySetter != null) {
@@ -622,7 +641,9 @@ public class MappingParserImpl implements MappingParser {
             if (JsonValue.ValueType.FALSE == valueType) {
                 return false;
             }
-            throw new MapperException("Unable to parse " + jsonValue + " to boolean");
+            final String snippet = config.getSnippet().of(jsonValue);
+            final String description = ExceptionMessages.description(valueType);
+            throw new MapperException("Unable to parse " + description + " to boolean: " + snippet);
         }
 
         if (config.isTreatByteArrayAsBase64() && jsonValue.getValueType() == JsonValue.ValueType.STRING && (type == byte[].class /*|| type == Byte[].class*/)) {
@@ -732,7 +753,9 @@ public class MappingParserImpl implements MappingParser {
             return itemConverter.to(string);
         }
 
-        throw new MapperException("Unable to parse " + jsonValue + " to " + type);
+        final String snippet = config.getSnippet().of(jsonValue);
+        final String description = ExceptionMessages.description(valueType);
+        throw new MapperException("Unable to parse " + description + " to " + type + ": " + snippet);
     }
 
     private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter,
@@ -805,8 +828,12 @@ public class MappingParserImpl implements MappingParser {
             boolean[] array = new boolean[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (boolean) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to boolean[] has null value at index " + i);
+                }
+                array[i] = (boolean) object;
                 i++;
             }
             return array;
@@ -815,8 +842,12 @@ public class MappingParserImpl implements MappingParser {
             byte[] array = new byte[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (byte) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to byte[] has null value at index " + i);
+                }
+                array[i] = (byte) object;
                 i++;
             }
             return array;
@@ -825,8 +856,12 @@ public class MappingParserImpl implements MappingParser {
             char[] array = new char[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (char) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to char[] has null value at index " + i);
+                }
+                array[i] = (char) object;
                 i++;
             }
             return array;
@@ -835,8 +870,12 @@ public class MappingParserImpl implements MappingParser {
             short[] array = new short[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (short) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to short[] has null value at index " + i);
+                }
+                array[i] = (short) object;
                 i++;
             }
             return array;
@@ -845,8 +884,12 @@ public class MappingParserImpl implements MappingParser {
             int[] array = new int[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (int) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to int[] has null value at index " + i);
+                }
+                array[i] = (int) object;
                 i++;
             }
             return array;
@@ -855,8 +898,12 @@ public class MappingParserImpl implements MappingParser {
             long[] array = new long[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (long) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to long[] has null value at index " + i);
+                }
+                array[i] = (long) object;
                 i++;
             }
             return array;
@@ -865,8 +912,12 @@ public class MappingParserImpl implements MappingParser {
             float[] array = new float[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (float) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to float[] has null value at index " + i);
+                }
+                array[i] = (float) object;
                 i++;
             }
             return array;
@@ -875,8 +926,12 @@ public class MappingParserImpl implements MappingParser {
             double[] array = new double[jsonArray.size()];
             int i = 0;
             for (final JsonValue value : jsonArray) {
-                array[i] = (double) toObject(null, value, componentType, itemConverter,
+                final Object object = toObject(null, value, componentType, itemConverter,
                         isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType);
+                if (object == null) {
+                    throw new IllegalStateException("json array mapped to double[] has null value at index " + i);
+                }
+                array[i] = (double) object;
                 i++;
             }
             return array;
