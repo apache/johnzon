@@ -32,7 +32,7 @@ public class JsonbAdapterTest {
     public JsonbRule jsonbRule = new JsonbRule().withTypeAdapter(new ColorIdAdapter());
 
     @Test
-    public void test_inherited_adapter_recognized() {
+    public void testInheritedAdapterRecognized() {
         // given
         ColorId colorId = new ColorId("#336699");
 

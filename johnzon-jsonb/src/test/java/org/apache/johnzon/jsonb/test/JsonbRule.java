@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.jsonb.test;
 
-import org.apache.johnzon.jsonb.JsonbAdapterTest;
 import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
