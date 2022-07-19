@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb.test;
 
+import org.apache.johnzon.jsonb.JsonbAdapterTest;
 import org.apache.johnzon.jsonb.api.experimental.JsonbExtension;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
@@ -28,6 +29,7 @@ import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
 import javax.json.bind.JsonbConfig;
 import javax.json.bind.JsonbException;
+import javax.json.bind.adapter.JsonbAdapter;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonParser;
 import java.io.InputStream;
@@ -48,6 +50,11 @@ public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
 
     public JsonbRule withFormatting(final boolean format) {
         config.withFormatting(format);
+        return this;
+    }
+
+    public JsonbRule withTypeAdapter(JsonbAdapter<?, ?>... jsonbAdapters) {
+        config.withAdapters(jsonbAdapters);
         return this;
     }
 
@@ -170,4 +177,5 @@ public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
     public void toJson(final Object object, final Type runtimeType, final JsonGenerator jsonGenerator) {
         JsonbExtension.class.cast(jsonb).toJson(object, runtimeType, jsonGenerator);
     }
+
 }

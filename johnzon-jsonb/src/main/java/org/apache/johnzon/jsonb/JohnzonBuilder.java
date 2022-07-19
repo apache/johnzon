@@ -55,13 +55,9 @@ import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -238,10 +234,10 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .ifPresent(builder::setSnippetMaxLength);
 
         // user adapters
+        final Types types = new Types();
+
         config.getProperty(JsonbConfig.ADAPTERS).ifPresent(adapters -> Stream.of(JsonbAdapter[].class.cast(adapters)).forEach(adapter -> {
-            final ParameterizedType pt = ParameterizedType.class.cast(
-                    Stream.of(adapter.getClass().getGenericInterfaces())
-                          .filter(i -> ParameterizedType.class.isInstance(i) && ParameterizedType.class.cast(i).getRawType() == JsonbAdapter.class).findFirst().orElse(null));
+            final ParameterizedType pt = types.findParameterizedType(adapter.getClass(), JsonbAdapter.class);
             if (pt == null) {
                 throw new IllegalArgumentException(adapter + " doesn't implement JsonbAdapter");
             }
@@ -286,7 +282,6 @@ public class JohnzonBuilder implements JsonbBuilder {
             getBeanManager(); // force detection
         }
 
-        final Types types = new Types();
         builder.setReadAttributeBeforeWrite(
                 config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
         builder.setAutoAdjustStringBuffers(
