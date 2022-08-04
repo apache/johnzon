@@ -69,12 +69,14 @@ import java.util.TreeSet;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static javax.json.JsonValue.ValueType.ARRAY;
@@ -253,13 +255,8 @@ public class MappingParserImpl implements MappingParser {
 
     private Object buildObject(final Type inType, final JsonObject object, final boolean applyObjectConverter,
                                final JsonPointerTracker jsonPointer, final Collection<Class<?>> skippedConverters) {
-        Type type = inType;
-        if (inType == Object.class) {
-            type = new JohnzonParameterizedType(Map.class, String.class, Object.class);
-        }
-
+        final Type type = inType == Object.class ? new JohnzonParameterizedType(Map.class, String.class, Object.class) : inType;
         if (applyObjectConverter && !(type instanceof ParameterizedType)) {
-
             if (!(type instanceof Class)) {
                 throw new MapperException("ObjectConverters are only supported for Classes not Types");
             }
@@ -295,7 +292,6 @@ public class MappingParserImpl implements MappingParser {
                 final Type[] fieldArgTypes = aType.getActualTypeArguments();
                 if (fieldArgTypes.length >= 2) {
                     final Class<?> raw = Class.class.cast(aType.getRawType());
-
                     final Map map;
                     if (SortedMap.class.isAssignableFrom(raw) || NavigableMap.class == raw || TreeMap.class == raw) {
                         map = config.getAttributeOrder() == null ? new TreeMap() : new TreeMap(config.getAttributeOrder());
@@ -314,14 +310,7 @@ public class MappingParserImpl implements MappingParser {
                     }
 
                     if (map != null) {
-
-                        Type keyType;
-                        if (ParameterizedType.class.isInstance(fieldArgTypes[0])) {
-                            keyType = fieldArgTypes[0];
-                        } else {
-                            keyType = fieldArgTypes[0];
-                        }
-
+                        final Type keyType = fieldArgTypes[0];
                         final boolean any = fieldArgTypes.length < 2 || fieldArgTypes[1] == Object.class;
                         for (final Map.Entry<String, JsonValue> value : object.entrySet()) {
                             final JsonValue jsonValue = value.getValue();
@@ -367,12 +356,10 @@ public class MappingParserImpl implements MappingParser {
         if (classMapping.factory == null) {
             throw new MissingFactoryException(classMapping.clazz, object, config.getSnippet().of(object));
         }
-
         if (config.isFailOnUnknown()) {
             if (!classMapping.setters.keySet().containsAll(object.keySet())) {
-                throw new MapperException("(fail on unknown properties): " + new HashSet<String>(object.keySet()) {{
-                    removeAll(classMapping.setters.keySet());
-                }});
+                throw new MapperException("(fail on unknown properties): " +
+                        object.keySet().stream().filter(it -> !classMapping.setters.containsKey(it)).collect(joining(", ", "[", "]")));
             }
         }
 
@@ -381,13 +368,17 @@ public class MappingParserImpl implements MappingParser {
             if (classMapping.factory.getParameterTypes() == null || classMapping.factory.getParameterTypes().length == 0) {
                 t = classMapping.factory.create(null);
             } else {
-                t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer));
+                t = classMapping.factory.create(createParameters(classMapping, object, jsonPointer, e -> {
+                    if (FactoryCreateException.class.isInstance(e)) {
+                        throw FactoryCreateException.class.cast(e);
+                    }
+                    throw new FactoryCreateException(type, object, config.getSnippet().of(object), e);
+                }));
             }
-        } catch (FactoryCreateException e){
+        } catch (final FactoryCreateException e){
             throw e;
-        } catch (Exception e) {
-            final String snippet = config.getSnippet().of(object);
-            throw new FactoryCreateException(type, object, snippet, e);
+        } catch (final Exception e) {
+            throw new FactoryCreateException(type, object, config.getSnippet().of(object), e);
         }
 
         // store the new object under it's jsonPointer in case it gets referenced later
@@ -410,7 +401,6 @@ public class MappingParserImpl implements MappingParser {
 
             final JsonValue jsonValue = jsonEntry.getValue();
             final JsonValue.ValueType valueType = jsonValue != null ? jsonValue.getValueType() : null;
-
             try {
                 if (JsonValue.class == value.paramType) {
                     value.writer.write(t, jsonValue);
@@ -438,14 +428,22 @@ public class MappingParserImpl implements MappingParser {
                     final Object convertedValue = toValue(
                             existingInstance, jsonValue, value.converter, value.itemConverter,
                             value.paramType, value.objectConverter,
-                            isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType);
+                            isDedup() ? new JsonPointerTracker(jsonPointer, jsonEntry.getKey()) : null, inType,
+                            e -> {
+                                if (SetterMappingException.class.isInstance(e)) {
+                                    throw SetterMappingException.class.cast(e);
+                                }
+                                final String snippet = config.getSnippet().of(jsonValue);
+                                throw new SetterMappingException(
+                                        classMapping.clazz, jsonEntry.getKey(), value.writer.getType(), valueType, snippet, e);
+                            });
                     if (convertedValue != null) {
                         setterMethod.write(t, convertedValue);
                     }
                 }
-            } catch (SetterMappingException alreadyHandled) {
+            } catch (final SetterMappingException alreadyHandled) {
                 throw alreadyHandled;
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 final String snippet = jsonValue == null? "null": config.getSnippet().of(jsonValue);
                 throw new SetterMappingException(classMapping.clazz, jsonEntry.getKey(), value.writer.getType(), valueType, snippet, e);
             }
@@ -458,7 +456,8 @@ public class MappingParserImpl implements MappingParser {
                         classMapping.anySetter.invoke(t, key,
                                 toValue(null, entry.getValue(), null, null,
                                         classMapping.anySetter.getGenericParameterTypes()[1], null,
-                                isDedup() ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type));
+                                        isDedup() ? new JsonPointerTracker(jsonPointer, entry.getKey()) : null, type,
+                                        MapperException::new));
                     } catch (final IllegalAccessException e) {
                         throw new IllegalStateException(e);
                     } catch (final InvocationTargetException e) {
@@ -467,13 +466,13 @@ public class MappingParserImpl implements MappingParser {
                 }
             }
         } else if (classMapping.anyField != null) {
-            final Type tRef = type;
             try {
                 classMapping.anyField.set(t, object.entrySet().stream()
                     .filter(it -> !classMapping.setters.containsKey(it.getKey()))
                     .collect(toMap(Map.Entry::getKey, e -> toValue(null, e.getValue(), null, null,
                             ParameterizedType.class.cast(classMapping.anyField.getGenericType()).getActualTypeArguments()[1], null,
-                            isDedup() ? new JsonPointerTracker(jsonPointer, e.getKey()) : null, tRef))));
+                            isDedup() ? new JsonPointerTracker(jsonPointer, e.getKey()) : null, type,
+                            MapperException::new))));
             } catch (final IllegalAccessException e) {
                 throw new IllegalStateException(e);
             }
@@ -486,7 +485,8 @@ public class MappingParserImpl implements MappingParser {
                     final Object convertedValue = toValue(
                             null, e.getValue(), null, null,
                             classMapping.mapAdderType, null,
-                            new JsonPointerTracker(jsonPointer, e.getKey()), inType);
+                            new JsonPointerTracker(jsonPointer, e.getKey()), inType,
+                            MapperException::new);
                     if (convertedValue != null) {
                         try {
                             classMapping.mapAdder.invoke(t, e.getKey(), convertedValue);
@@ -498,7 +498,6 @@ public class MappingParserImpl implements MappingParser {
                     }
                 });
         }
-
         return t;
     }
 
@@ -1060,7 +1059,7 @@ public class MappingParserImpl implements MappingParser {
             collection.add(JsonValue.NULL.equals(value)
                     ? null
                     : toValue(null, value, null, itemConverter, mapping.arg, objectConverter,
-                    isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType));
+                    isDedup() ? new JsonPointerTracker(jsonPointer, i) : null, rootType, MapperException::new));
             i++;
         }
 
@@ -1083,7 +1082,8 @@ public class MappingParserImpl implements MappingParser {
     }
 
 
-    private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object, JsonPointerTracker jsonPointer) {
+    private Object[] createParameters(final Mappings.ClassMapping mapping, final JsonObject object, JsonPointerTracker jsonPointer,
+                                      final Function<Exception, RuntimeException> onException) {
         final int length = mapping.factory.getParameterTypes().length;
         final Object[] objects = new Object[length];
 
@@ -1097,7 +1097,8 @@ public class MappingParserImpl implements MappingParser {
                     parameterType,
                     mapping.factory.getObjectConverter()[i],
                     isDedup() ? new JsonPointerTracker(jsonPointer, paramName) : null,
-                    mapping.clazz); //X TODO ObjectConverter in @JohnzonConverter with Constructors!
+                    mapping.clazz, //X TODO ObjectConverter in @JohnzonConverter with Constructors!
+                    onException);
             if (objects[i] == null) {
                 objects[i] = getPrimitiveDefault(parameterType);
             }
@@ -1108,7 +1109,8 @@ public class MappingParserImpl implements MappingParser {
 
     private Object toValue(final Object baseInstance, final JsonValue jsonValue, final Adapter converter,
                            final Adapter itemConverter, final Type type, final ObjectConverter.Reader objectConverter,
-                           final JsonPointerTracker jsonPointer, final Type rootType) {
+                           final JsonPointerTracker jsonPointer, final Type rootType,
+                           final Function<Exception, RuntimeException> onException) {
 
         if (objectConverter != null) {
             return objectConverter.fromJson(jsonValue, type, this);
@@ -1118,11 +1120,11 @@ public class MappingParserImpl implements MappingParser {
             return converter == null ?
                     toObject(baseInstance, jsonValue, type, itemConverter, jsonPointer, rootType) :
                     convertTo(converter, jsonValue, jsonPointer, type);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             if (e instanceof MapperException) {
                 throw e;
             }
-            throw new MapperException(e);
+            throw onException.apply(e);
         }
     }
 

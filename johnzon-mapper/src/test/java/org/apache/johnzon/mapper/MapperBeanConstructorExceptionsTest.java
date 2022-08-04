@@ -55,12 +55,8 @@ public class MapperBeanConstructorExceptionsTest {
                     return throwable;
                 }
             }, Spliterator.IMMUTABLE), false).collect(toList());
-            assertEquals(3, exceptionStack.size());
-
-            // warn: this *must* be 1 which requires to ensure the MapperException thrown by
-            //       org.apache.johnzon.mapper.MappingParserImpl.toValue is mutable to add the context/right message
-            //       (no need to strip it, an alternative could be to use addSuppressed but it would keep creating stacks for nothing)
-            assertEquals(2, exceptionStack.stream().filter(MapperException.class::isInstance).count());
+            assertEquals(2, exceptionStack.size());
+            assertEquals(1, exceptionStack.stream().filter(MapperException.class::isInstance).count());
         }
     }
 
