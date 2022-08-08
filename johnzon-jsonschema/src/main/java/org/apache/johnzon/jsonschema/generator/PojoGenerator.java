@@ -209,7 +209,8 @@ public class PojoGenerator {
     protected String asType(final String javaName, final JsonObject schema, final boolean required) {
         final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
-            final String name = onRef(new Ref(JsonString.class.cast(ref).getString(), imports, attributes, nested));
+            final String name = onRef(new Ref(
+                    JsonString.class.cast(ref).getString(), configuration.getClassName(), imports, attributes, nested));
             if (name != null) {
                 return name;
             }
@@ -441,7 +442,9 @@ public class PojoGenerator {
     protected String onItemSchema(final String javaName, final JsonObject schema) {
         final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
-            final String name = onRef(new Ref(JsonString.class.cast(ref).getString(), imports, attributes, nested));
+            final String name = onRef(new Ref(
+                    configuration.getClassName(),
+                    JsonString.class.cast(ref).getString(), imports, attributes, nested));
             if (name != null) {
                 return name;
             }
@@ -659,16 +662,22 @@ public class PojoGenerator {
 
     public static class Ref {
         private final String ref;
+        private final String enclosingClass;
         private final Set<String> imports;
         private final List<Attribute> attributes;
         private final Map<String, String> nested;
 
-        private Ref(final String ref, final Set<String> imports,
+        private Ref(final String ref, final String enclosingClass, final Set<String> imports,
                     final List<Attribute> attributes, final Map<String, String> nested) {
             this.ref = ref;
+            this.enclosingClass = enclosingClass;
             this.imports = imports;
             this.attributes = attributes;
             this.nested = nested;
+        }
+
+        public String getEnclosingClass() {
+            return enclosingClass;
         }
 
         public String getRef() {
