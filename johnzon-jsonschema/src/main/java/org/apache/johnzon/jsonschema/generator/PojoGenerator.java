@@ -536,7 +536,7 @@ public class PojoGenerator {
     }
 
     protected boolean isReserved(final String name) {
-        return "continue".equals(name) || "break".equals(name) ||
+        return "continue".equals(name) || "break".equals(name) || "default".equals(name) ||
                 "do".equals(name) || "while".equals(name) ||
                 "for".equals(name) ||
                 "if".equals(name) || "else".equals(name) ||
