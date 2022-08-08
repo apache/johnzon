@@ -560,7 +560,7 @@ public class PojoGenerator {
 
     protected String toCamelCase(final String name) {
         final StringBuilder out = new StringBuilder(name.length());
-        boolean up = true;
+        boolean up = false;
         for (final char c : name.toCharArray()) {
             if (up) {
                 out.append(Character.toUpperCase(c));
