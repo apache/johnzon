@@ -563,7 +563,7 @@ public class PojoGenerator {
         boolean up = true;
         for (final char c : name.toCharArray()) {
             if (up) {
-                out.append(Character.isUpperCase(c));
+                out.append(Character.toUpperCase(c));
                 up = false;
             } else if (c == '_') {
                 up = true;
