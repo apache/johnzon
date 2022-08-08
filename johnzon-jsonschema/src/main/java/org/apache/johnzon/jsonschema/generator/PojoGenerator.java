@@ -670,14 +670,26 @@ public class PojoGenerator {
     }
 
     protected static class Attribute {
-        private final String javaName;
-        private final String jsonName;
-        private final String type;
+        protected final String javaName;
+        protected final String jsonName;
+        protected final String type;
 
         protected Attribute(final String javaName, final String jsonName, final String type) {
             this.javaName = javaName;
             this.jsonName = jsonName;
             this.type = type;
+        }
+
+        public String getJavaName() {
+            return javaName;
+        }
+
+        public String getJsonName() {
+            return jsonName;
+        }
+
+        public String getType() {
+            return type;
         }
     }
 
