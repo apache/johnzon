@@ -548,10 +548,30 @@ public class PojoGenerator {
             name += "Value";
         }
 
+        if (name.contains("_")) {
+            name = toCamelCase(name);
+        }
+
         if (!Objects.equals(key, name) && configuration.isAddJsonbProperty()) {
             imports.add(JsonbProperty.class.getName());
         }
         return name;
+    }
+
+    protected String toCamelCase(final String name) {
+        final StringBuilder out = new StringBuilder(name.length());
+        boolean up = true;
+        for (final char c : name.toCharArray()) {
+            if (up) {
+                out.append(Character.isUpperCase(c));
+                up = false;
+            } else if (c == '_') {
+                up = true;
+            } else {
+                out.append(c);
+            }
+        }
+        return out.toString();
     }
 
     protected boolean isReserved(final String name) {
