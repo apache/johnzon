@@ -258,8 +258,10 @@ public class PojoGenerator {
                 return required ? "double" : "Double";
             // openapi types
             case "int":
+            case "int32":
             case "integer":
                 return required ? "int" : "Integer";
+            case "int64":
             case "long":
                 return required ? "long" : "Long";
             case "float":
@@ -383,9 +385,11 @@ public class PojoGenerator {
                         imports.add(Map.class.getName());
                         return "Map<String, Double>";
                     case "int":
+                    case "int32":
                     case "integer":
                         imports.add(Map.class.getName());
                         return "Map<String, Integer>";
+                    case "int64":
                     case "long":
                         imports.add(Map.class.getName());
                         return "Map<String, Long>";
@@ -492,8 +496,10 @@ public class PojoGenerator {
                 case "double":
                     return "Double";
                 case "int":
+                case "int32":
                 case "integer":
                     return "Integer";
+                case "int64":
                 case "long":
                     return "Long";
                 case "float":
