@@ -425,7 +425,7 @@ public class PojoGenerator {
                     .setClassName(className)
                     .setAddJsonbProperty(configuration.isAddJsonbProperty())
                     .setAddAllArgsConstructor(configuration.isAddAllArgsConstructor())
-                    .setOnRef(configuration.getOnRef()))
+                    .setOnRef(configuration.getOnRef()), schema)
                     .visitSchema(schema)
                     .generate());
             return className;
@@ -435,7 +435,7 @@ public class PojoGenerator {
         return JsonObject.class.getSimpleName();
     }
 
-    protected PojoGenerator newSubPojoGenerator(final PojoConfiguration pojoConfiguration) {
+    protected PojoGenerator newSubPojoGenerator(final PojoConfiguration pojoConfiguration, final JsonObject schema) {
         return new PojoGenerator(pojoConfiguration);
     }
 
@@ -467,7 +467,7 @@ public class PojoGenerator {
                             .setClassName(className)
                             .setAddJsonbProperty(configuration.isAddJsonbProperty())
                             .setAddAllArgsConstructor(configuration.isAddAllArgsConstructor())
-                            .setOnRef(configuration.getOnRef()))
+                            .setOnRef(configuration.getOnRef()), schema)
                             .visitSchema(schema)
                             .generate());
                     return className;
