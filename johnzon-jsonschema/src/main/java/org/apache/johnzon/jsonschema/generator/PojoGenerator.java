@@ -443,8 +443,8 @@ public class PojoGenerator {
         final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
             final String name = onRef(new Ref(
-                    configuration.getClassName(),
-                    JsonString.class.cast(ref).getString(), imports, attributes, nested));
+                    JsonString.class.cast(ref).getString(), configuration.getClassName(),
+                    imports, attributes, nested));
             if (name != null) {
                 return name;
             }
