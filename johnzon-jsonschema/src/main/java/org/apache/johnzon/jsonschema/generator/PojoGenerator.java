@@ -35,6 +35,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -190,7 +191,10 @@ public class PojoGenerator {
      * @param ref the reference to resolve.
      * @return the reference class name if resolved else null.
      */
-    protected String onRef(final String ref) {
+    protected String onRef(final Ref ref) {
+        if (configuration.getOnRef() != null) {
+            return configuration.getOnRef().apply(ref);
+        }
         return null; // todo: check if already in nested for ex
     }
 
@@ -205,7 +209,7 @@ public class PojoGenerator {
     protected String asType(final String javaName, final JsonObject schema, final boolean required) {
         final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
-            final String name = onRef(JsonString.class.cast(ref).getString());
+            final String name = onRef(new Ref(JsonString.class.cast(ref).getString(), imports, attributes, nested));
             if (name != null) {
                 return name;
             }
@@ -411,11 +415,12 @@ public class PojoGenerator {
             }
         } else if (hasProperties) {
             final String className = configuration.getClassName() + Character.toUpperCase(javaName.charAt(0)) + javaName.substring(1);
-            nested.putAll(new PojoGenerator(new PojoConfiguration()
+            nested.putAll(newSubPojoGenerator(new PojoConfiguration()
                     .setPackageName(configuration.getPackageName())
                     .setClassName(className)
                     .setAddJsonbProperty(configuration.isAddJsonbProperty())
-                    .setAddAllArgsConstructor(configuration.isAddAllArgsConstructor()))
+                    .setAddAllArgsConstructor(configuration.isAddAllArgsConstructor())
+                    .setOnRef(configuration.getOnRef()))
                     .visitSchema(schema)
                     .generate());
             return className;
@@ -425,10 +430,14 @@ public class PojoGenerator {
         return JsonObject.class.getSimpleName();
     }
 
+    protected PojoGenerator newSubPojoGenerator(final PojoConfiguration pojoConfiguration) {
+        return new PojoGenerator(pojoConfiguration);
+    }
+
     protected String onItemSchema(final String javaName, final JsonObject schema) {
         final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
-            final String name = onRef(JsonString.class.cast(ref).getString());
+            final String name = onRef(new Ref(JsonString.class.cast(ref).getString(), imports, attributes, nested));
             if (name != null) {
                 return name;
             }
@@ -446,11 +455,12 @@ public class PojoGenerator {
                     throw new IllegalStateException("Array of array unsupported");
                 case "object":
                     final String className = configuration.getClassName() + Character.toUpperCase(javaName.charAt(0)) + javaName.substring(1);
-                    nested.putAll(new PojoGenerator(new PojoConfiguration()
+                    nested.putAll(newSubPojoGenerator(new PojoConfiguration()
                             .setPackageName(configuration.getPackageName())
                             .setClassName(className)
                             .setAddJsonbProperty(configuration.isAddJsonbProperty())
-                            .setAddAllArgsConstructor(configuration.isAddAllArgsConstructor()))
+                            .setAddAllArgsConstructor(configuration.isAddAllArgsConstructor())
+                            .setOnRef(configuration.getOnRef()))
                             .visitSchema(schema)
                             .generate());
                     return className;
@@ -572,6 +582,16 @@ public class PojoGenerator {
         private boolean addJsonbProperty = true;
         private boolean addAllArgsConstructor = true;
         private boolean fluentSetters = false;
+        private Function<Ref, String> onRef;
+
+        public Function<Ref, String> getOnRef() {
+            return onRef;
+        }
+
+        public PojoConfiguration setOnRef(final Function<Ref, String> onRef) {
+            this.onRef = onRef;
+            return this;
+        }
 
         public boolean isFluentSetters() {
             return fluentSetters;
@@ -628,6 +648,37 @@ public class PojoGenerator {
             this.javaName = javaName;
             this.jsonName = jsonName;
             this.type = type;
+        }
+    }
+
+    public static class Ref {
+        private final String ref;
+        private final Set<String> imports;
+        private final List<Attribute> attributes;
+        private final Map<String, String> nested;
+
+        private Ref(final String ref, final Set<String> imports,
+                    final List<Attribute> attributes, final Map<String, String> nested) {
+            this.ref = ref;
+            this.imports = imports;
+            this.attributes = attributes;
+            this.nested = nested;
+        }
+
+        public String getRef() {
+            return ref;
+        }
+
+        public Set<String> getImports() {
+            return imports;
+        }
+
+        public List<Attribute> getAttributes() {
+            return attributes;
+        }
+
+        public Map<String, String> getNested() {
+            return nested;
         }
     }
 }
