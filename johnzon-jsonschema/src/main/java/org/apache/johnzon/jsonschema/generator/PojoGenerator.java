@@ -203,7 +203,7 @@ public class PojoGenerator {
     }
 
     protected String asType(final String javaName, final JsonObject schema, final boolean required) {
-        final JsonValue ref = schema.get("ref");
+        final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
             final String name = onRef(JsonString.class.cast(ref).getString());
             if (name != null) {
@@ -426,7 +426,7 @@ public class PojoGenerator {
     }
 
     protected String onItemSchema(final String javaName, final JsonObject schema) {
-        final JsonValue ref = schema.get("ref");
+        final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
             final String name = onRef(JsonString.class.cast(ref).getString());
             if (name != null) {
