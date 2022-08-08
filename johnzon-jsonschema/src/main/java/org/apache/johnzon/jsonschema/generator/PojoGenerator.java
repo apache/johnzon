@@ -537,7 +537,7 @@ public class PojoGenerator {
         if (Character.isDigit(name.charAt(0))) {
             name = "a" + name;
         }
-        while (name.startsWith("_")) {
+        while (!name.isEmpty() && (!Character.isJavaIdentifierStart(name.charAt(0)) || name.charAt(0) == '_' || name.charAt(0) == '$')) {
             name = name.substring(1);
         }
         if (name.isEmpty()) {
@@ -559,6 +559,7 @@ public class PojoGenerator {
                 "do".equals(name) || "while".equals(name) ||
                 "for".equals(name) ||
                 "if".equals(name) || "else".equals(name) ||
+                "enum".equals(name) ||
                 "int".equals(name) ||
                 "long".equals(name) ||
                 "float".equals(name) ||
