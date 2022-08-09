@@ -544,7 +544,7 @@ public class PojoGenerator {
         return JsonValue.class.getSimpleName();
     }
 
-    private String toJavaName(final String key) {
+    protected String toJavaName(final String key) {
         String name = key.chars()
                 .mapToObj(i -> Character.toString(!Character.isJavaIdentifierPart(i) ? '_' : (char) i))
                 .collect(joining());
