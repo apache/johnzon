@@ -198,11 +198,23 @@ public class PojoGenerator {
         return null; // todo: check if already in nested for ex
     }
 
+    protected String beforeEnumEnd() {
+        return "";
+    }
+
     protected String beforeClassEnd() {
         return "";
     }
 
     protected String afterClassName() {
+        return "";
+    }
+
+    protected String afterEnumName() {
+        return "";
+    }
+
+    protected String enumImports() {
         return "";
     }
 
@@ -316,7 +328,8 @@ public class PojoGenerator {
                 configuration.getPackageName().replace('.', '/') + '/' + className + ".java", "" +
                         "package " + configuration.getPackageName() + ";\n" +
                         "\n" +
-                        "public enum " + className + " {\n" +
+                        enumImports() +
+                        "public enum " + className + afterEnumName() + " {\n" +
                         values.entrySet().stream()
                                 .map(it -> "" +
                                         (injectValues && configuration.isAddJsonbProperty() ?
@@ -338,6 +351,7 @@ public class PojoGenerator {
                                         "    }\n" +
                                         "" :
                                 "") +
+                        beforeEnumEnd() +
                         "}\n");
         return className;
     }
