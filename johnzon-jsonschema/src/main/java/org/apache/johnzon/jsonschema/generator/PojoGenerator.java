@@ -77,6 +77,7 @@ public class PojoGenerator {
                         .sorted()
                         .map(it -> "import " + it + ";")
                         .collect(joining("\n", "", "\n\n"))) +
+                beforeClassDeclaration() +
                 "public class " + configuration.getClassName() + afterClassName() + " {\n" +
                 (attributes.isEmpty() ?
                         ("" +
@@ -223,6 +224,14 @@ public class PojoGenerator {
         return "";
     }
 
+    protected String beforeEnumDeclaration() {
+        return "";
+    }
+
+    protected String beforeClassDeclaration() {
+        return "";
+    }
+
     protected String asType(final String javaName, final JsonObject schema, final boolean required) {
         final JsonValue ref = schema.get("$ref");
         if (ref != null && ref.getValueType() == JsonValue.ValueType.STRING) {
@@ -334,6 +343,7 @@ public class PojoGenerator {
                         "package " + configuration.getPackageName() + ";\n" +
                         "\n" +
                         enumImports() +
+                        beforeEnumDeclaration() +
                         "public enum " + className + afterEnumName(values, injectValues) + " {\n" +
                         values.entrySet().stream()
                                 .map(it -> "" +
