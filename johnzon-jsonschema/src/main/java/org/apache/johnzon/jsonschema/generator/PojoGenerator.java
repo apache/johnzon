@@ -277,7 +277,7 @@ public class PojoGenerator {
             case "string":
                 final JsonValue enumList = schema.get("enum");
                 if (enumList != null && enumList.getValueType() == JsonValue.ValueType.ARRAY) {
-                    return onEnum(javaName, enumList);
+                    return onEnum(javaName, enumList, schema);
                 }
                 return "String";
             case "number":
@@ -331,8 +331,8 @@ public class PojoGenerator {
         }
     }
 
-    protected String onEnum(final String javaName, final JsonValue enumList) {
-        final String className = configuration.getClassName() + Character.toUpperCase(javaName.charAt(0)) + javaName.substring(1);
+    protected String onEnum(final String javaName, final JsonValue enumList, final JsonObject schema) {
+        final String className = enumName(javaName, schema);
         final Map<String, String> values = enumList.asJsonArray().stream()
                 .map(JsonString.class::cast)
                 .map(JsonString::getString)
@@ -370,6 +370,10 @@ public class PojoGenerator {
                         beforeEnumEnd() +
                         "}\n");
         return className;
+    }
+
+    protected String enumName(final String javaName, final JsonObject schema) {
+        return configuration.getClassName() + Character.toUpperCase(javaName.charAt(0)) + javaName.substring(1);
     }
 
     protected String onObjectAttribute(final String javaName, final JsonObject schema) {
