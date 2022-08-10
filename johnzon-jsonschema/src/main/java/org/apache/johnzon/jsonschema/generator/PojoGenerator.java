@@ -212,7 +212,7 @@ public class PojoGenerator {
     }
 
     /**
-     * @param values the enum values (key is json name, value is java name).
+     * @param values            the enum values (key is json name, value is java name).
      * @param valuesAreInjected is there a toString() with json name or is the enum anemic (only values, no method)
      * @return the data to add after enum name and before the opening brace in enum declaration.
      */
@@ -343,6 +343,7 @@ public class PojoGenerator {
                         "package " + configuration.getPackageName() + ";\n" +
                         "\n" +
                         enumImports() +
+                        (injectValues ? "import " + JsonbProperty.class.getName() + ";\n\n" : "") +
                         beforeEnumDeclaration() +
                         "public enum " + className + afterEnumName(values, injectValues) + " {\n" +
                         values.entrySet().stream()
