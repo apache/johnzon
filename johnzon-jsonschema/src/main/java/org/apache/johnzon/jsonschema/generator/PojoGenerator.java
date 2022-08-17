@@ -53,6 +53,7 @@ public class PojoGenerator {
     protected final Set<String> imports = new TreeSet<>(String::compareTo);
     protected final List<Attribute> attributes = new ArrayList<>();
     protected final Map<String, String> nested = new TreeMap<>(String::compareTo);
+    private boolean isEnum;
 
     public PojoGenerator(final PojoConfiguration configuration) {
         this.configuration = configuration;
@@ -64,6 +65,10 @@ public class PojoGenerator {
     }
 
     public Map<String, String> generate() {
+        if (isEnum) {
+            return nested;
+        }
+
         final String name = configuration.getPackageName() + '.' + configuration.getClassName();
         final String path = name.replace('.', '/') + ".java";
         attributes.sort(comparing(a -> a.javaName));
@@ -169,6 +174,12 @@ public class PojoGenerator {
 
     public PojoGenerator visitSchema(final JsonObject schema) {
         if (!schema.containsKey("properties")) {
+            if (schema.containsKey("enum")) {
+                isEnum = true;
+                doEnum(schema.getJsonArray("enum"), configuration.getClassName());
+                return this;
+            }
+
             throw new IllegalArgumentException("Unsupported schema since it does not contain any properties: " + schema);
         }
 
@@ -334,6 +345,11 @@ public class PojoGenerator {
 
     protected String onEnum(final String javaName, final JsonValue enumList, final JsonObject schema) {
         final String className = enumName(javaName, schema);
+        doEnum(enumList, className);
+        return className;
+    }
+
+    private void doEnum(final JsonValue enumList, final String className) {
         final Map<String, String> values = enumList.asJsonArray().stream()
                 .map(JsonString.class::cast)
                 .map(JsonString::getString)
@@ -370,7 +386,6 @@ public class PojoGenerator {
                                 "") +
                         beforeEnumEnd() +
                         "}\n");
-        return className;
     }
 
     protected String enumName(final String javaName, final JsonObject schema) {
