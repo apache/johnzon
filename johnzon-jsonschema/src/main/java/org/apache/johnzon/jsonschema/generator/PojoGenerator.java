@@ -89,8 +89,7 @@ public class PojoGenerator {
                                 "    @Override\n" +
                                 "    public boolean equals(final Object other) {\n" +
                                 "        return other instanceof " + configuration.getClassName() + ";\n" +
-                                "    }\n" +
-                                "}\n") :
+                                "    }\n") :
                         (attributes.stream()
                                 .map(a -> "" +
                                         (configuration.isAddJsonbProperty() && !Objects.equals(a.javaName, a.jsonName) ?
@@ -115,7 +114,9 @@ public class PojoGenerator {
                                                                         .collect(joining()),
                                                                 "",
                                                                 ") {\n" +
-                                                                        "        // no-op\n" +
+                                                                        attributes.stream()
+                                                                                .map(a -> "        this." + a.getJavaName() + " = " + a.javaName + ";\n")
+                                                                                .collect(joining()) +
                                                                         "    }\n\n")) :
                                         "") +
                                 attributes.stream()
@@ -127,10 +128,10 @@ public class PojoGenerator {
                                                     "    }\n" +
                                                     "\n" +
                                                     "    public " +
-                                                    (configuration.isFluentSetters() ? a.type : "void") +
+                                                    (configuration.isFluentSetters() ? configuration.getClassName() : "void") +
                                                     " set" + marker + "(final " + a.type + " " + a.javaName + ") {\n" +
                                                     "        this." + a.javaName + " = " + a.javaName + ";\n" +
-                                                    (configuration.isFluentSetters() ? "    return this;\n" : "") +
+                                                    (configuration.isFluentSetters() ? "        return this;\n" : "") +
                                                     "    }\n" +
                                                     "";
                                         })
