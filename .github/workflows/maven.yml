@@ -13,7 +13,7 @@ jobs:
         jdk: [ '11', '17', '19' ]
         dist: [ 'zulu' ]
         include:
-          - { jdk: '1.8', dist: 'adopt' } # Zulu doesn't have JDK 8
+          - { jdk: '8', dist: 'adopt' } # Zulu doesn't have JDK 8
 
     steps:
       - uses: actions/checkout@v3
