@@ -22,10 +22,9 @@ jobs:
           distribution: ${{ matrix.dist }}
           cache: 'maven'
 
-      - name: Maven Rat Check
-        run: mvn -V apache-rat:check --no-transfer-progress
-
       - name: Maven Package
+        env:
+          MAVEN_OPTS: -Dmaven.artifact.threads=64
         run: mvn -V package --no-transfer-progress
 
       #- name: Maven javadoc
