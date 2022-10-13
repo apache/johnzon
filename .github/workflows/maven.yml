@@ -10,10 +10,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [ '11', '17', '19' ]
+        jdk: [ '8', '11', '17', '19' ]
         dist: [ 'zulu' ]
-        include:
-          - { jdk: '8', dist: 'adopt' } # Zulu doesn't have JDK 8
 
     steps:
       - uses: actions/checkout@v3
@@ -27,8 +25,8 @@ jobs:
       - name: Maven Rat Check
         run: mvn -V apache-rat:check --no-transfer-progress
 
-      - name: Maven Verify
-        run: mvn -V verify --no-transfer-progress
+      - name: Maven Package
+        run: mvn -V package --no-transfer-progress
 
       #- name: Maven javadoc
       #  run: mvn javadoc:javadoc -Ddoclint=all --no-transfer-progress
