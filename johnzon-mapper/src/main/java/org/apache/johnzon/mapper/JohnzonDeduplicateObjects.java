@@ -30,7 +30,7 @@ import java.lang.annotation.Target;
  * The feature only gets activated if this annotation is available
  * on the root object to be serialised/deserialised.
  *
- * @see MapperBuilder#setDeduplicateObjects(boolean)
+ * @see MapperBuilder#setDeduplicateObjects(Boolean)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE})

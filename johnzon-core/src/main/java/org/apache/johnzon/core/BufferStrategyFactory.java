@@ -51,6 +51,8 @@ public class BufferStrategyFactory {
      *
      * You can also pass in a fully qualified class name of a custom {@link BufferStrategy}.
      *
+     * @param strategyName one of the supported BufferStrategies as per above
+     * @return an instance of the chosen BufferStrategy
      * @throws IllegalArgumentException if the given strategyName does not resolve to a BufferStrategy.
      */
     public static BufferStrategy valueOf(String strategyName) {

@@ -22,13 +22,14 @@ package org.apache.johnzon.mapper;
  * An Adapter is similar to a {@link Converter}.
  * The main difference is that a Converter always converts from/to a String.
  * An adapter might e.g. convert to a Date or any other Object which will
- * then be json-ified.<p>
+ * then be json-ified.
  *
  * A small example which has a special Java type to internally represent dates.
  * Let's call it {@code DateHolder}.
  * Our {@code Mapper} should treat it as a {@code java.util.Date}.
  * For doing so we create a {@code DateHolderAdapter} like the following example shows:
  * <pre>
+ * {@code
  * public static class DateHolderAdapter implements Adapter<DateHolder, Date> {
  *     @Override
  *     public DateHolder to(Date date) {
@@ -40,6 +41,7 @@ package org.apache.johnzon.mapper;
  *     public Date from(DateHolder dateHolder) {
  *        return new Date(dateHolder.getDate());
  *     }
+ * }
  * }
  * </pre>
  *
@@ -53,11 +55,15 @@ package org.apache.johnzon.mapper;
 public interface Adapter<POJO_TYPE, JSON_TYPE> extends MapperConverter {
     /**
      * Transfer JSONTYPE_TYPE from JSON to POJO as POJO_TYPE.
+     * @param b the JSON type
+     * @return the equivalent Java type
      */
     POJO_TYPE to(JSON_TYPE b);
 
     /**
      * Take the POJO_TYPE object A from a POJO an convert it to JSON_TYPE which will be inserted into the JSON output.
+     * @param a the Java type
+     * @return the equivalent JSON type
      */
     JSON_TYPE from(POJO_TYPE a);
 }

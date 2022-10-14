@@ -26,13 +26,13 @@ import java.lang.reflect.Type;
  *
  * An example would be to convert joda LocalDate into Strings and back.
  *
- * @param <T>
+ * @param <T> the Java type that needs to be converted
  */
 public interface Converter<T> extends MapperConverter {
     String toString(T instance);
     T fromString(String text);
 
-    // for generic converters it allows to explicitely provide the converted type (ex: enum converter)
+    // for generic converters it allows to explicitly provide the converted type (ex: enum converter)
     // typically useful when generic type get resolved to a TypeVariable
     interface TypeAccess {
         Type type();
