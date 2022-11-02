@@ -137,6 +137,22 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Automatic-Module-Name>johnzon.jsonb</Automatic-Module-Name>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
       </plugin>
       <plugin>

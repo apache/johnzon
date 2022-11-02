@@ -36,6 +36,22 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-jar</id>
+            <configuration>
+              <archive>
+                <manifestEntries>
+                  <Automatic-Module-Name>johnzon.core</Automatic-Module-Name>
+                </manifestEntries>
+              </archive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
