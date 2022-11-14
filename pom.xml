@@ -183,10 +183,10 @@
           <version>${checkstyle.version}</version>
         </plugin>
         <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>findbugs-maven-plugin</artifactId>
-          <!-- todo: migrate to spotbugs-maven-plugin as the findbugs plugin is no longer maintained -->
-          <version>3.0.5</version>
+          <groupId>com.github.spotbugs</groupId>
+          <artifactId>spotbugs-maven-plugin</artifactId>
+          <!-- todo: Update spotbugs-maven-plugin to v4: https://spotbugs.readthedocs.io/en/stable/migration.html -->
+          <version>3.1.12.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -526,11 +526,11 @@
         <!-- Version defined in Apache parent pom -->
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>findbugs-maven-plugin</artifactId>
+        <groupId>com.github.spotbugs</groupId>
+        <artifactId>spotbugs-maven-plugin</artifactId>
         <configuration>
           <xmlOutput>true</xmlOutput>
-          <!-- Optional directory to put findbugs xdoc xml report -->
+          <!-- Optional directory to put spotbugs (previously findbugs) xdoc xml report -->
           <xmlOutputDirectory>target/site</xmlOutputDirectory>
         </configuration>
       </plugin>
