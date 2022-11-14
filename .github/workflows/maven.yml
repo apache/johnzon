@@ -22,10 +22,7 @@ jobs:
           distribution: ${{ matrix.dist }}
           cache: 'maven'
 
-      - name: Maven Package
+      - name: Maven Verify
         env:
           MAVEN_OPTS: -Dmaven.artifact.threads=64
-        run: mvn -V package --no-transfer-progress
-
-      #- name: Maven javadoc
-      #  run: mvn javadoc:javadoc -Ddoclint=all --no-transfer-progress
+        run: mvn -V verify --no-transfer-progress

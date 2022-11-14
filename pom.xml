@@ -33,22 +33,25 @@
   <name>Apache Johnzon</name>
   <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
-  <url>http://johnzon.apache.org</url>
+  <url>https://johnzon.apache.org</url>
 
   <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <project.build.outputTimestamp>10</project.build.outputTimestamp>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+
     <geronimo-jsonp.version>1.5</geronimo-jsonp.version>
     <geronimo-jsonb.version>1.4</geronimo-jsonb.version>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.build.outputTimestamp>10</project.build.outputTimestamp>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
     <felix.plugin.version>5.1.8</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <bnd.version>6.1.0</bnd.version>
-    <java-compile.version>1.8</java-compile.version>
     <cxf.version>3.4.1</cxf.version>
-    <checkstyle.version>2.15</checkstyle.version> <!-- checkstyle > 2.15 version do not support java 6 -->
+    <checkstyle.version>3.0.0</checkstyle.version> <!-- Increasing checkstyle to 3.1 or above will require changes to the checkstyleRules -->
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
     <owb.version>2.0.23</owb.version>
@@ -78,6 +81,18 @@
         <version>${geronimo-jsonb.version}</version>
         <scope>provided</scope>
       </dependency>
+      <dependency>
+        <groupId>org.apache.geronimo.specs</groupId>
+        <artifactId>geronimo-json_1.1_spec</artifactId>
+        <version>${geronimo-jsonp.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.13.2</version>
+        <scope>test</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -85,14 +100,12 @@
     <dependency>
       <groupId>org.apache.geronimo.specs</groupId>
       <artifactId>geronimo-json_1.1_spec</artifactId>
-      <version>${geronimo-jsonp.version}</version>
       <scope>provided</scope>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.13.1</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -103,7 +116,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-shade-plugin</artifactId>
-          <version>3.2.3</version>
+          <!-- Version defined in Apache parent pom -->
           <executions>
             <execution>
               <id>jakarta</id>
@@ -164,16 +177,50 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-checkstyle-plugin</artifactId>
+          <version>${checkstyle.version}</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>findbugs-maven-plugin</artifactId>
+          <!-- todo: migrate to spotbugs-maven-plugin as the findbugs plugin is no longer maintained -->
+          <version>3.0.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-pmd-plugin</artifactId>
+          <version>3.19.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>versions-maven-plugin</artifactId>
+          <version>2.13.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>taglist-maven-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-changelog-plugin</artifactId>
+          <version>2.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-changes-plugin</artifactId>
+          <version>2.12.1</version>
+        </plugin>
       </plugins>
     </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>${java-compile.version}</source>
-          <target>${java-compile.version}</target>
-          <encoding>UTF-8</encoding>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
         </configuration>
@@ -239,7 +286,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
-        <version>3.5.1</version>
+        <!-- Version defined in Apache parent pom -->
         <configuration>
           <stagingDirectory>${staging.directory}</stagingDirectory>
         </configuration>
@@ -260,7 +307,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
-        <version>${checkstyle.version}</version>
         <executions>
           <execution>
             <id>verify-style</id>
@@ -375,7 +421,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>3.2.0</version>
+        <!-- Version defined in Apache parent pom -->
         <executions>
           <execution>
             <id>attach-javadocs</id>
@@ -387,8 +433,7 @@
               <detectJavaApiLink>false</detectJavaApiLink>
               <detectLinks>false</detectLinks>
               <detectOfflineLinks>false</detectOfflineLinks>
-              <doclint>none</doclint>
-              <source>8</source>
+              <doclint>all,-missing</doclint>
             </configuration>
           </execution>
         </executions>
@@ -397,7 +442,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
-        <version>3.0.0-M3</version>
+        <!-- Version defined in Apache parent pom -->
         <configuration>
           <argLine>${surefire.jvm.params}</argLine>
           <trimStackTrace>false</trimStackTrace>
@@ -412,27 +457,6 @@
           <pushChanges>false</pushChanges>
           <localCheckout>true</localCheckout>
           <autoVersionSubmodules>true</autoVersionSubmodules>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.6</version>
-        <configuration>
-          <instrumentation>
-            <ignores>
-              <ignore>org.apache.johnzon.maven.*</ignore>
-            </ignores>
-            <excludes>
-              <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
-              <exclude>org/apache/johnzon/**/*Test.class</exclude>
-            </excludes>
-          </instrumentation>
-          <formats>
-            <format>xml</format>
-          </formats>
-          <aggregate>true</aggregate>
         </configuration>
       </plugin>
 
@@ -470,25 +494,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>
-        <version>3.0.0-M2</version>
-        <executions>
-          <execution>
-            <id>enforce-versions</id>
-            <goals>
-              <goal>enforce</goal>
-            </goals>
-            <configuration>
-              <rules>
-                <requireMavenVersion>
-                  <version>[3.3,)</version>
-                </requireMavenVersion>
-                <requireJavaVersion>
-                  <version>[${java-compile.version},)</version>
-                </requireJavaVersion>
-              </rules>
-            </configuration>
-          </execution>
-        </executions>
+        <!-- Version (and configuration) defined in Apache parent pom -->
       </plugin>
     </plugins>
   </build>
@@ -517,12 +523,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-site-plugin</artifactId>
-        <version>3.5.1</version>
+        <!-- Version defined in Apache parent pom -->
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>findbugs-maven-plugin</artifactId>
-        <version>3.0.4</version>
         <configuration>
           <xmlOutput>true</xmlOutput>
           <!-- Optional directory to put findbugs xdoc xml report -->
@@ -532,12 +537,11 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
-        <version>3.6</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-project-info-reports-plugin</artifactId>
-        <version>2.9</version>
+        <!-- Version defined in Apache parent pom -->
         <configuration>
           <dependencyLocationsEnabled>false</dependencyLocationsEnabled>
         </configuration>
@@ -545,7 +549,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-        <version>2.10.3</version>
         <configuration>
           <notimestamp>true</notimestamp>
           <show>private</show>
@@ -567,29 +570,9 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-report-plugin</artifactId>
-        <version>2.19.1</version>
+        <!-- Version defined in Apache parent pom -->
         <configuration>
           <argLine>${surefire.jvm.params}</argLine>
-          <aggregate>true</aggregate>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>cobertura-maven-plugin</artifactId>
-        <version>2.6</version>
-        <configuration>
-          <instrumentation>
-            <ignores>
-              <ignore>org.apache.johnzon.maven.*</ignore>
-            </ignores>
-            <excludes>
-              <exclude>org/apache/johnzon/**/*Mojo*.class</exclude>
-              <exclude>org/apache/johnzon/**/*Test.class</exclude>
-            </excludes>
-          </instrumentation>
-          <formats>
-            <format>html</format>
-          </formats>
           <aggregate>true</aggregate>
         </configuration>
       </plugin>
@@ -608,7 +591,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.1</version>
         <reportSets>
           <reportSet>
             <reports>
@@ -622,7 +604,6 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>taglist-maven-plugin</artifactId>
-        <version>2.4</version>
         <configuration>
           <tags>
             <tag>TODO</tag>
@@ -636,7 +617,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-changelog-plugin</artifactId>
-        <version>2.3</version>
         <configuration>
           <type>range</type>
           <range>30</range>
@@ -646,7 +626,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-changes-plugin</artifactId>
-        <version>2.11</version>
         <configuration>
           <useJql>true</useJql>
           <columnNames>Type,Key,Summary,Assignee,Status,Resolution,Created</columnNames>
@@ -795,16 +774,6 @@
   </contributors>
 
   <profiles>
-    <profile>
-      <id>doclint-java8-disable</id>
-      <activation>
-        <jdk>[1.8,)</jdk>
-      </activation>
-      <properties>
-        <checkstyle.version>2.17</checkstyle.version>
-      </properties>
-    </profile>
-
     <profile>
         <id>jdk9+</id>
         <activation>
