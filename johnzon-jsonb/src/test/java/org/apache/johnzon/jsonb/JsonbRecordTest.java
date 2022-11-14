@@ -34,18 +34,18 @@ public class JsonbRecordTest {
 
     @Test
     public void roundTrip() {
-        final JsonbRecord ref = new JsonbRecord(119, "Santa");
+        final Record ref = new Record(119, "Santa");
         final String expectedJson = "{\"_name\":\"Santa\",\"age\":119}";
         assertEquals(expectedJson, jsonb.toJson(ref));
-        assertEquals(ref, jsonb.fromJson(expectedJson, JsonbRecord.class));
+        assertEquals(ref, jsonb.fromJson(expectedJson, Record.class));
     }
 
     @JohnzonRecord
-    public static class JsonbRecord {
+    public static class Record {
         private final int age;
         private final String name;
 
-        public JsonbRecord(@JohnzonRecord.Name("age") final int age,
+        public Record(@JohnzonRecord.Name("age") final int age,
                            @JohnzonRecord.Name("name") @JsonbProperty("_name") final String name) { // simulate custom constructor
             this.age = age;
             this.name = name;
@@ -61,7 +61,7 @@ public class JsonbRecordTest {
 
         @Override
         public String toString() {
-            return "JsonbRecord{" +
+            return "Record{" +
                     "age=" + age +
                     ", name='" + name + '\'' +
                     '}';
@@ -75,8 +75,8 @@ public class JsonbRecordTest {
             if (o == null || getClass() != o.getClass()) {
                 return false;
             }
-            final JsonbRecord jsonbRecord = JsonbRecord.class.cast(o);
-            return age == jsonbRecord.age && Objects.equals(name, jsonbRecord.name);
+            final Record record = Record.class.cast(o);
+            return age == record.age && Objects.equals(name, record.name);
         }
 
         @Override
