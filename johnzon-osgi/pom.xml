@@ -29,6 +29,10 @@
   <name>Johnzon :: Support for OSGI Jaxrs Whiteboard</name>
   <packaging>bundle</packaging>
 
+  <properties>
+    <maven.javadoc.skip>true</maven.javadoc.skip>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.aries.component-dsl</groupId>

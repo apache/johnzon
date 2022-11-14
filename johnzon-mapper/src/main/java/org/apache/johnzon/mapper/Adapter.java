@@ -29,25 +29,23 @@ package org.apache.johnzon.mapper;
  * Our {@code Mapper} should treat it as a {@code java.util.Date}.
  * For doing so we create a {@code DateHolderAdapter} like the following example shows:
  * <pre>
- * {@code
- * public static class DateHolderAdapter implements Adapter<DateHolder, Date> {
- *     @Override
+ * {@code public static class DateHolderAdapter implements Adapter<DateHolder, Date>} {
+ *     {@code @Override}
  *     public DateHolder to(Date date) {
  *         DateHolder dh = new DateHolder(date.getTime());
  *         return dh;
  *     }
  *
- *     @Override
+ *     {@code @Override}
  *     public Date from(DateHolder dateHolder) {
  *        return new Date(dateHolder.getDate());
  *     }
- * }
  * }
  * </pre>
  *
  * Consider a POJO has a DateHolder.
  * When serialising the {@code Mapper} will first use the {@code DateHolderAdapter#from(DateHolder)} and from there to JSON.
- * When reading JSON the {@code to(Date}} method will be used.
+ * When reading JSON the {@code to(Date)} method will be used.
  *
  * @param <POJO_TYPE> The Java type in the POJO (Plain Old Java Object)
  * @param <JSON_TYPE> The Java Type which will be used to transform to JSON.

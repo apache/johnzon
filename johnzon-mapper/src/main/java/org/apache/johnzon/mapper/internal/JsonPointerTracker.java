@@ -45,7 +45,7 @@ public class JsonPointerTracker {
     /**
      * For Arrays and Lists.
      *
-     * @param jsonPointer
+     * @param jsonPointer the json node
      * @param i           current counter number
      */
     public JsonPointerTracker(JsonPointerTracker jsonPointer, int i) {

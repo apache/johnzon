@@ -30,7 +30,7 @@ public final class BeanUtil {
     /**
      * Calculate the name of a getter based on the name of it's field and the type
      *
-     * @param fieldName
+     * @param fieldName of the field
      * @param type      of the field
      * @return "get" or "is" method name for the field
      */
@@ -44,7 +44,7 @@ public final class BeanUtil {
     /**
      * Calculate the name of a setter based on the name of it's field
      *
-     * @param fieldName
+     * @param fieldName of the field
      * @return "set" method name for the field
      */
     public static String setterName(String fieldName) {
@@ -64,9 +64,9 @@ public final class BeanUtil {
     }
 
     /**
-     * capitalize according to java beans specification.
-     * That is start the given field with a lower case, but only if the 2nd char is not also an uppercase character
-     * Enabled -> enabled, but URL will remain URL.
+     * decapitalize according to java beans specification.
+     * That is start the given field with a lower case, but only if the 2nd char is not also an uppercase character.
+     * eg; "Enabled" will become "enabled", but "URL" will remain "URL".
      */
     public static String decapitalize(String name) {
         if (name == null || name.length() == 0) {

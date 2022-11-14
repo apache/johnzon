@@ -46,7 +46,7 @@ public class JsonbRecordTest {
         private final String name;
 
         public Record(@JohnzonRecord.Name("age") final int age,
-                      @JohnzonRecord.Name("name") @JsonbProperty("_name") final String name) { // simulate custom constructor
+                           @JohnzonRecord.Name("name") @JsonbProperty("_name") final String name) { // simulate custom constructor
             this.age = age;
             this.name = name;
         }
