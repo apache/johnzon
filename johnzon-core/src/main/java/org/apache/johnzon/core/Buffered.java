@@ -17,7 +17,7 @@
 package org.apache.johnzon.core;
 
 /**
- * A <tt>Buffered</tt> is a source or destination of data that is buffered
+ * A <code>Buffered</code> is a source or destination of data that is buffered
  * before writing or reading.  The bufferSize method allows all participants
  * in the underlying stream to align on this buffer size for optimization.
  *
@@ -31,6 +31,7 @@ public interface Buffered { // https://github.com/apache/johnzon/pull/84#discuss
     /**
      * The buffer size used by this stream while reading input or before writing
      * output to the underlying stream.
+     * @return the size of the buffer
      */
     int bufferSize();
 }

@@ -208,6 +208,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     }
 
     /**
+     * @param currentLength length of the buffer
      * @return the amount of bytes the current buffer should get extended with
      */
     protected int getBufferExtends(int currentLength) {

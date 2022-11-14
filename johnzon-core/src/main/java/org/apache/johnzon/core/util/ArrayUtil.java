@@ -146,6 +146,8 @@ public final class ArrayUtil {
 
     /**
      * Take the given array object and fill a fresh Collection with it.
+     * @param array an array that is to be duplicated
+     * @return a new collection of the original array elements
      * @throws IllegalArgumentException if the given value this is not an array.
      */
     public static Collection<Object> newCollection(Object array) {
