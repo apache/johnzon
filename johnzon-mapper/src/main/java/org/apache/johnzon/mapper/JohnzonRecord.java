@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
 /**
  * Forces method named as properties to be used as getters (String foo() will match the attribute foo).
  * Also enables a constructor with all properties even if not marked as @ConstructorProperties or equivalent.
- * It simulates java >= 14 record style.
+ * It simulates Java 14+ records.
  */
 @Target({ TYPE })
 @Retention(RUNTIME)
