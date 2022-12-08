@@ -252,13 +252,13 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
             int i = 0;
             for (final Parameter parameter : (finalConstructor == null ? finalFactory : finalConstructor).getParameters()) {
                 final JsonbProperty property = getAnnotation(parameter, JsonbProperty.class);
-                params[i] = property != null ?
+                params[i] = property != null && !property.value().isEmpty() ?
                         property.value() :
                         (record ?
                                 ofNullable(parameter.getAnnotation(JohnzonRecord.Name.class))
                                         .map(JohnzonRecord.Name::value)
-                                        .orElseGet(parameter::getName) :
-                                parameter.getName());
+                                        .orElseGet(() -> naming.translateName(parameter.getName())) :
+                                naming.translateName(parameter.getName()));
 
                 final JsonbTypeAdapter adapter = getAnnotation(parameter, JsonbTypeAdapter.class);
                 final JsonbDateFormat dateFormat = getAnnotation(parameter, JsonbDateFormat.class);

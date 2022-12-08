@@ -50,6 +50,35 @@ public class JsonSchemaValidatorTest {
     }
 
     @Test
+    public void patternPropertiesNested() {
+        try (final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("nested", jsonFactory.createObjectBuilder()
+                                .add("type", "object")
+                                .add("patternProperties", jsonFactory.createObjectBuilder()
+                                        .add("[0-9]+", jsonFactory.createObjectBuilder().add("type", "number"))
+                                        .build())))
+                .build())) {
+
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder().build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                            .add("nested", jsonFactory.createObjectBuilder()
+                                    .add("1", 1)
+                                    .build())
+                            .build())
+                    .isSuccess());
+
+            final ValidationResult result = validator.apply(jsonFactory.createObjectBuilder()
+                    .add("nested", jsonFactory.createObjectBuilder()
+                            .add("1", "test")
+                            .build())
+                    .build());
+            assertFalse(result.toString(), result.isSuccess());
+        }
+    }
+
+    @Test
     public void rootRequired() {
         final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
                 .add("type", "object")

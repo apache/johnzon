@@ -47,6 +47,11 @@ public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
         return this;
     }
 
+    public JsonbRule withPropertyNamingStrategy(final String propertyorderstrategy) {
+        config.withPropertyNamingStrategy(propertyorderstrategy);
+        return this;
+    }
+
     public JsonbRule withFormatting(final boolean format) {
         config.withFormatting(format);
         return this;

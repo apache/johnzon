@@ -197,17 +197,20 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
                             final Predicate<CharSequence> pattern = regexFactory.get().apply(obj.getKey());
                             final JsonObject currentSchema = obj.getValue().asJsonObject();
                             // no cache cause otherwise it could be in properties
-                            return (Function<JsonValue, Stream<ValidationResult.ValidationError>>) validable -> {
+                            return (Function<JsonValue, Stream<ValidationResult.ValidationError>>) root -> {
+                                final JsonValue validable = Optional.ofNullable(valueProvider)
+                                        .map(provider -> provider.apply(root))
+                                        .orElse(root);
                                 if (validable.getValueType() != JsonValue.ValueType.OBJECT) {
                                     return Stream.empty();
                                 }
                                 return validable.asJsonObject().entrySet().stream()
                                         .filter(e -> pattern.test(e.getKey()))
-                                        .flatMap(e -> {
-                                            final String[] subPath = Stream.concat(Stream.of(path), Stream.of(e.getKey())).toArray(String[]::new);
-                                            final Function<JsonValue, JsonValue> provider = new ChainedValueAccessor(valueProvider, e.getKey());
-                                            return buildValidator(subPath, currentSchema, provider).apply(validable);
-                                        });
+                                        .flatMap(e -> buildValidator(
+                                                Stream.concat(Stream.of(path), Stream.of(e.getKey())).toArray(String[]::new),
+                                                currentSchema,
+                                                o -> o.asJsonObject().get(e.getKey()))
+                                                .apply(validable));
                             };
                         })
                         .collect(toList()))
