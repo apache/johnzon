@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk: [ '8', '11', '17', '19' ]
+        jdk: [ '11', '17', '19' ]
         dist: [ 'zulu' ]
 
     steps:
