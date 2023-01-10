@@ -21,9 +21,9 @@ package org.apache.johnzon.core;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import javax.json.Json;
-import javax.json.JsonNumber;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonValue;
 
 import org.junit.Assert;
 import org.junit.Test;

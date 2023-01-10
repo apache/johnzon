@@ -19,12 +19,12 @@ package org.apache.johnzon.core;
 
 import java.io.StringReader;
 
-import javax.json.Json;
-import javax.json.JsonMergePatch;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonValue;
-import javax.json.spi.JsonProvider;
+import jakarta.json.Json;
+import jakarta.json.JsonMergePatch;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
+import jakarta.json.spi.JsonProvider;
 
 import org.junit.Assert;
 import org.junit.Test;

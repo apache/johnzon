@@ -20,10 +20,10 @@ package org.apache.johnzon.core;
 import java.io.Serializable;
 import java.util.Map;
 
-import javax.json.JsonMergePatch;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
+import jakarta.json.JsonMergePatch;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
 
 /**
  * @author <a href="mailto:struberg@yahoo.de">Mark Struberg</a>

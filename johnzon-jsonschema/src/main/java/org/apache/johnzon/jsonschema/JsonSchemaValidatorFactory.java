@@ -33,8 +33,8 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import javax.json.JsonObject;
-import javax.json.JsonValue;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 import org.apache.johnzon.jsonschema.regex.JavaRegex;
 import org.apache.johnzon.jsonschema.regex.JavascriptRegex;

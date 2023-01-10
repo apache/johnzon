@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb.model.packageformat;
 
-import javax.json.bind.annotation.JsonbNumberFormat;
+import jakarta.json.bind.annotation.JsonbNumberFormat;
 
 @JsonbNumberFormat("###,###.###")
 public class FormatFromClassModel extends FormatFromPackageModel {

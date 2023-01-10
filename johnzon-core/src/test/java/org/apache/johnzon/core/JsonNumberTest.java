@@ -21,9 +21,9 @@ package org.apache.johnzon.core;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;

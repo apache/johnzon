@@ -20,7 +20,7 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.spi.JsonbProvider;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Map;

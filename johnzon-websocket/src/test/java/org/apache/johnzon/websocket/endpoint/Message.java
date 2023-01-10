@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.websocket.endpoint;
 
-import javax.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement // old tomee default json provider (pre-johnzon erea) was using jaxb
 public class Message {

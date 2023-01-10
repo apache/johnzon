@@ -20,8 +20,8 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonGenerator;
 
 import org.junit.Test;
 

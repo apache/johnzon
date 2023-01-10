@@ -20,9 +20,9 @@ package org.apache.johnzon.websocket.jsr;
 
 import org.apache.johnzon.websocket.internal.jsr.JsrDecoder;
 
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonStructure;
 
 public class JsrStructureDecoder extends JsrDecoder<JsonStructure> {
     private JsonReaderFactory factory;

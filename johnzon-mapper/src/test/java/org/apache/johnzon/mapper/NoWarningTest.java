@@ -27,7 +27,7 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import javax.json.Json;
+import jakarta.json.Json;
 
 import org.junit.After;
 import org.junit.Before;

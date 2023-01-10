@@ -18,10 +18,10 @@
  */
 package org.apache.johnzon.jsonschema.generator;
 
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.bind.annotation.JsonbProperty;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+import jakarta.json.bind.annotation.JsonbProperty;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;

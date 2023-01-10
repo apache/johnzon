@@ -18,9 +18,9 @@
  */
 package org.apache.johnzon.jsonb.factory;
 
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
+import jakarta.enterprise.context.spi.CreationalContext;
+import jakarta.enterprise.inject.spi.Bean;
+import jakarta.enterprise.inject.spi.BeanManager;
 import java.util.Set;
 
 public class CdiJohnzonAdapterFactory extends SimpleJohnzonAdapterFactory {

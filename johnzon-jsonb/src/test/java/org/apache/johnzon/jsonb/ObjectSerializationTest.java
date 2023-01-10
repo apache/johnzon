@@ -21,8 +21,8 @@ package org.apache.johnzon.jsonb;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 
 import org.junit.Test;
 

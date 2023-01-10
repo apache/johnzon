@@ -21,9 +21,9 @@ package org.apache.johnzon.jsonb;
 import org.apache.johnzon.mapper.Cleanable;
 import org.apache.johnzon.mapper.util.BeanUtil;
 
-import javax.json.bind.annotation.JsonbProperty;
-import javax.json.bind.annotation.JsonbVisibility;
-import javax.json.bind.config.PropertyVisibilityStrategy;
+import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbVisibility;
+import jakarta.json.bind.config.PropertyVisibilityStrategy;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import static java.util.Optional.ofNullable;
 
-class DefaultPropertyVisibilityStrategy implements javax.json.bind.config.PropertyVisibilityStrategy, Cleanable<Class<?>> {
+class DefaultPropertyVisibilityStrategy implements jakarta.json.bind.config.PropertyVisibilityStrategy, Cleanable<Class<?>> {
     private final ConcurrentMap<Class<?>, PropertyVisibilityStrategy> strategies = new ConcurrentHashMap<>();
 
     private volatile boolean skipGetpackage;

@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;

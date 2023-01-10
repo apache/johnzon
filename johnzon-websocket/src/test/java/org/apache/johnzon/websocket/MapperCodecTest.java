@@ -42,11 +42,11 @@ import org.junit.runner.RunWith;
 
 import java.net.URI;
 import java.net.URL;
-import javax.json.Json;
-import javax.websocket.CloseReason;
-import javax.websocket.ContainerProvider;
-import javax.websocket.Session;
-import javax.websocket.WebSocketContainer;
+import jakarta.json.Json;
+import jakarta.websocket.CloseReason;
+import jakarta.websocket.ContainerProvider;
+import jakarta.websocket.Session;
+import jakarta.websocket.WebSocketContainer;
 
 import static org.apache.openejb.loader.JarLocation.jarLocation;
 import static org.junit.Assert.assertEquals;

@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb.converter;
 
-import javax.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 import java.time.LocalDate;
 import java.util.concurrent.TimeUnit;
 

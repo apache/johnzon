@@ -21,12 +21,12 @@ package org.apache.johnzon.websocket.internal.jsr;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.json.Json;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonWriterFactory;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
+import jakarta.json.Json;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonWriterFactory;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import jakarta.servlet.annotation.WebListener;
 
 @WebListener
 public class FactoryLocator implements ServletContextListener {

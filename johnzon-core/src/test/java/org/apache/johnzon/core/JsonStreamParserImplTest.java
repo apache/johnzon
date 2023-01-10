@@ -20,7 +20,7 @@ package org.apache.johnzon.core;
 
 import org.junit.Test;
 
-import javax.json.stream.JsonParser;
+import jakarta.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;

@@ -20,8 +20,8 @@ package org.apache.johnzon.core;
 
 import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
 
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.Flushable;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;

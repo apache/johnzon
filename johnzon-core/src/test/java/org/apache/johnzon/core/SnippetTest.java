@@ -18,10 +18,10 @@ package org.apache.johnzon.core;
 
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParser;
+import jakarta.json.Json;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.OutputStream;
 import java.io.Writer;
@@ -32,8 +32,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static javax.json.JsonValue.ValueType.ARRAY;
-import static javax.json.JsonValue.ValueType.OBJECT;
+import static jakarta.json.JsonValue.ValueType.ARRAY;
+import static jakarta.json.JsonValue.ValueType.OBJECT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

@@ -26,7 +26,7 @@ import static org.apache.aries.component.dsl.OSGi.register;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.johnzon.jaxrs.jsonb.jaxrs.JsonbJaxrsProvider;

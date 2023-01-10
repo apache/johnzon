@@ -18,7 +18,7 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.JsonbException;
+import jakarta.json.bind.JsonbException;
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
 

@@ -25,8 +25,8 @@ import static java.util.stream.Collectors.toList;
 import org.apache.johnzon.mapper.internal.JsonPointerTracker;
 import org.apache.johnzon.mapper.util.ArrayUtil;
 
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.math.BigInteger;

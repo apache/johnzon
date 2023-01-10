@@ -22,8 +22,8 @@ import org.apache.johnzon.jsonschema.ValidationResult;
 import org.apache.johnzon.jsonschema.spi.ValidationContext;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonValue;
 import java.util.function.Function;
 import java.util.stream.Stream;
 

@@ -24,9 +24,9 @@ import org.apache.johnzon.websocket.jsr.JsrObjectEncoder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import javax.json.JsonObject;
-import javax.websocket.ClientEndpoint;
-import javax.websocket.OnMessage;
+import jakarta.json.JsonObject;
+import jakarta.websocket.ClientEndpoint;
+import jakarta.websocket.OnMessage;
 
 @ClientEndpoint(encoders = JsrObjectEncoder.class, decoders = JsrObjectDecoder.class)
 public class JsrClientEndpointImpl {

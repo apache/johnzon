@@ -21,11 +21,11 @@ package org.apache.johnzon.jsonp.strict;
 import org.apache.johnzon.core.JsonPointerImpl;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonException;
-import javax.json.JsonPointer;
-import javax.json.JsonStructure;
-import javax.json.spi.JsonProvider;
+import jakarta.json.Json;
+import jakarta.json.JsonException;
+import jakarta.json.JsonPointer;
+import jakarta.json.JsonStructure;
+import jakarta.json.spi.JsonProvider;
 
 import static org.junit.Assert.assertEquals;
 

@@ -659,7 +659,7 @@ Configuration of this extension is managed via Configuration Admin using the **p
 
 ##### CDI
 
-Since JSON-B specification provides an integration with the CDI specification to handle caching, this module also provides such integration for OSGi CDI Integration specification by providing an `javax.enterprise.inject.spi.Extension` service with the required service property `osgi.cdi.extension` with the value `JavaJSONB`.
+Since JSON-B specification provides an integration with the CDI specification to handle caching, this module also provides such integration for OSGi CDI Integration specification by providing an `jakarta.enterprise.inject.spi.Extension` service with the required service property `osgi.cdi.extension` with the value `JavaJSONB`.
 
 ##### Implicit Extensions
 

@@ -18,9 +18,9 @@
  */
 package org.apache.johnzon.jaxrs;
 
-import javax.json.JsonStructure;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
+import jakarta.json.JsonStructure;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.Produces;
 
 // @Provider // don't let it be scanned, it would conflict with JsrProvider
 @Produces({

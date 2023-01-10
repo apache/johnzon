@@ -21,9 +21,9 @@ package org.apache.johnzon.websocket.mapper;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.websocket.internal.mapper.MapperLocator;
 
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 import java.io.IOException;
 import java.io.Writer;
 

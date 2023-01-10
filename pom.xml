@@ -29,7 +29,7 @@
   <groupId>org.apache.johnzon</groupId>
   <artifactId>johnzon</artifactId>
   <packaging>pom</packaging>
-  <version>1.2.20-SNAPSHOT</version>
+  <version>2.0.0-SNAPSHOT</version>
   <name>Apache Johnzon</name>
   <description>Apache Johnzon is an implementation of JSR-353 (JavaTM API for JSON Processing).</description>
   <inceptionYear>2014</inceptionYear>
@@ -39,22 +39,20 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.outputTimestamp>10</project.build.outputTimestamp>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
 
-    <geronimo-jsonp.version>1.5</geronimo-jsonp.version>
-    <geronimo-jsonb.version>1.4</geronimo-jsonb.version>
+    <jakarta-jsonp-api.version>2.1.1</jakarta-jsonp-api.version>
+    <jakarta-jsonb-api.version>3.0.0</jakarta-jsonb-api.version>
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
     <felix.plugin.version>5.1.8</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <bnd.version>6.1.0</bnd.version>
-    <cxf.version>3.4.1</cxf.version>
+    <cxf.version>4.0.0</cxf.version>
     <checkstyle.version>3.0.0</checkstyle.version> <!-- Increasing checkstyle to 3.1 or above will require changes to the checkstyleRules -->
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
-    <owb.version>2.0.23</owb.version>
+    <owb.version>2.0.27</owb.version>
     <arquillian.jvm.args />
   </properties>
 
@@ -76,15 +74,15 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.apache.geronimo.specs</groupId>
-        <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-        <version>${geronimo-jsonb.version}</version>
+        <groupId>jakarta.json</groupId>
+        <artifactId>jakarta.json-api</artifactId>
+        <version>${jakarta-jsonp-api.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
-        <groupId>org.apache.geronimo.specs</groupId>
-        <artifactId>geronimo-json_1.1_spec</artifactId>
-        <version>${geronimo-jsonp.version}</version>
+        <groupId>jakarta.json.bind</groupId>
+        <artifactId>jakarta.json.bind-api</artifactId>
+        <version>${jakarta-jsonb-api.version}</version>
         <scope>provided</scope>
       </dependency>
       <dependency>
@@ -98,8 +96,8 @@
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-json_1.1_spec</artifactId>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -155,70 +153,6 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-shade-plugin</artifactId>
-          <version>3.4.1</version>
-          <executions>
-            <execution>
-              <id>jakarta</id>
-              <phase>package</phase>
-              <goals>
-                <goal>shade</goal>
-              </goals>
-              <configuration>
-                <minimizeJar>false</minimizeJar>
-                <shadedArtifactAttached>true</shadedArtifactAttached>
-                <shadedClassifierName>jakarta</shadedClassifierName>
-                <createDependencyReducedPom>false</createDependencyReducedPom>
-                <transformers>
-                  <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
-                </transformers>
-                <artifactSet>
-                  <includes>
-                    <include>${project.groupId}:${project.artifactId}</include>
-                  </includes>
-                </artifactSet>
-                <relocations>
-                  <relocation>
-                    <pattern>javax.annotation</pattern>
-                    <shadedPattern>jakarta.annotation</shadedPattern>
-                    <excludes>
-                      <exclude>javax.annotation.processing.**</exclude>
-                    </excludes>
-                  </relocation>
-                  <relocation>
-                    <pattern>javax.enterprise</pattern>
-                    <shadedPattern>jakarta.enterprise</shadedPattern>
-                    <excludes>
-                      <exclude>javax.enterprise.deploy.**</exclude>
-                    </excludes>
-                  </relocation>
-                  <relocation>
-                    <pattern>javax.inject</pattern>
-                    <shadedPattern>jakarta.inject</shadedPattern>
-                  </relocation>
-                  <relocation>
-                    <pattern>javax.json</pattern>
-                    <shadedPattern>jakarta.json</shadedPattern>
-                  </relocation>
-                  <relocation>
-                    <pattern>javax.servlet</pattern>
-                    <shadedPattern>jakarta.servlet</shadedPattern>
-                  </relocation>
-                  <relocation>
-                    <pattern>javax.websocket</pattern>
-                    <shadedPattern>jakarta.websocket</shadedPattern>
-                  </relocation>
-                  <relocation>
-                    <pattern>javax.ws.rs</pattern>
-                    <shadedPattern>jakarta.ws.rs</shadedPattern>
-                  </relocation>
-                </relocations>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>${checkstyle.version}</version>
         </plugin>
@@ -241,7 +175,7 @@
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
-          <version>2.13.0</version>
+          <version>2.14.2</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -272,8 +206,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
+          <release>11</release>
           <encoding>${project.build.sourceEncoding}</encoding>
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
@@ -403,7 +336,7 @@
                   <property name="format" value="^_?[A-Z][a-zA-Z0-9]*$" />
                 </module>
                 <module name="AvoidStarImport">
-                  <property name="excludes" value="java.io,java.net,java.util,javax.enterprise.inject.spi,javax.enterprise.context" />
+                  <property name="excludes" value="java.io,java.net,java.util,jakarta.enterprise.inject.spi,jakarta.enterprise.context" />
                 </module>
                 <module name="IllegalImport" />
                 <module name="RedundantImport" />
@@ -487,7 +420,7 @@
               <detectLinks>false</detectLinks>
               <detectOfflineLinks>false</detectOfflineLinks>
               <doclint>all,-missing</doclint>
-              <source>${maven.compiler.source}</source>
+              <release>11</release>
             </configuration>
           </execution>
         </executions>
@@ -558,7 +491,7 @@
                   <version>[3.3,)</version>
                 </requireMavenVersion>
                 <requireJavaVersion>
-                  <version>[${maven.compiler.target},)</version>
+                  <version>[11,)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

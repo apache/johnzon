@@ -22,8 +22,8 @@ import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.json.bind.annotation.JsonbCreator;
-import javax.json.bind.config.PropertyNamingStrategy;
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.config.PropertyNamingStrategy;
 import java.util.StringJoiner;
 
 import static org.junit.Assert.assertEquals;

@@ -20,11 +20,11 @@ package org.apache.johnzon.jsonb;
 
 import static org.junit.Assert.assertEquals;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonValue;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonValue;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 
 import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;

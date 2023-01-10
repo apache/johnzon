@@ -21,9 +21,9 @@ package org.apache.johnzon.jaxrs;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.Produces;
-import javax.ws.rs.ext.Provider;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.ext.Provider;
 import java.util.Collection;
 
 @Provider // this is scanned cause does not overlap with JohnzonProvider in terms of mime types

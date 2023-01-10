@@ -31,7 +31,7 @@
     <dependencySet>
       <useProjectArtifact>false</useProjectArtifact>
       <includes>
-        <include>org.apache.geronimo.specs:geronimo-json-*</include>
+        <include>jakar:geronimo-json-*</include>
         <include>org.apache.johnzon:johnzon-*</include>
       </includes>
       <outputDirectory>/</outputDirectory>

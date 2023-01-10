@@ -22,11 +22,11 @@ import org.apache.johnzon.jsonlogic.spi.AsyncOperator;
 import org.apache.johnzon.jsonlogic.spi.Operator;
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
-import javax.json.JsonPatch;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonPatch;
+import jakarta.json.JsonValue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;

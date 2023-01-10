@@ -18,9 +18,9 @@ package org.apache.johnzon.core;
 
 import java.util.Collections;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObject;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 
 import org.junit.Assert;
 import org.junit.Test;

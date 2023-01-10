@@ -26,7 +26,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.CodingErrorAction;
 
 /**
- * {@link java.io.OutputStreamWriter} delegating directly to a {@link sun.nio.cs.StreamEncoder} with a controlled underlying buffer size.
+ * {@link java.io.OutputStreamWriter} delegating directly to a sun.nio.cs.StreamEncoder with a controlled underlying buffer size.
  * It enables to wrap an {@link OutputStream} as a {@link Writer} but with a faster feedback than a default
  * {@link java.io.OutputStreamWriter} which uses a 8k buffer by default (encapsulated).
  * <p>

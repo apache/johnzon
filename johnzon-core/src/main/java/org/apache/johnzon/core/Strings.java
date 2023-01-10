@@ -21,7 +21,7 @@ package org.apache.johnzon.core;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import javax.json.stream.JsonParsingException;
+import jakarta.json.stream.JsonParsingException;
 
 class Strings implements JsonChars {
 

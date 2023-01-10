@@ -25,7 +25,7 @@ import java.io.PushbackInputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
-import javax.json.JsonException;
+import jakarta.json.JsonException;
 
 final class RFC4627AwareInputStreamReader extends InputStreamReader {
 

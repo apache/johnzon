@@ -20,10 +20,10 @@
 @Capability(namespace = SERVICE_NAMESPACE,
     attribute = {
         JAX_RS_MEDIA_TYPE + "=" + APPLICATION_JSON,
-        "objectClass:List<String>='javax.ws.rs.ext.MessageBodyReader,javax.ws.rs.ext.MessageBodyWriter'"})
+        "objectClass:List<String>='jakarta.ws.rs.ext.MessageBodyReader,jakarta.ws.rs.ext.MessageBodyWriter'"})
 package org.apache.johnzon.osgi;
 
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import static jakarta.ws.rs.core.MediaType.APPLICATION_JSON;
 import static org.osgi.namespace.service.ServiceNamespace.SERVICE_NAMESPACE;
 import static org.osgi.service.jaxrs.whiteboard.JaxrsWhiteboardConstants.JAX_RS_MEDIA_TYPE;
 

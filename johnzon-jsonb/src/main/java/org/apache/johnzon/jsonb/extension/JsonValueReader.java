@@ -24,7 +24,7 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.function.Supplier;
 
-import javax.json.JsonStructure;
+import jakarta.json.JsonStructure;
 
 public class JsonValueReader<T> extends Reader implements Supplier<JsonStructure> {
     private final JsonStructure input;

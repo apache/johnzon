@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonException;
+import jakarta.json.JsonException;
 
 public class MapperException extends JsonException {
     public MapperException(final Throwable e) {

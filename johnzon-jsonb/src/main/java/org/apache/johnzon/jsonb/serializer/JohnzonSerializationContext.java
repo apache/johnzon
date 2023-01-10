@@ -20,8 +20,8 @@ package org.apache.johnzon.jsonb.serializer;
 
 import org.apache.johnzon.mapper.MappingGenerator;
 
-import javax.json.bind.serializer.SerializationContext;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.bind.serializer.SerializationContext;
+import jakarta.json.stream.JsonGenerator;
 
 // TODO: fix it
 public class JohnzonSerializationContext implements SerializationContext {

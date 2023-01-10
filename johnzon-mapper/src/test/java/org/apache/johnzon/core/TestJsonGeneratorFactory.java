@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGenerator;
 import java.io.Writer;
 import java.util.Collections;
 

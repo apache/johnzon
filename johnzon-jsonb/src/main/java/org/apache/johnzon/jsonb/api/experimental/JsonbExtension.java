@@ -20,9 +20,9 @@ package org.apache.johnzon.jsonb.api.experimental;
 
 import java.lang.reflect.Type;
 
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParser;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParser;
 
 public interface JsonbExtension {
     // https://github.com/eclipse-ee4j/jsonb-api/issues/111

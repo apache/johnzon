@@ -25,7 +25,7 @@ import java.util.Collection;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 
 public class JsonSchemaValidator implements Function<JsonValue, ValidationResult>, AutoCloseable {
     private static final ValidationResult SUCCESS = new ValidationResult(emptyList());

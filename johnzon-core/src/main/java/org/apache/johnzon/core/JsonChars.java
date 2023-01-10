@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.stream.JsonParser.Event;
+import jakarta.json.stream.JsonParser.Event;
 
 public interface JsonChars {
     char EOF = Character.MIN_VALUE;

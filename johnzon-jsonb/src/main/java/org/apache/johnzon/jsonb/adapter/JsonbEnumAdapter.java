@@ -20,7 +20,7 @@ package org.apache.johnzon.jsonb.adapter;
 
 import org.apache.johnzon.mapper.MapperConfig;
 
-import javax.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbProperty;
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.util.HashMap;

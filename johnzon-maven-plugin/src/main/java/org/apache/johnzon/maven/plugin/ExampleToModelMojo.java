@@ -25,13 +25,13 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -271,7 +271,7 @@ public class ExampleToModelMojo extends AbstractMojo {
 
         if (!jsonField.equals(field)) {
             if (useJsonb) {
-                imports.add("javax.json.bind.annotation.JsonbProperty");
+                imports.add("jakarta.json.bind.annotation.JsonbProperty");
                 writer.append(prefix).append("@JsonbProperty(\"").append(jsonField).append("\")");
             } else {
                 imports.add("org.apache.johnzon.mapper.JohnzonProperty");

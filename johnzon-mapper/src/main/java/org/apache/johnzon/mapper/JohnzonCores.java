@@ -18,11 +18,11 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGeneratorFactory;
-import javax.json.stream.JsonParser;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGeneratorFactory;
+import jakarta.json.stream.JsonParser;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 

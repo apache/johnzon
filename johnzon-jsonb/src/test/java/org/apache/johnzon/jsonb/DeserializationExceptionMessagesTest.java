@@ -18,7 +18,7 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.JsonbException;
+import jakarta.json.bind.JsonbException;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -794,14 +794,14 @@ public class DeserializationExceptionMessagesTest {
     public void arrayOfCharFromArrayOfObject() throws Exception {
         assertMessage("{ \"arrayOfChar\" : [{\"red\": 255, \"green\": 165, \"blue\":0},{\"red\": 0, \"green\": 45, \"blue\":127}] }",
                 "Widget property 'arrayOfChar' of type char[] cannot be mapped to json array value: [{\"red\":255,\"gree" +
-                        "n\":...\nCannot cast org.apache.johnzon.core.JsonObjectImpl to javax.json.JsonString");
+                        "n\":...\nCannot cast org.apache.johnzon.core.JsonObjectImpl to jakarta.json.JsonString");
     }
 
     @Test
     public void arrayOfCharFromArrayOfBoolean() throws Exception {
         assertMessage("{ \"arrayOfChar\" : [true,false,true,true,false] }",
                 "Widget property 'arrayOfChar' of type char[] cannot be mapped to json array value: [true,false,true," +
-                        "tru...\nCannot cast javax.json.JsonValue$2 to javax.json.JsonString");
+                        "tru...\nCannot cast jakarta.json.JsonValueImpl to jakarta.json.JsonString");
     }
 
     @Test

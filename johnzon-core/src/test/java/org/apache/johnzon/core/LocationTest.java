@@ -23,11 +23,11 @@ import static org.junit.Assert.assertEquals;
 import java.io.StringReader;
 import java.util.HashMap;
 
-import javax.json.Json;
-import javax.json.JsonReader;
-import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParsingException;
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+import jakarta.json.stream.JsonLocation;
+import jakarta.json.stream.JsonParser;
+import jakarta.json.stream.JsonParsingException;
 
 import org.junit.Assert;
 import org.junit.Test;

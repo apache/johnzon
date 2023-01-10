@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
-import javax.json.bind.config.PropertyNamingStrategy;
+import jakarta.json.bind.config.PropertyNamingStrategy;
 import java.util.function.Function;
 
 public class PropertyNamingStrategyFactory {

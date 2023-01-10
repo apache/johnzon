@@ -54,10 +54,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonValue;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 public class MapperTest {
     private static final String BIG_OBJECT_STR = "{" + "\"name\":\"the string\"," + "\"intVal\":56," + "\"longnumber\":118,"

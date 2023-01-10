@@ -20,7 +20,7 @@ package org.apache.johnzon.core;
 
 import java.io.Serializable;
 
-import javax.json.stream.JsonLocation;
+import jakarta.json.stream.JsonLocation;
 
 final class JsonLocationImpl implements JsonLocation, Serializable {
     

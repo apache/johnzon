@@ -20,11 +20,11 @@ package org.apache.johnzon.websocket.internal.jsr;
 
 import java.io.IOException;
 import java.io.Writer;
-import javax.json.JsonWriter;
-import javax.json.JsonWriterFactory;
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
+import jakarta.json.JsonWriter;
+import jakarta.json.JsonWriterFactory;
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 
 public abstract class JsrEncoder<T> implements Encoder.TextStream<T> {
     private JsonWriterFactory factory;
