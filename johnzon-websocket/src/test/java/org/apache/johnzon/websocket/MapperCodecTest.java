@@ -18,8 +18,6 @@
  */
 package org.apache.johnzon.websocket;
 
-import org.apache.johnzon.core.JsonProviderImpl;
-import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.websocket.endpoint.ClientEndpointImpl;
 import org.apache.johnzon.websocket.endpoint.Message;
@@ -42,13 +40,11 @@ import org.junit.runner.RunWith;
 
 import java.net.URI;
 import java.net.URL;
-import jakarta.json.Json;
 import jakarta.websocket.CloseReason;
 import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
 
-import static org.apache.openejb.loader.JarLocation.jarLocation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -56,14 +52,18 @@ import static org.junit.Assert.assertNotNull;
 public class MapperCodecTest {
     @Deployment(testable = false)
     public static WebArchive war() {
-        return ShrinkWrap.create(WebArchive.class, "codec.war")
-                .addClasses(ServerEndpointImpl.class, ServerReport.class, Message.class)
-                .addAsLibrary(
-                        ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
-                            .addClasses(MapperLocator.class, MapperLocatorDelegate.class, IgnoreIfMissing.class, JohnzonTextDecoder.class, JohnzonTextEncoder.class)
-                            .addPackages(true, JsonProviderImpl.class.getPackage())
-                            .addPackages(true, Mapper.class.getPackage()))
-                .addAsLibrary(jarLocation(Json.class));
+        final WebArchive war = ShrinkWrap.create(WebArchive.class, "codec.war")
+                                                .addClasses(ServerEndpointImpl.class, ServerReport.class, Message.class)
+                                                .addAsLibrary(
+                                                    ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
+                                                              .addClasses(MapperLocator.class,
+                                                                          MapperLocatorDelegate.class,
+                                                                          IgnoreIfMissing.class,
+                                                                          JohnzonTextDecoder.class,
+                                                                          JohnzonTextEncoder.class));
+
+        System.out.println(war.toString(true));
+        return war;
     }
 
     @ArquillianResource

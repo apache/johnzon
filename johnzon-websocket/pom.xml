@@ -30,7 +30,7 @@
 
   <properties>
     <tomcat.version>10.1.4</tomcat.version>
-    <tomee.version>8.0.13</tomee.version>
+    <tomee.version>9.0.0</tomee.version>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
 

@@ -18,8 +18,8 @@
  */
 package org.test.apache.johnzon.mojo;
 
-import java.util.List;
 import jakarta.json.bind.annotation.JsonbProperty;
+import java.util.List;
 
 public record SomeValue(
     String benchmark,
