@@ -29,7 +29,7 @@
   <name>Johnzon :: WebSocket</name>
 
   <properties>
-    <tomcat.version>8.5.9</tomcat.version>
+    <tomcat.version>10.1.4</tomcat.version>
     <tomee.version>8.0.13</tomee.version>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
@@ -65,6 +65,19 @@
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-jsonb</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <version>3.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>4.0.0</version>
       <scope>test</scope>
     </dependency>
 

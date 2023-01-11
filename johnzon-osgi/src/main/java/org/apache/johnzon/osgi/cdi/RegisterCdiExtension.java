@@ -41,7 +41,7 @@ public class RegisterCdiExtension {
     public static OSGi<?> ifPossible() {
         if (tryLoadingCdi()) {
             return register(
-                javax.enterprise.inject.spi.Extension.class,
+                jakarta.enterprise.inject.spi.Extension.class,
                 new org.apache.johnzon.osgi.cdi.CdiExtensionFactory(),
                 getCdiExtensionProperties()
             );
