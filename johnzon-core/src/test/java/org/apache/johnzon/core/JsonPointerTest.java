@@ -506,19 +506,6 @@ public class JsonPointerTest {
         assertEquals("[[\"bar\",\"qux\",\"baz\",\"xyz\"]]", result.toString());
     }
 
-    @Test
-    public void testRemoveLastArrayElementSimpleWithPatch() {
-        JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");
-        JsonStructure target = Json.createArrayBuilder()
-                                   .add("bar")
-                                   .add("qux")
-                                   .add("baz")
-                                   .build();
-
-        JsonStructure result = jsonPointer.remove(target);
-        assertEquals("[\"bar\",\"qux\"]", result.toString());
-    }
-
     @Test(expected = JsonException.class)
     public void testRemoveLastArrayElementFromEmptySimple() {
         final JsonPointerImpl jsonPointer = new JsonPointerImpl(JsonProvider.provider(), "/-");

@@ -16,19 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.jsonp.strict;
-
-import org.apache.johnzon.core.JsonPointerImpl;
-import org.junit.Test;
+package org.apache.johnzon.core;
 
 import jakarta.json.Json;
 import jakarta.json.JsonException;
 import jakarta.json.JsonPointer;
 import jakarta.json.JsonStructure;
 import jakarta.json.spi.JsonProvider;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * This test class was originally located in the johnzon-jsonp-strict module to bring full JSON Pointer
+ * compatibility. Since in version 2.0 it's the default in Johnzon to be compliant, this test migrated to core
+ * as it does provide some interesting code coverage
+ */
 public class StrictJsonPointerFactoryTest {
     @Test
     public void validMinusUsage() {

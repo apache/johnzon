@@ -18,8 +18,6 @@
  */
 package org.apache.johnzon.core;
 
-import org.apache.johnzon.core.spi.JsonPointerFactory;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -29,9 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.stream.StreamSupport;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonArrayBuilder;
@@ -56,8 +52,6 @@ import jakarta.json.stream.JsonGeneratorFactory;
 import jakarta.json.stream.JsonParser;
 import jakarta.json.stream.JsonParserFactory;
 
-import static java.util.Comparator.comparing;
-
 public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
@@ -69,14 +63,6 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
     private final Supplier<JsonBuilderFactory> builderFactory = new Cached<>(() ->
             new JsonBuilderFactoryImpl(null, bufferProvider.get(), RejectDuplicateKeysMode.DEFAULT));
-    private final JsonPointerFactory jsonPointerFactory;
-
-    public JsonProviderImpl() {
-        jsonPointerFactory = StreamSupport.stream(ServiceLoader.load(JsonPointerFactory.class).spliterator(), false)
-                .min(comparing(JsonPointerFactory::ordinal))
-                .orElseGet(DefaultJsonPointerFactory::new);
-    }
-
     @Override
     public JsonParser createParser(final InputStream in) {
         return parserFactory.createParser(in);
@@ -216,7 +202,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonPointer createPointer(String path) {
-        return jsonPointerFactory.createPointer(this, path);
+        return new JsonPointerImpl(this, path);
     }
 
     @Override

@@ -476,7 +476,7 @@ public class JsonPointerImpl implements JsonPointer {
             return jsonArray.size();
 
         } else if (!addOperation && referenceToken.equals("-")) {
-            final int arrayIndex = jsonArray.size() - minusShift();
+            final int arrayIndex = jsonArray.size();
             validateArraySize(referenceToken, jsonArray, arrayIndex, jsonArray.size());
             return arrayIndex;
         }
@@ -491,16 +491,6 @@ public class JsonPointerImpl implements JsonPointer {
         } catch (final NumberFormatException e) {
             throw new JsonException("'" + referenceToken + "' is no valid array index", e);
         }
-    }
-
-    /**
-     * This method can be overridden in sub classes.
-     * It's main goal is to support patch operation using "-" to replace, remove last element which is forbidden in JsonPointer
-     *
-     * @return the shift to apply on minus. For backward compatibility it's 1. We can have a strict JSONP compliancy with the dedicated module.
-     */
-    protected int minusShift() {
-        return 1;
     }
 
     private void validateJsonPointer(JsonValue target, int size) throws NullPointerException, JsonException {

@@ -68,7 +68,6 @@
     <module>johnzon-jsonschema</module>
     <module>johnzon-osgi</module>
     <module>johnzon-jsonlogic</module>
-    <module>johnzon-jsonp-strict</module>
   </modules>
 
   <dependencyManagement>
