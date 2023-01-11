@@ -429,8 +429,8 @@ public class PojoGeneratorTest {
         return "" +
                 "package org.test;\n" +
                 "\n" +
-                "import java.util.Objects;\n" +
                 "import jakarta.json.JsonObject;\n" +
+                "import java.util.Objects;\n" +
                 "\n" +
                 "public class TheClassMetadataManagedFields {\n" +
                 "    private String apiVersion;\n" +
