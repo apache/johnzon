@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 
 public interface SnippetFactory {
     String of(JsonValue value);

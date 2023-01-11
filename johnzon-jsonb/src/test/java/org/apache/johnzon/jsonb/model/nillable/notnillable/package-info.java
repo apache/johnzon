@@ -19,4 +19,4 @@
 @JsonbNillable(false)
 package org.apache.johnzon.jsonb.model.nillable.notnillable;
 
-import javax.json.bind.annotation.JsonbNillable;
+import jakarta.json.bind.annotation.JsonbNillable;

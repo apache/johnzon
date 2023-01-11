@@ -21,8 +21,8 @@ package org.apache.johnzon.jsonp.strict;
 import org.apache.johnzon.core.JsonPointerImpl;
 import org.apache.johnzon.core.spi.JsonPointerFactory;
 
-import javax.json.JsonPointer;
-import javax.json.spi.JsonProvider;
+import jakarta.json.JsonPointer;
+import jakarta.json.spi.JsonProvider;
 
 /**
  * This aims at replacing the {@link org.apache.johnzon.core.DefaultJsonPointerFactory} in order to force Johnzon

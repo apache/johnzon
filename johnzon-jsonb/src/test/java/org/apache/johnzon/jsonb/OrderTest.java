@@ -21,7 +21,7 @@ package org.apache.johnzon.jsonb;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import javax.json.bind.annotation.JsonbPropertyOrder;
+import jakarta.json.bind.annotation.JsonbPropertyOrder;
 
 import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;

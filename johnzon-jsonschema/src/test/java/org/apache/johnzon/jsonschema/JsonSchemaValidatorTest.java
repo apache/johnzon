@@ -27,8 +27,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 
-import javax.json.Json;
-import javax.json.JsonBuilderFactory;
+import jakarta.json.Json;
+import jakarta.json.JsonBuilderFactory;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;

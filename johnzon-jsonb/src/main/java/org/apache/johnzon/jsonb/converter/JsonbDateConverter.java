@@ -27,7 +27,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-import javax.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 
 public class JsonbDateConverter extends JsonbDateConverterBase<Date> {
     private static final ZoneId UTC = ZoneId.of("UTC");

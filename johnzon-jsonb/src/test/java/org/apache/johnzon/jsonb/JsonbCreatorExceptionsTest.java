@@ -18,9 +18,9 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.JsonbException;
-import javax.json.bind.annotation.JsonbCreator;
-import javax.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.JsonbException;
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbProperty;
 
 public class JsonbCreatorExceptionsTest {
 

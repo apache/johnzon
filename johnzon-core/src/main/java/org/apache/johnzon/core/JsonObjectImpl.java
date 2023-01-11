@@ -18,12 +18,12 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonObject;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringWriter;

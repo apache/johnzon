@@ -23,7 +23,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import javax.json.bind.config.PropertyNamingStrategy;
+import jakarta.json.bind.config.PropertyNamingStrategy;
 
 import static org.junit.Assert.assertEquals;
 

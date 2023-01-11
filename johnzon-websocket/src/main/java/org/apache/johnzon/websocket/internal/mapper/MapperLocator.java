@@ -20,7 +20,7 @@ package org.apache.johnzon.websocket.internal.mapper;
 
 import org.apache.johnzon.websocket.internal.servlet.IgnoreIfMissing;
 
-import javax.servlet.annotation.WebListener;
+import jakarta.servlet.annotation.WebListener;
 
 @WebListener // since people move to json-b we make this init lazy
 public class MapperLocator extends IgnoreIfMissing {

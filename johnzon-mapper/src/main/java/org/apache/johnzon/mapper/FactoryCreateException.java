@@ -16,7 +16,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonObject;
+import jakarta.json.JsonObject;
 import java.lang.reflect.Type;
 
 public class FactoryCreateException extends MapperException {

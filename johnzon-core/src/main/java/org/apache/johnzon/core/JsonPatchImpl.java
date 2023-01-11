@@ -23,16 +23,16 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import javax.json.JsonArray;
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonException;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonPatch;
-import javax.json.JsonPointer;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-import javax.json.spi.JsonProvider;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonPatch;
+import jakarta.json.JsonPointer;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
+import jakarta.json.spi.JsonProvider;
 
 class JsonPatchImpl implements JsonPatch {
 

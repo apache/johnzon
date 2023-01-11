@@ -16,7 +16,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 import java.lang.reflect.Type;
 
 public class SetterMappingException extends MapperException {

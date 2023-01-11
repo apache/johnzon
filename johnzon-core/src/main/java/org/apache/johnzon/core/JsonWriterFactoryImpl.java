@@ -29,9 +29,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.json.JsonWriter;
-import javax.json.JsonWriterFactory;
-import javax.json.stream.JsonGeneratorFactory;
+import jakarta.json.JsonWriter;
+import jakarta.json.JsonWriterFactory;
+import jakarta.json.stream.JsonGeneratorFactory;
 
 class JsonWriterFactoryImpl extends AbstractJsonFactory implements JsonWriterFactory{
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(

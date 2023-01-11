@@ -25,9 +25,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.stream.JsonParser;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.stream.JsonParser;
 
 class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFactory {
     static final Collection<String> SUPPORTED_CONFIG_KEYS = RejectDuplicateKeysMode.CONFIG_KEYS;

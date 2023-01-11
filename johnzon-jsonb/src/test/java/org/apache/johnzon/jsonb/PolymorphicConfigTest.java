@@ -25,10 +25,10 @@ import static org.junit.Assert.assertEquals;
 import java.util.List;
 import java.util.Objects;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.config.PropertyOrderStrategy;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.config.PropertyOrderStrategy;
 
 import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
 import org.junit.Test;

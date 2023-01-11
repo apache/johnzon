@@ -21,12 +21,12 @@ package org.apache.johnzon.jsonb;
 import java.math.BigDecimal;
 import java.util.function.Supplier;
 
-import javax.json.JsonNumber;
-import javax.json.JsonString;
-import javax.json.JsonValue;
-import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParserFactory;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonString;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonLocation;
+import jakarta.json.stream.JsonParser;
+import jakarta.json.stream.JsonParserFactory;
 
 import org.apache.johnzon.mapper.jsonp.RewindableJsonParser;
 

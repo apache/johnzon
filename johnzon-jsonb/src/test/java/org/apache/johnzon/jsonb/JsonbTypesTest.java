@@ -50,9 +50,9 @@ import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.spi.JsonbProvider;
 
 import org.apache.cxf.common.util.StringUtils;
 import org.junit.Test;

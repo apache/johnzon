@@ -20,9 +20,9 @@ package org.apache.johnzon.jsonschema.generator;
 
 import org.junit.Test;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -429,8 +429,8 @@ public class PojoGeneratorTest {
         return "" +
                 "package org.test;\n" +
                 "\n" +
+                "import jakarta.json.JsonObject;\n" +
                 "import java.util.Objects;\n" +
-                "import javax.json.JsonObject;\n" +
                 "\n" +
                 "public class TheClassMetadataManagedFields {\n" +
                 "    private String apiVersion;\n" +

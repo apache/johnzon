@@ -18,8 +18,8 @@
  */
 package org.apache.johnzon.jsonb;
 
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.spi.JsonbProvider;
 
 public class JohnzonProvider extends JsonbProvider {
     @Override

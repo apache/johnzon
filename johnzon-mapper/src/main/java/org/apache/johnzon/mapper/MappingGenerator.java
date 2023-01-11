@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGenerator;
 
 /**
  * Handles writing Json for Objects.

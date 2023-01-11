@@ -20,7 +20,7 @@ package org.apache.johnzon.mapper;
 
 import org.junit.Test;
 
-import javax.json.Json;
+import jakarta.json.Json;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;

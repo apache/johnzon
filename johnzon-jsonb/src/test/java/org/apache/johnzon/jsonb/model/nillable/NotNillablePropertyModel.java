@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb.model.nillable;
 
-import javax.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbProperty;
 
 public class NotNillablePropertyModel {
     @JsonbProperty(nillable = false)

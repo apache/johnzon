@@ -25,15 +25,15 @@ import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
-import javax.json.JsonString;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParser;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonNumber;
+import jakarta.json.JsonString;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbException;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParser;
 
 import java.io.InputStream;
 import java.io.OutputStream;

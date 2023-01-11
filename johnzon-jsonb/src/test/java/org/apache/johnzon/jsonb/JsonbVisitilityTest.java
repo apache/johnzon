@@ -21,11 +21,11 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.annotation.JsonbProperty;
-import javax.json.bind.annotation.JsonbVisibility;
-import javax.json.bind.config.PropertyVisibilityStrategy;
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbVisibility;
+import jakarta.json.bind.config.PropertyVisibilityStrategy;
+import jakarta.json.bind.spi.JsonbProvider;
 
 import org.junit.Assert;
 import org.junit.Test;

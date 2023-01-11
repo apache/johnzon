@@ -18,8 +18,8 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.JsonException;
-import javax.json.JsonValue;
+import jakarta.json.JsonException;
+import jakarta.json.JsonValue;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;

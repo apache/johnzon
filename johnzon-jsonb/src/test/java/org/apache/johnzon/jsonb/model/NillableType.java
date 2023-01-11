@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.jsonb.model;
 
-import javax.json.bind.annotation.JsonbNillable;
+import jakarta.json.bind.annotation.JsonbNillable;
 
 @JsonbNillable
 public class NillableType {

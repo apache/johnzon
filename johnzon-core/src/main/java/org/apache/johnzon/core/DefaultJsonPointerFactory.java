@@ -20,8 +20,8 @@ package org.apache.johnzon.core;
 
 import org.apache.johnzon.core.spi.JsonPointerFactory;
 
-import javax.json.JsonPointer;
-import javax.json.spi.JsonProvider;
+import jakarta.json.JsonPointer;
+import jakarta.json.spi.JsonProvider;
 
 /**
  * This is not a standard factory but allows Johnzon to support an extended version of JSon Pointer.

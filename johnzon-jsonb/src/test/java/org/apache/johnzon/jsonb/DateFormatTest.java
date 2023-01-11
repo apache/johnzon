@@ -32,10 +32,10 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.stream.Stream;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 
 import org.apache.johnzon.jsonb.model.Holder;
 import org.apache.johnzon.jsonb.model.packageformat.FormatOnClassModel;

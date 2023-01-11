@@ -20,5 +20,5 @@
 @JsonbDateFormat(value = "E DD MMM yyyy HH:mm:ss z", locale = "it")
 package org.apache.johnzon.jsonb.model.packageformat;
 
-import javax.json.bind.annotation.JsonbDateFormat;
-import javax.json.bind.annotation.JsonbNumberFormat;
+import jakarta.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbNumberFormat;

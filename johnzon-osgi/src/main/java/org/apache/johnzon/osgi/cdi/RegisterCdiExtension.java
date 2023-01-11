@@ -26,7 +26,7 @@ import static org.apache.aries.component.dsl.OSGi.register;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.annotation.Priority;
+import jakarta.annotation.Priority;
 
 import org.apache.aries.component.dsl.OSGi;
 import org.apache.johnzon.jaxrs.jsonb.jaxrs.JsonbJaxrsProvider;
@@ -41,7 +41,7 @@ public class RegisterCdiExtension {
     public static OSGi<?> ifPossible() {
         if (tryLoadingCdi()) {
             return register(
-                javax.enterprise.inject.spi.Extension.class,
+                jakarta.enterprise.inject.spi.Extension.class,
                 new org.apache.johnzon.osgi.cdi.CdiExtensionFactory(),
                 getCdiExtensionProperties()
             );
@@ -52,7 +52,7 @@ public class RegisterCdiExtension {
 
     private static boolean tryLoadingCdi() {
         try {
-            Class.forName("javax.enterprise.inject.spi.Extension");
+            Class.forName("jakarta.enterprise.inject.spi.Extension");
             return true;
         } catch (ClassNotFoundException cfne) {
             return false;

@@ -18,11 +18,11 @@
  */
 package org.apache.johnzon.websocket.internal;
 
-import javax.websocket.EndpointConfig;
-import javax.websocket.OnMessage;
-import javax.websocket.Session;
-import javax.websocket.server.PathParam;
-import javax.websocket.server.ServerEndpointConfig;
+import jakarta.websocket.EndpointConfig;
+import jakarta.websocket.OnMessage;
+import jakarta.websocket.Session;
+import jakarta.websocket.server.PathParam;
+import jakarta.websocket.server.ServerEndpointConfig;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;

@@ -18,9 +18,9 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.JsonException;
-import javax.json.stream.JsonLocation;
-import javax.json.stream.JsonParsingException;
+import jakarta.json.JsonException;
+import jakarta.json.stream.JsonLocation;
+import jakarta.json.stream.JsonParsingException;
 
 import java.io.IOException;
 import java.io.InputStream;

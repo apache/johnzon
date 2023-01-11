@@ -22,7 +22,7 @@ import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.json.bind.adapter.JsonbAdapter;
+import jakarta.json.bind.adapter.JsonbAdapter;
 
 import static org.junit.Assert.assertEquals;
 

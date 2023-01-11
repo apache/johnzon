@@ -20,10 +20,10 @@ package org.apache.johnzon.jaxrs;
 
 import static java.util.Optional.ofNullable;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.MessageBodyReader;
-import javax.ws.rs.ext.MessageBodyWriter;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
+import jakarta.ws.rs.ext.MessageBodyReader;
+import jakarta.ws.rs.ext.MessageBodyWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,7 +82,7 @@ public abstract class DelegateProvider<T> implements MessageBodyWriter<T>, Messa
         try {
             ofNullable(Thread.currentThread().getContextClassLoader())
                     .orElseGet(ClassLoader::getSystemClassLoader)
-                    .loadClass("javax.ws.rs.core.Feature");
+                    .loadClass("jakarta.ws.rs.core.Feature");
             return true;
         } catch (final NoClassDefFoundError | ClassNotFoundException e) {
             return false;

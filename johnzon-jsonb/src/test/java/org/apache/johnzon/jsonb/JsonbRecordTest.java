@@ -23,7 +23,7 @@ import org.apache.johnzon.mapper.JohnzonRecord;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbProperty;
 import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;

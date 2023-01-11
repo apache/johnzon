@@ -20,7 +20,7 @@ package org.apache.johnzon.jsonb.model.packageformat;
 
 import java.util.Date;
 
-import javax.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbDateFormat;
 
 import org.apache.johnzon.jsonb.model.Holder;
 

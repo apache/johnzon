@@ -18,13 +18,13 @@ package org.apache.johnzon.core;
 
 import java.util.Map;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonPatch;
-import javax.json.JsonPatchBuilder;
-import javax.json.JsonStructure;
-import javax.json.JsonValue;
-import javax.json.spi.JsonProvider;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonPatch;
+import jakarta.json.JsonPatchBuilder;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonValue;
+import jakarta.json.spi.JsonProvider;
 
 /**
  * Create a diff from a source and target JsonStructure

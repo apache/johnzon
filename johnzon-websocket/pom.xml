@@ -21,7 +21,7 @@
   <parent>
     <artifactId>johnzon</artifactId>
     <groupId>org.apache.johnzon</groupId>
-    <version>1.2.20-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -29,8 +29,8 @@
   <name>Johnzon :: WebSocket</name>
 
   <properties>
-    <tomcat.version>8.5.9</tomcat.version>
-    <tomee.version>8.0.1</tomee.version>
+    <tomcat.version>10.1.4</tomcat.version>
+    <tomee.version>9.0.0</tomee.version>
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
 
@@ -49,8 +49,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.geronimo.specs</groupId>
-      <artifactId>geronimo-jsonb_1.0_spec</artifactId>
+      <groupId>jakarta.json.bind</groupId>
+      <artifactId>jakarta.json.bind-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -65,6 +65,19 @@
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-jsonb</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <version>3.1.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.xml.bind</groupId>
+      <artifactId>jakarta.xml.bind-api</artifactId>
+      <version>4.0.0</version>
       <scope>test</scope>
     </dependency>
 

@@ -23,8 +23,8 @@ import static java.util.stream.Collectors.joining;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import javax.json.JsonObject;
-import javax.json.JsonValue;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonValue;
 
 public class ValidationContext {
     private final String[] path;

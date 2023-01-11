@@ -20,14 +20,14 @@ package org.apache.johnzon.jsonb.serializer;
 
 import java.lang.reflect.Type;
 
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
-import javax.json.bind.serializer.DeserializationContext;
-import javax.json.spi.JsonProvider;
-import javax.json.stream.JsonParser;
-import javax.json.stream.JsonParsingException;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
+import jakarta.json.bind.serializer.DeserializationContext;
+import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonParser;
+import jakarta.json.stream.JsonParsingException;
 
 import org.apache.johnzon.mapper.MappingParser;
 

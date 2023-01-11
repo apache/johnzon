@@ -18,9 +18,9 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.json.spi.JsonProvider;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.spi.JsonProvider;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StringReader;

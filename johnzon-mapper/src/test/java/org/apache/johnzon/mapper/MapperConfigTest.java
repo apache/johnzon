@@ -26,7 +26,7 @@ import org.apache.johnzon.mapper.map.LazyConverterMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;

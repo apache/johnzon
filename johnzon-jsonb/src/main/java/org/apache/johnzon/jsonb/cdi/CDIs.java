@@ -46,7 +46,7 @@ public final class CDIs {
         }
 
         private static JohnzonCdiExtension load(final Object beanManager) {
-            final javax.enterprise.inject.spi.BeanManager bm = javax.enterprise.inject.spi.BeanManager.class.cast(beanManager);
+            final jakarta.enterprise.inject.spi.BeanManager bm = jakarta.enterprise.inject.spi.BeanManager.class.cast(beanManager);
             return JohnzonCdiExtension.class.cast(
                 bm.getReference(bm.resolve(bm.getBeans(JohnzonCdiExtension.class)), JohnzonCdiExtension.class, bm.createCreationalContext(null)));
         }

@@ -19,7 +19,7 @@
 
 package org.apache.johnzon.osgi.cdi;
 
-import javax.enterprise.inject.spi.Extension;
+import jakarta.enterprise.inject.spi.Extension;
 
 import org.apache.johnzon.jsonb.cdi.JohnzonCdiExtension;
 import org.osgi.framework.Bundle;

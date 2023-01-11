@@ -23,11 +23,11 @@ import org.apache.johnzon.jsonb.test.JsonbRule;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
-import javax.json.bind.annotation.JsonbProperty;
-import javax.json.bind.annotation.JsonbTransient;
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbException;
+import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbTransient;
+import jakarta.json.bind.spi.JsonbProvider;
 
 import static org.junit.Assert.assertEquals;
 

@@ -20,11 +20,11 @@ package org.apache.johnzon.websocket.jsonb;
 
 import org.apache.johnzon.websocket.internal.TypeAwareDecoder;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
-import javax.websocket.DecodeException;
-import javax.websocket.Decoder;
-import javax.websocket.EndpointConfig;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbException;
+import jakarta.websocket.DecodeException;
+import jakarta.websocket.Decoder;
+import jakarta.websocket.EndpointConfig;
 import java.io.Reader;
 import java.lang.reflect.Type;
 

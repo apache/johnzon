@@ -20,15 +20,15 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.adapter.JsonbAdapter;
-import javax.json.bind.annotation.JsonbCreator;
-import javax.json.bind.annotation.JsonbDateFormat;
-import javax.json.bind.annotation.JsonbProperty;
-import javax.json.bind.config.PropertyOrderStrategy;
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.adapter.JsonbAdapter;
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.config.PropertyOrderStrategy;
+import jakarta.json.bind.spi.JsonbProvider;
 import java.io.ByteArrayOutputStream;
 import java.io.StringWriter;
 import java.time.LocalDateTime;

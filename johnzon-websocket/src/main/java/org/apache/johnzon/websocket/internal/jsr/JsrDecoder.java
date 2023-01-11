@@ -20,11 +20,11 @@ package org.apache.johnzon.websocket.internal.jsr;
 
 import java.io.IOException;
 import java.io.Reader;
-import javax.json.JsonReader;
-import javax.json.JsonReaderFactory;
-import javax.websocket.DecodeException;
-import javax.websocket.Decoder;
-import javax.websocket.EndpointConfig;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.websocket.DecodeException;
+import jakarta.websocket.Decoder;
+import jakarta.websocket.EndpointConfig;
 
 public abstract class JsrDecoder<T> implements Decoder.TextStream<T> {
     private JsonReaderFactory factory;

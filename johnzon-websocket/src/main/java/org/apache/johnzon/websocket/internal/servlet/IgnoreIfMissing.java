@@ -18,8 +18,8 @@
  */
 package org.apache.johnzon.websocket.internal.servlet;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
 import java.util.function.Supplier;
 
 public class IgnoreIfMissing implements ServletContextListener {

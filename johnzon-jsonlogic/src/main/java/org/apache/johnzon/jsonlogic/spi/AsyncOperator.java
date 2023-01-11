@@ -20,7 +20,7 @@ package org.apache.johnzon.jsonlogic.spi;
 
 import org.apache.johnzon.jsonlogic.JohnzonJsonLogic;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 

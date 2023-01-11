@@ -20,7 +20,7 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Test;
 
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.spi.JsonbProvider;
 
 import static org.junit.Assert.assertNotNull;
 

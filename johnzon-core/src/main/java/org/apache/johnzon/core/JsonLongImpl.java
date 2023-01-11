@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.JsonNumber;
+import jakarta.json.JsonNumber;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;

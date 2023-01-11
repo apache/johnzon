@@ -22,11 +22,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.LinkedList;
 
-import javax.json.JsonArrayBuilder;
-import javax.json.JsonBuilderFactory;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObjectBuilder;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 
 // assume usage is right, since it is an internal based on the fact we correctly use jsongenerator api it is fine
 // todo: drop reflection, it is not needed here but it was simpler for a first impl

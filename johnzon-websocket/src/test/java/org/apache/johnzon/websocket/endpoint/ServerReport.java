@@ -22,12 +22,12 @@ import org.apache.johnzon.mapper.MapperBuilder;
 
 import java.io.StringWriter;
 import java.util.concurrent.TimeUnit;
-import javax.json.Json;
-import javax.json.JsonWriter;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import jakarta.json.Json;
+import jakarta.json.JsonWriter;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.MediaType;
 
 @Path("report")
 @Produces(MediaType.APPLICATION_JSON)

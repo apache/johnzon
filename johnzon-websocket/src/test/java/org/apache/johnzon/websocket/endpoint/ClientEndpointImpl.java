@@ -24,8 +24,8 @@ import org.apache.johnzon.websocket.mapper.JohnzonTextEncoder;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
-import javax.websocket.ClientEndpoint;
-import javax.websocket.OnMessage;
+import jakarta.websocket.ClientEndpoint;
+import jakarta.websocket.OnMessage;
 
 @ClientEndpoint(encoders = JohnzonTextEncoder.class, decoders = ClientEndpointImpl.MessageDecoder.class)
 public class ClientEndpointImpl {

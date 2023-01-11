@@ -20,7 +20,7 @@ package org.apache.johnzon.core;
 
 import org.junit.Test;
 
-import javax.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGenerator;
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;

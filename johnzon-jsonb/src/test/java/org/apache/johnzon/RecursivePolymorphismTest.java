@@ -20,24 +20,24 @@ package org.apache.johnzon;
 
 import org.junit.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
-import javax.json.bind.annotation.JsonbPropertyOrder;
-import javax.json.bind.config.PropertyOrderStrategy;
-import javax.json.bind.serializer.DeserializationContext;
-import javax.json.bind.serializer.JsonbDeserializer;
-import javax.json.bind.serializer.JsonbSerializer;
-import javax.json.bind.serializer.SerializationContext;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonParser;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.annotation.JsonbPropertyOrder;
+import jakarta.json.bind.config.PropertyOrderStrategy;
+import jakarta.json.bind.serializer.DeserializationContext;
+import jakarta.json.bind.serializer.JsonbDeserializer;
+import jakarta.json.bind.serializer.JsonbSerializer;
+import jakarta.json.bind.serializer.SerializationContext;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParser;
 import java.lang.reflect.Type;
 import java.util.List;
 
 import static java.util.Arrays.asList;
-import static javax.json.stream.JsonParser.Event.KEY_NAME;
-import static javax.json.stream.JsonParser.Event.START_OBJECT;
-import static javax.json.stream.JsonParser.Event.VALUE_NUMBER;
+import static jakarta.json.stream.JsonParser.Event.KEY_NAME;
+import static jakarta.json.stream.JsonParser.Event.START_OBJECT;
+import static jakarta.json.stream.JsonParser.Event.VALUE_NUMBER;
 import static org.junit.Assert.assertEquals;
 
 public class RecursivePolymorphismTest {

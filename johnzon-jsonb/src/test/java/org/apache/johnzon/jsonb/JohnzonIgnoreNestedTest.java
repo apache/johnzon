@@ -21,8 +21,8 @@ package org.apache.johnzon.jsonb;
 import org.apache.johnzon.mapper.JohnzonIgnoreNested;
 import org.junit.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.spi.JsonbProvider;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.spi.JsonbProvider;
 import java.util.Collection;
 
 import static java.util.Collections.singletonList;

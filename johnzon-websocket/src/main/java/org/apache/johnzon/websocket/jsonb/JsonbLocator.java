@@ -20,7 +20,7 @@ package org.apache.johnzon.websocket.jsonb;
 
 import org.apache.johnzon.websocket.internal.servlet.IgnoreIfMissing;
 
-import javax.servlet.annotation.WebListener;
+import jakarta.servlet.annotation.WebListener;
 
 @WebListener
 public class JsonbLocator extends IgnoreIfMissing {

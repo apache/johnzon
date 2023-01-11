@@ -20,7 +20,7 @@
 @Capability(namespace = SERVICE_NAMESPACE,
     attribute = {
         CDI_EXTENSION_PROPERTY + "=JavaJSONB",
-        "objectClass:List<String>='javax.enterprise.inject.spi.Extension'"})
+        "objectClass:List<String>='jakarta.enterprise.inject.spi.Extension'"})
 @Capability(namespace = CDI_EXTENSION_PROPERTY,
     attribute = CDI_EXTENSION_PROPERTY + "=JavaJSONB")
 @Requirement(

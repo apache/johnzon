@@ -30,12 +30,12 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.NoContentException;
-import javax.ws.rs.ext.ContextResolver;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedHashMap;
+import jakarta.ws.rs.core.NoContentException;
+import jakarta.ws.rs.ext.ContextResolver;
 
 import org.apache.cxf.jaxrs.impl.ProvidersImpl;
 import org.apache.johnzon.core.JsonReaderImpl;

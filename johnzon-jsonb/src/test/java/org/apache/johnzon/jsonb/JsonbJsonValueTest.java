@@ -20,10 +20,10 @@ package org.apache.johnzon.jsonb;
 
 import static org.junit.Assert.assertEquals;
 
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
 
 import org.apache.johnzon.jsonb.extension.JsonValueReader;
 import org.apache.johnzon.jsonb.extension.JsonValueWriter;

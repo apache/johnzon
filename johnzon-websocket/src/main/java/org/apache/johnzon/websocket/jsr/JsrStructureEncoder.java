@@ -20,8 +20,8 @@ package org.apache.johnzon.websocket.jsr;
 
 import org.apache.johnzon.websocket.internal.jsr.JsrEncoder;
 
-import javax.json.JsonStructure;
-import javax.json.JsonWriter;
+import jakarta.json.JsonStructure;
+import jakarta.json.JsonWriter;
 
 public class JsrStructureEncoder extends JsrEncoder<JsonStructure> {
     @Override

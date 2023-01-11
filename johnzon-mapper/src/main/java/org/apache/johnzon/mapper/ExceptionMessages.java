@@ -16,18 +16,18 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonValue;
+import jakarta.json.JsonValue;
 import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 
-import static javax.json.JsonValue.ValueType.ARRAY;
-import static javax.json.JsonValue.ValueType.FALSE;
-import static javax.json.JsonValue.ValueType.NUMBER;
-import static javax.json.JsonValue.ValueType.OBJECT;
-import static javax.json.JsonValue.ValueType.STRING;
-import static javax.json.JsonValue.ValueType.TRUE;
+import static jakarta.json.JsonValue.ValueType.ARRAY;
+import static jakarta.json.JsonValue.ValueType.FALSE;
+import static jakarta.json.JsonValue.ValueType.NUMBER;
+import static jakarta.json.JsonValue.ValueType.OBJECT;
+import static jakarta.json.JsonValue.ValueType.STRING;
+import static jakarta.json.JsonValue.ValueType.TRUE;
 
 public final class ExceptionMessages {
 

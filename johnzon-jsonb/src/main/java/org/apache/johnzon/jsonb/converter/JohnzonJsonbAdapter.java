@@ -21,8 +21,8 @@ package org.apache.johnzon.jsonb.converter;
 import org.apache.johnzon.mapper.TypeAwareAdapter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 
-import javax.json.bind.JsonbException;
-import javax.json.bind.adapter.JsonbAdapter;
+import jakarta.json.bind.JsonbException;
+import jakarta.json.bind.adapter.JsonbAdapter;
 import java.lang.reflect.Type;
 
 public class JohnzonJsonbAdapter<JsonType, OriginalType> implements TypeAwareAdapter<OriginalType, JsonType> {

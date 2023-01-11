@@ -18,11 +18,11 @@
  */
 package org.apache.johnzon.websocket.jsonb;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbException;
-import javax.websocket.EncodeException;
-import javax.websocket.Encoder;
-import javax.websocket.EndpointConfig;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbException;
+import jakarta.websocket.EncodeException;
+import jakarta.websocket.Encoder;
+import jakarta.websocket.EndpointConfig;
 import java.io.Writer;
 
 public class JsonbTextEncoder implements Encoder.TextStream<Object> {

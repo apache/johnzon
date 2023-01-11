@@ -18,8 +18,8 @@
  */
 package org.apache.johnzon.mapper;
 
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 

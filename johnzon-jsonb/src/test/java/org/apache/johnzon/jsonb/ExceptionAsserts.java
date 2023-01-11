@@ -18,9 +18,9 @@ package org.apache.johnzon.jsonb;
 
 import org.junit.Assert;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
-import javax.json.bind.JsonbConfig;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Type;
 import java.util.concurrent.Callable;

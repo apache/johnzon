@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.core;
 
-import javax.json.JsonString;
+import jakarta.json.JsonString;
 import java.io.Serializable;
 
 final class JsonStringImpl implements JsonString, Serializable {
