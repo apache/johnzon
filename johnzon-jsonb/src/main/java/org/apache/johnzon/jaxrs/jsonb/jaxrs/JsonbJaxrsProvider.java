@@ -314,7 +314,7 @@ public class JsonbJaxrsProvider<T> implements MessageBodyWriter<T>, MessageBodyR
         try {
             ofNullable(Thread.currentThread().getContextClassLoader())
                     .orElseGet(ClassLoader::getSystemClassLoader)
-                    .loadClass("javax.ws.rs.core.Feature");
+                    .loadClass("jakarta.ws.rs.core.Feature");
             return true;
         } catch (final NoClassDefFoundError | ClassNotFoundException e) {
             return false;

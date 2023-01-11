@@ -52,7 +52,7 @@ public class RegisterCdiExtension {
 
     private static boolean tryLoadingCdi() {
         try {
-            Class.forName("javax.enterprise.inject.spi.Extension");
+            Class.forName("jakarta.enterprise.inject.spi.Extension");
             return true;
         } catch (ClassNotFoundException cfne) {
             return false;

@@ -677,7 +677,10 @@ public class SchemaProcessor {
             if (Boolean.class == type) {
                 return false;
             }
-            if (type.getName().startsWith("java.") || type.getName().startsWith("javax.")) {
+            if (type.getName().startsWith("java.")
+                || type.getName().startsWith("javax.")
+                || type.getName().startsWith("jakarta.")
+            ) {
                 return null;
             }
             try {

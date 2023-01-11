@@ -358,7 +358,7 @@ TIP: more in JohnzonBuilder class.
 
 A JAX-RS provider based on JSON-B is provided in the module as well. It is `org.apache.johnzon.jaxrs.jsonb.jaxrs.JsonbJaxrsProvider`.
 
-IMPORTANT: in JAX-RS 1.0 the provider can throw any exception he wants for an empty incoming stream on reader side. This had been broken in JAX-RS 2.x where it must throw a `javax.ws.rs.core.NoContentException`.
+IMPORTANT: in JAX-RS 1.0 the provider can throw any exception he wants for an empty incoming stream on reader side. This had been broken in JAX-RS 2.x where it must throw a `jakarta.ws.rs.core.NoContentException`.
 To ensure you can pick the implementation you can and limit the breaking changes, you can set ̀throwNoContentExceptionOnEmptyStreams` on the provider to switch between both behaviors.
 Default will be picked from the current available API. Finally, this behavior only works with `johnzon-core`.
 

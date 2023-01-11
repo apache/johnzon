@@ -396,7 +396,7 @@ public class JohnzonBuilder implements JsonbBuilder {
     private Object getBeanManager() {
         if (beanManager == null) {
             try { // don't trigger CDI if not there
-                final Class<?> cdi = tccl().loadClass("javax.enterprise.inject.spi.CDI");
+                final Class<?> cdi = tccl().loadClass("jakarta.enterprise.inject.spi.CDI");
                 final Object cdiInstance = cdi.getMethod("current").invoke(null);
                 beanManager = cdi.getMethod("getBeanManager").invoke(cdiInstance);
                 cdiIntegration = new CDIs(beanManager);

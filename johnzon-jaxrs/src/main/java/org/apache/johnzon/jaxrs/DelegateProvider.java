@@ -82,7 +82,7 @@ public abstract class DelegateProvider<T> implements MessageBodyWriter<T>, Messa
         try {
             ofNullable(Thread.currentThread().getContextClassLoader())
                     .orElseGet(ClassLoader::getSystemClassLoader)
-                    .loadClass("javax.ws.rs.core.Feature");
+                    .loadClass("jakarta.ws.rs.core.Feature");
             return true;
         } catch (final NoClassDefFoundError | ClassNotFoundException e) {
             return false;
