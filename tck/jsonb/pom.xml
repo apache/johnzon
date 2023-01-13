@@ -138,6 +138,7 @@
           <systemProperties>
             <signature.sigTestClasspath>${project.build.outputDirectory}</signature.sigTestClasspath>
           </systemProperties>
+          <argLine>-Duser.language=en -Duser.region=US</argLine>
         </configuration>
       </plugin>
     </plugins>
