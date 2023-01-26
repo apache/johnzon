@@ -74,26 +74,11 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <configuration>
-              <archive>
-                <manifestEntries>
-                  <Automatic-Module-Name>johnzon.mapper</Automatic-Module-Name>
-                </manifestEntries>
-              </archive>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
+            <Automatic-Module-Name>johnzon.mapper</Automatic-Module-Name>
             <Export-Package>{local-packages};-split-package:=error,org.apache.johnzon.mapper.internal</Export-Package>
           </instructions>
         </configuration>
