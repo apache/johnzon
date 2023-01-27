@@ -144,7 +144,7 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
-            <Automatic-Module-Name>johnzon.jsonb</Automatic-Module-Name>
+            <Automatic-Module-Name>org.apache.johnzon.jsonb</Automatic-Module-Name>
             <Import-Package>
               javax.ws.rs.*;resolution:=optional,
               *

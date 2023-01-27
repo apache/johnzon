@@ -45,7 +45,7 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
-            <Automatic-Module-Name>johnzon.jsonlogic</Automatic-Module-Name>
+            <Automatic-Module-Name>org.apache.johnzon.jsonlogic</Automatic-Module-Name>
           </instructions>
         </configuration>
       </plugin>

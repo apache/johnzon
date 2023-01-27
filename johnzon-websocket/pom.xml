@@ -158,7 +158,7 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
-            <Automatic-Module-Name>johnzon.websocket</Automatic-Module-Name>
+            <Automatic-Module-Name>org.apache.johnzon.websocket</Automatic-Module-Name>
           </instructions>
         </configuration>
       </plugin>
