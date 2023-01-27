@@ -304,6 +304,7 @@
         </executions>
         <configuration>
           <encoding>UTF-8</encoding>
+          <excludes>**/module-info*</excludes>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
           <includeTestSourceDirectory>true</includeTestSourceDirectory>
