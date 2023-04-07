@@ -25,6 +25,8 @@ import org.apache.johnzon.mapper.map.LazyConverterMap;
 
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
+import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
+
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -35,7 +37,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import static java.util.Collections.emptyMap;
 import static java.util.stream.Collectors.toList;
@@ -82,11 +83,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
     private final Map<Class<?>, Class<?>> interfaceImplementationMapping;
     private final boolean useBigDecimalForObjectNumbers;
 
-    private final Function<String, Class<?>> typeLoader;
-    private final Function<Class<?>, String> discriminatorMapper;
-    private final Predicate<Class<?>> serializationPredicate;
-    private final Predicate<Class<?>> deserializationPredicate;
-    private final String discriminator;
+    private final PolymorphismHandler polymorphismHandler;
 
     private final Map<Class<?>, ObjectConverter.Writer<?>> objectConverterWriterCache;
     private final Map<Class<?>, ObjectConverter.Reader<?>> objectConverterReaderCache;
@@ -117,18 +114,13 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean useJsRange,
                         final boolean useBigDecimalForObjectNumbers,
                         final boolean supportEnumMapDeserialization,
-                        final Function<String, Class<?>> typeLoader,
-                        final Function<Class<?>, String> discriminatorMapper,
-                        final String discriminator,
-                        final Predicate<Class<?>> deserializationPredicate,
-                        final Predicate<Class<?>> serializationPredicate,
+                        final PolymorphismHandler polymorphismHandler,
                         final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory) {
         //CHECKSTYLE:ON
         this(adapters, objectConverterWriters, objectConverterReaders, version, close, skipNull, skipEmptyArray,
                 treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite, accessMode, encoding,
                 attributeOrder, failOnUnknown, serializeValueFilter, useBigDecimalForFloats, deduplicateObjects, interfaceImplementationMapping,
-                useJsRange, useBigDecimalForObjectNumbers, supportEnumMapDeserialization, typeLoader,
-                discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
+                useJsRange, useBigDecimalForObjectNumbers, supportEnumMapDeserialization, polymorphismHandler, enumConverterFactory,
                 JohnzonCores.snippetFactory(50, Json.createGeneratorFactory(emptyMap())));
     }
 
@@ -151,11 +143,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final boolean useJsRange,
                         final boolean useBigDecimalForObjectNumbers,
                         final boolean supportEnumMapDeserialization,
-                        final Function<String, Class<?>> typeLoader,
-                        final Function<Class<?>, String> discriminatorMapper,
-                        final String discriminator,
-                        final Predicate<Class<?>> deserializationPredicate,
-                        final Predicate<Class<?>> serializationPredicate,
+                        final PolymorphismHandler polymorphismHandler,
                         final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory,
                         final SnippetFactory snippet) {
         //CHECKSTYLE:ON
@@ -173,11 +161,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.useJsRange = useJsRange;
         this.useBigDecimalForObjectNumbers = useBigDecimalForObjectNumbers;
         this.supportEnumMapDeserialization = supportEnumMapDeserialization;
-        this.typeLoader = typeLoader;
-        this.discriminatorMapper = discriminatorMapper;
-        this.serializationPredicate = serializationPredicate;
-        this.deserializationPredicate = deserializationPredicate;
-        this.discriminator = discriminator;
+        this.polymorphismHandler = polymorphismHandler;
         this.enumConverterFactory = enumConverterFactory;
 
         // handle Adapters
@@ -214,24 +198,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         return noGeneratorAdapterTypes;
     }
 
-    public Function<String, Class<?>> getTypeLoader() {
-        return typeLoader;
-    }
-
-    public Function<Class<?>, String> getDiscriminatorMapper() {
-        return discriminatorMapper;
-    }
-
-    public Predicate<Class<?>> getDeserializationPredicate() {
-        return deserializationPredicate;
-    }
-
-    public Predicate<Class<?>> getSerializationPredicate() {
-        return serializationPredicate;
-    }
-
-    public String getDiscriminator() {
-        return discriminator;
+    public PolymorphismHandler getPolymorphismHandler() {
+        return polymorphismHandler;
     }
 
     public boolean isUseBigDecimalForObjectNumbers() {

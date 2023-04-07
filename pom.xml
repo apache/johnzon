@@ -346,10 +346,10 @@
                   <property name="ignorePattern" value="@version|@see" />
                 </module>
                 <module name="MethodLength">
-                  <property name="max" value="250" />
+                  <property name="max" value="255" />
                 </module>
                 <module name="ParameterNumber">
-                  <property name="max" value="11" />
+                  <property name="max" value="13" />
                 </module>
                 <module name="EmptyBlock">
                   <property name="option" value="text" />

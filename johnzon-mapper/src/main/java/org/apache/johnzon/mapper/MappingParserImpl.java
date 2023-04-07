@@ -274,17 +274,13 @@ public class MappingParserImpl implements MappingParser {
             }
         }
 
-        if (config.getDeserializationPredicate() != null && Class.class.isInstance(inType)) {
-            final Class<?> clazz = Class.class.cast(inType);
-            if (config.getDeserializationPredicate().test(clazz) && object.containsKey(config.getDiscriminator())) {
-                final String discriminator = object.getString(config.getDiscriminator());
-                final Class<?> nestedType = config.getTypeLoader().apply(discriminator);
-                if (nestedType != null && nestedType != inType) {
-                    return buildObject(nestedType, object, applyObjectConverter, jsonPointer, skippedConverters);
-                }
+        final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
+        if (classMapping != null && classMapping.polymorphicDeserializedTypeResolver != null && inType instanceof Class) {
+            Class<?> nestedType = classMapping.polymorphicDeserializedTypeResolver.apply(object, (Class<?>) inType);
+            if (nestedType != null && nestedType != inType) {
+                return buildObject(nestedType, object, applyObjectConverter, jsonPointer, skippedConverters);
             }
         }
-        final Mappings.ClassMapping classMapping = mappings.findOrCreateClassMapping(type);
 
         if (classMapping == null) {
             if (ParameterizedType.class.isInstance(type)) {

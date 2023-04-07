@@ -48,6 +48,9 @@ import jakarta.json.JsonReaderFactory;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
+import org.apache.johnzon.mapper.polymorphism.JohnzonMapperPolymorphismHandler;
+import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
+
 import java.io.Closeable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -114,6 +117,8 @@ public class MapperBuilder {
     private Predicate<Class<?>> deserializationPredicate;
     private Predicate<Class<?>> serializationPredicate;
     private String discriminator;
+
+    private PolymorphismHandler polymorphismHandler;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -224,6 +229,11 @@ public class MapperBuilder {
             adapters.put(new AdapterKey(boolean.class, String.class), adapters.get(new AdapterKey(Boolean.class, String.class)));
         }
 
+        if (polymorphismHandler == null) {
+            polymorphismHandler = new JohnzonMapperPolymorphismHandler(
+                    typeLoader, discriminatorMapper, serializationPredicate, deserializationPredicate, discriminator);
+        }
+
         return new Mapper(
                 readerFactory, generatorFactory, builderFactory, provider,
                 new MapperConfig(
@@ -234,10 +244,7 @@ public class MapperBuilder {
                         accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
-                        supportEnumContainerDeserialization,
-                        typeLoader, discriminatorMapper, discriminator,
-                        deserializationPredicate, serializationPredicate,
-                        enumConverterFactory,
+                        supportEnumContainerDeserialization, polymorphismHandler, enumConverterFactory,
                         JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory)),
                 closeables);
     }
@@ -562,6 +569,11 @@ public class MapperBuilder {
 
     public MapperBuilder setSkipAccessModeWrapper(final boolean skipAccessModeWrapper) {
         this.skipAccessModeWrapper = skipAccessModeWrapper;
+        return this;
+    }
+
+    public MapperBuilder setPolymorphismHandler(final PolymorphismHandler polymorphismHandler) {
+        this.polymorphismHandler = polymorphismHandler;
         return this;
     }
 }

@@ -170,7 +170,7 @@ public class MapperConfigTest {
                                 StandardCharsets.UTF_8,
                                 null,
                                 false, null, false, false, emptyMap(), true, false, true,
-                                null, null, null, null, null,
+                                null,
                                 type -> new EnumConverter(type));
     }
 

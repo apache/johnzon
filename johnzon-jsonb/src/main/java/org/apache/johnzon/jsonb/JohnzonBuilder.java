@@ -51,6 +51,8 @@ import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonParserFactory;
+import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
+
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
@@ -130,9 +132,15 @@ public class JohnzonBuilder implements JsonbBuilder {
             builder.setPretty(true);
         }
 
+        builder.setPolymorphismHandler(config.getProperty("johnzon.polymorphismHandler")
+                .map(object -> toType(object, PolymorphismHandler.class))
+                .orElseGet(JsonbPolymorphismHandler::new));
+
         config.getProperty(PolymorphicConfig.class.getName())
                 .map(PolymorphicConfig.class::cast)
                 .ifPresent(pc -> {
+                    builder.setPolymorphismHandler(null); // reset polymorphism handler, enables johnzon-mapper native polymorphism handling
+
                     builder.setPolymorphicDiscriminator(pc.getDiscriminator());
                     builder.setPolymorphicDeserializationPredicate(pc.getDeserializationPredicate());
                     builder.setPolymorphicSerializationPredicate(pc.getSerializationPredicate());
@@ -205,14 +213,14 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .ifPresent(builder::setSkipAccessModeWrapper);
 
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
-                .map(this::toAccessMode)
+                .map(object -> toType(object, AccessMode.class))
                 .orElseGet(() -> new JsonbAccessMode(
                         propertyNamingStrategy, orderValue, visibilityStrategy,
                         !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
                         builder.getAdapters(),
                         factory, jsonp, builderFactorySupplier, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
-                                .map(this::toAccessMode)
+                                .map(object -> toType(object, AccessMode.class))
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, false, true)),
                         // this changes in v3 of the spec so let's use this behavior which makes everyone happy by default
                         config.getProperty("johnzon.failOnMissingCreatorValues")
@@ -361,10 +369,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         return !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v);
     }
 
-    private AccessMode toAccessMode(final Object s) {
+    private <T> T toType(final Object s, Class<T> type) {
         if (String.class.isInstance(s)) {
             try {
-                return AccessMode.class.cast(
+                return type.cast(
                         Thread.currentThread().getContextClassLoader().loadClass(s.toString()).getConstructor().newInstance());
             } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
                 throw new IllegalArgumentException(e);
@@ -372,7 +380,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 throw new IllegalArgumentException(e.getCause());
             }
         }
-        return AccessMode.class.cast(s);
+        return type.cast(s);
     }
 
     private Supplier<JsonParserFactory> createJsonParserFactory() {
