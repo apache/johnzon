@@ -20,6 +20,7 @@ package org.apache.johnzon.mapper.polymorphism;
 
 import jakarta.json.JsonObject;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -52,7 +53,7 @@ public class JohnzonMapperPolymorphismHandler implements PolymorphismHandler {
     }
 
     @Override
-    public List<Map.Entry<String, String>> getPolymorphismPropertiesToSerialize(Class<?> clazz) {
+    public List<Map.Entry<String, String>> getPolymorphismPropertiesToSerialize(Class<?> clazz, Collection<String> otherProperties) {
         if (serializationPredicate == null || !serializationPredicate.test(clazz)) {
             return null;
         }

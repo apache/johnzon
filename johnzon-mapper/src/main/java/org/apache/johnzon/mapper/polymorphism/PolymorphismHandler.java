@@ -20,13 +20,14 @@ package org.apache.johnzon.mapper.polymorphism;
 
 import jakarta.json.JsonObject;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 public interface PolymorphismHandler {
     boolean hasPolymorphism(Class<?> clazz);
 
-    List<Map.Entry<String, String>> getPolymorphismPropertiesToSerialize(Class<?> clazz);
+    List<Map.Entry<String, String>> getPolymorphismPropertiesToSerialize(Class<?> clazz, Collection<String> otherProperties);
 
     Class<?> getTypeToDeserialize(JsonObject jsonObject, Class<?> clazz);
 }

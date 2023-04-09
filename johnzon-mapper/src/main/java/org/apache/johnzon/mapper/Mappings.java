@@ -532,8 +532,10 @@ public class Mappings {
                     accessMode.findAnySetter(clazz),
                     anyField,
                     Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null,
-                    polymorphismHandler != null && polymorphismHandler.hasPolymorphism(clazz) ? polymorphismHandler.getPolymorphismPropertiesToSerialize(clazz) : null,
-                    polymorphismHandler != null && polymorphismHandler.hasPolymorphism(clazz) ? polymorphismHandler::getTypeToDeserialize : null);
+                    polymorphismHandler != null && polymorphismHandler.hasPolymorphism(clazz)
+                            ? polymorphismHandler.getPolymorphismPropertiesToSerialize(clazz, getters.keySet()) : null,
+                    polymorphismHandler != null && polymorphismHandler.hasPolymorphism(clazz)
+                            ? polymorphismHandler::getTypeToDeserialize : null);
 
             accessMode.afterParsed(clazz);
 
