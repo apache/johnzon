@@ -50,6 +50,23 @@ public class JsonbPolymorphismTest {
     }
 
     @Test
+    public void testSubtypeSelfSerialization() {
+        Dog dog = new Dog();
+        dog.dogAge = 3;
+
+        assertEquals("{\"@animal\":\"dog\",\"@dog\":\"other\",\"dogAge\":3}",
+                jsonb.toJson(dog));
+    }
+
+    @Test
+    public void testSubtypeSelfDeserialization() {
+        Animal deserialized = jsonb.fromJson("{\"@animal\":\"dog\",\"@dog\":\"other\",\"dogAge\":3}", Animal.class);
+
+        assertTrue(deserialized instanceof Dog);
+        assertEquals(3, ((Dog) deserialized).dogAge);
+    }
+
+    @Test
     public void testNoTypeInformationInJson() {
         Dog dog = jsonb.fromJson("{\"dogAge\":3}", Dog.class);
 
@@ -60,7 +77,10 @@ public class JsonbPolymorphismTest {
     public interface Animal {
     }
 
-    @JsonbTypeInfo(key = "@dog", value = @JsonbSubtype(alias = "labrador", type = Labrador.class))
+    @JsonbTypeInfo(key = "@dog", value = {
+            @JsonbSubtype(alias = "other", type = Dog.class),
+            @JsonbSubtype(alias = "labrador", type = Labrador.class)
+    })
     public static class Dog implements Animal {
         public int dogAge;
     }

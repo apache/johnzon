@@ -57,10 +57,19 @@ public class JsonbPolymorphismHandler implements PolymorphismHandler {
                     throw new JsonbException("JsonbTypeInfo key '" + typeInfo.key() + "' found more than once in type hierarchy of " + clazz.getName());
                 }
 
+                String bestMatchingAlias = null;
                 for (JsonbSubtype subtype : typeInfo.value()) {
                     if (subtype.type().isAssignableFrom(clazz)) {
-                        entries.add(0, Map.entry(typeInfo.key(), subtype.alias()));
+                        bestMatchingAlias = subtype.alias();
+
+                        if (clazz == subtype.type()) { // Exact match found, no need to continue further
+                            break;
+                        }
                     }
+                }
+
+                if (bestMatchingAlias != null) {
+                    entries.add(0, Map.entry(typeInfo.key(), bestMatchingAlias));
                 }
             }
 
@@ -125,7 +134,7 @@ public class JsonbPolymorphismHandler implements PolymorphismHandler {
 
         JsonbTypeInfo typeInfo = classToValidate.getAnnotation(JsonbTypeInfo.class);
         for (JsonbSubtype subtype : typeInfo.value()) {
-            if (classToValidate == subtype.type() || !classToValidate.isAssignableFrom(subtype.type())) {
+            if (!classToValidate.isAssignableFrom(subtype.type())) {
                 throw new JsonbException("JsonbSubtype '" + subtype.alias() + "'" +
                         " (" + subtype.type().getName() + ") is not a subclass of " + classToValidate);
             }
