@@ -64,7 +64,6 @@
     <module>johnzon-maven-plugin</module>
     <module>johnzon-websocket</module>
     <module>johnzon-jsonb</module>
-    <module>johnzon-json-extras</module>
     <module>johnzon-jsonschema</module>
     <module>johnzon-osgi</module>
     <module>johnzon-jsonlogic</module>
