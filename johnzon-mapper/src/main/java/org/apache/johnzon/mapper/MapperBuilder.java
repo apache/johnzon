@@ -572,6 +572,17 @@ public class MapperBuilder {
         return this;
     }
 
+    /**
+     * Use your own implementation of {@link PolymorphismHandler}, this overrides anything set using these methods:
+     * <ul>
+     *     <li>{@link MapperBuilder#setPolymorphicSerializationPredicate}</li>
+     *     <li>{@link MapperBuilder#setPolymorphicDiscriminatorMapper}</li>
+     *     <li>{@link MapperBuilder#setPolymorphicTypeLoader}</li>
+     *     <li>{@link MapperBuilder#setPolymorphicDiscriminator}</li>
+     * </ul>
+     * <p>
+     * Needed for more complex implementations of polymorphism that use multiple properties in JSON to identify types (e.g. JSON-B 3)
+     */
     public MapperBuilder setPolymorphismHandler(final PolymorphismHandler polymorphismHandler) {
         this.polymorphismHandler = polymorphismHandler;
         return this;
