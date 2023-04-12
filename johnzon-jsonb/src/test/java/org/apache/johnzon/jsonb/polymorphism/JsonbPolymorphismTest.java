@@ -18,10 +18,10 @@
  */
 package org.apache.johnzon.jsonb.polymorphism;
 
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
+import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.junit.Rule;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -29,7 +29,7 @@ import static org.junit.Assert.assertTrue;
 
 public class JsonbPolymorphismTest {
 
-    private Jsonb jsonb = JsonbBuilder.create();
+    @Rule public JsonbRule jsonb = new JsonbRule();
 
     @Test
     public void testSerialization() {
