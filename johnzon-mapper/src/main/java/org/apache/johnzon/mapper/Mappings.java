@@ -83,7 +83,7 @@ public class Mappings {
 
         public boolean deduplicateObjects;
 
-        protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
+        public ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
                                final Adapter<?, ?> adapter,
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,

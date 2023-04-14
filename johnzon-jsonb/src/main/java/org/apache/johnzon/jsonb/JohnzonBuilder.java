@@ -18,26 +18,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import org.apache.johnzon.jsonb.adapter.JsonbEnumAdapter;
-import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
-import org.apache.johnzon.jsonb.cdi.CDIs;
-import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
-import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
-import org.apache.johnzon.jsonb.reflect.Types;
-import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
-import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
-import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
-import org.apache.johnzon.mapper.Converter;
-import org.apache.johnzon.mapper.Mapper;
-import org.apache.johnzon.mapper.MapperBuilder;
-import org.apache.johnzon.mapper.MapperConfig;
-import org.apache.johnzon.mapper.ObjectConverter;
-import org.apache.johnzon.mapper.SerializeValueFilter;
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
-import org.apache.johnzon.mapper.converter.LocaleConverter;
-import org.apache.johnzon.mapper.internal.AdapterKey;
-
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -51,22 +31,47 @@ import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonParserFactory;
+import org.apache.johnzon.jsonb.adapter.JsonbEnumAdapter;
+import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
+import org.apache.johnzon.jsonb.cdi.CDIs;
+import org.apache.johnzon.jsonb.converter.JohnzonJsonbAdapter;
+import org.apache.johnzon.jsonb.factory.SimpleJohnzonAdapterFactory;
+import org.apache.johnzon.jsonb.reflect.Types;
+import org.apache.johnzon.jsonb.serializer.JohnzonDeserializationContext;
+import org.apache.johnzon.jsonb.serializer.JohnzonSerializationContext;
+import org.apache.johnzon.jsonb.spi.JohnzonAdapterFactory;
+import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.Mapper;
+import org.apache.johnzon.mapper.MapperBuilder;
+import org.apache.johnzon.mapper.MapperConfig;
+import org.apache.johnzon.mapper.Mappings;
+import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.SerializeValueFilter;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
+import org.apache.johnzon.mapper.converter.LocaleConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
 
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Base64;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import static jakarta.json.bind.config.PropertyNamingStrategy.IDENTITY;
+import static jakarta.json.bind.config.PropertyOrderStrategy.ANY;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
-import static jakarta.json.bind.config.PropertyNamingStrategy.IDENTITY;
-import static jakarta.json.bind.config.PropertyOrderStrategy.ANY;
 
 public class JohnzonBuilder implements JsonbBuilder {
     private static final Object NO_BM = new Object();
@@ -337,6 +342,11 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (Closeable.class.isInstance(accessMode)) {
             builder.addCloseable(Closeable.class.cast(accessMode));
         }
+
+        config.getProperty("johnzon.mappings").ifPresentOrElse(
+                it -> builder.setMappingsClass((Class<? extends Mappings>) it),
+                () -> builder.setMappingsClass(JsonbMappings.class));
+
         return doCreateJsonb(skipCdi, ijson, builder.build());
     }
 
