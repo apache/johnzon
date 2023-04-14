@@ -18,17 +18,17 @@
  */
 package org.apache.johnzon.mapper;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static java.util.Locale.ROOT;
-
-// import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
-import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.access.KnownNotOpenedJavaTypesAccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.BooleanConverter;
 import org.apache.johnzon.mapper.converter.ByteConverter;
 import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
@@ -43,27 +43,19 @@ import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.map.LazyConverterMap;
 
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonReaderFactory;
-import jakarta.json.spi.JsonProvider;
-import jakarta.json.stream.JsonGenerator;
-import jakarta.json.stream.JsonGeneratorFactory;
-import org.apache.johnzon.mapper.polymorphism.JohnzonMapperPolymorphismHandler;
-import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
-
 import java.io.Closeable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static java.util.Locale.ROOT;
 
 // this class is responsible to hold any needed config
 // to build the runtime
@@ -117,8 +109,6 @@ public class MapperBuilder {
     private Predicate<Class<?>> deserializationPredicate;
     private Predicate<Class<?>> serializationPredicate;
     private String discriminator;
-
-    private PolymorphismHandler polymorphismHandler;
 
     public Mapper build() {
         if (readerFactory == null || generatorFactory == null) {
@@ -229,11 +219,6 @@ public class MapperBuilder {
             adapters.put(new AdapterKey(boolean.class, String.class), adapters.get(new AdapterKey(Boolean.class, String.class)));
         }
 
-        if (polymorphismHandler == null) {
-            polymorphismHandler = new JohnzonMapperPolymorphismHandler(
-                    typeLoader, discriminatorMapper, serializationPredicate, deserializationPredicate, discriminator);
-        }
-
         return new Mapper(
                 readerFactory, generatorFactory, builderFactory, provider,
                 new MapperConfig(
@@ -244,7 +229,7 @@ public class MapperBuilder {
                         accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
-                        supportEnumContainerDeserialization, polymorphismHandler, enumConverterFactory,
+                        supportEnumContainerDeserialization, typeLoader, discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate , enumConverterFactory,
                         JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory)),
                 closeables);
     }
@@ -569,22 +554,6 @@ public class MapperBuilder {
 
     public MapperBuilder setSkipAccessModeWrapper(final boolean skipAccessModeWrapper) {
         this.skipAccessModeWrapper = skipAccessModeWrapper;
-        return this;
-    }
-
-    /**
-     * Use your own implementation of {@link PolymorphismHandler}, this overrides anything set using these methods:
-     * <ul>
-     *     <li>{@link MapperBuilder#setPolymorphicSerializationPredicate}</li>
-     *     <li>{@link MapperBuilder#setPolymorphicDiscriminatorMapper}</li>
-     *     <li>{@link MapperBuilder#setPolymorphicTypeLoader}</li>
-     *     <li>{@link MapperBuilder#setPolymorphicDiscriminator}</li>
-     * </ul>
-     * <p>
-     * Needed for more complex implementations of polymorphism that use multiple properties in JSON to identify types (e.g. JSON-B 3)
-     */
-    public MapperBuilder setPolymorphismHandler(final PolymorphismHandler polymorphismHandler) {
-        this.polymorphismHandler = polymorphismHandler;
         return this;
     }
 }

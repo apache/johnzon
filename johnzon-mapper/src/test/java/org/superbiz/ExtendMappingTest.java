@@ -63,6 +63,7 @@ public class ExtendMappingTest {
                     new FieldAccessMode(false, false),
                     StandardCharsets.UTF_8, String::compareTo, false, null, false, false,
                     emptyMap(), true, false, true, null,
+                    null, null, null, null,
                     type -> new EnumConverter(type)));
         }
 

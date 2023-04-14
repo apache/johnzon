@@ -24,7 +24,6 @@ import jakarta.json.JsonValue;
 import jakarta.json.bind.JsonbException;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
-import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,13 +31,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-public class JsonbPolymorphismHandler implements PolymorphismHandler {
-    @Override
+public class JsonbPolymorphismHandler {
     public boolean hasPolymorphism(Class<?> clazz) {
         return clazz.isAnnotationPresent(JsonbTypeInfo.class) || !getParentClassesWithTypeInfo(clazz).isEmpty();
     }
 
-    @Override
     public List<Map.Entry<String, String>> getPolymorphismPropertiesToSerialize(Class<?> clazz, Collection<String> otherProperties) {
         List<Map.Entry<String, String>> entries = new ArrayList<>();
 
@@ -80,7 +77,6 @@ public class JsonbPolymorphismHandler implements PolymorphismHandler {
         return entries;
     }
 
-    @Override
     public Class<?> getTypeToDeserialize(JsonObject jsonObject, Class<?> clazz) {
         validateJsonbTypeInfo(clazz);
         validateOnlyOneParentWithTypeInfo(clazz);

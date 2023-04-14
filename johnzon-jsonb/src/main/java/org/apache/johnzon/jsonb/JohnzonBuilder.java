@@ -51,7 +51,6 @@ import jakarta.json.bind.serializer.JsonbSerializer;
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonParserFactory;
-import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
 
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
@@ -132,15 +131,9 @@ public class JohnzonBuilder implements JsonbBuilder {
             builder.setPretty(true);
         }
 
-        builder.setPolymorphismHandler(config.getProperty("johnzon.polymorphismHandler")
-                .map(object -> toType(object, PolymorphismHandler.class))
-                .orElseGet(JsonbPolymorphismHandler::new));
-
         config.getProperty(PolymorphicConfig.class.getName())
                 .map(PolymorphicConfig.class::cast)
                 .ifPresent(pc -> {
-                    builder.setPolymorphismHandler(null); // reset polymorphism handler, enables johnzon-mapper native polymorphism handling
-
                     builder.setPolymorphicDiscriminator(pc.getDiscriminator());
                     builder.setPolymorphicDeserializationPredicate(pc.getDeserializationPredicate());
                     builder.setPolymorphicSerializationPredicate(pc.getSerializationPredicate());

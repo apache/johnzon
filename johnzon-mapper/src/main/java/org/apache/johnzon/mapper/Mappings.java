@@ -18,10 +18,15 @@
  */
 package org.apache.johnzon.mapper;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static org.apache.johnzon.mapper.reflection.Converters.matches;
-import static org.apache.johnzon.mapper.reflection.Generics.resolve;
+import jakarta.json.JsonObject;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.reflection.Generics;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
@@ -54,16 +59,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 
-import jakarta.json.JsonObject;
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.access.FieldAccessMode;
-import org.apache.johnzon.mapper.access.MethodAccessMode;
-import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
-import org.apache.johnzon.mapper.internal.AdapterKey;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
-import org.apache.johnzon.mapper.polymorphism.PolymorphismHandler;
-import org.apache.johnzon.mapper.reflection.Generics;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 public class Mappings {
     public static class ClassMapping {
@@ -112,7 +111,7 @@ public class Mappings {
 
         private Boolean isDeduplicateObjects() {
             final JohnzonDeduplicateObjects jdo = clazz.getAnnotation(JohnzonDeduplicateObjects.class);
-            if (jdo != null){
+            if (jdo != null) {
                 return jdo.value();
             }
             return false;
@@ -518,7 +517,6 @@ public class Mappings {
 
             final Method anyGetter = accessMode.findAnyGetter(clazz);
             final Field anyField = accessMode.findAnyField(clazz);
-            final PolymorphismHandler polymorphismHandler = config.getPolymorphismHandler();
             final ClassMapping mapping = new ClassMapping(
                     clazz, accessMode.findFactory(clazz), getters, setters,
                     accessMode.findAdapter(clazz),
@@ -526,16 +524,16 @@ public class Mappings {
                     accessMode.findWriter(clazz),
                     anyGetter != null ? new Getter(
                             new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                            false,false, false, false, true, null, null, -1, null) :
+                            false, false, false, false, true, null, null, -1, null) :
                             (anyField != null ? new Getter(new FieldAccessMode.FieldReader(anyField, anyField.getGenericType()),
-                            false,false, false, false, true, null, null, -1, null) : null),
+                                    false, false, false, false, true, null, null, -1, null) : null),
                     accessMode.findAnySetter(clazz),
                     anyField,
                     Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null,
-                    polymorphismHandler != null && polymorphismHandler.hasPolymorphism(clazz)
-                            ? polymorphismHandler.getPolymorphismPropertiesToSerialize(clazz, getters.keySet()) : null,
-                    polymorphismHandler != null && polymorphismHandler.hasPolymorphism(clazz)
-                            ? polymorphismHandler::getTypeToDeserialize : null);
+                    config.getSerializationPredicate() != null && config.getSerializationPredicate().test(clazz)
+                            ? List.of(Map.entry(config.getDiscriminator(), config.getDiscriminatorMapper().apply(clazz))) : null,
+                    config.getDeserializationPredicate() != null && config.getDeserializationPredicate().test(clazz)
+                            ? (jsonObject, type) -> config.getTypeLoader().apply(jsonObject.getString(config.getDiscriminator())) : null);
 
             accessMode.afterParsed(clazz);
 
