@@ -18,10 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.internal.JsonPointerTracker;
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.util.ArrayUtil;
-
 import jakarta.json.JsonArray;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -34,6 +30,10 @@ import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
 import jakarta.json.stream.JsonParser;
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.util.ArrayUtil;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,6 +43,7 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -74,9 +75,18 @@ public class Mapper implements Closeable {
         this.builderFactory = builderFactory;
         this.provider = provider;
         this.config = config;
-        this.mappings = new Mappings(config);
         this.closeables = closeables;
         this.charset = config.getEncoding();
+
+        if (this.config.getMappingsClass() == null) {
+            this.mappings = new Mappings(config);
+        } else {
+            try {
+                this.mappings = this.config.getMappingsClass().getConstructor(MapperConfig.class).newInstance(config);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new MapperException("Can't instantiate Mappings!", e);
+            }
+        }
     }
 
     public <T> void writeArray(final Object object, final OutputStream stream) {

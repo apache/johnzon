@@ -78,10 +78,10 @@ public class Mappings {
         public final Field anyField;
         public final Method mapAdder;
         public final Class<?> mapAdderType;
-        public boolean deduplicateObjects;
+        public final List<Map.Entry<String, String>> serializedPolymorphicProperties;
+        public final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver;
 
-        public List<Map.Entry<String, String>> serializedPolymorphicProperties;
-        public BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver;
+        public boolean deduplicateObjects;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
@@ -89,8 +89,8 @@ public class Mappings {
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
                                final Getter anyGetter, final Method anySetter, final Field anyField,
                                final Method mapAdder,
-                               List<Map.Entry<String, String>> serializedPolymorphicProperties,
-                               BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver) {
+                               final List<Map.Entry<String, String>> serializedPolymorphicProperties,
+                               final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver) {
             this.clazz = clazz;
             this.factory = factory;
             this.getters = getters;
@@ -103,10 +103,9 @@ public class Mappings {
             this.anyField = anyField;
             this.mapAdder = mapAdder;
             this.mapAdderType = mapAdder == null ? null : mapAdder.getParameterTypes()[1];
-            this.deduplicateObjects = isDeduplicateObjects();
-
             this.serializedPolymorphicProperties = serializedPolymorphicProperties;
             this.polymorphicDeserializedTypeResolver = polymorphicDeserializedTypeResolver;
+            this.deduplicateObjects = isDeduplicateObjects();
         }
 
         private Boolean isDeduplicateObjects() {

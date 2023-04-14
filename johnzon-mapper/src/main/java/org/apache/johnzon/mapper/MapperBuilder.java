@@ -103,6 +103,8 @@ public class MapperBuilder {
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
     private boolean skipAccessModeWrapper;
 
+    private Class<? extends Mappings> mappingsClass;
+
     // @experimental polymorphic api
     private Function<String, Class<?>> typeLoader;
     private Function<Class<?>, String> discriminatorMapper;
@@ -229,8 +231,8 @@ public class MapperBuilder {
                         accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
-                        supportEnumContainerDeserialization, typeLoader, discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate , enumConverterFactory,
-                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory)),
+                        supportEnumContainerDeserialization, typeLoader, discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
+                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory), mappingsClass),
                 closeables);
     }
 
@@ -554,6 +556,11 @@ public class MapperBuilder {
 
     public MapperBuilder setSkipAccessModeWrapper(final boolean skipAccessModeWrapper) {
         this.skipAccessModeWrapper = skipAccessModeWrapper;
+        return this;
+    }
+
+    public MapperBuilder setMappingsClass(Class<? extends Mappings> mappingsClass) {
+        this.mappingsClass = mappingsClass;
         return this;
     }
 }

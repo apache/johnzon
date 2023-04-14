@@ -64,7 +64,7 @@ public class ExtendMappingTest {
                     StandardCharsets.UTF_8, String::compareTo, false, null, false, false,
                     emptyMap(), true, false, true, null,
                     null, null, null, null,
-                    type -> new EnumConverter(type)));
+                    type -> new EnumConverter(type), null));
         }
 
         @Override
