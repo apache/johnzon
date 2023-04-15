@@ -78,6 +78,15 @@ public final class Meta {
         return null;
     }
 
+    public static <T extends Annotation> T getDirectAnnotation(final Class<?> clazz, final Class<T> api) {
+        final T annotation = clazz.getAnnotation(api);
+        if (annotation != null) {
+            return annotation;
+        }
+
+        return findMeta(clazz.getAnnotations(), api);
+    }
+
     public static <T extends Annotation> T getAnnotation(final Class<?> clazz, final Class<T> api) {
         Class<?> current = clazz;
         final Set<Class<?>> visited = new HashSet<>();
@@ -85,14 +94,12 @@ public final class Meta {
             if (!visited.add(current)) {
                 return null;
             }
-            final T annotation = current.getAnnotation(api);
+
+            final T annotation = getDirectAnnotation(current, api);
             if (annotation != null) {
                 return annotation;
             }
-            final T meta = findMeta(clazz.getAnnotations(), api);
-            if (meta != null) {
-                return meta;
-            }
+
             current = current.getSuperclass();
         }
         return null;

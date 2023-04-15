@@ -24,8 +24,10 @@ import jakarta.json.JsonValue;
 import jakarta.json.bind.JsonbException;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
+import org.apache.johnzon.mapper.access.Meta;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +46,7 @@ public class JsonbPolymorphismHandler {
             validateJsonbTypeInfo(current);
             validateOnlyOneParentWithTypeInfo(current);
 
-            JsonbTypeInfo typeInfo = current.getAnnotation(JsonbTypeInfo.class);
+            JsonbTypeInfo typeInfo = Meta.getDirectAnnotation(current, JsonbTypeInfo.class);
             if (typeInfo != null) {
                 if (otherProperties.contains(typeInfo.key())) {
                     throw new JsonbException("JsonbTypeInfo key '" + typeInfo.key() + "' collides with other properties in json");
@@ -81,7 +83,7 @@ public class JsonbPolymorphismHandler {
         validateJsonbTypeInfo(clazz);
         validateOnlyOneParentWithTypeInfo(clazz);
 
-        JsonbTypeInfo typeInfo = clazz.getAnnotation(JsonbTypeInfo.class);
+        JsonbTypeInfo typeInfo = Meta.getDirectAnnotation(clazz, JsonbTypeInfo.class);
         if (typeInfo == null || !jsonObject.containsKey(typeInfo.key())) {
             return clazz;
         }
@@ -128,7 +130,7 @@ public class JsonbPolymorphismHandler {
             return;
         }
 
-        JsonbTypeInfo typeInfo = classToValidate.getAnnotation(JsonbTypeInfo.class);
+        JsonbTypeInfo typeInfo = Meta.getDirectAnnotation(classToValidate, JsonbTypeInfo.class);
         for (JsonbSubtype subtype : typeInfo.value()) {
             if (!classToValidate.isAssignableFrom(subtype.type())) {
                 throw new JsonbException("JsonbSubtype '" + subtype.alias() + "'" +
@@ -144,17 +146,10 @@ public class JsonbPolymorphismHandler {
      */
     private List<Class<?>> getParentClassesWithTypeInfo(Class<?> clazz) {
         List<Class<?>> result = new ArrayList<>();
+        result.add(clazz.getSuperclass());
+        result.addAll(Arrays.asList(clazz.getInterfaces()));
 
-        if (clazz.getSuperclass() != null && clazz.getSuperclass().isAnnotationPresent(JsonbTypeInfo.class)) {
-            result.add(clazz.getSuperclass());
-        }
-
-        for (Class<?> iface : clazz.getInterfaces()) {
-            if (iface.isAnnotationPresent(JsonbTypeInfo.class)) {
-                result.add(iface);
-            }
-        }
-
+        result.removeIf(it -> it == null || Meta.getDirectAnnotation(it, JsonbTypeInfo.class) == null);
         return result;
     }
 }
