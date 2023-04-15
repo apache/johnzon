@@ -98,7 +98,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     private final SnippetFactory snippet;
 
-    private final Class<? extends Mappings> mappingsClass;
+    private final Function<MapperConfig, Mappings> mappingsFactory;
 
     //CHECKSTYLE:OFF
     @Deprecated
@@ -125,14 +125,14 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final Predicate<Class<?>> deserializationPredicate,
                         final Predicate<Class<?>> serializationPredicate,
                         final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory,
-                        final Class<? extends Mappings> mappingsClass) {
+                        final Function<MapperConfig, Mappings> mappingsFactory) {
         //CHECKSTYLE:ON
         this(adapters, objectConverterWriters, objectConverterReaders, version, close, skipNull, skipEmptyArray,
                 treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite, accessMode, encoding,
                 attributeOrder, failOnUnknown, serializeValueFilter, useBigDecimalForFloats, deduplicateObjects, interfaceImplementationMapping,
                 useJsRange, useBigDecimalForObjectNumbers, supportEnumMapDeserialization, typeLoader,
                 discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
-                JohnzonCores.snippetFactory(50, Json.createGeneratorFactory(emptyMap())), mappingsClass);
+                JohnzonCores.snippetFactory(50, Json.createGeneratorFactory(emptyMap())), mappingsFactory);
     }
 
     //disable checkstyle for 10+ parameters
@@ -161,7 +161,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final Predicate<Class<?>> serializationPredicate,
                         final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory,
                         final SnippetFactory snippet,
-                        final Class<? extends Mappings> mappingsClass) {
+                        final Function<MapperConfig, Mappings> mappingsFactory) {
         //CHECKSTYLE:ON
         this.objectConverterWriters = objectConverterWriters;
         this.objectConverterReaders = objectConverterReaders;
@@ -201,7 +201,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         this.deduplicateObjects = deduplicateObjects;
         this.snippet = snippet;
 
-        this.mappingsClass = mappingsClass;
+        this.mappingsFactory = mappingsFactory;
     }
 
     public SnippetFactory getSnippet() {
@@ -470,8 +470,8 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
         return supportEnumMapDeserialization;
     }
 
-    public Class<? extends Mappings> getMappingsClass() {
-        return mappingsClass;
+    public Function<MapperConfig, Mappings> getMappingsFactory() {
+        return mappingsFactory;
     }
 
     public interface CustomEnumConverter<A> extends Converter<A>, Converter.TypeAccess {

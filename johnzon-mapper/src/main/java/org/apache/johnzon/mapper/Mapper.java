@@ -43,7 +43,6 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -75,18 +74,9 @@ public class Mapper implements Closeable {
         this.builderFactory = builderFactory;
         this.provider = provider;
         this.config = config;
+        this.mappings = this.config.getMappingsFactory() != null ? this.config.getMappingsFactory().apply(config) : new Mappings(config);
         this.closeables = closeables;
         this.charset = config.getEncoding();
-
-        if (this.config.getMappingsClass() == null) {
-            this.mappings = new Mappings(config);
-        } else {
-            try {
-                this.mappings = this.config.getMappingsClass().getConstructor(MapperConfig.class).newInstance(config);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-                throw new MapperException("Can't instantiate Mappings!", e);
-            }
-        }
     }
 
     public <T> void writeArray(final Object object, final OutputStream stream) {

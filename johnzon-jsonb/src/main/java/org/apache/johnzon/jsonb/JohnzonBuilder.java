@@ -64,6 +64,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -343,9 +344,9 @@ public class JohnzonBuilder implements JsonbBuilder {
             builder.addCloseable(Closeable.class.cast(accessMode));
         }
 
-        config.getProperty("johnzon.mappings").ifPresentOrElse(
-                it -> builder.setMappingsClass((Class<? extends Mappings>) it),
-                () -> builder.setMappingsClass(JsonbMappings.class));
+        builder.setMappingsFactory(config.getProperty("johnzon.mappings-factory")
+                .map(it -> (Function<MapperConfig, Mappings>) it)
+                .orElse(JsonbMappings::new));
 
         return doCreateJsonb(skipCdi, ijson, builder.build());
     }

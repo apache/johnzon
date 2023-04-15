@@ -48,7 +48,11 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -102,8 +106,7 @@ public class MapperBuilder {
     private boolean supportEnumContainerDeserialization = true;
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
     private boolean skipAccessModeWrapper;
-
-    private Class<? extends Mappings> mappingsClass;
+    private Function<MapperConfig, Mappings> mappingsFactory;
 
     // @experimental polymorphic api
     private Function<String, Class<?>> typeLoader;
@@ -232,7 +235,7 @@ public class MapperBuilder {
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
                         supportEnumContainerDeserialization, typeLoader, discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
-                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory), mappingsClass),
+                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory), mappingsFactory),
                 closeables);
     }
 
@@ -559,8 +562,8 @@ public class MapperBuilder {
         return this;
     }
 
-    public MapperBuilder setMappingsClass(Class<? extends Mappings> mappingsClass) {
-        this.mappingsClass = mappingsClass;
+    public MapperBuilder setMappingsFactory(Function<MapperConfig, Mappings> mappingsFactory) {
+        this.mappingsFactory = mappingsFactory;
         return this;
     }
 }
