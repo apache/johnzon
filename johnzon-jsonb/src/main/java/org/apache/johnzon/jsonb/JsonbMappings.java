@@ -18,11 +18,19 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.MapperConfig;
 import org.apache.johnzon.mapper.Mappings;
+import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.access.AccessMode;
 
+import jakarta.json.JsonObject;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 
 public class JsonbMappings extends Mappings {
     private final JsonbPolymorphismHandler polymorphismHandler;
@@ -34,8 +42,8 @@ public class JsonbMappings extends Mappings {
     }
 
     @Override
-    protected ClassMapping createClassMapping(Class<?> inClazz, Map<Type, Type> resolvedTypes) {
-        ClassMapping original = super.createClassMapping(inClazz, resolvedTypes);
+    protected Mappings.ClassMapping createClassMapping(Class<?> inClazz, Map<Type, Type> resolvedTypes) {
+        Mappings.ClassMapping original = super.createClassMapping(inClazz, resolvedTypes);
         if (!polymorphismHandler.hasPolymorphism(inClazz) || original.polymorphicDeserializedTypeResolver != null || original.serializedPolymorphicProperties != null) {
             return original;
         }
@@ -46,5 +54,19 @@ public class JsonbMappings extends Mappings {
                 original.anySetter, original.anyField, original.mapAdder,
                 polymorphismHandler.getPolymorphismPropertiesToSerialize(original.clazz, original.getters.keySet()),
                 polymorphismHandler::getTypeToDeserialize);
+    }
+
+    public static class ClassMapping extends Mappings.ClassMapping {
+        protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
+                               final Map<String, Getter> getters, final Map<String, Setter> setters,
+                               final Adapter<?, ?> adapter,
+                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
+                               final Getter anyGetter, final Method anySetter, final Field anyField,
+                               final Method mapAdder,
+                               final List<Map.Entry<String, String>> serializedPolymorphicProperties,
+                               final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver) {
+            super(clazz, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter, anyField, mapAdder,
+                    serializedPolymorphicProperties, polymorphicDeserializedTypeResolver);
+        }
     }
 }

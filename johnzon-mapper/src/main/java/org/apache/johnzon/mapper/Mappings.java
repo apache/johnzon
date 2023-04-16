@@ -83,7 +83,16 @@ public class Mappings {
 
         public boolean deduplicateObjects;
 
-        public ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
+        protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
+                               final Map<String, Getter> getters, final Map<String, Setter> setters,
+                               final Adapter<?, ?> adapter,
+                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
+                               final Getter anyGetter, final Method anySetter, final Field anyField,
+                               final Method mapAdder) {
+            this(clazz, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter, anyField, mapAdder, null, null);
+        }
+
+        protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
                                final Map<String, Getter> getters, final Map<String, Setter> setters,
                                final Adapter<?, ?> adapter,
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
