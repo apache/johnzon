@@ -18,14 +18,14 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.mapper.access.Meta;
+
 import jakarta.json.JsonObject;
 import jakarta.json.JsonString;
 import jakarta.json.JsonValue;
 import jakarta.json.bind.JsonbException;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
-import org.apache.johnzon.mapper.access.Meta;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

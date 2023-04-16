@@ -18,6 +18,10 @@
  */
 package org.apache.johnzon.mapper;
 
+import org.apache.johnzon.mapper.internal.JsonPointerTracker;
+import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
+import org.apache.johnzon.mapper.util.ArrayUtil;
+
 import jakarta.json.JsonArray;
 import jakarta.json.JsonBuilderFactory;
 import jakarta.json.JsonObject;
@@ -30,10 +34,6 @@ import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
 import jakarta.json.stream.JsonParser;
-import org.apache.johnzon.mapper.internal.JsonPointerTracker;
-import org.apache.johnzon.mapper.reflection.JohnzonCollectionType;
-import org.apache.johnzon.mapper.util.ArrayUtil;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;

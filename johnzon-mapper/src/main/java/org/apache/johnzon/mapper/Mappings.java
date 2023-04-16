@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import jakarta.json.JsonObject;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
@@ -28,6 +27,7 @@ import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.reflection.Generics;
 import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
+import jakarta.json.JsonObject;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;

@@ -18,19 +18,6 @@
  */
 package org.apache.johnzon.jsonb;
 
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbConfig;
-import jakarta.json.bind.adapter.JsonbAdapter;
-import jakarta.json.bind.config.BinaryDataStrategy;
-import jakarta.json.bind.config.PropertyNamingStrategy;
-import jakarta.json.bind.config.PropertyVisibilityStrategy;
-import jakarta.json.bind.serializer.JsonbDeserializer;
-import jakarta.json.bind.serializer.JsonbSerializer;
-import jakarta.json.spi.JsonProvider;
-import jakarta.json.stream.JsonGenerator;
-import jakarta.json.stream.JsonParserFactory;
 import org.apache.johnzon.jsonb.adapter.JsonbEnumAdapter;
 import org.apache.johnzon.jsonb.api.experimental.PolymorphicConfig;
 import org.apache.johnzon.jsonb.cdi.CDIs;
@@ -52,6 +39,19 @@ import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.adapter.JsonbAdapter;
+import jakarta.json.bind.config.BinaryDataStrategy;
+import jakarta.json.bind.config.PropertyNamingStrategy;
+import jakarta.json.bind.config.PropertyVisibilityStrategy;
+import jakarta.json.bind.serializer.JsonbDeserializer;
+import jakarta.json.bind.serializer.JsonbSerializer;
+import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParserFactory;
 import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;

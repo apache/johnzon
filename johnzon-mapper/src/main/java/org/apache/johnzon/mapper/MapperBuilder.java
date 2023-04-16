@@ -18,11 +18,6 @@
  */
 package org.apache.johnzon.mapper;
 
-import jakarta.json.JsonBuilderFactory;
-import jakarta.json.JsonReaderFactory;
-import jakarta.json.spi.JsonProvider;
-import jakarta.json.stream.JsonGenerator;
-import jakarta.json.stream.JsonGeneratorFactory;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -43,6 +38,11 @@ import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.map.LazyConverterMap;
 
+import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.Closeable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
