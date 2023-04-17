@@ -177,7 +177,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .ifPresent(builder::setInterfaceImplementationMapping);
         builder.setUseJsRange(toBool( // https://github.com/eclipse-ee4j/jsonb-api/issues/180
                 System.getProperty("johnzon.use-js-range", config.getProperty("johnzon.use-js-range")
-                .map(String::valueOf).orElse("false"))));
+                    .map(String::valueOf).orElse("false"))));
         builder.setUseShortISO8601Format(false);
         config.getProperty(JsonbConfig.DATE_FORMAT)
                 .map(String.class::cast)
@@ -212,14 +212,14 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .ifPresent(builder::setSkipAccessModeWrapper);
 
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
-                .map(object -> toType(object, AccessMode.class))
+                .map(this::toAccessMode)
                 .orElseGet(() -> new JsonbAccessMode(
                         propertyNamingStrategy, orderValue, visibilityStrategy,
                         !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
                         builder.getAdapters(),
                         factory, jsonp, builderFactorySupplier, parserFactoryProvider,
                         config.getProperty("johnzon.accessModeDelegate")
-                                .map(object -> toType(object, AccessMode.class))
+                                .map(this::toAccessMode)
                                 .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, false, true)),
                         // this changes in v3 of the spec so let's use this behavior which makes everyone happy by default
                         config.getProperty("johnzon.failOnMissingCreatorValues")
@@ -317,10 +317,10 @@ public class JohnzonBuilder implements JsonbBuilder {
                     throw new IllegalArgumentException("We only support serializer on Class for now");
                 }
                 builder.addObjectConverter(
-                    Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator) ->
-                        s.serialize(
-                                instance, jsonbGenerator.getJsonGenerator(),
-                                new JohnzonSerializationContext(jsonbGenerator)));
+                        Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator) ->
+                                s.serialize(
+                                        instance, jsonbGenerator.getJsonGenerator(),
+                                        new JohnzonSerializationContext(jsonbGenerator)));
             });
         });
         config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
@@ -373,10 +373,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         return !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v);
     }
 
-    private <T> T toType(final Object s, Class<T> type) {
+    private AccessMode toAccessMode(final Object s) {
         if (String.class.isInstance(s)) {
             try {
-                return type.cast(
+                return AccessMode.class.cast(
                         Thread.currentThread().getContextClassLoader().loadClass(s.toString()).getConstructor().newInstance());
             } catch (final InstantiationException | IllegalAccessException | NoSuchMethodException | ClassNotFoundException e) {
                 throw new IllegalArgumentException(e);
@@ -384,7 +384,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 throw new IllegalArgumentException(e.getCause());
             }
         }
-        return type.cast(s);
+        return AccessMode.class.cast(s);
     }
 
     private Supplier<JsonParserFactory> createJsonParserFactory() {

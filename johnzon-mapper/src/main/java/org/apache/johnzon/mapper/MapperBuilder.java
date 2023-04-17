@@ -18,12 +18,17 @@
  */
 package org.apache.johnzon.mapper;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static java.util.Locale.ROOT;
+
+// import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
-import org.apache.johnzon.mapper.access.KnownNotOpenedJavaTypesAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.access.KnownNotOpenedJavaTypesAccessMode;
 import org.apache.johnzon.mapper.converter.BooleanConverter;
 import org.apache.johnzon.mapper.converter.ByteConverter;
 import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
@@ -56,10 +61,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static java.util.Locale.ROOT;
 
 // this class is responsible to hold any needed config
 // to build the runtime
@@ -234,7 +235,10 @@ public class MapperBuilder {
                         accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
                         interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
-                        supportEnumContainerDeserialization, typeLoader, discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
+                        supportEnumContainerDeserialization,
+                        typeLoader, discriminatorMapper, discriminator,
+                        deserializationPredicate, serializationPredicate,
+                        enumConverterFactory,
                         JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory), mappingsFactory),
                 closeables);
     }
