@@ -57,22 +57,17 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static jakarta.json.bind.config.PropertyNamingStrategy.IDENTITY;
-import static jakarta.json.bind.config.PropertyOrderStrategy.ANY;
 import static java.time.format.DateTimeFormatter.ofPattern;
 import static java.util.Collections.emptyMap;
 import static java.util.Optional.ofNullable;
+import static jakarta.json.bind.config.PropertyNamingStrategy.IDENTITY;
+import static jakarta.json.bind.config.PropertyOrderStrategy.ANY;
 
 public class JohnzonBuilder implements JsonbBuilder {
     private static final Object NO_BM = new Object();
@@ -177,7 +172,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                 .ifPresent(builder::setInterfaceImplementationMapping);
         builder.setUseJsRange(toBool( // https://github.com/eclipse-ee4j/jsonb-api/issues/180
                 System.getProperty("johnzon.use-js-range", config.getProperty("johnzon.use-js-range")
-                    .map(String::valueOf).orElse("false"))));
+                .map(String::valueOf).orElse("false"))));
         builder.setUseShortISO8601Format(false);
         config.getProperty(JsonbConfig.DATE_FORMAT)
                 .map(String.class::cast)
@@ -317,10 +312,10 @@ public class JohnzonBuilder implements JsonbBuilder {
                     throw new IllegalArgumentException("We only support serializer on Class for now");
                 }
                 builder.addObjectConverter(
-                        Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator) ->
-                                s.serialize(
-                                        instance, jsonbGenerator.getJsonGenerator(),
-                                        new JohnzonSerializationContext(jsonbGenerator)));
+                    Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator) ->
+                        s.serialize(
+                                instance, jsonbGenerator.getJsonGenerator(),
+                                new JohnzonSerializationContext(jsonbGenerator)));
             });
         });
         config.getProperty(JsonbConfig.DESERIALIZERS).map(JsonbDeserializer[].class::cast).ifPresent(deserializers -> {
