@@ -119,7 +119,7 @@ public class Mappings {
 
         private Boolean isDeduplicateObjects() {
             final JohnzonDeduplicateObjects jdo = clazz.getAnnotation(JohnzonDeduplicateObjects.class);
-            if (jdo != null) {
+            if (jdo != null){
                 return jdo.value();
             }
             return false;
@@ -532,9 +532,9 @@ public class Mappings {
                     accessMode.findWriter(clazz),
                     anyGetter != null ? new Getter(
                             new MethodAccessMode.MethodReader(anyGetter, anyGetter.getReturnType()),
-                            false, false, false, false, true, null, null, -1, null) :
+                            false,false, false, false, true, null, null, -1, null) :
                             (anyField != null ? new Getter(new FieldAccessMode.FieldReader(anyField, anyField.getGenericType()),
-                                    false, false, false, false, true, null, null, -1, null) : null),
+                            false,false, false, false, true, null, null, -1, null) : null),
                     accessMode.findAnySetter(clazz),
                     anyField,
                     Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null,
