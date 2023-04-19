@@ -497,6 +497,57 @@ in `MessageDecoder`.
     }
 
 
+
+### JSON-B Extra
+
+<pre class="prettyprint linenums"><![CDATA[
+<dependency>
+  <groupId>org.apache.johnzon</groupId>
+  <artifactId>johnzon-jsonb-extras</artifactId>
+  <version>${johnzon.version}</version>
+</dependency>
+]]></pre>
+
+This module provides some extension to JSON-B.
+
+#### Polymorphism
+
+This extension provides a way to handle polymorphism:
+
+For the deserialization side you have to list the potential children
+on the root class:
+
+    @Polymorphic.JsonChildren({
+            Child1.class,
+            Child2.class
+    })
+    public abstract class Root {
+        public String name;
+    }
+
+Then on children you bind an "id" for each of them (note that if you don't give one, the simple name is used):
+
+    @Polymorphic.JsonId("first")
+    public class Child1 extends Root {
+        public String type;
+    }
+
+Finally on the field using the root type (polymorphic type) you can
+bind the corresponding serializer and/or deserializer:
+    
+    public class Wrapper {
+        @JsonbTypeSerializer(Polymorphic.Serializer.class)
+        @JsonbTypeDeserializer(Polymorphic.DeSerializer.class)
+        public Root root;
+    
+        @JsonbTypeSerializer(Polymorphic.Serializer.class)
+        @JsonbTypeDeserializer(Polymorphic.DeSerializer.class)
+        public List<Root> roots;
+    }
+
+Binding the polymophic serializer and/or deserializer *must not* be done using `JsonbConfig.withSerializers` / `JsonbConfig.withDeserializers`, as it is designed to work *only* with binding performed *using annotations*.
+
+
 ### JSON Schema
 
 <pre class="prettyprint linenums"><![CDATA[
