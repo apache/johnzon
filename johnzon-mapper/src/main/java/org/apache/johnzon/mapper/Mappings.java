@@ -18,14 +18,10 @@
  */
 package org.apache.johnzon.mapper;
 
-import org.apache.johnzon.mapper.access.AccessMode;
-import org.apache.johnzon.mapper.access.FieldAccessMode;
-import org.apache.johnzon.mapper.access.MethodAccessMode;
-import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
-import org.apache.johnzon.mapper.internal.AdapterKey;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
-import org.apache.johnzon.mapper.reflection.Generics;
-import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
+import static org.apache.johnzon.mapper.reflection.Converters.matches;
+import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
 import jakarta.json.JsonObject;
 import java.lang.annotation.Annotation;
@@ -59,10 +55,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.BiFunction;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyMap;
-import static org.apache.johnzon.mapper.reflection.Converters.matches;
-import static org.apache.johnzon.mapper.reflection.Generics.resolve;
+import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.access.FieldAccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.DateWithCopyConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.reflection.Generics;
+import org.apache.johnzon.mapper.reflection.JohnzonParameterizedType;
 
 public class Mappings {
     public static class ClassMapping {

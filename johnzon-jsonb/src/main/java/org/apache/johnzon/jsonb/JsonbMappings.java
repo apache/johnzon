@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import org.apache.johnzon.jsonb.polymorphism.JsonbPolymorphismHandler;
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.MapperConfig;
 import org.apache.johnzon.mapper.Mappings;
@@ -48,6 +49,7 @@ public class JsonbMappings extends Mappings {
         }
 
         polymorphismHandler.validateJsonbPolymorphismAnnotations(original.clazz);
+        polymorphismHandler.populateTypeInfoCache(original.clazz);
         return new ClassMapping(
                 original.clazz, original.factory, original.getters, original.setters,
                 original.adapter, original.reader, original.writer, original.anyGetter,

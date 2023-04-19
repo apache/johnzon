@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.johnzon.jsonb;
+package org.apache.johnzon.jsonb.polymorphism;
 
 import org.apache.johnzon.mapper.access.Meta;
 
@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 
 public class JsonbPolymorphismHandler {
+    private final Map<Class<?>, JsonbPolymorphismTypeInfo> typeInfoCache = new HashMap<>();
+
     public boolean hasPolymorphism(Class<?> clazz) {
         return clazz.isAnnotationPresent(JsonbTypeInfo.class) || getParentWithTypeInfo(clazz) != null;
     }
@@ -74,24 +76,34 @@ public class JsonbPolymorphismHandler {
     }
 
     public Class<?> getTypeToDeserialize(JsonObject jsonObject, Class<?> clazz) {
-        JsonbTypeInfo typeInfo = Meta.getAnnotation(clazz, JsonbTypeInfo.class);
-        if (typeInfo == null || !jsonObject.containsKey(typeInfo.key())) {
+        if (!typeInfoCache.containsKey(clazz)) {
             return clazz;
         }
 
-        JsonValue typeValue = jsonObject.get(typeInfo.key());
-        if (typeValue == null || typeValue.getValueType() != JsonValue.ValueType.STRING) {
-            throw new JsonbException("Property '" + typeInfo.key() + "' isn't a String, resolving JsonbSubtype is impossible");
+        JsonbPolymorphismTypeInfo typeInfo = typeInfoCache.get(clazz);
+        if (!jsonObject.containsKey(typeInfo.getTypeKey())) {
+            return clazz;
+        }
+
+        JsonValue typeValue = jsonObject.get(typeInfo.getTypeKey());
+        if (typeValue.getValueType() != JsonValue.ValueType.STRING) {
+            throw new JsonbException("Property '" + typeInfo.getTypeKey() + "' isn't a String, resolving JsonbSubtype is impossible");
         }
 
         String typeValueString = ((JsonString) typeValue).getString();
-        for (JsonbSubtype subtype : typeInfo.value()) {
-            if (subtype.alias().equals(typeValueString)) {
-                return subtype.type();
-            }
+        if (!typeInfo.getAliases().containsKey(typeValueString)) {
+            throw new JsonbException("No JsonbSubtype found for alias '" + typeValueString + "' on " + clazz.getName());
         }
 
-        throw new JsonbException("No JsonbSubtype found for alias '" + typeValueString + "' on " + clazz.getName());
+        return typeInfo.getAliases().get(typeValueString);
+    }
+
+    public void populateTypeInfoCache(Class<?> clazz) {
+        if (typeInfoCache.containsKey(clazz) || !clazz.isAnnotationPresent(JsonbTypeInfo.class)) {
+            return;
+        }
+
+        typeInfoCache.put(clazz, new JsonbPolymorphismTypeInfo(Meta.getAnnotation(clazz, JsonbTypeInfo.class)));
     }
 
     /**
