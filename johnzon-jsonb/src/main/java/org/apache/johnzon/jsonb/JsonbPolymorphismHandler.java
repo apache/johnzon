@@ -27,33 +27,28 @@ import jakarta.json.bind.JsonbException;
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 public class JsonbPolymorphismHandler {
     public boolean hasPolymorphism(Class<?> clazz) {
-        return clazz.isAnnotationPresent(JsonbTypeInfo.class) || !getParentClassesWithTypeInfo(clazz).isEmpty();
+        return clazz.isAnnotationPresent(JsonbTypeInfo.class) || getParentWithTypeInfo(clazz) != null;
     }
 
-    public List<Map.Entry<String, String>> getPolymorphismPropertiesToSerialize(Class<?> clazz, Collection<String> otherProperties) {
-        List<Map.Entry<String, String>> entries = new ArrayList<>();
+    public Map.Entry<String, String>[] getPolymorphismPropertiesToSerialize(Class<?> clazz, Collection<String> otherProperties) {
+        List<Map.Entry<String, String>> result = new ArrayList<>();
 
         Class<?> current = clazz;
         while (current != null) {
-            validateJsonbTypeInfo(current);
-            validateOnlyOneParentWithTypeInfo(current);
-
-            JsonbTypeInfo typeInfo = Meta.getDirectAnnotation(current, JsonbTypeInfo.class);
-            if (typeInfo != null) {
+            // Only try to resolve types when there's a JsonbTypeInfo Annotation present on the current type, Meta.getAnnotation tries to
+            // walk up parents by itself until it finds the given Annotation and could incorrectly cause JsonbExceptions to be thrown
+            // (multiple JsonbTypeInfos with same key found even if thats not actually the case)
+            if (current.isAnnotationPresent(JsonbTypeInfo.class)) {
+                JsonbTypeInfo typeInfo = Meta.getAnnotation(current, JsonbTypeInfo.class);
                 if (otherProperties.contains(typeInfo.key())) {
                     throw new JsonbException("JsonbTypeInfo key '" + typeInfo.key() + "' collides with other properties in json");
-                }
-
-                if (entries.stream().anyMatch(entry -> Objects.equals(entry.getKey(), typeInfo.key()))) {
-                    throw new JsonbException("JsonbTypeInfo key '" + typeInfo.key() + "' found more than once in type hierarchy of " + clazz.getName());
                 }
 
                 String bestMatchingAlias = null;
@@ -68,30 +63,25 @@ public class JsonbPolymorphismHandler {
                 }
 
                 if (bestMatchingAlias != null) {
-                    entries.add(0, Map.entry(typeInfo.key(), bestMatchingAlias));
+                    result.add(0, Map.entry(typeInfo.key(), bestMatchingAlias));
                 }
             }
 
-            List<Class<?>> parentClassesWithTypeInfo = getParentClassesWithTypeInfo(current);
-            current = parentClassesWithTypeInfo.isEmpty() ? null : parentClassesWithTypeInfo.get(0);
+            current = getParentWithTypeInfo(current);
         }
 
-        return entries;
+        return result.toArray(Map.Entry[]::new);
     }
 
     public Class<?> getTypeToDeserialize(JsonObject jsonObject, Class<?> clazz) {
-        validateJsonbTypeInfo(clazz);
-        validateOnlyOneParentWithTypeInfo(clazz);
-
-        JsonbTypeInfo typeInfo = Meta.getDirectAnnotation(clazz, JsonbTypeInfo.class);
+        JsonbTypeInfo typeInfo = Meta.getAnnotation(clazz, JsonbTypeInfo.class);
         if (typeInfo == null || !jsonObject.containsKey(typeInfo.key())) {
             return clazz;
         }
 
         JsonValue typeValue = jsonObject.get(typeInfo.key());
-        if (!(typeValue instanceof JsonString)) {
-            throw new JsonbException("Property '" + typeInfo.key() + "' isn't a String, resolving "
-                    + "JsonbSubtype is impossible");
+        if (typeValue == null || typeValue.getValueType() != JsonValue.ValueType.STRING) {
+            throw new JsonbException("Property '" + typeInfo.key() + "' isn't a String, resolving JsonbSubtype is impossible");
         }
 
         String typeValueString = ((JsonString) typeValue).getString();
@@ -105,32 +95,30 @@ public class JsonbPolymorphismHandler {
     }
 
     /**
-     * Validates that only one parent class (superclass + interfaces) has {@link JsonbTypeInfo} annotation
-     *
-     * @param classToValidate class to validate
+     * Validates {@link JsonbTypeInfo} annotation on clazz and its parents (superclass/interfaces),
+     * see {@link JsonbPolymorphismHandler#validateSubtypeCompatibility(Class)}, {@link JsonbPolymorphismHandler#validateOnlyOneParentWithTypeInfo(Class)}
+     * and {@link JsonbPolymorphismHandler#validateNoTypeInfoKeyCollision(Class)}
+     * @param classToValidate Class to validate
      * @throws JsonbException validation failed
      */
-    private void validateOnlyOneParentWithTypeInfo(Class<?> classToValidate) {
-        if (getParentClassesWithTypeInfo(classToValidate).size() > 1) {
-            throw new JsonbException("More than one interface/superclass of " + classToValidate.getName() +
-                    " has JsonbTypeInfo Annotation");
-        }
+    public void validateJsonbPolymorphismAnnotations(Class<?> classToValidate) {
+        validateSubtypeCompatibility(classToValidate);
+        validateOnlyOneParentWithTypeInfo(classToValidate);
+        validateNoTypeInfoKeyCollision(classToValidate);
     }
 
     /**
-     * Validates {@link JsonbTypeInfo} on clazz.
-     * Validation fails either if any {@link JsonbSubtype#type()} is the same as clazz
-     * or if any clazz and {@link JsonbSubtype#type()} aren't compatible.
+     * Validation fails if any clazz and {@link JsonbSubtype#type()} aren't compatible.
      *
      * @param classToValidate Class to validate
      * @throws JsonbException validation failed
      */
-    private void validateJsonbTypeInfo(Class<?> classToValidate) {
+    protected void validateSubtypeCompatibility(Class<?> classToValidate) {
         if (!classToValidate.isAnnotationPresent(JsonbTypeInfo.class)) {
             return;
         }
 
-        JsonbTypeInfo typeInfo = Meta.getDirectAnnotation(classToValidate, JsonbTypeInfo.class);
+        JsonbTypeInfo typeInfo = Meta.getAnnotation(classToValidate, JsonbTypeInfo.class);
         for (JsonbSubtype subtype : typeInfo.value()) {
             if (!classToValidate.isAssignableFrom(subtype.type())) {
                 throw new JsonbException("JsonbSubtype '" + subtype.alias() + "'" +
@@ -140,16 +128,64 @@ public class JsonbPolymorphismHandler {
     }
 
     /**
-     * Collects all parent classes (superclass + interfaces) that have the JsonbTypeInfo annotation
-     * @param clazz base class
-     * @return List of classes with JsonbTypeInfo annotation
+     * Validates that only one parent class (superclass + interfaces) has {@link JsonbTypeInfo} annotation
+     *
+     * @param classToValidate class to validate
+     * @throws JsonbException validation failed
      */
-    private List<Class<?>> getParentClassesWithTypeInfo(Class<?> clazz) {
-        List<Class<?>> result = new ArrayList<>();
-        result.add(clazz.getSuperclass());
-        result.addAll(Arrays.asList(clazz.getInterfaces()));
+    protected void validateOnlyOneParentWithTypeInfo(Class<?> classToValidate) {
+        boolean found = classToValidate.getSuperclass() != null && Meta.getAnnotation(classToValidate.getSuperclass(), JsonbTypeInfo.class) != null;
 
-        result.removeIf(it -> it == null || Meta.getDirectAnnotation(it, JsonbTypeInfo.class) == null);
-        return result;
+        for (Class<?> iface : classToValidate.getInterfaces()) {
+            if (iface != null && Meta.getAnnotation(iface, JsonbTypeInfo.class) != null) {
+                if (found) {
+                    throw new JsonbException("More than one interface/superclass of " + classToValidate.getName() +
+                            " has JsonbTypeInfo Annotation");
+                }
+
+                found = true;
+            }
+        }
+    }
+
+    /**
+     * Validates that {@link JsonbTypeInfo#key()} is only defined once in type hierarchy.
+     * Assumes {@link JsonbPolymorphismHandler#validateOnlyOneParentWithTypeInfo(Class)} already passed.
+     *
+     * @param classToValidate class to validate
+     * @throws JsonbException validation failed
+     */
+    protected void validateNoTypeInfoKeyCollision(Class<?> classToValidate) {
+        Map<String, Class<?>> keyToDefiningClass = new HashMap<>();
+
+        Class<?> current = classToValidate;
+        while (current != null) {
+            if (current.isAnnotationPresent(JsonbTypeInfo.class)) {
+                String key = Meta.getAnnotation(current, JsonbTypeInfo.class).key();
+
+                if (keyToDefiningClass.containsKey(key)) {
+                    throw new JsonbException("JsonbTypeInfo key '" + key + "' found more than once in type hierarchy of " + classToValidate
+                    + " (first defined in " + keyToDefiningClass.get(key).getName() + ", then defined again in " + current.getName() + ")");
+                }
+
+                keyToDefiningClass.put(key, current);
+            }
+
+            current = getParentWithTypeInfo(current);
+        }
+    }
+
+    protected Class<?> getParentWithTypeInfo(Class<?> clazz) {
+        if (clazz.getSuperclass() != null && Meta.getAnnotation(clazz.getSuperclass(), JsonbTypeInfo.class) != null) {
+            return clazz.getSuperclass();
+        }
+
+        for (Class<?> iface : clazz.getInterfaces()) {
+            if (Meta.getAnnotation(iface, JsonbTypeInfo.class) != null) {
+                return iface;
+            }
+        }
+
+        return null;
     }
 }

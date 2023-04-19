@@ -86,8 +86,11 @@ public class JsonbPolymorphismValidationTest {
     @Test
     public void testTypeInfoKeyCollision() {
         JsonbException exception = assertThrows(JsonbException.class, () -> jsonb.toJson(new MyCar()));
-        assertEquals("JsonbTypeInfo key '@type' found more than once in type hierarchy of" +
-                " org.apache.johnzon.jsonb.polymorphism.JsonbPolymorphismValidationTest$MyCar", exception.getMessage());
+
+        assertEquals("JsonbTypeInfo key '@type' found more than once in type hierarchy of class " +
+                "org.apache.johnzon.jsonb.polymorphism.JsonbPolymorphismValidationTest$MyCar" +
+                " (first defined in org.apache.johnzon.jsonb.polymorphism.JsonbPolymorphismValidationTest$Car," +
+                " then defined again in org.apache.johnzon.jsonb.polymorphism.JsonbPolymorphismValidationTest$Vehicle)", exception.getMessage());
     }
 
     @Test

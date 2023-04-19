@@ -78,7 +78,7 @@ public class Mappings {
         public final Field anyField;
         public final Method mapAdder;
         public final Class<?> mapAdderType;
-        public final List<Map.Entry<String, String>> serializedPolymorphicProperties;
+        public final Map.Entry<String, String>[] serializedPolymorphicProperties;
         public final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver;
 
         public boolean deduplicateObjects;
@@ -98,7 +98,7 @@ public class Mappings {
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
                                final Getter anyGetter, final Method anySetter, final Field anyField,
                                final Method mapAdder,
-                               final List<Map.Entry<String, String>> serializedPolymorphicProperties,
+                               final Map.Entry<String, String>[] serializedPolymorphicProperties,
                                final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver) {
             this.clazz = clazz;
             this.factory = factory;
@@ -539,7 +539,7 @@ public class Mappings {
                     anyField,
                     Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null,
                     config.getSerializationPredicate() != null && config.getSerializationPredicate().test(clazz)
-                            ? List.of(Map.entry(config.getDiscriminator(), config.getDiscriminatorMapper().apply(clazz))) : null,
+                            ? new Map.Entry[] { Map.entry(config.getDiscriminator(), config.getDiscriminatorMapper().apply(clazz)) } : null,
                     config.getDeserializationPredicate() != null && config.getDeserializationPredicate().test(clazz)
                             ? (jsonObject, type) -> config.getTypeLoader().apply(jsonObject.getString(config.getDiscriminator())) : null);
 

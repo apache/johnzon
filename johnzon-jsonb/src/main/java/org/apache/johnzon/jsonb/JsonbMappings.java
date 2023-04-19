@@ -28,7 +28,6 @@ import jakarta.json.JsonObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
-import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 
@@ -48,6 +47,7 @@ public class JsonbMappings extends Mappings {
             return original;
         }
 
+        polymorphismHandler.validateJsonbPolymorphismAnnotations(original.clazz);
         return new ClassMapping(
                 original.clazz, original.factory, original.getters, original.setters,
                 original.adapter, original.reader, original.writer, original.anyGetter,
@@ -63,7 +63,7 @@ public class JsonbMappings extends Mappings {
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
                                final Getter anyGetter, final Method anySetter, final Field anyField,
                                final Method mapAdder,
-                               final List<Map.Entry<String, String>> serializedPolymorphicProperties,
+                               final Map.Entry<String, String>[] serializedPolymorphicProperties,
                                final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver) {
             super(clazz, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter, anyField, mapAdder,
                     serializedPolymorphicProperties, polymorphicDeserializedTypeResolver);
