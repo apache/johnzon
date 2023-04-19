@@ -512,7 +512,9 @@ This module provides some extension to JSON-B.
 
 #### Polymorphism
 
-This extension provides a way to handle polymorphism:
+This extension shouldn't be used anymore if you don't absolutely rely on the JSON format it generates/parses.
+Use JSON-B 3 polymorphism instead. It provides a way to handle polymorphism:
+
 
 For the deserialization side you have to list the potential children
 on the root class:
