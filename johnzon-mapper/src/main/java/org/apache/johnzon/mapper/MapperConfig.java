@@ -124,15 +124,14 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
                         final String discriminator,
                         final Predicate<Class<?>> deserializationPredicate,
                         final Predicate<Class<?>> serializationPredicate,
-                        final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory,
-                        final Function<MapperConfig, Mappings> mappingsFactory) {
+                        final Function<Class<?>, CustomEnumConverter<?>> enumConverterFactory) {
         //CHECKSTYLE:ON
         this(adapters, objectConverterWriters, objectConverterReaders, version, close, skipNull, skipEmptyArray,
                 treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite, accessMode, encoding,
                 attributeOrder, failOnUnknown, serializeValueFilter, useBigDecimalForFloats, deduplicateObjects, interfaceImplementationMapping,
                 useJsRange, useBigDecimalForObjectNumbers, supportEnumMapDeserialization, typeLoader,
                 discriminatorMapper, discriminator, deserializationPredicate, serializationPredicate, enumConverterFactory,
-                JohnzonCores.snippetFactory(50, Json.createGeneratorFactory(emptyMap())), mappingsFactory);
+                JohnzonCores.snippetFactory(50, Json.createGeneratorFactory(emptyMap())), null);
     }
 
     //disable checkstyle for 10+ parameters
