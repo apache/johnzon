@@ -107,6 +107,7 @@ public class MapperBuilder {
     private boolean supportEnumContainerDeserialization = true;
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
     private boolean skipAccessModeWrapper;
+    private Function<MapperConfig, Mappings> mappingsFactory;
 
     // @experimental polymorphic api
     private Function<String, Class<?>> typeLoader;
@@ -238,7 +239,7 @@ public class MapperBuilder {
                         typeLoader, discriminatorMapper, discriminator,
                         deserializationPredicate, serializationPredicate,
                         enumConverterFactory,
-                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory)),
+                        JohnzonCores.snippetFactory(snippetMaxLength, generatorFactory), mappingsFactory),
                 closeables);
     }
 
@@ -562,6 +563,11 @@ public class MapperBuilder {
 
     public MapperBuilder setSkipAccessModeWrapper(final boolean skipAccessModeWrapper) {
         this.skipAccessModeWrapper = skipAccessModeWrapper;
+        return this;
+    }
+
+    public MapperBuilder setMappingsFactory(Function<MapperConfig, Mappings> mappingsFactory) {
+        this.mappingsFactory = mappingsFactory;
         return this;
     }
 }

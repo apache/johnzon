@@ -154,7 +154,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
-            final Mappings.ClassMapping classMapping = mappings.getClassMapping(objectClass); // don't create here!
+            Mappings.ClassMapping classMapping = mappings.getClassMapping(objectClass); // don't create here!
             if (classMapping != null) {
                 if (classMapping.adapter != null) {
                     final Object result = classMapping.adapter.from(object);
@@ -179,23 +179,26 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 }
             } else {
                 if (classMapping == null) { // will be created anyway now so force it and if it has an adapter respect it
-                    final Mappings.ClassMapping mapping = mappings.findOrCreateClassMapping(objectClass);
-                    if (mapping != null && mapping.adapter != null) {
-                        final Object result = mapping.adapter.from(object);
-                        doWriteObject(result, generator, writeBody, ignoredProperties, jsonPointer);
-                        return;
-                    }
+                    classMapping = mappings.findOrCreateClassMapping(objectClass);
                 }
+
+                if (classMapping.adapter != null) {
+                    final Object result = classMapping.adapter.from(object);
+                    doWriteObject(result, generator, writeBody, ignoredProperties, jsonPointer);
+                    return;
+                }
+
                 if (writeBody) {
                     generator.writeStartObject();
                 }
-                final boolean writeEnd;
-                if (config.getSerializationPredicate() != null && config.getSerializationPredicate().test(objectClass)) {
-                    generator.write(config.getDiscriminator(), config.getDiscriminatorMapper().apply(objectClass));
-                    writeEnd = doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
-                } else {
-                    writeEnd = doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
+
+                if (classMapping.serializedPolymorphicProperties != null) {
+                    for (Map.Entry<String, String> polymorphicProperty : classMapping.serializedPolymorphicProperties) {
+                        generator.write(polymorphicProperty.getKey(), polymorphicProperty.getValue());
+                    }
                 }
+
+                final boolean writeEnd = doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
                 if (writeEnd && writeBody) {
                     generator.writeEnd();
                 }

@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static org.apache.johnzon.mapper.reflection.Converters.matches;
 import static org.apache.johnzon.mapper.reflection.Generics.resolve;
 
+import jakarta.json.JsonObject;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -52,6 +53,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiFunction;
 
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -76,6 +78,9 @@ public class Mappings {
         public final Field anyField;
         public final Method mapAdder;
         public final Class<?> mapAdderType;
+        public final Map.Entry<String, String>[] serializedPolymorphicProperties;
+        public final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver;
+
         public boolean deduplicateObjects;
 
         protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
@@ -84,6 +89,17 @@ public class Mappings {
                                final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
                                final Getter anyGetter, final Method anySetter, final Field anyField,
                                final Method mapAdder) {
+            this(clazz, factory, getters, setters, adapter, reader, writer, anyGetter, anySetter, anyField, mapAdder, null, null);
+        }
+
+        protected ClassMapping(final Class<?> clazz, final AccessMode.Factory factory,
+                               final Map<String, Getter> getters, final Map<String, Setter> setters,
+                               final Adapter<?, ?> adapter,
+                               final ObjectConverter.Reader<?> reader, final ObjectConverter.Writer<?> writer,
+                               final Getter anyGetter, final Method anySetter, final Field anyField,
+                               final Method mapAdder,
+                               final Map.Entry<String, String>[] serializedPolymorphicProperties,
+                               final BiFunction<JsonObject, Class<?>, Class<?>> polymorphicDeserializedTypeResolver) {
             this.clazz = clazz;
             this.factory = factory;
             this.getters = getters;
@@ -96,6 +112,8 @@ public class Mappings {
             this.anyField = anyField;
             this.mapAdder = mapAdder;
             this.mapAdderType = mapAdder == null ? null : mapAdder.getParameterTypes()[1];
+            this.serializedPolymorphicProperties = serializedPolymorphicProperties;
+            this.polymorphicDeserializedTypeResolver = polymorphicDeserializedTypeResolver;
             this.deduplicateObjects = isDeduplicateObjects();
         }
 
@@ -519,7 +537,11 @@ public class Mappings {
                             false,false, false, false, true, null, null, -1, null) : null),
                     accessMode.findAnySetter(clazz),
                     anyField,
-                    Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null);
+                    Map.class.isAssignableFrom(clazz) ? accessMode.findMapAdder(clazz) : null,
+                    config.getSerializationPredicate() != null && config.getSerializationPredicate().test(clazz)
+                            ? new Map.Entry[] { Map.entry(config.getDiscriminator(), config.getDiscriminatorMapper().apply(clazz)) } : null,
+                    config.getDeserializationPredicate() != null && config.getDeserializationPredicate().test(clazz)
+                            ? (jsonObject, type) -> config.getTypeLoader().apply(jsonObject.getString(config.getDiscriminator())) : null);
 
             accessMode.afterParsed(clazz);
 

@@ -31,6 +31,7 @@ import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.Mapper;
 import org.apache.johnzon.mapper.MapperBuilder;
 import org.apache.johnzon.mapper.MapperConfig;
+import org.apache.johnzon.mapper.Mappings;
 import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
@@ -58,6 +59,7 @@ import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -336,6 +338,11 @@ public class JohnzonBuilder implements JsonbBuilder {
         if (Closeable.class.isInstance(accessMode)) {
             builder.addCloseable(Closeable.class.cast(accessMode));
         }
+
+        builder.setMappingsFactory(config.getProperty("johnzon.mappings-factory")
+                .map(it -> (Function<MapperConfig, Mappings>) it)
+                .orElse(JsonbMappings::new));
+
         return doCreateJsonb(skipCdi, ijson, builder.build());
     }
 

@@ -74,7 +74,7 @@ public class Mapper implements Closeable {
         this.builderFactory = builderFactory;
         this.provider = provider;
         this.config = config;
-        this.mappings = new Mappings(config);
+        this.mappings = this.config.getMappingsFactory() != null ? this.config.getMappingsFactory().apply(config) : new Mappings(config);
         this.closeables = closeables;
         this.charset = config.getEncoding();
     }
