@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class JsonbPolymorphismTypeInfo {
-    private String typeKey;
-    private Map<String, Class<?>> aliases;
+    private final String typeKey;
+    private final Map<String, Class<?>> aliases;
 
     protected JsonbPolymorphismTypeInfo(JsonbTypeInfo annotation) {
         this.typeKey = annotation.key();

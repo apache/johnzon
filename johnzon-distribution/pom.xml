@@ -161,7 +161,9 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.4.2</version>
         <executions>
           <execution>
             <id>source-assembly</id>
@@ -203,14 +205,8 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <phase />
-          </execution>
-        </executions>
         <configuration>
-          <skip>true</skip>
+          <skipIfEmpty>false</skipIfEmpty>
         </configuration>
       </plugin>
       <plugin>
