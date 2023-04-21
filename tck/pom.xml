@@ -34,4 +34,26 @@
     <module>jsonp</module>
   </modules>
 
+  <profiles>
+    <profile>
+      <id>tck-jsonb</id>
+
+      <properties>
+        <tck.skipJsonb>false</tck.skipJsonb>
+      </properties>
+    </profile>
+
+    <profile>
+      <id>tck-jsonp</id>
+
+      <properties>
+        <tck.skipJsonp>false</tck.skipJsonp>
+      </properties>
+    </profile>
+  </profiles>
+
+  <properties>
+    <tck.skipJsonp>true</tck.skipJsonp>
+    <tck.skipJsonb>true</tck.skipJsonb>
+  </properties>
 </project>

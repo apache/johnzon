@@ -2,15 +2,17 @@ name: Maven
 
 on: [push, pull_request]
 
+env:
+  MAVEN_OPTS: -Dmaven.artifact.threads=64
+
 jobs:
   build:
     name: Test with Java ${{ matrix.jdk }}
-    #runs-on: ${{ matrix.os }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        jdk: [ '11', '17', '19' ]
+        jdk: [ '11', '17', '20' ]
         dist: [ 'zulu' ]
 
     steps:
@@ -23,6 +25,27 @@ jobs:
           cache: 'maven'
 
       - name: Maven Package
-        env:
-          MAVEN_OPTS: -Dmaven.artifact.threads=64
-        run: mvn -V package --no-transfer-progress
+        run: mvn -V --no-transfer-progress package
+
+  tck:
+    name: Run ${{ matrix.spec }} TCK with Java ${{ matrix.jdk }}-${{ matrix.dist }}
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [ '11', '17', '20' ]
+        dist: [ 'zulu' ]
+        spec: ['jsonp', 'jsonb']
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK ${{ matrix.jdk }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.jdk }}
+          distribution: ${{ matrix.dist }}
+          cache: 'maven'
+
+      - name: Maven Verify TCK
+        run: mvn -V --no-transfer-progress verify --also-make --projects tck/${{ matrix.spec }} -Ptck-${{ matrix.spec }}
