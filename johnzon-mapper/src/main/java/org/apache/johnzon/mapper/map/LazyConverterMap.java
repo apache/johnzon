@@ -55,6 +55,7 @@ import java.time.temporal.TemporalQueries;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -63,6 +64,7 @@ import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
@@ -93,12 +95,28 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
     private boolean useShortISO8601Format = true;
     private DateTimeFormatter dateTimeFormatter;
 
+    private List<AdapterKey> builtInAdapterKeys = Stream.of(Date.class, URI.class, URL.class, Class.class, String.class,
+                    BigDecimal.class, BigInteger.class, Locale.class, Period.class, Duration.class, Calendar.class, GregorianCalendar.class,
+                    TimeZone.class, ZoneId.class, ZoneOffset.class, SimpleTimeZone.class, Instant.class, LocalDateTime.class, LocalDate.class,
+                    ZonedDateTime.class, OffsetDateTime.class, OffsetTime.class, LocalTime.class)
+            .map(it -> new AdapterKey(it, String.class, true))
+            .collect(Collectors.toList());
+
     public void setUseShortISO8601Format(final boolean useShortISO8601Format) {
         this.useShortISO8601Format = useShortISO8601Format;
     }
 
     public void setDateTimeFormatter(final DateTimeFormatter dateTimeFormatter) {
         this.dateTimeFormatter = dateTimeFormatter;
+    }
+
+    @Override
+    public Adapter<?, ?> remove(Object key) {
+        if (key instanceof AdapterKey) {
+            builtInAdapterKeys.remove(key);
+        }
+
+        return super.remove(key);
     }
 
     @Override
@@ -112,7 +130,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 return null;
             }
             final AdapterKey k = AdapterKey.class.cast(key);
-            if (k.getTo() == String.class) {
+            if (builtInAdapterKeys.contains(k)) {
                 final Adapter<?, ?> adapter = doLazyLookup(k);
                 if (adapter != null) {
                     return adapter;
@@ -132,14 +150,8 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
     }
 
     public Set<AdapterKey> adapterKeys() {
-        return Stream.concat(
-                super.keySet().stream()
-                        .filter(it -> super.get(it) != NO_ADAPTER),
-                Stream.of(Date.class, URI.class, URL.class, Class.class, String.class, BigDecimal.class, BigInteger.class,
-                        Locale.class, Period.class, Duration.class, Calendar.class, GregorianCalendar.class, TimeZone.class,
-                        ZoneId.class, ZoneOffset.class, SimpleTimeZone.class, Instant.class, LocalDateTime.class, LocalDate.class,
-                        ZonedDateTime.class, OffsetDateTime.class, OffsetTime.class)
-                        .map(it -> new AdapterKey(it, String.class, true)))
+        return Stream.concat(super.keySet().stream(), builtInAdapterKeys.stream())
+                .filter(it -> super.get(it) != NO_ADAPTER)
                 .collect(toSet());
     }
 

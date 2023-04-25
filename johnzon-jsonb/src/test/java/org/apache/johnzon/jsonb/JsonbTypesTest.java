@@ -21,6 +21,8 @@ package org.apache.johnzon.jsonb;
 import static org.junit.Assert.assertEquals;
 
 import java.io.StringReader;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
@@ -63,7 +65,8 @@ public class JsonbTypesTest {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
         final LocalTime localTime = LocalTime.of(1, 2, 3);
         final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
-        final String expected = "{\"calendar\":\"2015-01-01T01:01:00Z[UTC]\",\"date\":\"2015-01-01T01:01:00Z[UTC]\"," +
+        final String expected = "{\"bigDecimal\":1.5,\"bigInteger\":1," +
+                "\"calendar\":\"2015-01-01T01:01:00Z[UTC]\",\"date\":\"2015-01-01T01:01:00Z[UTC]\"," +
                 "\"duration\":\"PT30S\",\"gregorianCalendar\":\"2015-01-01T01:01:00Z[UTC]\"," +
                 "\"instant\":\"2015-01-01T00:00:00Z\",\"localDate\":\"2015-01-01\"," +
                 "\"localDateTime\":\"2015-01-01T01:01\",\"localTime\":\"01:02:03\"," +
@@ -97,6 +100,8 @@ public class JsonbTypesTest {
         assertEquals(TimeUnit.DAYS.toMillis(localDate.toEpochDay()), types.instant.toEpochMilli());
         assertEquals(Duration.of(30, ChronoUnit.SECONDS), types.duration);
         assertEquals(Period.of(0, 1, 10), types.period);
+        assertEquals(BigInteger.valueOf(1), types.bigInteger);
+        assertEquals(BigDecimal.valueOf(1.5), types.bigDecimal);
 
         assertEquals(expected, jsonb.toJson(types));
 
@@ -172,6 +177,8 @@ public class JsonbTypesTest {
         private LocalDate localDate;
         private OffsetDateTime offsetDateTime;
         private OffsetTime offsetTime;
+        private BigInteger bigInteger;
+        private BigDecimal bigDecimal;
 
         public LocalTime getLocalTime() {
             return localTime;
@@ -341,6 +348,22 @@ public class JsonbTypesTest {
             this.offsetTime = offsetTime;
         }
 
+        public BigInteger getBigInteger() {
+            return bigInteger;
+        }
+
+        public void setBigInteger(BigInteger bigInteger) {
+            this.bigInteger = bigInteger;
+        }
+
+        public BigDecimal getBigDecimal() {
+            return bigDecimal;
+        }
+
+        public void setBigDecimal(BigDecimal bigDecimal) {
+            this.bigDecimal = bigDecimal;
+        }
+
         @Override
         public boolean equals(final Object o) {
             if (this == o) {
@@ -369,7 +392,9 @@ public class JsonbTypesTest {
                 Objects.equals(localDateTime, types.localDateTime) &&
                 Objects.equals(localDate, types.localDate) &&
                 Objects.equals(offsetDateTime, types.offsetDateTime) &&
-                Objects.equals(offsetTime, types.offsetTime);
+                Objects.equals(offsetTime, types.offsetTime) &&
+                Objects.equals(bigInteger, types.bigInteger) &&
+                Objects.equals(bigDecimal, types.bigDecimal);
         }
 
         @Override
@@ -377,7 +402,7 @@ public class JsonbTypesTest {
             return Objects.hash(
                 url, uri, optionalString, optionalInt, optionalLong, optionalDouble, date,
                 calendar, gregorianCalendar, timeZone, zoneId, zoneOffset, simpleTimeZone, instant, duration,
-                period, localDateTime, localDate, offsetDateTime, offsetTime);
+                period, localDateTime, localDate, offsetDateTime, offsetTime, bigInteger, bigDecimal);
         }
     }
 

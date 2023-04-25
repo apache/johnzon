@@ -56,6 +56,8 @@ import java.io.Closeable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -233,6 +235,10 @@ public class JohnzonBuilder implements JsonbBuilder {
                         Number.class.cast(it).intValue() :
                         Integer.parseInt(it.toString()))
                 .ifPresent(builder::setSnippetMaxLength);
+
+        // drop johnzon-mapper BigInteger/BigDecimal built in adapters to not serialize those types as JsonString. See JSON-B spec 3.4.1
+        builder.getAdapters().remove(new AdapterKey(BigDecimal.class, String.class));
+        builder.getAdapters().remove(new AdapterKey(BigInteger.class, String.class));
 
         // user adapters
         final Types types = new Types();
