@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.johnzon.jsonb.tck;
+package org.apache.johnzon.jsonb.tck;
 
 import jakarta.enterprise.inject.spi.CDI;
 import org.apache.webbeans.container.OwbCDIProvider;
