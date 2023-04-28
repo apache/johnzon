@@ -65,7 +65,7 @@ public class JsonbTypesTest {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
         final LocalTime localTime = LocalTime.of(1, 2, 3);
         final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
-        final String expected = "{\"bigDecimal\":1.5,\"bigInteger\":1," +
+        final String expected = "{\"bigDecimal\":\"1.5\",\"bigInteger\":\"1\"," +
                 "\"calendar\":\"2015-01-01T01:01:00Z[UTC]\",\"date\":\"2015-01-01T01:01:00Z[UTC]\"," +
                 "\"duration\":\"PT30S\",\"gregorianCalendar\":\"2015-01-01T01:01:00Z[UTC]\"," +
                 "\"instant\":\"2015-01-01T00:00:00Z\",\"localDate\":\"2015-01-01\"," +
@@ -109,6 +109,23 @@ public class JsonbTypesTest {
     }
 
     @Test
+    public void testReadAndWriteBigIntDecimalAsNumbers() throws Exception {
+        final String expected = "{\"bigDecimal\":1.5,\"bigInteger\":1}";
+        final Jsonb jsonb = newJsonb(
+                new JsonbConfig()
+                        .setProperty("johnzon.use-biginteger-stringadapter", false)
+                        .setProperty("johnzon.use-bigdecimal-stringadapter", false));
+
+        final Types types = jsonb.fromJson(new StringReader(expected), Types.class);
+        assertEquals(BigInteger.valueOf(1), types.bigInteger);
+        assertEquals(BigDecimal.valueOf(1.5), types.bigDecimal);
+
+        assertEquals(expected, jsonb.toJson(types));
+
+        jsonb.close();
+    }
+
+    @Test
     public void readAndWriteWithDateFormats() throws Exception {
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ");
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyyMMdd+HHmmssZ"), "yyyyMMdd+HHmmssZ");
@@ -139,7 +156,7 @@ public class JsonbTypesTest {
     }
     
     private static Jsonb newJsonb() {
-        return newJsonb(null);
+        return newJsonb((String) null);
     }
     
     private static Jsonb newJsonb(String dateFormat) {
@@ -147,12 +164,17 @@ public class JsonbTypesTest {
         if (!StringUtils.isEmpty(dateFormat)){
             jsonbConfig.withDateFormat(dateFormat, Locale.getDefault());
         }
-        return JsonbProvider.provider().create().withConfig(jsonbConfig.setProperty("johnzon.attributeOrder", new Comparator<String>() {
+
+        return newJsonb(jsonbConfig.setProperty("johnzon.attributeOrder", new Comparator<String>() {
             @Override
             public int compare(final String o1, final String o2) {
                 return o1.compareTo(o2);
             }
-        })).build();
+        }));
+    }
+
+    private static Jsonb newJsonb(JsonbConfig jsonbConfig) {
+        return JsonbProvider.provider().create().withConfig(jsonbConfig).build();
     }
 
     public static class Types {
