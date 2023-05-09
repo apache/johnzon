@@ -234,6 +234,16 @@ public class JohnzonBuilder implements JsonbBuilder {
                         Integer.parseInt(it.toString()))
                 .ifPresent(builder::setSnippetMaxLength);
 
+        config.getProperty("johnzon.use-biginteger-stringadapter")
+                .or(() -> Optional.ofNullable(System.getProperty("johnzon.use-biginteger-stringadapter")))
+                .map(Object::toString).map(Boolean::parseBoolean)
+                .ifPresent(builder::setUseBigIntegerStringAdapter);
+
+        config.getProperty("johnzon.use-bigdecimal-stringadapter")
+                .or(() -> Optional.ofNullable(System.getProperty("johnzon.use-bigdecimal-stringadapter")))
+                .map(Object::toString).map(Boolean::parseBoolean)
+                .ifPresent(builder::setUseBigDecimalStringAdapter);
+
         // user adapters
         final Types types = new Types();
 

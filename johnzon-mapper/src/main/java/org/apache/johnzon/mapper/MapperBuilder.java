@@ -266,6 +266,16 @@ public class MapperBuilder {
         return this;
     }
 
+    public MapperBuilder setUseBigIntegerStringAdapter(final boolean convertBigIntegerToString) {
+        adapters.setUseBigIntegerStringAdapter(convertBigIntegerToString);
+        return this;
+    }
+
+    public MapperBuilder setUseBigDecimalStringAdapter(final boolean convertBigDecimalToString) {
+        adapters.setUseBigDecimalStringAdapter(convertBigDecimalToString);
+        return this;
+    }
+
     public MapperBuilder setAdaptersDateTimeFormatterString(final String dateTimeFormatter) {
         adapters.setDateTimeFormatter(DateTimeFormatter.ofPattern(dateTimeFormatter));
         return this;

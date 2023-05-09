@@ -137,6 +137,9 @@
           -->
           <systemProperties>
             <signature.sigTestClasspath>${project.build.outputDirectory}</signature.sigTestClasspath>
+
+            <johnzon.use-bigdecimal-stringadapter>false</johnzon.use-bigdecimal-stringadapter>
+            <johnzon.use-biginteger-stringadapter>false</johnzon.use-biginteger-stringadapter>
           </systemProperties>
           <argLine>-Duser.language=en -Duser.region=US</argLine>
         </configuration>
