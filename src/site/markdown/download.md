@@ -34,6 +34,17 @@ Read more about [how we sign Apache Releases](http://www.apache.org/info/verific
 
 ----------
 
+## Johnzon-2.0.x
+
+Apache Johnzon 2.0.x implements the JSON-P 2.1 and JSON-B 3.0 specifications which on a level of JavaEE 10. This version is not backward compatible due to the namespace change from `javax` to `jakarta`. 
+Apache Johnzon does not implement Jakarta EE 9 per se, because there was no change in terms of APIs except the namespace change. 
+So we decided to use Apache Johnzon 1.2.x bellow and publish a Jakarta compatible version using bytecode transformation. All artifacts can be used with the classifier `jakarta`.
+
+#### Source
+
+This version is currently only available as snapshot. 
+We are still actively working on passing the TCK but so far most of the implementation is ready.
+
 ## Johnzon-1.2.x
 
 Apache Johnzon 1.2.x implements the JSON-P 1.1 and JSON-B 1.0 specifications which on a level of JavaEE 8.
@@ -41,9 +52,9 @@ Apache Johnzon 1.2.x implements the JSON-P 1.1 and JSON-B 1.0 specifications whi
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
 
-* [johnzon-1.2.16-source-release.zip](https://www.apache.org/dyn/closer.lua/1.2.16/johnzon-1.2.16-source-release.zip)
-* [johnzon-1.2.16-source-release.zip.sha512](https://www.apache.org/dist/johnzon/1.2.16/johnzon-1.2.16-source-release.zip.sha512)
-* [johnzon-1.2.16-source-release.zip.asc](https://www.apache.org/dist/johnzon/1.2.16/johnzon-1.2.16-source-release.zip.asc)
+* [johnzon-1.2.20-source-release.zip](https://www.apache.org/dyn/closer.lua/1.2.20/johnzon-1.2.20-source-release.zip)
+* [johnzon-1.2.20-source-release.zip.sha512](https://www.apache.org/dist/johnzon/1.2.20/johnzon-1.2.20-source-release.zip.sha512)
+* [johnzon-1.2.20-source-release.zip.asc](https://www.apache.org/dist/johnzon/1.2.20/johnzon-1.2.20-source-release.zip.asc)
 
 
 ## Johnzon-1.0.x
@@ -68,6 +79,23 @@ Should you want to build any of the above binaries, this source bundle is the ri
 -------
 
 ### Maven Dependencies
+
+#### APIs for Johnzon-2.0.x (Jakarta EE 10)
+
+Since Java EE got open sourced to become Jakarta EE, the APIs can be used without license restrictions, so we moved away from our Apache APIs.
+
+    <dependency>
+        <groupId>jakarta.json</groupId>
+        <artifactId>jakarta.json-api</artifactId>
+        <version>2.1.1</version>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>jakarta.json.bind</groupId>
+        <artifactId>jakarta.json.bind-api</artifactId>
+        <version>3.0</version>
+        <scope>provided</scope>
+    </dependency>
 
 #### APIs for Johnzon-1.1.x (JavaEE 8)
 
