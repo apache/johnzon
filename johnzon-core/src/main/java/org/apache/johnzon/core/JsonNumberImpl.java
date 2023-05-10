@@ -69,11 +69,13 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public BigInteger bigIntegerValue() {
+        checkBigIntegerScale();
         return value.toBigInteger();
     }
 
     @Override
     public BigInteger bigIntegerValueExact() {
+        checkBigIntegerScale();
         return value.toBigIntegerExact();
     }
 
@@ -115,6 +117,19 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
     private void checkFractionalPart() {
         if (value.remainder(BigDecimal.ONE).doubleValue() != 0) {
             throw new ArithmeticException("Not an int/long, use other value readers");
+        }
+    }
+
+    private void checkBigIntegerScale() {
+        // should be fine enough. Maybe we should externalize so users can pick something better if they need to
+        // it becomes their responsibility to fix the limit and may expose them to a DoS attack
+        final int limit = 1_000;
+        final int absScale = Math.abs(value.scale());
+
+        if (absScale > limit) {
+            throw new ArithmeticException(String.format(
+                "BigDecimal scale (%d) magnitude exceeds maximum allowed (%d)",
+                value.scale(), limit));
         }
     }
 }

@@ -26,7 +26,9 @@ import javax.json.JsonArray;
 import javax.json.JsonNumber;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
@@ -62,20 +64,62 @@ public class JsonNumberTest {
     
     @Test(expected=ArithmeticException.class)
     public void testBigIntegerExact() {
-       
         JsonArray array = Json.createArrayBuilder().add(100.0200).build();
         array.getJsonNumber(0).bigIntegerValueExact();
-
-       
     }
-    
+
     @Test
     public void testBigInteger() {
-       
         JsonArray array = Json.createArrayBuilder().add(100.0200).build();
         Assert.assertEquals(new BigInteger("100"), array.getJsonNumber(0).bigIntegerValue());
+    }
 
-       
+    @Test
+    public void testSlowBigIntegerConversion() {
+        JsonArray array = Json.createArrayBuilder()
+                              .add(new BigDecimal("1000000000e1000"))
+                              .add(Double.MAX_VALUE)
+                              .build();
+
+        { // for Double
+            long start = System.nanoTime();
+            for (int i = 1; i < 5; i++) {
+                // if it takes a few seconds in any machine, that's already too much
+                if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > (3 * i)) {
+                    fail("took too long: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + " s" +
+                         " to compute " + i + " conversions toBigInteger");
+                }
+
+                array.getJsonNumber(1).bigIntegerValue();
+            }
+            long end = System.nanoTime();
+            System.out.println("took: " + TimeUnit.NANOSECONDS.toMillis(end - start) + " ms");
+        }
+
+        { // for Number
+            long start = System.nanoTime();
+            for (int i = 1; i < 100; i++) {
+                // if it takes a second in any machine, that's already too much
+                // depends on the allowed scale in JsonNumberImpl#checkBigIntegerScale
+                if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > (30 * i)) {
+                    fail("took too long: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + " s" +
+                         " to compute " + i + " conversions toBigInteger");
+                }
+
+                array.getJsonNumber(0).bigIntegerValue();
+            }
+            long end = System.nanoTime();
+            System.out.println("took: " + TimeUnit.NANOSECONDS.toMillis(end - start) + " ms");
+        }
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testBigIntegerConversionLimit() {
+        JsonArray array = Json.createArrayBuilder()
+                              .add(new BigDecimal("1e1001")) // limit is 1000 by default
+                              .build();
+
+        array.getJsonNumber(0).bigIntegerValue();
     }
 
     @Test
