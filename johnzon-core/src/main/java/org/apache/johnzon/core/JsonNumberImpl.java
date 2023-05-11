@@ -69,13 +69,13 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public BigInteger bigIntegerValue() {
-        checkBigIntegerScale();
+        checkBigDecimalScale();
         return value.toBigInteger();
     }
 
     @Override
     public BigInteger bigIntegerValueExact() {
-        checkBigIntegerScale();
+        checkBigDecimalScale();
         return value.toBigIntegerExact();
     }
 
@@ -120,7 +120,7 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
         }
     }
 
-    private void checkBigIntegerScale() {
+    private void checkBigDecimalScale() {
         // should be fine enough. Maybe we should externalize so users can pick something better if they need to
         // it becomes their responsibility to fix the limit and may expose them to a DoS attack
         final int limit = 1_000;

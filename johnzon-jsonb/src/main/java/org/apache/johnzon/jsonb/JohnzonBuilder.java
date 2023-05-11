@@ -110,7 +110,10 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         // todo: global spec toggle to disable all these ones at once?
         builder.setUseBigDecimalForObjectNumbers(
-                config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
+            config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
+        builder.setMaxBigDecimalScale(
+            config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(1000));
+
         builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
                 toBool(System.getProperty("johnzon.support-enum-container-deserialization", config.getProperty("johnzon.support-enum-container-deserialization")
                         .map(String::valueOf).orElse("true"))));
@@ -366,6 +369,10 @@ public class JohnzonBuilder implements JsonbBuilder {
 
     private Boolean toBool(final Object v) {
         return !Boolean.class.isInstance(v) ? Boolean.parseBoolean(v.toString()) : Boolean.class.cast(v);
+    }
+
+    private Integer toInt(final Object v) {
+        return !Integer.class.isInstance(v) ? Integer.parseInt(v.toString()) : Integer.class.cast(v);
     }
 
     private AccessMode toAccessMode(final Object s) {

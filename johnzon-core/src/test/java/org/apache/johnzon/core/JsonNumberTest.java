@@ -100,7 +100,7 @@ public class JsonNumberTest {
             long start = System.nanoTime();
             for (int i = 1; i < 100; i++) {
                 // if it takes a second in any machine, that's already too much
-                // depends on the allowed scale in JsonNumberImpl#checkBigIntegerScale
+                // depends on the allowed scale in JsonNumberImpl#checkBigDecimalScale
                 if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > (30 * i)) {
                     fail("took too long: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + " s" +
                          " to compute " + i + " conversions toBigInteger");
