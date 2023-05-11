@@ -104,6 +104,7 @@ public class MapperBuilder {
     private Boolean deduplicateObjects = null;
     private boolean useJsRange;
     private boolean useBigDecimalForObjectNumbers;
+    private int maxBigDecimalScale = 1000;
     private boolean supportEnumContainerDeserialization = true;
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
     private boolean skipAccessModeWrapper;
@@ -233,7 +234,7 @@ public class MapperBuilder {
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
-                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
+                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers, maxBigDecimalScale,
                         supportEnumContainerDeserialization,
                         typeLoader, discriminatorMapper, discriminator,
                         deserializationPredicate, serializationPredicate,
@@ -527,6 +528,11 @@ public class MapperBuilder {
 
     public MapperBuilder setUseBigDecimalForObjectNumbers(final boolean value) {
         this.useBigDecimalForObjectNumbers = value;
+        return this;
+    }
+
+    public MapperBuilder setMaxBigDecimalScale(final int maxBigDecimalScale) {
+        this.maxBigDecimalScale = maxBigDecimalScale;
         return this;
     }
 
