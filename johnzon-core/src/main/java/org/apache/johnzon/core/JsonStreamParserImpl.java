@@ -118,29 +118,30 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //detect charset according to RFC 4627
     public JsonStreamParserImpl(final InputStream inputStream, final int maxStringLength,
                                 final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer,
-                                final boolean autoAdjust) {
+                                final boolean autoAdjust, final JsonProviderImpl provider) {
 
-        this(inputStream, null, null, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
+        this(inputStream, null, null, maxStringLength, bufferProvider, valueBuffer, autoAdjust, provider);
     }
 
     //use charset provided
     public JsonStreamParserImpl(final InputStream inputStream, final Charset encoding, final int maxStringLength,
                                 final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer,
-                                final boolean autoAdjust) {
+                                final boolean autoAdjust, final JsonProviderImpl provider) {
 
-        this(inputStream, null, encoding, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
+        this(inputStream, null, encoding, maxStringLength, bufferProvider, valueBuffer, autoAdjust, provider);
     }
 
     public JsonStreamParserImpl(final Reader reader, final int maxStringLength, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                                final BufferStrategy.BufferProvider<char[]> valueBuffer, final boolean autoAdjust) {
+                                final BufferStrategy.BufferProvider<char[]> valueBuffer, final boolean autoAdjust, final JsonProviderImpl provider) {
 
-        this(null, reader, null, maxStringLength, bufferProvider, valueBuffer, autoAdjust);
+        this(null, reader, null, maxStringLength, bufferProvider, valueBuffer, autoAdjust, provider);
     }
 
     private JsonStreamParserImpl(final InputStream inputStream, final Reader reader, final Charset encoding, final int maxStringLength,
                                  final BufferStrategy.BufferProvider<char[]> bufferProvider, final BufferStrategy.BufferProvider<char[]> valueBuffer,
-                                 final boolean autoAdjust) {
+                                 final boolean autoAdjust, final JsonProviderImpl provider) {
 
+        super(provider);
         this.autoAdjust = autoAdjust;
         this.maxValueLength = maxStringLength <= 0 ? 8192 : maxStringLength;
         this.fallBackCopyBuffer = valueBuffer.newBuffer();

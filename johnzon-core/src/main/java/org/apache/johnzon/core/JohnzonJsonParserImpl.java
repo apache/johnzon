@@ -50,6 +50,13 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
     private boolean manualNext = false;
 
+    private final JsonProviderImpl provider;
+
+    protected JohnzonJsonParserImpl(final JsonProviderImpl provider) {
+        this.provider = provider;
+    }
+
+
     @Override
     public Event next() {
         manualNext = true;
@@ -65,7 +72,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getObject()");
         }
 
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT);
+        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT, provider);
         return jsonReader.readObject();
     }
 
@@ -77,7 +84,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getArray()");
         }
 
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT);
+        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT, provider);
         return jsonReader.readArray();
     }
 
@@ -87,7 +94,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         switch (current) {
             case START_ARRAY:
             case START_OBJECT:
-                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT);
+                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT, provider);
                 return jsonReader.readValue();
             case VALUE_TRUE:
                 return JsonValue.TRUE;
@@ -102,7 +109,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
                 if (isFitLong()) {
                     return new JsonLongImpl(getLong());
                 }
-                return new JsonNumberImpl(getBigDecimal());
+                return new JsonNumberImpl(getBigDecimal(), provider::checkBigDecimalScale);
             default:
                 throw new IllegalStateException(current + " doesn't support getValue()");
         }

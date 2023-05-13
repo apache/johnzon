@@ -32,20 +32,23 @@ class JsonMergePatchDiff extends DiffBase {
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final JsonValue source;
     private final JsonValue target;
+    private JsonProviderImpl provider;
 
     public JsonMergePatchDiff(final JsonValue source, final JsonValue target,
-                              final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+                              final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                              final JsonProviderImpl provider) {
         this.bufferProvider = bufferProvider;
         this.source = source;
         this.target = target;
+        this.provider = provider;
     }
 
     public JsonMergePatch calculateDiff() {
-        return new JsonMergePatchImpl(diff(source, target), bufferProvider);
+        return new JsonMergePatchImpl(diff(source, target), bufferProvider, provider);
     }
 
     private JsonValue diff(JsonValue source, JsonValue target) {
-        JsonObjectBuilder builder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, RejectDuplicateKeysMode.DEFAULT);
+        JsonObjectBuilder builder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, RejectDuplicateKeysMode.DEFAULT, provider);
 
         if (isJsonObject(source) && isJsonObject(target)) {
             JsonObject srcObj = source.asJsonObject();

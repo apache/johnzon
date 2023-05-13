@@ -169,7 +169,7 @@ public class MapperConfigTest {
                                 new FieldAccessMode(true, true),
                                 StandardCharsets.UTF_8,
                                 null,
-                                false, null, false, false, emptyMap(), true, false, true,
+                                false, null, false, false, emptyMap(), true, false, 1000, true,
                                 null, null, null, null, null,
                                 type -> new EnumConverter(type));
     }

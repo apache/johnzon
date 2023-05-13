@@ -37,6 +37,7 @@ import static java.util.Collections.emptyMap;
 class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
     private final Map<String, Object> internalConfig = new HashMap<String, Object>();
     private RejectDuplicateKeysMode rejectDuplicateKeysMode;
+    private JsonProviderImpl provider;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
     private static final List<String> SUPPORTED_CONFIG_KEYS = RejectDuplicateKeysMode.CONFIG_KEYS;
 
@@ -45,9 +46,10 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
     }
 
     JsonBuilderFactoryImpl(final Map<String, ?> config, final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                           final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
+                           final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl provider) {
         this.bufferProvider = bufferProvider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
+        this.provider = provider;
         if (config != null && !config.isEmpty()) {
             for (String configKey : config.keySet()) {
                 if(SUPPORTED_CONFIG_KEYS.contains(configKey)) {
@@ -62,28 +64,28 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
 
     @Override
     public JsonObjectBuilder createObjectBuilder() {
-        return new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode);
+        return new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode, provider);
     }
 
     @Override
     public JsonObjectBuilder createObjectBuilder(JsonObject initialData) {
-        return new JsonObjectBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode);
+        return new JsonObjectBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode, provider);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder() {
-        return new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode);
+        return new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode, provider);
     }
 
 
     @Override
     public JsonArrayBuilder createArrayBuilder(JsonArray initialData) {
-        return new JsonArrayBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode);
+        return new JsonArrayBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode, provider);
     }
 
     @Override
     public JsonArrayBuilder createArrayBuilder(Collection<?> initialData) {
-        return new JsonArrayBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode);
+        return new JsonArrayBuilderImpl(initialData, bufferProvider, rejectDuplicateKeysMode, provider);
     }
 
     @Override
@@ -93,7 +95,7 @@ class JsonBuilderFactoryImpl implements JsonBuilderFactory, Serializable {
 
     @Override
     public JsonObjectBuilder createObjectBuilder(Map<String, Object> initialValues) {
-        return new JsonObjectBuilderImpl(initialValues, bufferProvider, rejectDuplicateKeysMode);
+        return new JsonObjectBuilderImpl(initialValues, bufferProvider, rejectDuplicateKeysMode, provider);
     }
 
 }

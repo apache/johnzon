@@ -35,9 +35,9 @@ public class JsonStreamParserImplTest {
     @Test
     public void ensureNoArrayBoundErrorWhenOverflow() throws IOException {
         final String json = new JsonObjectBuilderImpl(
-                emptyMap(),
-                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(100),
-                RejectDuplicateKeysMode.TRUE)
+            emptyMap(),
+            BufferStrategyFactory.valueOf("QUEUE").newCharProvider(100),
+            RejectDuplicateKeysMode.TRUE, (JsonProviderImpl) JsonProviderImpl.provider())
                 .add("content", "{\"foo\":\"barbar\\barbarbar\"}")
                 .build()
                 .toString();
@@ -46,7 +46,7 @@ public class JsonStreamParserImplTest {
                 10,
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
-                true);
+                true, (JsonProviderImpl) JsonProviderImpl.provider());
         final List<String> events = new ArrayList<>();
         while (parser.hasNext()) {
             final JsonParser.Event event = parser.next();

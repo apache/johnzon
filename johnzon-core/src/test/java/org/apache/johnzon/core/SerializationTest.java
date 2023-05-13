@@ -52,7 +52,8 @@ public class SerializationTest {
 
     @Test
     public void jsonNumber() throws IOException, ClassNotFoundException {
-        final JsonNumber source = new JsonNumberImpl(new BigDecimal("1.0"));
+        final JsonNumber source = new JsonNumberImpl(new BigDecimal("1.0"),
+                                                     ((JsonProviderImpl) JsonProviderImpl.provider())::checkBigDecimalScale);
         final JsonNumber deserialized = serialDeser(source);
         assertNotSame(source, deserialized);
         assertEquals(1.0, deserialized.doubleValue(), 0.);
