@@ -31,10 +31,13 @@ import javax.json.JsonValue;
 public class JsonMergePatchImpl implements JsonMergePatch, Serializable {
     private JsonValue patch;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
+    private JsonProviderImpl provider;
 
-    public JsonMergePatchImpl(final JsonValue patch, final BufferStrategy.BufferProvider<char[]> bufferProvider) {
+    public JsonMergePatchImpl(final JsonValue patch, final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                              final JsonProviderImpl provider) {
         this.patch = patch;
         this.bufferProvider = bufferProvider;
+        this.provider = provider;
     }
 
     @Override
@@ -51,14 +54,14 @@ public class JsonMergePatchImpl implements JsonMergePatch, Serializable {
 
             return applyJsonObjectPatch(valueToApplyPatchOn.asJsonObject(), patchObject);
         } else {
-            // this must be a native JsonValue or JsonObject, so we just replace the
+            // this must be a native JsonValue or JsonObject, so we just replace
             // the whole original valueToApplyPatchOn with the new jsonValue
             return patch;
         }
     }
 
     private JsonValue applyJsonObjectPatch(JsonObject jsonObject, JsonObject patch) {
-        JsonObjectBuilder builder = new JsonObjectBuilderImpl(jsonObject, bufferProvider, RejectDuplicateKeysMode.DEFAULT);
+        JsonObjectBuilder builder = new JsonObjectBuilderImpl(jsonObject, bufferProvider, RejectDuplicateKeysMode.DEFAULT, provider);
 
         for (Map.Entry<String, JsonValue> patchAttrib : patch.entrySet()) {
             String attribName = patchAttrib.getKey();

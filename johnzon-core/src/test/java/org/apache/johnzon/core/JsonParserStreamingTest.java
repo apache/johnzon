@@ -49,7 +49,8 @@ public class JsonParserStreamingTest {
 
         final BufferStrategy.BufferProvider<char[]> bs = BufferStrategyFactory.valueOf("QUEUE").newCharProvider(len);
         try (final InputStream stream = new ByteArrayInputStream(bytes);
-                final JsonStreamParserImpl impl = new JsonStreamParserImpl(stream, len, bs, bs, false)) {
+                final JsonStreamParserImpl impl = new JsonStreamParserImpl(stream, len, bs, bs, false,
+                                                               (JsonProviderImpl) JsonProviderImpl.provider())) {
 
             while (impl.hasNext()) {
                 impl.next();

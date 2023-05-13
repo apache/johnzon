@@ -37,6 +37,7 @@ import org.apache.johnzon.core.util.ArrayUtil;
 
 class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
     private RejectDuplicateKeysMode rejectDuplicateKeysMode;
+    private JsonProviderImpl provider;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
     private Map<String, JsonValue> attributeMap = new LinkedHashMap<>();
 
@@ -46,17 +47,21 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     public JsonObjectBuilderImpl(final JsonObject initialData,
                                  final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                                 final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
+                                 final RejectDuplicateKeysMode rejectDuplicateKeysMode,
+                                 final JsonProviderImpl provider) {
         this.bufferProvider = bufferProvider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
+        this.provider = provider;
         this.attributeMap = new LinkedHashMap<>(initialData);
     }
 
     public JsonObjectBuilderImpl(final Map<String, Object> initialValues,
                                  final BufferStrategy.BufferProvider<char[]> bufferProvider,
-                                 final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
+                                 final RejectDuplicateKeysMode rejectDuplicateKeysMode,
+                                 final JsonProviderImpl provider) {
         this.bufferProvider = bufferProvider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
+        this.provider = provider;
         if (!initialValues.isEmpty()) {
             for (Map.Entry<String, Object> entry : initialValues.entrySet()) {
                 add(entry.getKey(), entry.getValue());
@@ -88,12 +93,12 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         } else if (value == null) {
             addNull(name);
         } else if (value instanceof Map) {
-            add(name, new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, rejectDuplicateKeysMode).build());
+            add(name, new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, rejectDuplicateKeysMode, provider).build());
         } else if (value instanceof Collection) {
-            add(name, new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, rejectDuplicateKeysMode).build());
+            add(name, new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, rejectDuplicateKeysMode, provider).build());
         } else if (value.getClass().isArray()) {
             final Collection<Object> collection = ArrayUtil.newCollection(value);
-            add(name, new JsonArrayBuilderImpl(collection, bufferProvider, rejectDuplicateKeysMode).build());
+            add(name, new JsonArrayBuilderImpl(collection, bufferProvider, rejectDuplicateKeysMode, provider).build());
         } else {
             throw new JsonException("Illegal JSON type! name=" + name + " type=" + value.getClass());
         }
@@ -113,13 +118,13 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
 
     @Override
     public JsonObjectBuilder add(final String name, final BigInteger value) {
-        putValue(name, new JsonNumberImpl(new BigDecimal(value)));
+        putValue(name, new JsonNumberImpl(new BigDecimal(value), provider::checkBigDecimalScale));
         return this;
     }
 
     @Override
     public JsonObjectBuilder add(final String name, final BigDecimal value) {
-        putValue(name, new JsonNumberImpl(value));
+        putValue(name, new JsonNumberImpl(value, provider::checkBigDecimalScale));
         return this;
     }
 

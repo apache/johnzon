@@ -77,7 +77,7 @@ public class JsonNumberTest {
     @Test
     public void testSlowBigIntegerConversion() {
         JsonArray array = Json.createArrayBuilder()
-                              .add(new BigDecimal("1000000000e1000"))
+                              .add(new BigDecimal("1e1000")) // 1e20000000 --> lost of damage
                               .add(Double.MAX_VALUE)
                               .build();
 
@@ -85,7 +85,7 @@ public class JsonNumberTest {
             long start = System.nanoTime();
             for (int i = 1; i < 5; i++) {
                 // if it takes a few seconds in any machine, that's already too much
-                if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > (3 * i)) {
+                if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > 1) {
                     fail("took too long: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + " s" +
                          " to compute " + i + " conversions toBigInteger");
                 }
@@ -101,7 +101,7 @@ public class JsonNumberTest {
             for (int i = 1; i < 100; i++) {
                 // if it takes a second in any machine, that's already too much
                 // depends on the allowed scale in JsonNumberImpl#checkBigDecimalScale
-                if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > (30 * i)) {
+                if (TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) > 1) {
                     fail("took too long: " + TimeUnit.NANOSECONDS.toSeconds(System.nanoTime() - start) + " s" +
                          " to compute " + i + " conversions toBigInteger");
                 }

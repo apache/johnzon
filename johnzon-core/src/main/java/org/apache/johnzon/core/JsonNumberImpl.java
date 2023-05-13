@@ -22,13 +22,15 @@ import javax.json.JsonNumber;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.function.Consumer;
 
 final class JsonNumberImpl implements JsonNumber, Serializable {
     private final BigDecimal value;
     private transient Integer hashCode = null;
-    private static final int MAX_BIG_DECIMAL_SCALE = toInt(System.getProperty("johnzon.max-big-decimal-scale", "1000"));
+    private transient Consumer<BigDecimal> maxBigDecimalScale = (bigDecimal) -> {}; // for deserialization?
 
-    JsonNumberImpl(final BigDecimal decimal) {
+    JsonNumberImpl(final BigDecimal decimal, final Consumer<BigDecimal> maxBigDecimalScale) {
+        this.maxBigDecimalScale = maxBigDecimalScale;
         if (decimal == null) {
             throw new NullPointerException("decimal must not be null");
         }
@@ -70,13 +72,13 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public BigInteger bigIntegerValue() {
-        checkBigDecimalScale();
+        maxBigDecimalScale.accept(value);
         return value.toBigInteger();
     }
 
     @Override
     public BigInteger bigIntegerValueExact() {
-        checkBigDecimalScale();
+        maxBigDecimalScale.accept(value);
         return value.toBigIntegerExact();
     }
 
@@ -121,20 +123,4 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
         }
     }
 
-    private void checkBigDecimalScale() {
-        // should be fine enough. Maybe we should externalize so users can pick something better if they need to
-        // it becomes their responsibility to fix the limit and may expose them to a DoS attack
-        final int limit = MAX_BIG_DECIMAL_SCALE;
-        final int absScale = Math.abs(value.scale());
-
-        if (absScale > limit) {
-            throw new ArithmeticException(String.format(
-                "BigDecimal scale (%d) limit exceeds maximum allowed (%d)",
-                value.scale(), limit));
-        }
-    }
-
-    private static Integer toInt(final Object v) {
-        return !Integer.class.isInstance(v) ? Integer.parseInt(v.toString()) : Integer.class.cast(v);
-    }
 }

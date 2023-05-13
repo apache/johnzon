@@ -107,10 +107,8 @@ public class JohnzonBuilder implements JsonbBuilder {
         final boolean skipCdi = shouldSkipCdi();
 
         // todo: global spec toggle to disable all these ones at once?
-        builder.setUseBigDecimalForObjectNumbers(
-            config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
-        builder.setMaxBigDecimalScale(
-            config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(1000));
+        builder.setUseBigDecimalForObjectNumbers(config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
+        builder.setMaxBigDecimalScale(config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(1000));
 
         builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
                 toBool(System.getProperty("johnzon.support-enum-container-deserialization", config.getProperty("johnzon.support-enum-container-deserialization")
@@ -284,10 +282,8 @@ public class JohnzonBuilder implements JsonbBuilder {
             getBeanManager(); // force detection
         }
 
-        builder.setReadAttributeBeforeWrite(
-                config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
-        builder.setAutoAdjustStringBuffers(
-                config.getProperty("johnzon.autoAdjustBuffer").map(Boolean.class::cast).orElse(true));
+        builder.setReadAttributeBeforeWrite(config.getProperty("johnzon.readAttributeBeforeWrite").map(Boolean.class::cast).orElse(false));
+        builder.setAutoAdjustStringBuffers(config.getProperty("johnzon.autoAdjustBuffer").map(Boolean.class::cast).orElse(true));
         config.getProperty("johnzon.serialize-value-filter")
                 .map(s -> {
                     if (String.class.isInstance(s)) {

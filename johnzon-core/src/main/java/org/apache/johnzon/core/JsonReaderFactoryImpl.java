@@ -34,33 +34,35 @@ class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFac
 
     private final JsonParserFactoryImpl parserFactory;
     private final RejectDuplicateKeysMode rejectDuplicateKeys;
+    private JsonProviderImpl provider;
 
-    JsonReaderFactoryImpl(final Map<String, ?> config) {
+    JsonReaderFactoryImpl(final Map<String, ?> config, final JsonProviderImpl provider) {
         super(config, SUPPORTED_CONFIG_KEYS, JsonParserFactoryImpl.SUPPORTED_CONFIG_KEYS);
+        this.provider = provider;
         if (!internalConfig.isEmpty()) {
             RejectDuplicateKeysMode.CONFIG_KEYS.forEach(internalConfig::remove);
         }
-        this.parserFactory = new JsonParserFactoryImpl(internalConfig);
+        this.parserFactory = new JsonParserFactoryImpl(internalConfig, provider);
         this.rejectDuplicateKeys = RejectDuplicateKeysMode.from(config);
     }
 
     @Override
     public JsonReader createReader(final Reader reader) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(reader), parserFactory.getValueBufferProvider(), rejectDuplicateKeys);
+        return new JsonReaderImpl(parserFactory.createInternalParser(reader), parserFactory.getValueBufferProvider(), rejectDuplicateKeys, provider);
     }
 
     @Override
     public JsonReader createReader(final InputStream in) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(in), parserFactory.getValueBufferProvider(), rejectDuplicateKeys);
+        return new JsonReaderImpl(parserFactory.createInternalParser(in), parserFactory.getValueBufferProvider(), rejectDuplicateKeys, provider);
     }
 
     @Override
     public JsonReader createReader(final InputStream in, final Charset charset) {
-        return new JsonReaderImpl(parserFactory.createInternalParser(in, charset), parserFactory.getValueBufferProvider(), rejectDuplicateKeys);
+        return new JsonReaderImpl(parserFactory.createInternalParser(in, charset), parserFactory.getValueBufferProvider(), rejectDuplicateKeys, provider);
     }
 
     public JsonReader createReader(final JsonParser parser) {
-        return new JsonReaderImpl(parser, parserFactory.getValueBufferProvider(), rejectDuplicateKeys);
+        return new JsonReaderImpl(parser, parserFactory.getValueBufferProvider(), rejectDuplicateKeys, provider);
     }
 
     @Override

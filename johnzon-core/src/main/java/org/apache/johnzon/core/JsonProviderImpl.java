@@ -18,8 +18,6 @@
  */
 package org.apache.johnzon.core;
 
-import org.apache.johnzon.core.spi.JsonPointerFactory;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
@@ -29,9 +27,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.function.Supplier;
-import java.util.stream.StreamSupport;
 
 import javax.json.JsonArray;
 import javax.json.JsonArrayBuilder;
@@ -56,26 +52,18 @@ import javax.json.stream.JsonGeneratorFactory;
 import javax.json.stream.JsonParser;
 import javax.json.stream.JsonParserFactory;
 
-import static java.util.Comparator.comparing;
-
 public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final Supplier<BufferStrategy.BufferProvider<char[]>> bufferProvider = new Cached<>(() ->
         BufferStrategyFactory.valueOf(System.getProperty(AbstractJsonFactory.BUFFER_STRATEGY, "QUEUE"))
             .newCharProvider(Integer.getInteger("org.apache.johnzon.default-char-provider.length", 1024)));
 
-    private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null);
-    private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null);
+    private final JsonReaderFactory readerFactory = new JsonReaderFactoryImpl(null, this);
+    private final JsonParserFactory parserFactory = new JsonParserFactoryImpl(null, this);
     private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
     private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
     private final Supplier<JsonBuilderFactory> builderFactory = new Cached<>(() ->
-            new JsonBuilderFactoryImpl(null, bufferProvider.get(), RejectDuplicateKeysMode.DEFAULT));
-    private final JsonPointerFactory jsonPointerFactory;
-
-    public JsonProviderImpl() {
-        jsonPointerFactory = StreamSupport.stream(ServiceLoader.load(JsonPointerFactory.class).spliterator(), false)
-                .min(comparing(JsonPointerFactory::ordinal))
-                .orElseGet(DefaultJsonPointerFactory::new);
-    }
+            new JsonBuilderFactoryImpl(null, bufferProvider.get(), RejectDuplicateKeysMode.DEFAULT, this));
+    private int maxBigDecimalScale = Integer.getInteger("johnzon.max-big-decimal-scale", 1_000);
 
     @Override
     public JsonParser createParser(final InputStream in) {
@@ -99,12 +87,12 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonParserFactory createParserFactory(final Map<String, ?> config) {
-        return (config == null || config.isEmpty()) ? parserFactory : new JsonParserFactoryImpl(config);
+        return (config == null || config.isEmpty()) ? parserFactory : new JsonParserFactoryImpl(config, this);
     }
 
     @Override
     public JsonReaderFactory createReaderFactory(final Map<String, ?> config) {
-        return (config == null || config.isEmpty()) ? readerFactory : new JsonReaderFactoryImpl(config);
+        return (config == null || config.isEmpty()) ? readerFactory : new JsonReaderFactoryImpl(config, this);
     }
 
     @Override
@@ -189,19 +177,19 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonNumber createValue(final BigDecimal value) {
-        return new JsonNumberImpl(value);
+        return new JsonNumberImpl(value, this::checkBigDecimalScale);
     }
 
     @Override
     public JsonNumber createValue(final BigInteger value) {
-        return new JsonNumberImpl(new BigDecimal(value.toString()));
+        return new JsonNumberImpl(new BigDecimal(value.toString()), this::checkBigDecimalScale);
     }
 
     @Override
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
         final JsonBuilderFactory builderFactory = this.builderFactory.get();
         return (config == null || config.isEmpty()) ?
-                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get(), RejectDuplicateKeysMode.from(config));
+                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get(), RejectDuplicateKeysMode.from(config), this);
     }
 
     @Override
@@ -216,7 +204,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonPointer createPointer(String path) {
-        return jsonPointerFactory.createPointer(this, path);
+        return new JsonPointerImpl(this, path);
     }
 
     @Override
@@ -231,12 +219,20 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
 
     @Override
     public JsonMergePatch createMergePatch(JsonValue patch) {
-        return new JsonMergePatchImpl(patch, bufferProvider.get());
+        return new JsonMergePatchImpl(patch, bufferProvider.get(), this);
     }
 
     @Override
     public JsonMergePatch createMergeDiff(JsonValue source, JsonValue target) {
-        return new JsonMergePatchDiff(source, target, bufferProvider.get()).calculateDiff();
+        return new JsonMergePatchDiff(source, target, bufferProvider.get(), this).calculateDiff();
+    }
+
+    public int getMaxBigDecimalScale() {
+        return maxBigDecimalScale;
+    }
+
+    public void setMaxBigDecimalScale(final int maxBigDecimalScale) {
+        this.maxBigDecimalScale = maxBigDecimalScale;
     }
 
     /**
@@ -261,6 +257,19 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
                 }
             }
             return computed;
+        }
+    }
+
+    public void checkBigDecimalScale(final BigDecimal value) {
+        // should be fine enough. Maybe we should externalize so users can pick something better if they need to
+        // it becomes their responsibility to fix the limit and may expose them to a DoS attack
+        final int limit = maxBigDecimalScale;
+        final int absScale = Math.abs(value.scale());
+
+        if (absScale > limit) {
+            throw new ArithmeticException(String.format(
+                "BigDecimal scale (%d) limit exceeds maximum allowed (%d)",
+                value.scale(), limit));
         }
     }
 }

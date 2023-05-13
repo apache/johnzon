@@ -53,9 +53,11 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
     private final boolean supportsComments;
     private final boolean autoAdjustBuffers;
     private final Charset defaultEncoding;
+    private final JsonProviderImpl provider;
 
-    JsonParserFactoryImpl(final Map<String, ?> config) {
+    JsonParserFactoryImpl(final Map<String, ?> config, final JsonProviderImpl provider) {
         super(config, SUPPORTED_CONFIG_KEYS, null);
+        this.provider = provider;
 
         final int bufferSize = getInt(BUFFER_LENGTH, DEFAULT_BUFFER_LENGTH);
         if (bufferSize <= 0) {
@@ -79,26 +81,26 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
             return getDefaultJsonParserImpl(in, defaultEncoding);
         }
         if (supportsComments) {
-            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers);
+            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
         }
         //UTF Auto detection RFC 4627
-        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers);
+        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
     }
 
     private JsonStreamParserImpl getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
         if (supportsComments) {
-            return new CommentsJsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers);
+            return new CommentsJsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
         }
         //use provided charset
-        return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers);
+        return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
     }
 
     private JsonStreamParserImpl getDefaultJsonParserImpl(final Reader in) {
         if (supportsComments) {
-            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers);
+            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
         }
         //no charset necessary
-        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers);
+        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
     }
 
     @Override
@@ -119,13 +121,13 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
     @Override
     public JsonParser createParser(final JsonObject obj) {
         // no need of a comment version since JsonObject has no comment event
-        return new JsonInMemoryParser(obj, bufferProvider);
+        return new JsonInMemoryParser(obj, bufferProvider, provider);
     }
 
     @Override
     public JsonParser createParser(final JsonArray array) {
         // no need of a comment version since JsonObject has no comment event
-        return new JsonInMemoryParser(array, bufferProvider);
+        return new JsonInMemoryParser(array, bufferProvider, provider);
     }
 
     @Override
