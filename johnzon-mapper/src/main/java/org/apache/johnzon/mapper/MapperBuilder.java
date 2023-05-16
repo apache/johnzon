@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Locale.ROOT;
 
 // import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
+import org.apache.johnzon.mapper.util.JsonProviderUtil;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -124,6 +125,7 @@ public class MapperBuilder {
                 provider = this.provider;
             } else {
                 provider = JsonProvider.provider();
+                JsonProviderUtil.setMaxBigDecimalScale(provider, maxBigDecimalScale);
                 this.provider = provider;
             }
             final Map<String, Object> config = new HashMap<String, Object>();
@@ -142,7 +144,7 @@ public class MapperBuilder {
             }
 
             if (readerFactory == null) {
-                config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
+                config.remove(JsonGenerator.PRETTY_PRINTING); // doesn't mean anything anymore for reader
                 if (supportsComments) {
                     config.put("org.apache.johnzon.supports-comments", "true");
                 }
@@ -159,6 +161,7 @@ public class MapperBuilder {
             }
         } else if (this.provider == null) {
             this.provider = JsonProvider.provider();
+            JsonProviderUtil.setMaxBigDecimalScale(provider, maxBigDecimalScale);
         }
         if (builderFactory == null) {
             builderFactory = provider.createBuilderFactory(emptyMap());
