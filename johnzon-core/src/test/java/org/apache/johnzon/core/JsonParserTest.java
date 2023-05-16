@@ -355,10 +355,10 @@ public class JsonParserTest {
     public void simpleInMemory() {
         final JsonObjectBuilder ob = Json.createObjectBuilder();
         ob.add("a", new JsonStringImpl("b"));
-        ob.add("c", new JsonNumberImpl(new BigDecimal(4)));
+        ob.add("c", new JsonNumberImpl(new BigDecimal(4), ((JsonProviderImpl)JsonProviderImpl.provider())::checkBigDecimalScale));
         JsonArrayBuilder ab = Json.createArrayBuilder();
-        ab.add(new JsonNumberImpl(new BigDecimal(1)));
-        ab.add(new JsonNumberImpl(new BigDecimal(-2)));
+        ab.add(new JsonNumberImpl(new BigDecimal(1), ((JsonProviderImpl)JsonProviderImpl.provider())::checkBigDecimalScale));
+        ab.add(new JsonNumberImpl(new BigDecimal(-2), ((JsonProviderImpl)JsonProviderImpl.provider())::checkBigDecimalScale));
         
         ob.add("d", ab);
         ob.add ("e", Json.createObjectBuilder()

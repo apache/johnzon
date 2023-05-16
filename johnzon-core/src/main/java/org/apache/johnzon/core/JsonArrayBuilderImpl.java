@@ -36,6 +36,7 @@ import org.apache.johnzon.core.util.ArrayUtil;
 
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
     private RejectDuplicateKeysMode rejectDuplicateKeysMode;
+    private JsonProviderImpl jsonProvider;
     private List<JsonValue> tmpList;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
 
@@ -45,14 +46,15 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     public JsonArrayBuilderImpl(final JsonArray initialData,
                                 final BufferStrategy.BufferProvider<char[]> provider,
-                                final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl jsonProvider) {
         this.tmpList = new ArrayList<>(initialData);
         this.bufferProvider = provider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
+        this.jsonProvider = jsonProvider;
     }
 
     public JsonArrayBuilderImpl(final Collection<?> initialData, final BufferStrategy.BufferProvider<char[]> provider,
-                                final RejectDuplicateKeysMode rejectDuplicateKeysMode) {
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl jsonProvider) {
         this.bufferProvider = provider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
         this.tmpList = new ArrayList<>();
@@ -61,6 +63,7 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
                 add(initialValue);
             }
         }
+        this.jsonProvider = jsonProvider;
     }
 
     @Override
@@ -83,13 +86,13 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     @Override
     public JsonArrayBuilder add(final int index, final BigDecimal value) {
-        addValue(index, new JsonNumberImpl(value));
+        addValue(index, new JsonNumberImpl(value, jsonProvider::checkBigDecimalScale));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final int index, final BigInteger value) {
-        addValue(index, new JsonNumberImpl(new BigDecimal(value)));
+        addValue(index, new JsonNumberImpl(new BigDecimal(value), jsonProvider::checkBigDecimalScale));
         return this;
     }
 
@@ -149,13 +152,13 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     @Override
     public JsonArrayBuilder set(final int index, final BigDecimal value) {
-        setValue(index, new JsonNumberImpl(value));
+        setValue(index, new JsonNumberImpl(value, jsonProvider::checkBigDecimalScale));
         return this;
     }
 
     @Override
     public JsonArrayBuilder set(final int index, final BigInteger value) {
-        setValue(index, new JsonNumberImpl(new BigDecimal(value)));
+        setValue(index, new JsonNumberImpl(new BigDecimal(value), jsonProvider::checkBigDecimalScale));
         return this;
     }
 
@@ -225,12 +228,12 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         } else if (value instanceof String) {
             add((String) value);
         } else if (value instanceof Map) {
-            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, rejectDuplicateKeysMode).build());
+            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, rejectDuplicateKeysMode, jsonProvider).build());
         } else if (value instanceof Collection) {
-            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, rejectDuplicateKeysMode).build());
+            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, rejectDuplicateKeysMode, jsonProvider).build());
         } else if (value.getClass().isArray()) {
             final Collection<Object> collection = ArrayUtil.newCollection(value);
-            add(new JsonArrayBuilderImpl(collection, bufferProvider, rejectDuplicateKeysMode).build());
+            add(new JsonArrayBuilderImpl(collection, bufferProvider, rejectDuplicateKeysMode, jsonProvider).build());
         } else {
             throw new JsonException("Illegal JSON type! type=" + value.getClass());
         }
@@ -252,13 +255,13 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     @Override
     public JsonArrayBuilder add(final BigDecimal value) {
-        addValue(new JsonNumberImpl(value));
+        addValue(new JsonNumberImpl(value, jsonProvider::checkBigDecimalScale));
         return this;
     }
 
     @Override
     public JsonArrayBuilder add(final BigInteger value) {
-        addValue(new JsonNumberImpl(new BigDecimal(value)));
+        addValue(new JsonNumberImpl(new BigDecimal(value), jsonProvider::checkBigDecimalScale));
         return this;
     }
 

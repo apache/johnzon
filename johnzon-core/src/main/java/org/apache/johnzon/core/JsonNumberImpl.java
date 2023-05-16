@@ -22,12 +22,15 @@ import jakarta.json.JsonNumber;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.function.Consumer;
 
 final class JsonNumberImpl implements JsonNumber, Serializable {
     private final BigDecimal value;
     private transient Integer hashCode = null;
+    private transient Consumer<BigDecimal> maxBigDecimalScale = (bigDecimal) -> {}; // for deserialization?
 
-    JsonNumberImpl(final BigDecimal decimal) {
+    JsonNumberImpl(final BigDecimal decimal, final Consumer<BigDecimal> maxBigDecimalScale) {
+        this.maxBigDecimalScale = maxBigDecimalScale;
         if (decimal == null) {
             throw new NullPointerException("decimal must not be null");
         }
@@ -69,11 +72,13 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public BigInteger bigIntegerValue() {
+        maxBigDecimalScale.accept(value);
         return value.toBigInteger();
     }
 
     @Override
     public BigInteger bigIntegerValueExact() {
+        maxBigDecimalScale.accept(value);
         return value.toBigIntegerExact();
     }
 
@@ -117,4 +122,5 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
             throw new ArithmeticException("Not an int/long, use other value readers");
         }
     }
+
 }

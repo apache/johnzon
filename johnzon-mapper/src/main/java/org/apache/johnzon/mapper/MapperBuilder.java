@@ -23,6 +23,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Locale.ROOT;
 
 // import org.apache.johnzon.core.JsonParserFactoryImpl; // don't depend on core in mapper
+import org.apache.johnzon.mapper.util.JsonProviderUtil;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.BaseAccessMode;
 import org.apache.johnzon.mapper.access.FieldAccessMode;
@@ -104,6 +105,7 @@ public class MapperBuilder {
     private Boolean deduplicateObjects = null;
     private boolean useJsRange;
     private boolean useBigDecimalForObjectNumbers;
+    private int maxBigDecimalScale = 1000;
     private boolean supportEnumContainerDeserialization = true;
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
     private boolean skipAccessModeWrapper;
@@ -123,6 +125,7 @@ public class MapperBuilder {
                 provider = this.provider;
             } else {
                 provider = JsonProvider.provider();
+                JsonProviderUtil.setMaxBigDecimalScale(provider, maxBigDecimalScale);
                 this.provider = provider;
             }
             final Map<String, Object> config = new HashMap<String, Object>();
@@ -141,7 +144,7 @@ public class MapperBuilder {
             }
 
             if (readerFactory == null) {
-                config.remove(JsonGenerator.PRETTY_PRINTING); // doesnt mean anything anymore for reader
+                config.remove(JsonGenerator.PRETTY_PRINTING); // doesn't mean anything anymore for reader
                 if (supportsComments) {
                     config.put("org.apache.johnzon.supports-comments", "true");
                 }
@@ -158,6 +161,7 @@ public class MapperBuilder {
             }
         } else if (this.provider == null) {
             this.provider = JsonProvider.provider();
+            JsonProviderUtil.setMaxBigDecimalScale(provider, maxBigDecimalScale);
         }
         if (builderFactory == null) {
             builderFactory = provider.createBuilderFactory(emptyMap());
@@ -234,7 +238,7 @@ public class MapperBuilder {
                         treatByteArrayAsBase64, treatByteArrayAsBase64URL, readAttributeBeforeWrite,
                         accessMode, encoding, attributeOrder, failOnUnknownProperties,
                         serializeValueFilter, useBigDecimalForFloats, deduplicateObjects,
-                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers,
+                        interfaceImplementationMapping, useJsRange, useBigDecimalForObjectNumbers, maxBigDecimalScale,
                         supportEnumContainerDeserialization,
                         typeLoader, discriminatorMapper, discriminator,
                         deserializationPredicate, serializationPredicate,
@@ -528,6 +532,11 @@ public class MapperBuilder {
 
     public MapperBuilder setUseBigDecimalForObjectNumbers(final boolean value) {
         this.useBigDecimalForObjectNumbers = value;
+        return this;
+    }
+
+    public MapperBuilder setMaxBigDecimalScale(final int maxBigDecimalScale) {
+        this.maxBigDecimalScale = maxBigDecimalScale;
         return this;
     }
 
