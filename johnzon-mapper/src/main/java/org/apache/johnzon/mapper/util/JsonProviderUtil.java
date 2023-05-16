@@ -55,7 +55,9 @@ public final class JsonProviderUtil {
      * @param value the max big decimal scale to set on the provider
      */
     public static void setMaxBigDecimalScale(final JsonProvider provider, final int value) {
-        if (!"org.apache.johnzon.core.JsonProviderImpl".equals(provider.getClass().getName())) return;
+        if (!"org.apache.johnzon.core.JsonProviderImpl".equals(provider.getClass().getName())) {
+            return;
+        }
 
         try {
             SET_MAX_BIG_DECIMAL_SCALE.invoke(provider, value);
