@@ -133,6 +133,15 @@ public class JsonObjectBuilderImplTest {
         builder.add("a", (Integer) null);
     }
 
+    @Test
+    public void testNullCheckValueExceptionMessage() {
+        final JsonObjectBuilder builder = Json.createObjectBuilder();
+        try {
+            builder.add("name", (JsonValue) null);
+        } catch (final NullPointerException e) {
+            assertEquals("value/builder must not be null for name: name", e.getMessage());
+        }
+    }
     @Test(expected = NullPointerException.class)
     public void testNullCheckName() {
         final JsonObjectBuilder builder = Json.createObjectBuilder();

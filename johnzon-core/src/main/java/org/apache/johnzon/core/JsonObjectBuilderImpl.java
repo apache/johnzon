@@ -182,9 +182,12 @@ class JsonObjectBuilderImpl implements JsonObjectBuilder, Serializable {
         return this;
     }
 
-    private void putValue(final String name, final JsonValue value){
-        if(name == null || value == null) {
-            throw new NullPointerException("name or value/builder must not be null");
+    private void putValue(final String name, final JsonValue value) {
+        if(name == null) {
+            throw new NullPointerException("name must not be null");
+        }
+        if(value == null) {
+            throw new NullPointerException("value/builder must not be null for name: " + name);
         }
         rejectDuplicateKeysMode.put().put(attributeMap, name, value);
     }
