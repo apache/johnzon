@@ -369,13 +369,13 @@ You can use some optimization to map a `JsonObject` to a POJO using Johnzon `Jso
 
 <pre class="prettyprint linenums"><![CDATA[
 final JsonValueReader<Simple> reader = new JsonValueReader<>(Json.createObjectBuilder().add("value", "simple").build());
-final Jsonb jsonb = getJohnsonJsonb();
+final Jsonb jsonb = getJohnzonJsonb();
 final Simple simple = jsonb.fromJson(reader, SomeModel.class);
 ]]></pre>
 
 <pre class="prettyprint linenums"><![CDATA[
 final JsonValueWriter writer = new JsonValueWriter();
-final Jsonb jsonb = getJohnsonJsonb();
+final Jsonb jsonb = getJohnzonJsonb();
 jsonb.toJson(object, writer);
 final JsonObject jsonObject = writer.getObject();
 ]]></pre>
