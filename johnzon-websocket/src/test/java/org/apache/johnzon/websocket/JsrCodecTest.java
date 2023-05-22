@@ -18,7 +18,6 @@
  */
 package org.apache.johnzon.websocket;
 
-import org.apache.johnzon.core.JsonProviderImpl;
 import org.apache.johnzon.websocket.endpoint.JsrClientEndpointImpl;
 import org.apache.johnzon.websocket.endpoint.JsrServerEndpointImpl;
 import org.apache.johnzon.websocket.endpoint.Message;
@@ -37,16 +36,15 @@ import org.jboss.shrinkwrap.api.spec.WebArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.net.URI;
-import java.net.URL;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.websocket.CloseReason;
 import javax.websocket.ContainerProvider;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
+import java.net.URI;
+import java.net.URL;
 
-import static org.apache.openejb.loader.JarLocation.jarLocation;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -59,8 +57,7 @@ public class JsrCodecTest {
                 .addAsLibraries(
                         ShrinkWrap.create(JavaArchive.class, "johnzon-websocket.jar")
                                 .addClasses(FactoryLocator.class, JsrDecoder.class, JsrEncoder.class, JsrObjectDecoder.class, JsrObjectEncoder.class)
-                                .addPackages(true, JsonProviderImpl.class.getPackage()))
-                .addAsLibrary(jarLocation(Json.class));
+                               );
     }
 
     @ArquillianResource
