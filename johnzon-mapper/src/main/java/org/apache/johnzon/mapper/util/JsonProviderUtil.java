@@ -16,7 +16,7 @@
  */
 package org.apache.johnzon.mapper.util;
 
-import jakarta.json.spi.JsonProvider;
+import javax.json.spi.JsonProvider;
 import org.apache.johnzon.core.JsonProviderImpl;
 
 import java.lang.reflect.Method;
