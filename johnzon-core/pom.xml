@@ -40,7 +40,6 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
-            <Automatic-Module-Name>org.apache.johnzon.core</Automatic-Module-Name>
             <Require-Capability>osgi.extender;filter:="(osgi.extender=osgi.serviceloader.registrar)"</Require-Capability>
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=jakarta.json.spi.JsonProvider</Provide-Capability>
           </instructions>

@@ -148,18 +148,10 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
+          <useModulePath>false</useModulePath>
           <systemPropertyVariables>
             <openejb.deployer.repository>https://repo1.maven.org/maven2/</openejb.deployer.repository>
           </systemPropertyVariables>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <configuration>
-          <instructions>
-            <Automatic-Module-Name>org.apache.johnzon.websocket</Automatic-Module-Name>
-          </instructions>
         </configuration>
       </plugin>
       <plugin>

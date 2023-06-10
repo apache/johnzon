@@ -37,21 +37,18 @@
     <dependency>
       <groupId>jakarta.annotation</groupId>
       <artifactId>jakarta.annotation-api</artifactId>
-      <version>2.1.1</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>jakarta.ws.rs</groupId>
       <artifactId>jakarta.ws.rs-api</artifactId>
-      <version>3.1.0</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>jakarta.enterprise</groupId>
       <artifactId>jakarta.enterprise.cdi-api</artifactId>
-      <version>4.0.1</version>
       <scope>provided</scope>
       <optional>true</optional>
     </dependency>
@@ -88,14 +85,14 @@
     <dependency>
       <groupId>jakarta.interceptor</groupId>
       <artifactId>jakarta.interceptor-api</artifactId>
-      <version>2.1.0</version>
-      <scope>test</scope>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>jakarta.inject</groupId>
       <artifactId>jakarta.inject-api</artifactId>
-      <version>2.0.1</version>
-      <scope>test</scope>
+      <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.apache.openwebbeans</groupId>
@@ -144,9 +141,8 @@
         <artifactId>maven-bundle-plugin</artifactId>
         <configuration>
           <instructions>
-            <Automatic-Module-Name>org.apache.johnzon.jsonb</Automatic-Module-Name>
             <Import-Package>
-              javax.ws.rs.*;resolution:=optional,
+              jakarta.ws.rs.*;resolution:=optional,
               *
             </Import-Package>
             <Require-Capability>
