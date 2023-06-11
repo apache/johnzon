@@ -138,8 +138,12 @@
           <systemProperties>
             <signature.sigTestClasspath>${project.build.outputDirectory}</signature.sigTestClasspath>
 
+            <!-- don't serialize BigDecimal/BigInteger as strings. Usually enabled by default in johnzon, see https://github.com/jakartaee/jsonb-api/issues/187 -->
             <johnzon.use-bigdecimal-stringadapter>false</johnzon.use-bigdecimal-stringadapter>
             <johnzon.use-biginteger-stringadapter>false</johnzon.use-biginteger-stringadapter>
+
+            <!-- needed to pass JSON-B 3 TCKs on jdk 13+, see https://github.com/jakartaee/jsonb-api/issues/272 -->
+            <java.locale.providers>COMPAT</java.locale.providers>
           </systemProperties>
           <argLine>-Duser.language=en -Duser.region=US</argLine>
         </configuration>
