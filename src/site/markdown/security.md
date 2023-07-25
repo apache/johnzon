@@ -37,3 +37,13 @@ If you need to report a bug that isn't an undisclosed security vulnerability, pl
 should be addressed to the [mailing list](http://johnzon.apache.org/mail-lists.html).
 
 The private security mailing address is: security (at) apache (dot) org
+
+## BigInteger and Java
+
+JSON-P/JSON-B exposes API using `BigDecimal` and `BigInteger`.
+The bridge between these two types is `BigDecimal#toBigInteger` which has a slow implementation in Java without careness or scale max validation.
+
+Johnzon does some sanity checks on this value but at some point we recommend you to stay away from these API and handle big numbers using `String` type and parse them yourself since you are the only ones knowing the correct functional and relevant validation of the scale before a instantiation.
+
+If you know you don't need such big types, prefer using plain primitives (or wrappers).
+
