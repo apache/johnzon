@@ -28,6 +28,7 @@ import static jakarta.json.JsonValue.ValueType.NUMBER;
 import static jakarta.json.JsonValue.ValueType.OBJECT;
 import static jakarta.json.JsonValue.ValueType.STRING;
 import static jakarta.json.JsonValue.ValueType.TRUE;
+import static java.util.Locale.ROOT;
 
 public final class ExceptionMessages {
 
@@ -79,7 +80,7 @@ public final class ExceptionMessages {
 
     public static String description(final JsonValue.ValueType type) {
         if (type == OBJECT || type == ARRAY || type == STRING) {
-            return "json " + type.toString().toLowerCase() + " value";
+            return "json " + type.toString().toLowerCase(ROOT) + " value";
         }
         if (type == NUMBER) {
             return "json numeric value";

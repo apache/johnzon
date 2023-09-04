@@ -34,6 +34,8 @@ import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
 import jakarta.json.spi.JsonProvider;
 
+import static java.util.Locale.ROOT;
+
 class JsonPatchImpl implements JsonPatch {
 
     private final JsonProvider provider;
@@ -238,7 +240,7 @@ class JsonPatchImpl implements JsonPatch {
                 synchronized (this) {
                     if (json == null) {
                         JsonObjectBuilder builder = provider.createObjectBuilder()
-                                .add("op", operation.name().toLowerCase())
+                                .add("op", operation.name().toLowerCase(ROOT))
                                 .add("path", path);
 
                         if (fromPointer != null) {
