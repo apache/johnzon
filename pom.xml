@@ -38,7 +38,6 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>10</project.build.outputTimestamp>
 
     <jakarta-jsonp-api.version>2.1.1</jakarta-jsonp-api.version>
     <jakarta-jsonb-api.version>3.0.0</jakarta-jsonb-api.version>
@@ -73,6 +72,33 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>jakarta.annotation</groupId>
+        <artifactId>jakarta.annotation-api</artifactId>
+        <version>2.1.1</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.persistence</groupId>
+        <artifactId>jakarta.persistence-api</artifactId>
+        <version>3.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.transaction</groupId>
+        <artifactId>jakarta.transaction-api</artifactId>
+        <version>2.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.interceptor</groupId>
+        <artifactId>jakarta.interceptor-api</artifactId>
+        <version>2.1.0</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.inject</groupId>
+        <artifactId>jakarta.inject-api</artifactId>
+        <version>2.0.1</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
         <groupId>jakarta.json</groupId>
         <artifactId>jakarta.json-api</artifactId>
         <version>${jakarta-jsonp-api.version}</version>
@@ -83,6 +109,16 @@
         <artifactId>jakarta.json.bind-api</artifactId>
         <version>${jakarta-jsonb-api.version}</version>
         <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.ws.rs</groupId>
+        <artifactId>jakarta.ws.rs-api</artifactId>
+        <version>3.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>jakarta.enterprise</groupId>
+        <artifactId>jakarta.enterprise.cdi-api</artifactId>
+        <version>4.0.1</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
@@ -113,32 +149,32 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>3.10.1</version>
+          <version>3.11.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>3.2.1</version>
+          <version>3.3.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.4.1</version>
+          <version>3.5.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-enforcer-plugin</artifactId>
-          <version>3.1.0</version>
+          <version>3.3.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.0.0</version>
+          <version>3.1.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-report-plugin</artifactId>
-          <version>3.0.0-M7</version>
+          <version>3.1.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -148,7 +184,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-release-plugin</artifactId>
-          <version>3.0.0-M6</version>
+          <version>3.0.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -164,17 +200,17 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-pmd-plugin</artifactId>
-          <version>3.19.0</version>
+          <version>3.21.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.4.1</version>
+          <version>3.4.5</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
           <artifactId>versions-maven-plugin</artifactId>
-          <version>2.14.2</version>
+          <version>2.16.0</version>
         </plugin>
         <plugin>
           <groupId>org.codehaus.mojo</groupId>
@@ -210,6 +246,8 @@
           <showDeprecation>true</showDeprecation>
           <showWarnings>true</showWarnings>
           <parameters>true</parameters>
+          <!-- disable JPMS when compiling test sources -->
+          <useModulePath>false</useModulePath>
         </configuration>
       </plugin>
 
@@ -415,7 +453,7 @@
               <goal>jar</goal>
             </goals>
             <configuration>
-              <show>private</show>
+              <show>protected</show>
               <detectJavaApiLink>false</detectJavaApiLink>
               <detectLinks>false</detectLinks>
               <detectOfflineLinks>false</detectOfflineLinks>
@@ -432,6 +470,7 @@
         <configuration>
           <argLine>${surefire.jvm.params}</argLine>
           <trimStackTrace>false</trimStackTrace>
+          <useModulePath>false</useModulePath>
         </configuration>
       </plugin>
 
