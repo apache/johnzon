@@ -41,7 +41,7 @@ public class JsonStreamParserImplTest {
                 10,
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
-                true);
+                true, (JsonProviderImpl) JsonProviderImpl.provider());
 
         assertEquals(null, parser.currentEvent());
 
@@ -58,7 +58,7 @@ public class JsonStreamParserImplTest {
                 10,
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
-                true);
+                true, (JsonProviderImpl) JsonProviderImpl.provider());
 
         assertEquals(JsonParser.Event.START_OBJECT, parser.current());
     }
@@ -68,7 +68,7 @@ public class JsonStreamParserImplTest {
         final String json = new JsonObjectBuilderImpl(
             emptyMap(),
             BufferStrategyFactory.valueOf("QUEUE").newCharProvider(100),
-            RejectDuplicateKeysMode.TRUE, (JsonProviderImpl) JsonProviderImpl.provider())
+            DuplicateKeysMode.NONE, (JsonProviderImpl) JsonProviderImpl.provider())
                 .add("content", "{\"foo\":\"barbar\\barbarbar\"}")
                 .build()
                 .toString();

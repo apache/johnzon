@@ -33,7 +33,8 @@ public class JsonInMemoryParserTest {
                 new JsonObjectImpl(
                         Collections.emptyMap(),
                         BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10)),
-                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10));
+                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
+                (JsonProviderImpl) JsonProviderImpl.provider());
 
         assertEquals(null, parser.currentEvent());
 
@@ -48,7 +49,8 @@ public class JsonInMemoryParserTest {
                 new JsonObjectImpl(
                         Collections.emptyMap(),
                         BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10)),
-                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10));
+                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
+                (JsonProviderImpl) JsonProviderImpl.provider());
 
         assertEquals(JsonParser.Event.START_OBJECT, parser.current());
     }

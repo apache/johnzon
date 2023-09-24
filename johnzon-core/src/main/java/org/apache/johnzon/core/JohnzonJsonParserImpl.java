@@ -72,7 +72,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getObject()");
         }
 
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT, provider);
+        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), DuplicateKeysMode.LAST, provider);
         return jsonReader.readObject();
     }
 
@@ -84,7 +84,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
             throw new IllegalStateException(current + " doesn't support getArray()");
         }
 
-        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT, provider);
+        JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), DuplicateKeysMode.LAST, provider);
         return jsonReader.readArray();
     }
 
@@ -94,7 +94,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         switch (current) {
             case START_ARRAY:
             case START_OBJECT:
-                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), RejectDuplicateKeysMode.DEFAULT, provider);
+                JsonReaderImpl jsonReader = new JsonReaderImpl(this, true, getCharArrayProvider(), DuplicateKeysMode.LAST, provider);
                 return jsonReader.readValue();
             case VALUE_TRUE:
                 return JsonValue.TRUE;

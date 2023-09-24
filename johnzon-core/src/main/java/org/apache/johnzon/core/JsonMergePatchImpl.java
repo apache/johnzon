@@ -61,7 +61,7 @@ public class JsonMergePatchImpl implements JsonMergePatch, Serializable {
     }
 
     private JsonValue applyJsonObjectPatch(JsonObject jsonObject, JsonObject patch) {
-        JsonObjectBuilder builder = new JsonObjectBuilderImpl(jsonObject, bufferProvider, RejectDuplicateKeysMode.DEFAULT, provider);
+        JsonObjectBuilder builder = new JsonObjectBuilderImpl(jsonObject, bufferProvider, DuplicateKeysMode.LAST, provider);
 
         for (Map.Entry<String, JsonValue> patchAttrib : patch.entrySet()) {
             String attribName = patchAttrib.getKey();

@@ -62,7 +62,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     private final JsonGeneratorFactory generatorFactory = new JsonGeneratorFactoryImpl(null);
     private final JsonWriterFactory writerFactory = new JsonWriterFactoryImpl(null);
     private final Supplier<JsonBuilderFactory> builderFactory = new Cached<>(() ->
-            new JsonBuilderFactoryImpl(null, bufferProvider.get(), RejectDuplicateKeysMode.DEFAULT, this));
+            new JsonBuilderFactoryImpl(null, bufferProvider.get(), DuplicateKeysMode.LAST, this));
     private int maxBigDecimalScale = Integer.getInteger("johnzon.max-big-decimal-scale", 1_000);
     @Override
     public JsonParser createParser(final InputStream in) {
@@ -193,7 +193,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     public JsonBuilderFactory createBuilderFactory(final Map<String, ?> config) {
         final JsonBuilderFactory builderFactory = this.builderFactory.get();
         return (config == null || config.isEmpty()) ?
-                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get(), RejectDuplicateKeysMode.from(config), this);
+                builderFactory : new JsonBuilderFactoryImpl(config, bufferProvider.get(), DuplicateKeysMode.from(config), this);
     }
 
     @Override

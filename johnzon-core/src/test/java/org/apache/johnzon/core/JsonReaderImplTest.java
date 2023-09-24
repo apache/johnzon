@@ -37,6 +37,7 @@ import java.util.Map;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
+import jakarta.json.JsonConfig;
 import jakarta.json.JsonException;
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
@@ -72,6 +73,35 @@ public class JsonReaderImplTest {
                 "\"a\":1," +
                 "\"a\":2" +
                 "}")).readObject();
+    }
+
+    @Test(expected = JsonException.class)
+    public void keyStrategyNone() {
+        Json.createReaderFactory(singletonMap(JsonConfig.KEY_STRATEGY, JsonConfig.KeyStrategy.NONE)).createReader(new StringReader("{" +
+                "\"a\":1," +
+                "\"a\":2" +
+                "}")).readObject();
+    }
+
+
+    @Test
+    public void keyStrategyFirstKey() {
+        JsonObject object = Json.createReaderFactory(singletonMap(JsonConfig.KEY_STRATEGY, JsonConfig.KeyStrategy.FIRST)).createReader(new StringReader("{" +
+                "\"a\":1," +
+                "\"a\":2" +
+                "}")).readObject();
+
+        assertEquals(1, object.getInt("a"));
+    }
+
+    @Test
+    public void keyStrategyLastKey() {
+        JsonObject object = Json.createReaderFactory(singletonMap(JsonConfig.KEY_STRATEGY, JsonConfig.KeyStrategy.LAST)).createReader(new StringReader("{" +
+                "\"a\":1," +
+                "\"a\":2" +
+                "}")).readObject();
+
+        assertEquals(2, object.getInt("a"));
     }
 
     @Test(expected = JsonParsingException.class)
