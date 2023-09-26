@@ -34,4 +34,49 @@
     <module>jsonp</module>
   </modules>
 
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <version>3.2.0</version>
+          <executions>
+            <execution>
+              <id>copy</id>
+              <phase>generate-test-resources</phase>
+              <goals>
+                <goal>copy</goal>
+              </goals>
+
+              <configuration>
+                <artifactItems>
+                  <artifactItem>
+                    <groupId>jakarta.json</groupId>
+                    <artifactId>jakarta.json-api</artifactId>
+                    <version>${jakarta-jsonp-api.version}</version>
+                    <type>jar</type>
+                    <overWrite>true</overWrite>
+                    <outputDirectory>${project.build.directory}/signaturedirectory</outputDirectory>
+                    <destFileName>jakarta.json-api.jar</destFileName>
+                  </artifactItem>
+
+                  <artifactItem>
+                    <groupId>jakarta.json.bind</groupId>
+                    <artifactId>jakarta.json.bind-api</artifactId>
+                    <version>${jakarta-jsonb-api.version}</version>
+                    <type>jar</type>
+                    <overWrite>true</overWrite>
+                    <outputDirectory>${project.build.directory}/signaturedirectory</outputDirectory>
+                    <destFileName>jakarta.json.bind-api.jar</destFileName>
+                  </artifactItem>
+                </artifactItems>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
 </project>
