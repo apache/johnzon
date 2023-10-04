@@ -77,13 +77,12 @@
   </dependencies>
 
   <build>
-    <testResources>
-      <testResource>
-        <directory>src/test/resources</directory>
-        <filtering>true</filtering>
-      </testResource>
-    </testResources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -94,16 +93,10 @@
           <dependenciesToScan>
             <dependency>jakarta.json.bind:jakarta.json.bind-tck</dependency>
           </dependenciesToScan>
-          <includes>
-            <include>ee.jakarta.tck.json.bind.**</include>
-          </includes>
-          <!--
-          <excludes>
-            <exclude>**/JSONBSigTest</exclude>
-          </excludes>
-          -->
+
           <systemProperties>
-            <signature.sigTestClasspath>${project.build.outputDirectory}</signature.sigTestClasspath>
+            <jimage.dir>${project.build.directory}/jimage</jimage.dir>
+            <signature.sigTestClasspath>${project.build.directory}/signaturedirectory/jakarta.json.bind-api.jar:${project.build.directory}/jimage/java.base:${project.build.directory}/jimage/java.rmi:${project.build.directory}/jimage/java.sql:${project.build.directory}/jimage/java.naming</signature.sigTestClasspath>
 
             <!-- don't serialize BigDecimal/BigInteger as strings. Usually enabled by default in johnzon, see https://github.com/jakartaee/jsonb-api/issues/187 -->
             <johnzon.use-bigdecimal-stringadapter>false</johnzon.use-bigdecimal-stringadapter>
@@ -117,6 +110,4 @@
       </plugin>
     </plugins>
   </build>
-
-
 </project>
