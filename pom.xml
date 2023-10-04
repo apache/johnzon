@@ -775,6 +775,13 @@
 
   <profiles>
     <profile>
+      <id>tck</id>
+      <modules>
+        <module>tck</module>
+      </modules>
+    </profile>
+
+    <profile>
         <id>jdk9+</id>
         <activation>
             <jdk>[9,)</jdk>
