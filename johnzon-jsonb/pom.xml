@@ -101,35 +101,12 @@
       <groupId>org.apache.openwebbeans</groupId>
       <artifactId>openwebbeans-impl</artifactId>
       <version>${owb.version}</version>
-      <classifier>jakarta</classifier>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.openwebbeans</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.geronimo.specs</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.openwebbeans</groupId>
       <artifactId>openwebbeans-spi</artifactId>
       <version>${owb.version}</version>
-      <classifier>jakarta</classifier>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.openwebbeans</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.geronimo.specs</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 

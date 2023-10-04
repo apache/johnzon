@@ -607,8 +607,9 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
 
             final WriterConverters writerConverters = new WriterConverters(annotations, types);
             final JsonbProperty property = annotations.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = annotations.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = isNillable(property, nillable);
+            final JsonbNillable propertyNillable = annotations.getAnnotation(JsonbNillable.class);
+            final JsonbNillable classOrPackageNillable = annotations.getClassOrPackageAnnotation(JsonbNillable.class);
+            final boolean isNillable = isNillable(property, propertyNillable, classOrPackageNillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Reader() {
                 @Override
@@ -725,8 +726,9 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
 
             final ReaderConverters converters = new ReaderConverters(initialWriter);
             final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = isNillable(property, nillable);
+            final JsonbNillable propertyNillable = initialWriter.getAnnotation(JsonbNillable.class);
+            final JsonbNillable classOrPackageNillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
+            final boolean isNillable = isNillable(property, propertyNillable, classOrPackageNillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Writer() {
                 @Override
@@ -829,12 +831,14 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                 });
     }
 
-    private boolean isNillable(final JsonbProperty property, final JsonbNillable nillable) {
-        if (property != null) {
+    private boolean isNillable(final JsonbProperty property, final JsonbNillable propertyNillable, final JsonbNillable classOrPackageNillable) {
+        if (propertyNillable != null) {
+            return propertyNillable.value();
+        } else if (property != null) {
             return property.nillable();
         }
-        if (nillable != null) {
-            return nillable.value();
+        if (classOrPackageNillable != null) {
+            return classOrPackageNillable.value();
         }
         return globalIsNillable;
     }
