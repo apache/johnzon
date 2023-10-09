@@ -30,20 +30,20 @@ import jakarta.json.JsonReaderFactory;
 import jakarta.json.stream.JsonParser;
 
 class JsonReaderFactoryImpl extends AbstractJsonFactory implements JsonReaderFactory {
-    static final Collection<String> SUPPORTED_CONFIG_KEYS = DuplicateKeysMode.CONFIG_KEYS;
+    static final Collection<String> SUPPORTED_CONFIG_KEYS = RejectDuplicateKeysMode.CONFIG_KEYS;
 
     private final JsonParserFactoryImpl parserFactory;
-    private final DuplicateKeysMode rejectDuplicateKeys;
+    private final RejectDuplicateKeysMode rejectDuplicateKeys;
     private JsonProviderImpl provider;
 
     JsonReaderFactoryImpl(final Map<String, ?> config, final JsonProviderImpl provider) {
         super(config, SUPPORTED_CONFIG_KEYS, JsonParserFactoryImpl.SUPPORTED_CONFIG_KEYS);
         this.provider = provider;
         if (!internalConfig.isEmpty()) {
-            DuplicateKeysMode.CONFIG_KEYS.forEach(internalConfig::remove);
+            RejectDuplicateKeysMode.CONFIG_KEYS.forEach(internalConfig::remove);
         }
         this.parserFactory = new JsonParserFactoryImpl(internalConfig, provider);
-        this.rejectDuplicateKeys = DuplicateKeysMode.from(config);
+        this.rejectDuplicateKeys = RejectDuplicateKeysMode.from(config);
     }
 
     @Override

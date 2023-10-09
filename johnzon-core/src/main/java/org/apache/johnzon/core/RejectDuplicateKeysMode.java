@@ -21,19 +21,22 @@ package org.apache.johnzon.core;
 import jakarta.json.JsonConfig;
 import jakarta.json.JsonException;
 import jakarta.json.JsonValue;
+
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.Arrays.asList;
 
-public enum DuplicateKeysMode {
-    NONE((map, k, v) -> {
+public enum RejectDuplicateKeysMode {
+    DEFAULT(Map::put),
+    TRUE((map, k, v) -> {
         if (map.put(k, v) != null) {
             throw new JsonException("Rejected key: '" + k + "', already present");
         }
     }),
-    FIRST(Map::putIfAbsent),
-    LAST(Map::put);
+    FIRST(Map::putIfAbsent);
 
     static final List<String> CONFIG_KEYS = asList(
             JsonConfig.KEY_STRATEGY, // jsonp 2.1 spec
@@ -41,45 +44,25 @@ public enum DuplicateKeysMode {
             "org.glassfish.json.rejectDuplicateKeys" // the spec includes it (yes :facepalm:)
     );
 
-    public static DuplicateKeysMode from(final Map<String, ?> config) {
+    public static RejectDuplicateKeysMode from(final Map<String, ?> config) {
         if (config == null) {
-            return LAST;
+            return DEFAULT;
         }
 
-        for (String configKey : CONFIG_KEYS) {
-            Object value = config.get(configKey);
-            if (value == null) {
-                continue;
-            }
-
-            if (configKey.equals(JsonConfig.KEY_STRATEGY)) {
-                JsonConfig.KeyStrategy specKeyStrategy = (JsonConfig.KeyStrategy) value;
-
-                switch (specKeyStrategy) {
-                    case NONE:
-                        return NONE;
-
-                    case FIRST:
-                        return FIRST;
-
-                    default:
-                    case LAST:
-                        return LAST;
-                }
-            }
-
-            String valueAsString = String.valueOf(value);
-            if ("true".equals(valueAsString)) {
-                return NONE;
-            }
-        }
-
-        return LAST;
+        return CONFIG_KEYS.stream()
+                .map(config::get)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .map(String::valueOf)
+                .map(it -> "false".equalsIgnoreCase(it) || "LAST".equalsIgnoreCase(it) ? "DEFAULT" : it) // aliases to avoid to add an enum value for nothing
+                .map(it -> "NONE".equalsIgnoreCase(it) ? "true" : it)
+                .map(it -> valueOf(it.toUpperCase(Locale.ROOT).trim()))
+                .orElse(TRUE);
     }
 
     private final Put put;
 
-    DuplicateKeysMode(final Put put) {
+    RejectDuplicateKeysMode(final Put put) {
         this.put = put;
     }
 

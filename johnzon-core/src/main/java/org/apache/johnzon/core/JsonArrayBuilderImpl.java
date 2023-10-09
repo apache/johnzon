@@ -35,7 +35,7 @@ import java.util.Map;
 import org.apache.johnzon.core.util.ArrayUtil;
 
 class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
-    private DuplicateKeysMode duplicateKeysMode;
+    private RejectDuplicateKeysMode rejectDuplicateKeysMode;
     private JsonProviderImpl jsonProvider;
     private List<JsonValue> tmpList;
     private BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -46,18 +46,18 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     public JsonArrayBuilderImpl(final JsonArray initialData,
                                 final BufferStrategy.BufferProvider<char[]> provider,
-                                final DuplicateKeysMode duplicateKeysMode,
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode,
                                 final JsonProviderImpl jsonProvider) {
         this.tmpList = new ArrayList<>(initialData);
         this.bufferProvider = provider;
-        this.duplicateKeysMode = duplicateKeysMode;
+        this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
         this.jsonProvider = jsonProvider;
     }
 
     public JsonArrayBuilderImpl(final Collection<?> initialData, final BufferStrategy.BufferProvider<char[]> provider,
-                                final DuplicateKeysMode duplicateKeysMode, final JsonProviderImpl jsonProvider) {
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl jsonProvider) {
         this.bufferProvider = provider;
-        this.duplicateKeysMode = duplicateKeysMode;
+        this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
         this.tmpList = new ArrayList<>();
         if (!initialData.isEmpty()) {
             for (Object initialValue : initialData) {
@@ -229,12 +229,12 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
         } else if (value instanceof String) {
             add((String) value);
         } else if (value instanceof Map) {
-            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, duplicateKeysMode, jsonProvider).build());
+            add(new JsonObjectBuilderImpl(Map.class.cast(value), bufferProvider, rejectDuplicateKeysMode, jsonProvider).build());
         } else if (value instanceof Collection) {
-            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, duplicateKeysMode, jsonProvider).build());
+            add(new JsonArrayBuilderImpl(Collection.class.cast(value), bufferProvider, rejectDuplicateKeysMode, jsonProvider).build());
         } else if (value.getClass().isArray()) {
             final Collection<Object> collection = ArrayUtil.newCollection(value);
-            add(new JsonArrayBuilderImpl(collection, bufferProvider, duplicateKeysMode, jsonProvider).build());
+            add(new JsonArrayBuilderImpl(collection, bufferProvider, rejectDuplicateKeysMode, jsonProvider).build());
         } else {
             throw new JsonException("Illegal JSON type! type=" + value.getClass());
         }

@@ -48,7 +48,7 @@ class JsonMergePatchDiff extends DiffBase {
     }
 
     private JsonValue diff(JsonValue source, JsonValue target) {
-        JsonObjectBuilder builder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, DuplicateKeysMode.LAST, provider);
+        JsonObjectBuilder builder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, RejectDuplicateKeysMode.DEFAULT, provider);
 
         if (isJsonObject(source) && isJsonObject(target)) {
             JsonObject srcObj = source.asJsonObject();

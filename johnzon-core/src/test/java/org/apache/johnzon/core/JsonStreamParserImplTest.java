@@ -68,7 +68,7 @@ public class JsonStreamParserImplTest {
         final String json = new JsonObjectBuilderImpl(
             emptyMap(),
             BufferStrategyFactory.valueOf("QUEUE").newCharProvider(100),
-            DuplicateKeysMode.NONE, (JsonProviderImpl) JsonProviderImpl.provider())
+            RejectDuplicateKeysMode.TRUE, (JsonProviderImpl) JsonProviderImpl.provider())
                 .add("content", "{\"foo\":\"barbar\\barbarbar\"}")
                 .build()
                 .toString();
