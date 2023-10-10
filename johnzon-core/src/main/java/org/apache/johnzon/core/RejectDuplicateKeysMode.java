@@ -57,7 +57,7 @@ public enum RejectDuplicateKeysMode {
                 .map(it -> "false".equalsIgnoreCase(it) || "LAST".equalsIgnoreCase(it) ? "DEFAULT" : it) // aliases to avoid to add an enum value for nothing
                 .map(it -> "NONE".equalsIgnoreCase(it) ? "true" : it)
                 .map(it -> valueOf(it.toUpperCase(Locale.ROOT).trim()))
-                .orElse(TRUE);
+                .orElse(DEFAULT);
     }
 
     private final Put put;
