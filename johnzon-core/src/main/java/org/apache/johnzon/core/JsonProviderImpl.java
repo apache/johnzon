@@ -180,8 +180,13 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
     }
 
     @Override
+    public JsonNumber createValue(Number number) {
+        return createValue(new BigDecimal(number.toString()));
+    }
+
+    @Override
     public JsonNumber createValue(final BigInteger value) {
-        return new JsonNumberImpl(new BigDecimal(value.toString()), this::checkBigDecimalScale);
+        return createValue((Number) value);
     }
 
     @Override

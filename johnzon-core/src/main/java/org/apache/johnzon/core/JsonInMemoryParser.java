@@ -174,6 +174,11 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
     }
 
     @Override
+    public Event currentEvent() {
+        return currentEvent;
+    }
+
+    @Override
     public Event current() {
         if (currentEvent == null && hasNext()) {
             internalNext();

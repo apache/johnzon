@@ -46,7 +46,8 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
 
     public JsonArrayBuilderImpl(final JsonArray initialData,
                                 final BufferStrategy.BufferProvider<char[]> provider,
-                                final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl jsonProvider) {
+                                final RejectDuplicateKeysMode rejectDuplicateKeysMode,
+                                final JsonProviderImpl jsonProvider) {
         this.tmpList = new ArrayList<>(initialData);
         this.bufferProvider = provider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;

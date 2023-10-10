@@ -33,6 +33,37 @@ import static org.junit.Assert.assertEquals;
 
 public class JsonStreamParserImplTest {
     @Test
+    public void testSpecCurrentEvent() {
+        String json = "{}";
+
+        final JsonParser parser = new JsonStreamParserImpl(new ByteArrayInputStream(json
+                .getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8,
+                10,
+                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
+                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
+                true, (JsonProviderImpl) JsonProviderImpl.provider());
+
+        assertEquals(null, parser.currentEvent());
+
+        parser.next();
+        assertEquals(JsonParser.Event.START_OBJECT, parser.currentEvent());
+    }
+
+    @Test
+    public void testJohnzonParserCurrent() {
+        String json = "{}";
+
+        final JohnzonJsonParser parser = new JsonStreamParserImpl(new ByteArrayInputStream(json
+                .getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8,
+                10,
+                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
+                BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
+                true, (JsonProviderImpl) JsonProviderImpl.provider());
+
+        assertEquals(JsonParser.Event.START_OBJECT, parser.current());
+    }
+
+    @Test
     public void ensureNoArrayBoundErrorWhenOverflow() throws IOException {
         final String json = new JsonObjectBuilderImpl(
             emptyMap(),

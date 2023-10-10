@@ -18,8 +18,10 @@
  */
 package org.apache.johnzon.core;
 
+import jakarta.json.JsonConfig;
 import jakarta.json.JsonException;
 import jakarta.json.JsonValue;
+
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -33,9 +35,11 @@ public enum RejectDuplicateKeysMode {
         if (map.put(k, v) != null) {
             throw new JsonException("Rejected key: '" + k + "', already present");
         }
-    });
+    }),
+    FIRST(Map::putIfAbsent);
 
     static final List<String> CONFIG_KEYS = asList(
+            JsonConfig.KEY_STRATEGY, // jsonp 2.1 spec
             "johnzon.rejectDuplicateKeys", // our specific one
             "org.glassfish.json.rejectDuplicateKeys" // the spec includes it (yes :facepalm:)
     );
@@ -44,12 +48,14 @@ public enum RejectDuplicateKeysMode {
         if (config == null) {
             return DEFAULT;
         }
+
         return CONFIG_KEYS.stream()
                 .map(config::get)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .map(String::valueOf)
-                .map(it -> "false".equalsIgnoreCase(it) ? "DEFAULT" : it) // alias to avoid to add an enum value for nothing
+                .map(it -> "false".equalsIgnoreCase(it) || "LAST".equalsIgnoreCase(it) ? "DEFAULT" : it) // aliases to avoid to add an enum value for nothing
+                .map(it -> "NONE".equalsIgnoreCase(it) ? "true" : it)
                 .map(it -> valueOf(it.toUpperCase(Locale.ROOT).trim()))
                 .orElse(DEFAULT);
     }

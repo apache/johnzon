@@ -83,4 +83,14 @@ public class JsonProviderTest {
 
         Assert.assertEquals(bi, val.bigIntegerValue());
     }
+
+    @Test
+    public void testJsonCreateValueNumber() {
+        Number someNumber = 42;
+        JsonNumber val = Json.createValue(someNumber);
+
+        Assert.assertNotNull(val);
+        Assert.assertEquals(JsonValue.ValueType.NUMBER, val.getValueType());
+        Assert.assertEquals(someNumber, val.intValue());
+    }
 }

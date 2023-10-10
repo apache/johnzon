@@ -28,6 +28,7 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 
 import jakarta.json.Json;
+import jakarta.json.JsonConfig;
 import jakarta.json.JsonException;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonObjectBuilder;
@@ -43,6 +44,36 @@ public class JsonObjectBuilderImplTest {
                 .createObjectBuilder()
                 .add("foo", 1)
                 .add("foo", 2);
+    }
+
+    @Test(expected = JsonException.class)
+    public void keyStrategyNone() {
+        Json.createBuilderFactory(singletonMap(JsonConfig.KEY_STRATEGY, JsonConfig.KeyStrategy.NONE))
+                .createObjectBuilder()
+                .add("foo", 1)
+                .add("foo", 2);
+    }
+
+    @Test
+    public void keyStrategyFirst() {
+        JsonObject built = Json.createBuilderFactory(singletonMap(JsonConfig.KEY_STRATEGY, JsonConfig.KeyStrategy.FIRST))
+                .createObjectBuilder()
+                .add("foo", 1)
+                .add("foo", 2)
+                .build();
+
+        assertEquals("{\"foo\":1}", built.toString());
+    }
+
+    @Test
+    public void keyStrategyLast() {
+        JsonObject built = Json.createBuilderFactory(singletonMap(JsonConfig.KEY_STRATEGY, JsonConfig.KeyStrategy.LAST))
+                .createObjectBuilder()
+                .add("foo", 1)
+                .add("foo", 2)
+                .build();
+
+        assertEquals("{\"foo\":2}", built.toString());
     }
 
     @Test

@@ -370,13 +370,19 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     }
 
     @Override
+    public Event currentEvent() {
+        return previousEvent >= 0 && previousEvent < Event.values().length
+                ? Event.values()[previousEvent]
+                : null;
+    }
+
+    @Override
     public Event current() {
         if (previousEvent < 0 && hasNext()) {
             internalNext();
         }
-        return previousEvent >= 0 && previousEvent < Event.values().length
-                ? Event.values()[previousEvent]
-                : null;
+
+        return currentEvent();
     }
 
     private void unreadChar() {
