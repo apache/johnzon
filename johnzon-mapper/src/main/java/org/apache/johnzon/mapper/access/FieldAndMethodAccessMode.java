@@ -177,7 +177,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
     @Override
     public Map<String, Writer> doFindWriters(final Class<?> clazz) {
         final Map<String, Writer> fieldWriters = this.fields.findWriters(clazz);
-        final Map<String, Writer> metodWriters = this.methods.findWriters(clazz);
+        final Map<String, Writer> methodWriters = this.methods.findWriters(clazz);
 
         final Map<String, Writer> writers = new HashMap<String, Writer>();
 
@@ -186,7 +186,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
             final Method m = getMethod("set" + Character.toUpperCase(key.charAt(0)) + (key.length() > 1 ? key.substring(1) : ""), clazz, toType(entry.getValue().getType()));
             boolean skip = false;
             if (m != null && (ignoreVisibilityFilter || Modifier.isPublic(m.getModifiers()))) {
-                for (final Writer w : metodWriters.values()) {
+                for (final Writer w : methodWriters.values()) {
                     if (MethodAccessMode.MethodDecoratedType.class.cast(w).getMethod().equals(m)) {
                         if (w.getAnnotation(JohnzonProperty.class) != null) {
                             skip = true;
@@ -203,7 +203,7 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
             writers.put(entry.getKey(), entry.getValue());
         }
 
-        for (final Map.Entry<String, Writer> entry : metodWriters.entrySet()) {
+        for (final Map.Entry<String, Writer> entry : methodWriters.entrySet()) {
             final Method mr = MethodAccessMode.MethodDecoratedType.class.cast(entry.getValue()).getMethod();
             final String fieldName = BeanUtil.decapitalize(mr.getName().startsWith("is") ? mr.getName().substring(2) : mr.getName().substring(3));
             final Field f = getField(fieldName, clazz);
