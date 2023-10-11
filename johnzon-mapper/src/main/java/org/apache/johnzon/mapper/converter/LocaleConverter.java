@@ -45,7 +45,7 @@ public class LocaleConverter implements TypeAwareAdapter<Locale, String> {
 
     @Override
     public String from(final Locale instance) {
-        return instance.toString();
+        return instance.toLanguageTag();
     }
 
     @Override

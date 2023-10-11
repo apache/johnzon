@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNotNull;
 public class LocaleTest {
     @Test
     public void roundTrip() {
-        final String expected = "{\"locale\":\"fr_FR\"}";
+        final String expected = "{\"locale\":\"fr-FR\"}";
         final Mapper mapper = new MapperBuilder().setAccessMode(new FieldAccessMode(false, false)).build();
         {
             final Locale locale = Locale.FRANCE;
@@ -40,7 +40,7 @@ public class LocaleTest {
         {
             final LocaleHolder holder = mapper.readObject(expected, LocaleHolder.class);
             assertNotNull(holder.locale);
-            assertEquals("fr_FR", holder.locale.toString());
+            assertEquals("fr-FR", holder.locale.toLanguageTag());
         }
     }
 
