@@ -18,13 +18,22 @@
  */
 package org.apache.johnzon.jsonb.polymorphism;
 
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbDateFormat;
+import jakarta.json.bind.annotation.JsonbProperty;
 import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.hamcrest.CoreMatchers;
 import org.junit.Rule;
 import org.junit.Test;
 
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -74,6 +83,23 @@ public class JsonbPolymorphismTest {
         assertEquals(3, dog.dogAge);
     }
 
+    @Test
+    public void testCreatorDeserialization() {
+        SomeDateType deserialized = jsonb.fromJson("{\"@dateType\":\"constructor\",\"localDate\":\"26-02-2021\"}",
+                                                   SomeDateType.class);
+
+        assertThat("Incorrectly deserialized according to the type information. Expected was DateConstructor instance. "
+                   + "Got instance of class " + deserialized.getClass(),
+                   deserialized, CoreMatchers.instanceOf(DateConstructor.class));
+
+        final DateTimeFormatter formatter =
+            DateTimeFormatter.ofPattern("dd-MM-yyyy").withLocale(Locale.forLanguageTag("nl-NL"));
+        assertThat("Date isn't the expected one",
+                   ((DateConstructor) deserialized).getLocalDate(),
+                   CoreMatchers.equalTo(LocalDate.parse("26-02-2021", formatter)));
+
+    }
+
     @JsonbTypeInfo(key = "@animal", value = @JsonbSubtype(alias = "dog", type = Dog.class))
     public interface Animal {
     }
@@ -88,5 +114,26 @@ public class JsonbPolymorphismTest {
 
     public static class Labrador extends Dog {
         public String labradorName;
+    }
+
+    @JsonbTypeInfo(key = "@dateType", value = {
+        @JsonbSubtype(alias = "constructor", type = DateConstructor.class)
+    })
+    public interface SomeDateType {
+
+    }
+
+    public static final class DateConstructor implements SomeDateType {
+
+        private LocalDate localDate;
+
+        @JsonbCreator
+        public DateConstructor(@JsonbProperty("localDate") @JsonbDateFormat(value = "dd-MM-yyyy", locale = "nl-NL") LocalDate localDate) {
+            this.localDate = localDate;
+        }
+
+        public LocalDate getLocalDate() {
+            return localDate;
+        }
     }
 }
