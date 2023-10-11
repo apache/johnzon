@@ -136,33 +136,50 @@ public class JsonbTypesTest {
     }
 
     @Test
-    public void testOptionalViaJsonbCreatorFullJson() {
+    public void testOptionalViaJsonbCreatorFullJson() throws Exception {
         final Jsonb jsonb = newJsonb();
         final String json = "{\"intOptional\":4711,\"stringOptional\":\"testVal\"}";
         final OptionalTypes optionalTypes = jsonb.fromJson(json, OptionalTypes.class);
         assertNotNull(optionalTypes);
         assertEquals("testVal", optionalTypes.getOptionalString());
         assertEquals(4711, optionalTypes.getOptionalInt());
+        jsonb.close();
     }
 
     @Test
-    public void testOptionalViaJsonbCreatorEmptyJson() {
+    public void testOptionalViaJsonbCreatorEmptyJson() throws Exception {
         final Jsonb jsonb = newJsonb();
         final String json = "{ }";
         final OptionalTypes optionalTypes = jsonb.fromJson(json, OptionalTypes.class);
         assertNotNull(optionalTypes);
         assertEquals(OptionalTypes.EMPTY, optionalTypes.getOptionalString());
         assertEquals(-1, optionalTypes.getOptionalInt());
+        jsonb.close();
     }
 
     @Test
-    public void testOptionalViaJsonbCreatorPartialJson() {
+    public void testOptionalViaJsonbCreatorPartialJson() throws Exception {
         final Jsonb jsonb = newJsonb();
         final String json = "{\"intOptional\":4711}";
         final OptionalTypes optionalTypes = jsonb.fromJson(json, OptionalTypes.class);
         assertNotNull(optionalTypes);
         assertEquals(OptionalTypes.EMPTY, optionalTypes.getOptionalString());
         assertEquals(4711, optionalTypes.getOptionalInt());
+        jsonb.close();
+    }
+
+    @Test
+    public void testPrimitiveEmptyJson() throws Exception {
+        final Jsonb jsonb = newJsonb();
+        final String json = "{ }";
+        final PrimitiveTypes primitiveTypes = jsonb.fromJson(json, PrimitiveTypes.class);
+        assertNotNull(primitiveTypes);
+        assertEquals(0, primitiveTypes.getByteVal());
+        assertEquals(0, primitiveTypes.getShortVal());
+        assertEquals(0, primitiveTypes.getIntVal());
+        assertEquals(0L, primitiveTypes.getLongVal());
+
+        jsonb.close();
     }
 
     private void readAndWriteWithDateFormat(DateTimeFormatter dateTimeFormatter, String dateFormat) throws Exception {
@@ -578,6 +595,52 @@ public class JsonbTypesTest {
 
         public int getOptionalInt() {
             return optionalInt;
+        }
+    }
+
+    public static class PrimitiveTypes {
+        private final byte byteVal;
+        private final short shortVal;
+        private final char charVal;
+        private final int intVal;
+        private final long longVal;
+
+        public PrimitiveTypes(byte byteVal, short shortVal, char charVal, int intVal, long longVal) {
+            this.byteVal = byteVal;
+            this.shortVal = shortVal;
+            this.charVal = charVal;
+            this.intVal = intVal;
+            this.longVal = longVal;
+
+        }
+
+        @JsonbCreator
+        public static PrimitiveTypes init(@JsonbProperty("byteVal")  byte byteVal,
+                                          @JsonbProperty("shortVal") short shortVal,
+                                          @JsonbProperty("charVal")  char charVal,
+                                          @JsonbProperty("intVal")   int intVal,
+                                          @JsonbProperty("longVal")  long longVal) {
+            return new PrimitiveTypes(byteVal, shortVal, charVal, intVal, longVal);
+        }
+
+        public byte getByteVal() {
+            return byteVal;
+        }
+
+        public short getShortVal() {
+            return shortVal;
+        }
+
+        public char getCharVal() {
+            return charVal;
+        }
+
+        public int getIntVal() {
+            return intVal;
+        }
+
+        public long getLongVal() {
+            return longVal;
         }
     }
 }
