@@ -97,6 +97,9 @@
           <excludes>
             <!-- https://github.com/jakartaee/jsonb-api/issues/344 -->
             <exclude>**/SerializersCustomizationCDITest</exclude>
+
+            <!-- https://github.com/jakartaee/jsonb-api/issues/347 -->
+            <exclude>**/AnnotationTypeInfoTest</exclude>
           </excludes>
 
           <systemProperties>
