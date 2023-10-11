@@ -178,6 +178,9 @@ public class JsonbTypesTest {
         assertEquals(0, primitiveTypes.getShortVal());
         assertEquals(0, primitiveTypes.getIntVal());
         assertEquals(0L, primitiveTypes.getLongVal());
+        assertEquals(0.0f, primitiveTypes.getFloatVal(), 0.0000001);
+        assertEquals(0.0, primitiveTypes.getDoubleVal(), 0.0000001);
+        assertEquals(false, primitiveTypes.isBooleanVal());
 
         jsonb.close();
     }
@@ -604,14 +607,20 @@ public class JsonbTypesTest {
         private final char charVal;
         private final int intVal;
         private final long longVal;
+        private final float floatVal;
+        private final double doubleVal;
+        private final boolean booleanVal;
 
-        public PrimitiveTypes(byte byteVal, short shortVal, char charVal, int intVal, long longVal) {
+        public PrimitiveTypes(byte byteVal, short shortVal, char charVal, int intVal, long longVal,
+                              float floatVal, double doubleVal, boolean booleanVal) {
             this.byteVal = byteVal;
             this.shortVal = shortVal;
             this.charVal = charVal;
             this.intVal = intVal;
             this.longVal = longVal;
-
+            this.floatVal = floatVal;
+            this.doubleVal = doubleVal;
+            this.booleanVal = booleanVal;
         }
 
         @JsonbCreator
@@ -619,8 +628,11 @@ public class JsonbTypesTest {
                                           @JsonbProperty("shortVal") short shortVal,
                                           @JsonbProperty("charVal")  char charVal,
                                           @JsonbProperty("intVal")   int intVal,
-                                          @JsonbProperty("longVal")  long longVal) {
-            return new PrimitiveTypes(byteVal, shortVal, charVal, intVal, longVal);
+                                          @JsonbProperty("longVal")  long longVal,
+                                          @JsonbProperty("floatVal")  float floatVal,
+                                          @JsonbProperty("doubleVal")  double doubleVal,
+                                          @JsonbProperty("booleanVal")  boolean booleanVal) {
+            return new PrimitiveTypes(byteVal, shortVal, charVal, intVal, longVal, floatVal, doubleVal, booleanVal);
         }
 
         public byte getByteVal() {
@@ -641,6 +653,18 @@ public class JsonbTypesTest {
 
         public long getLongVal() {
             return longVal;
+        }
+
+        public float getFloatVal() {
+            return floatVal;
+        }
+
+        public double getDoubleVal() {
+            return doubleVal;
+        }
+
+        public boolean isBooleanVal() {
+            return booleanVal;
         }
     }
 }
