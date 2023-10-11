@@ -50,6 +50,11 @@ class DefaultPropertyVisibilityStrategy implements jakarta.json.bind.config.Prop
         return strategy == this ? isFieldVisible(field, root, useGetter) : strategy.isVisible(field);
     }
 
+    /**
+     * If the field is not public then it's of course not visible. If the field is public then we need to look at the
+     * accessors. If there is a private/protected/default accessor for it then it overrides and the field is not visible
+     * But if there is no accessor for it, then it's visible.
+     */
     private boolean isFieldVisible(final Field field, final Class<?> root, final boolean useGetter) {
         if (!Modifier.isPublic(field.getModifiers())) {
             return false;
@@ -57,16 +62,16 @@ class DefaultPropertyVisibilityStrategy implements jakarta.json.bind.config.Prop
         // 3.7.1. Scope and Field access strategy
         // note: we should bind the class since a field of a parent class can have a getter in a child
         if (!useGetter) {
-            return !hasMethod(root, BeanUtil.setterName(field.getName()));
+            return !hasMethod(root, BeanUtil.setterName(field.getName()), field.getType());
         }
-        final String capitalizedName = BeanUtil.capitalize(field.getName());
-        return !hasMethod(root, "get" + capitalizedName) ||  hasMethod(root, "is" + capitalizedName);
+        return !hasMethod(root, BeanUtil.getterName(field.getName(), field.getType()));
     }
 
     private boolean hasMethod(Class<?> clazz, String methodName, Class<?>... paramTypes) {
         try {
-            clazz.getDeclaredMethod(methodName, paramTypes);
-            return true;
+            final Method declaredMethod = clazz.getDeclaredMethod(methodName, paramTypes);
+            return !Modifier.isPublic(declaredMethod.getModifiers());
+
         } catch (NoSuchMethodException e) {
             final Class<?> superclass = clazz.getSuperclass();
             if (superclass == Object.class) {

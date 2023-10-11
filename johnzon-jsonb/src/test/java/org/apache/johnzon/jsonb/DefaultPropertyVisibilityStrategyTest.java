@@ -18,6 +18,7 @@
  */
 package org.apache.johnzon.jsonb;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -57,6 +58,61 @@ public class DefaultPropertyVisibilityStrategyTest {
         }
     }
 
+    @Test
+    public void matchingPrivateAccessors() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            assertEquals("{}", jsonb.toJson(new PublicFieldWithPrivateAccessors()));
+            assertEquals("{}", jsonb.toJson(new PublicBooleanFieldWithPrivateAccessors()));
+
+            {
+                final PublicFieldWithPrivateAccessors unmarshalledObject =
+                    jsonb.fromJson("{\"foo\":\"bad\"}", PublicFieldWithPrivateAccessors.class);
+                assertEquals("bar", unmarshalledObject.foo);
+            }
+            {
+                final PublicBooleanFieldWithPrivateAccessors unmarshalledObject =
+                    jsonb.fromJson("{\"foo\":\"false\"}", PublicBooleanFieldWithPrivateAccessors.class);
+                assertEquals(true, unmarshalledObject.foo);
+            }
+        }
+    }
+
+    @Test
+    public void noMatchingPrivateAccessors() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            assertEquals("{\"foo\":\"bar\"}", jsonb.toJson(new PublicFieldWithoutMatchingPrivateAccessors()));
+
+            final PublicFieldWithoutMatchingPrivateAccessors unmarshalledObject =
+                jsonb.fromJson("{\"foo\":\"good\"}", PublicFieldWithoutMatchingPrivateAccessors.class);
+            assertEquals("good", unmarshalledObject.foo);
+        }
+    }
+
+    @Test
+    public void oneAccessorOnly() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            assertEquals("{}", jsonb.toJson(new PublicFieldWithMatchingPrivateGetterAccessors()));
+            assertEquals("{\"foo\":\"bar\"}", jsonb.toJson(new PublicFieldWithMatchingPrivateSetterAccessors()));
+            assertEquals("{\"foo\":\"bar\"}", jsonb.toJson(new PublicFieldWithPublicAccessors()));
+
+            {
+                final PublicFieldWithMatchingPrivateGetterAccessors unmarshalledObject =
+                    jsonb.fromJson("{\"foo\":\"good\"}", PublicFieldWithMatchingPrivateGetterAccessors.class);
+                assertEquals("good", unmarshalledObject.foo);
+            }
+            {
+                final PublicFieldWithMatchingPrivateSetterAccessors unmarshalledObject =
+                    jsonb.fromJson("{\"foo\":\"bad\"}", PublicFieldWithMatchingPrivateSetterAccessors.class);
+                assertEquals("bar", unmarshalledObject.foo);
+            }
+            {
+                final PublicFieldWithPublicAccessors unmarshalledObject =
+                    jsonb.fromJson("{\"foo\":\"good\"}", PublicFieldWithPublicAccessors.class);
+                assertEquals("good", unmarshalledObject.foo);
+            }
+        }
+    }
+
     public static class HideAll extends DefaultPropertyVisibilityStrategy {
         @Override
         public boolean isVisible(final Field field) {
@@ -78,6 +134,64 @@ public class DefaultPropertyVisibilityStrategyTest {
         @Override
         public boolean isVisible(final Method method) {
             return true;
+        }
+    }
+
+    // if there is a matching private getter/setter, the field even if it's public must be ignored
+    public static final class PublicFieldWithPrivateAccessors {
+        public String foo = "bar";
+
+        private String getFoo() {
+            return foo;
+        }
+
+        private void setFoo(final String foo) {
+            this.foo = foo;
+        }
+    }
+
+    public static final class PublicFieldWithPublicAccessors {
+        public String foo = "bar";
+
+        public String getFoo() {
+            return foo;
+        }
+
+        public void setFoo(final String foo) {
+            this.foo = foo;
+        }
+    }
+
+    public static final class PublicBooleanFieldWithPrivateAccessors {
+        public boolean foo = true;
+
+        private boolean isFoo() {
+            return foo;
+        }
+
+        private void setFoo(final boolean foo) {
+            this.foo = foo;
+        }
+    }
+
+    // if there is not matching getter/setter for a public field, then the field is used directly
+    public static final class PublicFieldWithoutMatchingPrivateAccessors {
+        public String foo = "bar";
+    }
+
+    public static final class PublicFieldWithMatchingPrivateGetterAccessors {
+        public String foo = "bar";
+
+        private String getFoo() {
+            return foo;
+        }
+    }
+
+    public static final class PublicFieldWithMatchingPrivateSetterAccessors {
+        public String foo = "bar";
+
+        private void setFoo(final String foo) {
+            this.foo = foo;
         }
     }
 
