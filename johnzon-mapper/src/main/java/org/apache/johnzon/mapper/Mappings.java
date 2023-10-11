@@ -398,7 +398,9 @@ public class Mappings {
     }
 
     public static Object getPrimitiveDefault(final Type type) {
-        if (type == long.class) {
+        if (type == char.class) {
+            return '\u0000';
+        } else if (type == long.class) {
             return 0L;
         } else if (type == int.class) {
             return 0;
