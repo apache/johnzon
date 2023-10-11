@@ -19,6 +19,7 @@
 package org.apache.johnzon.jsonb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -54,6 +55,8 @@ import java.util.concurrent.TimeUnit;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbConfig;
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.spi.JsonbProvider;
 
 import org.apache.cxf.common.util.StringUtils;
@@ -131,7 +134,37 @@ public class JsonbTypesTest {
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyyMMdd+HHmmssZ"), "yyyyMMdd+HHmmssZ");
         readAndWriteWithDateFormat(DateTimeFormatter.ofPattern("yyyy-MM-dd"), "yyyy-MM-dd");
     }
-    
+
+    @Test
+    public void testOptionalViaJsonbCreatorFullJson() {
+        final Jsonb jsonb = newJsonb();
+        final String json = "{\"intOptional\":4711,\"stringOptional\":\"testVal\"}";
+        final OptionalTypes optionalTypes = jsonb.fromJson(json, OptionalTypes.class);
+        assertNotNull(optionalTypes);
+        assertEquals("testVal", optionalTypes.getOptionalString());
+        assertEquals(4711, optionalTypes.getOptionalInt());
+    }
+
+    @Test
+    public void testOptionalViaJsonbCreatorEmptyJson() {
+        final Jsonb jsonb = newJsonb();
+        final String json = "{ }";
+        final OptionalTypes optionalTypes = jsonb.fromJson(json, OptionalTypes.class);
+        assertNotNull(optionalTypes);
+        assertEquals(OptionalTypes.EMPTY, optionalTypes.getOptionalString());
+        assertEquals(-1, optionalTypes.getOptionalInt());
+    }
+
+    @Test
+    public void testOptionalViaJsonbCreatorPartialJson() {
+        final Jsonb jsonb = newJsonb();
+        final String json = "{\"intOptional\":4711}";
+        final OptionalTypes optionalTypes = jsonb.fromJson(json, OptionalTypes.class);
+        assertNotNull(optionalTypes);
+        assertEquals(OptionalTypes.EMPTY, optionalTypes.getOptionalString());
+        assertEquals(4711, optionalTypes.getOptionalInt());
+    }
+
     private void readAndWriteWithDateFormat(DateTimeFormatter dateTimeFormatter, String dateFormat) throws Exception {
         final LocalDate localDate = LocalDate.of(2015, 1, 1);
         final LocalDateTime localDateTime = LocalDateTime.of(2015, 1, 1, 1, 1);
@@ -518,6 +551,33 @@ public class JsonbTypesTest {
         public int hashCode() {
             return Objects.hash(
                 date, calendar, gregorianCalendar, instant, localDateTime, localDate, offsetDateTime);
+        }
+    }
+
+    public static class OptionalTypes {
+        public final static String EMPTY = "    ";
+        private final String optionalString;
+        private final int optionalInt;
+
+        public OptionalTypes(String optionalString, int optionalInt) {
+            this.optionalString = optionalString;
+            this.optionalInt = optionalInt;
+        }
+
+        @JsonbCreator
+        public static OptionalTypes init(@JsonbProperty("stringOptional") Optional<String> stringOptional,
+                                         @JsonbProperty("intOptional") OptionalInt intOptional) {
+            return new OptionalTypes(
+                    stringOptional.orElse(EMPTY),
+                    intOptional.orElse(-1));
+        }
+
+        public String getOptionalString() {
+            return optionalString;
+        }
+
+        public int getOptionalInt() {
+            return optionalInt;
         }
     }
 }

@@ -42,30 +42,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.EnumMap;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.NavigableSet;
-import java.util.PriorityQueue;
-import java.util.Queue;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -621,6 +598,19 @@ public class MappingParserImpl implements MappingParser {
                             final Type type, final Adapter itemConverter, final JsonPointerTracker jsonPointer,
                             final Type rootType) {
         if (jsonValue == null) {
+            if (OptionalInt.class == type) {
+                return OptionalInt.empty();
+            }
+            if (OptionalDouble.class == type) {
+                return OptionalDouble.empty();
+            }
+            if (OptionalLong.class == type) {
+                return OptionalLong.empty();
+            }
+            if (type instanceof ParameterizedType && Optional.class == ((ParameterizedType)type).getRawType()) {
+                return Optional.empty();
+            }
+
             return null;
         }
 
@@ -693,6 +683,9 @@ public class MappingParserImpl implements MappingParser {
             if (type == Long.class || type == long.class) {
                 return number.longValueExact();
             }
+            if (type == OptionalLong.class) {
+                return OptionalLong.of(number.longValueExact());
+            }
 
             if (type == Float.class || type == float.class) {
                 return (float) number.doubleValue();
@@ -700,6 +693,9 @@ public class MappingParserImpl implements MappingParser {
 
             if (type == Double.class || type == double.class) {
                 return number.doubleValue();
+            }
+            if (type == OptionalDouble.class) {
+                return OptionalDouble.of(number.doubleValue());
             }
 
             if (type == BigInteger.class) {
@@ -712,6 +708,9 @@ public class MappingParserImpl implements MappingParser {
 
             if (type == Integer.class || type == int.class) {
                 return number.intValueExact();
+            }
+            if (type == OptionalInt.class) {
+                return OptionalInt.of(number.intValueExact());
             }
 
             if (type == Short.class || type == short.class) {
@@ -1167,7 +1166,15 @@ public class MappingParserImpl implements MappingParser {
         }
         if (converter == null) {
             if (ParameterizedType.class.isInstance(aClass)) {
-                return convertTo(ParameterizedType.class.cast(aClass).getRawType(), text);
+                ParameterizedType parameterizedType = (ParameterizedType) aClass;
+                final Type rawType = parameterizedType.getRawType();
+                final Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                if (Optional.class == rawType && actualTypeArguments.length == 1) {
+                    // convert the type parameter
+                    final Type actualType = actualTypeArguments[0];
+                    return Optional.of(convertTo(actualType, text));
+                }
+                return convertTo(rawType, text);
             }
             throw new MapperException("Missing a Converter for type " + aClass + " to convert the JSON String '" +
                     text + "' . Please register a custom converter for it.");
