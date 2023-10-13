@@ -65,6 +65,8 @@ The generator factory supports the standard properties (pretty one for example) 
 
 ### JSON-P Strict Compliance (stable)
 
+**This has been removed with Johnzon 2.0.x, johnzon-core is now JSON-P compliant by default.**
+
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
   <groupId>org.apache.johnzon</groupId>
@@ -353,6 +355,8 @@ JsonbConfig specific properties:
 * johnzon.accessMode: custom access mode, note that it can disable some JSON-B feature (annotations support).
 * johnzon.accessModeDelegate: delegate access mode used by JsonbAccessModel. Enables to enrich default access mode.
 * johnzon.failOnMissingCreatorValues: should the mapping fail when a `@JsonbCreator` misses some values.
+* johnzon.use-biginteger-stringadapter: Wether or not `BigInteger` is mapped as a string. `true` by default, set to `false` to ensure strict JSON-B 3 compliance
+* johnzon.use-bigdecimal-stringadapter: Wether or not `BigDecimal` is mapped as a string. `true` by default, set to `false` to ensure strict JSON-B 3 compliance
 
 TIP: more in JohnzonBuilder class.
 
