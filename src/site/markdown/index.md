@@ -24,7 +24,7 @@ for this specification like an Object mapper, some JAX-RS providers and a WebSoc
 ## Status
 
 Apache Johnzon is a Top Level Project at the Apache Software Foundation (ASF).
-It fully implements the JSON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
+It fully implements the [JSON-P 2.1](https://jakarta.ee/specifications/jsonp/2.1/) and [JSON-B 3.0](https://jakarta.ee/specifications/jsonb/3.0/) specifications.
 
 ## Get started
 
@@ -40,14 +40,14 @@ Johnzon comes with four main modules.
 </dependency>
 ]]></pre>
 
-This is the implementation of the JSON-P 1.1 specification. 
+This is the implementation of the JSON-P 2.1 specification. 
 You'll surely want to add the API as dependency too:
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
-  <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-json_1.1_spec</artifactId>
-  <version>${jsonspecversion}</version>
+  <groupId>jakarta.json</groupId>
+  <artifactId>jakarta.json-api</artifactId>
+  <version>2.1.2</version>
   <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
 </dependency>
 ]]></pre>
@@ -328,7 +328,7 @@ TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want h
 Note: as you can see you mainly just need to define a service with the id johnzon (same as in openejb-jar.xml)
 and you can reference other instances using $id for services and @id for resources.
 
-### JSON-B (JSON-B 1.0 compliant)
+### JSON-B (JSON-B 3.0 compliant)
 
 Johnzon provides a module johnzon-jsonb implementing JSON-B standard based on Johnzon Mapper.
 
