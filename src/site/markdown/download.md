@@ -28,7 +28,7 @@ should be addressed to the [mailing list](http://johnzon.apache.org/mail-lists.h
 
 ## KEYS for verifying Apache releases
 
-Please use the Johnzon [KEYS](https://www.apache.org/dist/johnzon/KEYS) file to validate our releases.
+Please use the Johnzon [KEYS](https://www.apache.org/dyn/closer.lua/johnzon/KEYS) file to validate our releases.
 Read more about [how we sign Apache Releases](http://www.apache.org/info/verification.html)
 
 
@@ -49,13 +49,25 @@ We are still actively working on passing the TCK but so far most of the implemen
 
 Apache Johnzon 1.2.x implements the JSON-P 1.1 and JSON-B 1.0 specifications which on a level of JavaEE 8.
 
+
+#### Binaries
+The binary distribution contains all Johnzon modules.
+* [apache-johnzon-1.2.21-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-bin.zip)
+* [apache-johnzon-1.2.21-bin.zip.sha256](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-bin.zip.sha256)
+* [apache-johnzon-1.2.21-bin.zip.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-bin.zip.asc)
+* [apache-johnzon-1.2.21-bin.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-bin.tar.gz)
+* [apache-johnzon-1.2.21-bin.tar.gz.sha256](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-bin.tar.gz.sha256)
+* [apache-johnzon-1.2.21-bin.tar.gz.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-bin.tar.gz.asc)
+
+
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
-
-* [johnzon-1.2.20-source-release.zip](https://www.apache.org/dyn/closer.lua/1.2.20/johnzon-1.2.20-source-release.zip)
-* [johnzon-1.2.20-source-release.zip.sha512](https://www.apache.org/dist/johnzon/1.2.20/johnzon-1.2.20-source-release.zip.sha512)
-* [johnzon-1.2.20-source-release.zip.asc](https://www.apache.org/dist/johnzon/1.2.20/johnzon-1.2.20-source-release.zip.asc)
-
+* [apache-johnzon-1.2.21-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.zip)
+* [apache-johnzon-1.2.21-src.zip.sha512](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.zip.sha512)
+* [apache-johnzon-1.2.21-src.zip.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.zip.asc)
+* [apache-johnzon-1.2.21-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.tar.gz)
+* [apache-johnzon-1.2.21-src.tar.gz.sha512](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.tar.gz.sha512)
+* [apache-johnzon-1.2.21-src.tar.gz.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.tar.gz.asc)
 
 ## Johnzon-1.0.x
 
@@ -66,16 +78,21 @@ This corresponds to JavaEE 7 level.
 The binary distribution contains all Johnzon modules.
 
 * [apache-johnzon-1.0.2-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip)
-* [apache-johnzon-1.0.2-bin.zip.sha256](https://www.apache.org/dist/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip.sha256)
-* [apache-johnzon-1.0.2-bin.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip.asc)
+* [apache-johnzon-1.0.2-bin.zip.sha256](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip.sha256)
+* [apache-johnzon-1.0.2-bin.zip.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip.asc)
+* [apache-johnzon-1.0.2-bin.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.tar.gz)
+* [apache-johnzon-1.0.2-bin.tar.gz.sha256](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.tar.gz.sha256)
+* [apache-johnzon-1.0.2-bin.tar.gz.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.tar.gz.asc)
 
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
 
-* [johnzon-1.0.2-source-release.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-source-release.zip)
-* [johnzon-1.0.2-source-release.zip.sha256](https://www.apache.org/dist/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-source-release.zip.sha256)
-* [johnzon-1.0.2-source-release.zip.asc](https://www.apache.org/dist/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-source-release.zip.asc)
-
+* [apache-johnzon-1.0.2-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.zip)
+* [apache-johnzon-1.0.2-src.zip.sha256](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.zip.sha256)
+* [apache-johnzon-1.0.2-src.zip.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.zip.asc)
+* [apache-johnzon-1.0.2-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.tar.gz)
+* [apache-johnzon-1.0.2-src.tar.gz.sha256](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.tar.gz.sha256)
+* [apache-johnzon-1.0.2-src.tar.gz.asc](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.tar.gz.asc)
 -------
 
 ### Maven Dependencies
