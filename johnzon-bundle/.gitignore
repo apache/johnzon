@@ -1,0 +1,17 @@
+/target
+.idea
+.classpath
+.metadata
+.project
+.settings
+.externalToolBuilders
+maven-eclipse.xml
+*.swp
+*.iml
+*.ipr
+*.iws
+*.bak
+.vlt
+.DS_Store
+jcr.log
+atlassian-ide-plugin.xml
