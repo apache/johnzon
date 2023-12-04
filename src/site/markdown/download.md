@@ -41,7 +41,7 @@ Apache Johnzon does not implement Jakarta EE 9 per se, because there was no chan
 So we decided to use Apache Johnzon 1.2.x bellow and publish a Jakarta compatible version using bytecode transformation. All artifacts can be used with the classifier `jakarta`.
 
 #### Binaries
-Binaries should be obtained from [maven central](https://repo1.maven.org/maven2/org/apache/johnzon/).
+Binaries should be obtained from [maven central](https://repo.maven.apache.org/maven2/org/apache/johnzon/).
 
 
 #### Source
@@ -59,7 +59,7 @@ Apache Johnzon 1.2.x implements the JSON-P 1.1 and JSON-B 1.0 specifications whi
 
 
 #### Binaries
-Binaries should be obtained from [maven central](https://repo1.maven.org/maven2/org/apache/johnzon/).
+Binaries should be obtained from [maven central](https://repo.maven.apache.org/maven2/org/apache/johnzon/).
 
 
 #### Source
