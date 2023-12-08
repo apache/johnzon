@@ -52,6 +52,9 @@ You'll surely want to add the API as dependency too:
 </dependency>
 ]]></pre>
 
+**Please note**: The jakarta JSON-P API jar has [hardcoded parsson](https://github.com/jakartaee/jsonp-api/blob/2.1.2/api/src/main/java/jakarta/json/spi/JsonProvider.java#L74-L79) as the default JSON-P implementation.
+This might cause unintended behaviour in cases where standard Java service loading is not possible.
+
 #### Johnzon Factory Configurations
 
 ##### JsonGeneratorFactory
