@@ -77,7 +77,6 @@
             <groupId>org.openjdk.nashorn</groupId>
             <artifactId>nashorn-core</artifactId>
             <version>15.3</version>
-            <scope>test</scope>
           </dependency>
         </dependencies>
     </profile>
