@@ -192,12 +192,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     generator.writeStartObject();
                 }
 
-                if (classMapping.serializedPolymorphicProperties != null) {
-                    for (Map.Entry<String, String> polymorphicProperty : classMapping.serializedPolymorphicProperties) {
-                        generator.write(polymorphicProperty.getKey(), polymorphicProperty.getValue());
-                    }
-                }
-
                 final boolean writeEnd = doWriteObjectBody(object, ignoredProperties, jsonPointer, generator);
                 if (writeEnd && writeBody) {
                     generator.writeEnd();
@@ -374,6 +368,12 @@ public class MappingGeneratorImpl implements MappingGenerator {
         if (classMapping.adapter != null) {
             doWriteObjectBody(classMapping.adapter.from(object), ignored, jsonPointer, generator);
             return true;
+        }
+
+        if (classMapping.serializedPolymorphicProperties != null) {
+            for (Map.Entry<String, String> polymorphicProperty : classMapping.serializedPolymorphicProperties) {
+                generator.write(polymorphicProperty.getKey(), polymorphicProperty.getValue());
+            }
         }
 
         for (final Map.Entry<String, Mappings.Getter> getterEntry : classMapping.getters.entrySet()) {

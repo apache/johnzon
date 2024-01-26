@@ -42,6 +42,17 @@ public class JsonbPolymorphismTest {
     @Rule public JsonbRule jsonb = new JsonbRule();
 
     @Test
+    public void testNestedSerialization() {
+        Labrador labrador = new Labrador();
+        labrador.dogAge = 3;
+        labrador.labradorName = "john";
+        AnimalWrapper wrapper = new AnimalWrapper();
+        wrapper.animal = labrador;
+
+        assertEquals("{\"animal\":{\"@animal\":\"dog\",\"@dog\":\"labrador\",\"dogAge\":3,\"labradorName\":\"john\"}}", jsonb.toJson(wrapper));
+    }
+
+    @Test
     public void testSerialization() {
         Labrador labrador = new Labrador();
         labrador.dogAge = 3;
@@ -98,6 +109,10 @@ public class JsonbPolymorphismTest {
                    ((DateConstructor) deserialized).getLocalDate(),
                    CoreMatchers.equalTo(LocalDate.parse("26-02-2021", formatter)));
 
+    }
+
+    public static class AnimalWrapper {
+        public Animal animal;
     }
 
     @JsonbTypeInfo(key = "@animal", value = @JsonbSubtype(alias = "dog", type = Dog.class))
