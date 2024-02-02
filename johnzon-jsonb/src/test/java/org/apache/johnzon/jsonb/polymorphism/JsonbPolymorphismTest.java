@@ -136,4 +136,17 @@ public class JsonbPolymorphismTest {
             return localDate;
         }
     }
+
+    @Test
+    public void typeInfoNotOnDirectParent() {
+        ConcreteSomething something = new ConcreteSomething();
+        assertEquals("{\"@type\":\"concrete\"}", jsonb.toJson(something));
+    }
+
+    @JsonbTypeInfo(
+            @JsonbSubtype(alias = "concrete", type = ConcreteSomething.class)
+    )
+    public static abstract class AbstractTopLevelSomething { }
+    public static abstract class AbstractMiddleLevelSomething extends AbstractTopLevelSomething { }
+    public static class ConcreteSomething extends AbstractMiddleLevelSomething { }
 }
