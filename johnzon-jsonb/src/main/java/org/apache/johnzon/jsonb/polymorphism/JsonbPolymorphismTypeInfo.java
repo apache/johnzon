@@ -20,14 +20,30 @@ package org.apache.johnzon.jsonb.polymorphism;
 
 import jakarta.json.bind.annotation.JsonbSubtype;
 import jakarta.json.bind.annotation.JsonbTypeInfo;
+
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class JsonbPolymorphismTypeInfo {
+    private final List<JsonbPolymorphismTypeInfo> parents;
+    private final Class<?> clazz;
+
     private final String typeKey;
     private final Map<String, Class<?>> aliases;
 
-    protected JsonbPolymorphismTypeInfo(JsonbTypeInfo annotation) {
+    protected JsonbPolymorphismTypeInfo(Class<?> clazz, JsonbTypeInfo annotation) {
+        this.parents = new ArrayList<>();
+        this.clazz = clazz;
+
+        if (annotation == null) {
+            this.typeKey = null;
+            this.aliases = null;
+
+            return;
+        }
+
         this.typeKey = annotation.key();
 
         aliases = new HashMap<>();
@@ -36,11 +52,31 @@ public class JsonbPolymorphismTypeInfo {
         }
     }
 
+    public boolean hasSubtypeInformation() {
+        return typeKey != null;
+    }
+
     public String getTypeKey() {
         return typeKey;
     }
 
     public Map<String, Class<?>> getAliases() {
         return aliases;
+    }
+
+    public Class<?> getClazz() {
+        return clazz;
+    }
+
+    public List<JsonbPolymorphismTypeInfo> getParents() {
+        return parents;
+    }
+
+    public JsonbPolymorphismTypeInfo getFirstParent() {
+        if (parents.isEmpty()) {
+            return null;
+        }
+
+        return parents.get(0);
     }
 }
