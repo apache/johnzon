@@ -24,7 +24,7 @@ for this specification like an Object mapper, some JAX-RS providers and a WebSoc
 ## Status
 
 Apache Johnzon is a Top Level Project at the Apache Software Foundation (ASF).
-It fully implements the JSON-P_1.1 (JSR-353) and JSON-B_1.0 (JSR-367) specifications.
+It fully implements the [JSON-P 2.1](https://jakarta.ee/specifications/jsonp/2.1/) and [JSON-B 3.0](https://jakarta.ee/specifications/jsonb/3.0/) specifications.
 
 ## Get started
 
@@ -40,17 +40,20 @@ Johnzon comes with four main modules.
 </dependency>
 ]]></pre>
 
-This is the implementation of the JSON-P 1.1 specification. 
+This is the implementation of the JSON-P 2.1 specification. 
 You'll surely want to add the API as dependency too:
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
-  <groupId>org.apache.geronimo.specs</groupId>
-  <artifactId>geronimo-json_1.1_spec</artifactId>
-  <version>${jsonspecversion}</version>
+  <groupId>jakarta.json</groupId>
+  <artifactId>jakarta.json-api</artifactId>
+  <version>2.1.2</version>
   <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
 </dependency>
 ]]></pre>
+
+**Please note**: The jakarta JSON-P API jar has [hardcoded parsson](https://github.com/jakartaee/jsonp-api/blob/2.1.2/api/src/main/java/jakarta/json/spi/JsonProvider.java#L74-L79) as the default JSON-P implementation.
+This might cause unintended behaviour in cases where standard Java service loading is not possible.
 
 #### Johnzon Factory Configurations
 
@@ -64,6 +67,8 @@ The generator factory supports the standard properties (pretty one for example) 
 * `org.apache.johnzon.boundedoutputstreamwriter` (int): when converting an `OuputStream` to a `Writer` it defines the buffer size (if > 0) +- 2 charaters (for the encoding logic). It enables a faster flushing to the actual underlying output stream combined with `org.apache.johnzon.default-char-buffer-generator`.
 
 ### JSON-P Strict Compliance (stable)
+
+**This has been removed with Johnzon 2.0.x, johnzon-core is now JSON-P compliant by default.**
 
 <pre class="prettyprint linenums"><![CDATA[
 <dependency>
@@ -328,7 +333,7 @@ TomEE uses by default Johnzon as JAX-RS provider for versions 7.x. If you want h
 Note: as you can see you mainly just need to define a service with the id johnzon (same as in openejb-jar.xml)
 and you can reference other instances using $id for services and @id for resources.
 
-### JSON-B (JSON-B 1.0 compliant)
+### JSON-B (JSON-B 3.0 compliant)
 
 Johnzon provides a module johnzon-jsonb implementing JSON-B standard based on Johnzon Mapper.
 
@@ -353,6 +358,8 @@ JsonbConfig specific properties:
 * johnzon.accessMode: custom access mode, note that it can disable some JSON-B feature (annotations support).
 * johnzon.accessModeDelegate: delegate access mode used by JsonbAccessModel. Enables to enrich default access mode.
 * johnzon.failOnMissingCreatorValues: should the mapping fail when a `@JsonbCreator` misses some values.
+* johnzon.use-biginteger-stringadapter: Whether or not `BigInteger` is mapped as a string. `true` by default, set to `false` to ensure strict JSON-B 3 compliance
+* johnzon.use-bigdecimal-stringadapter: Whether or not `BigDecimal` is mapped as a string. `true` by default, set to `false` to ensure strict JSON-B 3 compliance
 
 TIP: more in JohnzonBuilder class.
 
