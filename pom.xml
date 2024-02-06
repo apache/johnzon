@@ -760,6 +760,12 @@
       </properties>
       <roles><role>PMC</role></roles>
     </developer>
+
+    <developer>
+      <id>jungm</id>
+      <name>Markus Jung</name>
+      <email>jungm AT apache.org</email>
+    </developer>
   </developers>
 
   <contributors>
