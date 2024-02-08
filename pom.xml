@@ -39,7 +39,10 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.outputTimestamp>1698151225</project.build.outputTimestamp>
+
     <maven.compiler.release>11</maven.compiler.release>
+    <maven.compiler.target>${maven.compiler.release}</maven.compiler.target>
+    <maven.compiler.source>${maven.compiler.release}</maven.compiler.source>
 
     <jakarta-jsonp-api.version>2.1.1</jakarta-jsonp-api.version>
     <jakarta-jsonb-api.version>3.0.0</jakarta-jsonb-api.version>
