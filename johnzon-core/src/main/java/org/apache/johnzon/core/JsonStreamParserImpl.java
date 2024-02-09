@@ -211,8 +211,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
         }
 
-        if (previousFallBackCopyBuffers == null)
-        {
+        if (previousFallBackCopyBuffers == null) {
             previousFallBackCopyBuffers = new LinkedList<>();
         }
 
@@ -940,6 +939,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         }
 
         System.arraycopy(fallBackCopyBuffer, 0, newBuffer, index, fallBackCopyBufferLength);
+        index += fallBackCopyBufferLength;
 
         releasePreviousFallBackCopyBuffers();
         fallBackCopyBuffer = newBuffer;
