@@ -19,6 +19,7 @@
 package org.apache.johnzon.core;
 
 import jakarta.json.Json;
+import jakarta.json.JsonReader;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -32,11 +33,15 @@ public class HugeStringTest {
 
         // Warmup
         for (int i = 0; i < 10; i++) {
-            Json.createParser(new StringReader(json)).getObject();
+            try (JsonReader reader = Json.createReader(new StringReader(json))) {
+                reader.readObject();
+            }
         }
 
         long start = System.currentTimeMillis();
-        Json.createParser(new StringReader(json)).getObject();
+        try (JsonReader reader = Json.createReader(new StringReader(json))) {
+            reader.readObject();
+        }
         System.err.println("Took " + (System.currentTimeMillis() - start) + "ms");
     }
 }
