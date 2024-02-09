@@ -28,6 +28,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 //This class represents either the Json tokenizer and the Json parser.
@@ -74,6 +76,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     private char[] fallBackCopyBuffer;
     private boolean releaseFallBackCopyBufferLength = true;
     private int fallBackCopyBufferLength;
+    // when boundaries of fallBackCopyBuffer have been reached
+    private List<Buffer> previousFallBackCopyBuffers;
 
     // location (line, column, offset)
     // We try to calculate this efficiently so we do not just increment the values per char read
@@ -112,6 +116,16 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             super();
             this.previous = previous;
             this.isArray = isArray;
+        }
+    }
+
+    private static final class Buffer {
+        private char[] buffer;
+        private int length;
+
+        public Buffer(char[] buffer, int length) {
+            this.buffer = buffer;
+            this.length = length;
         }
     }
 
@@ -165,7 +179,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //append a single char to the value buffer
     private void appendToCopyBuffer(final char c) {
         if (fallBackCopyBufferLength >= fallBackCopyBuffer.length - 1) {
-            doAutoAdjust(1);
+            createNewFallBackCopyBuffer();
         }
         fallBackCopyBuffer[fallBackCopyBufferLength++] = c;
     }
@@ -180,40 +194,39 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             }
 
             if (fallBackCopyBufferLength >= fallBackCopyBuffer.length - length) { // not good at runtime but handled
-                doAutoAdjust(length);
-            } else {
-                System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength, length);
+                createNewFallBackCopyBuffer();
             }
+
+            System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength, length);
             fallBackCopyBufferLength += length;
         }
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
     }
 
-    private void doAutoAdjust(final int length) {
+    // Creates new fallBackCopyBuffer and stores the old instance in previousFallBackCopyBuffers,
+    // this is much faster than resizing (recreating + copying) fallBackCopyBuffer
+    private void createNewFallBackCopyBuffer() {
         if (!autoAdjust) {
             throw new ArrayIndexOutOfBoundsException("Buffer too small for such a long string");
         }
 
-        final char[] newArray = new char[fallBackCopyBuffer.length + Math.max(getBufferExtends(fallBackCopyBuffer.length), length)];
-        // TODO: log to adjust size once?
-        System.arraycopy(fallBackCopyBuffer, 0, newArray, 0, fallBackCopyBufferLength);
-        if (startOfValueInBuffer != -1) {
-            System.arraycopy(buffer, startOfValueInBuffer, newArray, fallBackCopyBufferLength, length);
+        if (previousFallBackCopyBuffers == null) {
+            previousFallBackCopyBuffers = new LinkedList<>();
         }
-        if (releaseFallBackCopyBufferLength) {
-            bufferProvider.release(fallBackCopyBuffer);
-            releaseFallBackCopyBufferLength = false;
-        }
-        fallBackCopyBuffer = newArray;
+
+        previousFallBackCopyBuffers.add(new Buffer(fallBackCopyBuffer, fallBackCopyBufferLength));
+        fallBackCopyBuffer = valueProvider.newBuffer();
+        fallBackCopyBufferLength = 0;
     }
 
-    /**
-     * @param currentLength length of the buffer
-     * @return the amount of bytes the current buffer should get extended with
-     */
-    protected int getBufferExtends(int currentLength) {
-        return currentLength / 4;
+    private void releasePreviousFallBackCopyBuffers() {
+        if (previousFallBackCopyBuffers == null) {
+            return;
+        }
+
+        previousFallBackCopyBuffers.forEach(it -> valueProvider.release(it.buffer));
+        previousFallBackCopyBuffers = null;
     }
 
 
@@ -443,6 +456,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             currentIntegralNumber = Integer.MIN_VALUE;
         }
 
+        releasePreviousFallBackCopyBuffers();
         if (fallBackCopyBufferLength != 0) {
             fallBackCopyBufferLength = 0;
         }
@@ -898,6 +912,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     @Override
     public String getString() {
         if (previousEvent == KEY_NAME || previousEvent == VALUE_STRING || previousEvent == VALUE_NUMBER) {
+            combinePreviousFallbackBuffersToCurrent();
 
             //if there a content in the value buffer read from them, if not use main buffer
             return fallBackCopyBufferLength > 0 ? new String(fallBackCopyBuffer, 0, fallBackCopyBufferLength) : new String(buffer,
@@ -905,6 +920,30 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         } else {
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getString()");
         }
+    }
+
+    // Combines all old stored fallback buffers into the current fallback buffer again so we have a char[] to easily access
+    // Releases all previous fallback buffers while doing so
+    private void combinePreviousFallbackBuffersToCurrent() {
+        if (previousFallBackCopyBuffers == null) {
+            return;
+        }
+
+        int newSize = previousFallBackCopyBuffers.stream().mapToInt(it -> it.length).sum() + fallBackCopyBufferLength;
+        char[] newBuffer = new char[newSize];
+
+        int index = 0;
+        for (Buffer buffer : previousFallBackCopyBuffers) {
+            System.arraycopy(buffer.buffer, 0, newBuffer, index, buffer.length);
+            index += buffer.length;
+        }
+
+        System.arraycopy(fallBackCopyBuffer, 0, newBuffer, index, fallBackCopyBufferLength);
+        index += fallBackCopyBufferLength;
+
+        releasePreviousFallBackCopyBuffers();
+        fallBackCopyBuffer = newBuffer;
+        fallBackCopyBufferLength = index;
     }
 
     @Override
@@ -929,6 +968,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return currentIntegralNumber;
         } else if (isCurrentNumberIntegral) {
+            combinePreviousFallbackBuffersToCurrent();
             //if there a content in the value buffer read from them, if not use main buffer
             final Integer retVal = fallBackCopyBufferLength > 0 ? parseIntegerFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
                     : parseIntegerFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
@@ -949,6 +989,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return currentIntegralNumber;
         } else if (isCurrentNumberIntegral) {
+            combinePreviousFallbackBuffersToCurrent();
             //if there a content in the value buffer read from them, if not use main buffer
             final Long retVal = fallBackCopyBufferLength > 0 ? parseLongFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
                     : parseLongFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
@@ -984,6 +1025,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
             return new BigDecimal(currentIntegralNumber);
         }
+
+        combinePreviousFallbackBuffersToCurrent();
         //if there a content in the value buffer read from them, if not use main buffer
         return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
                 fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer)));
@@ -1004,6 +1047,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         if (releaseFallBackCopyBufferLength) {
             valueProvider.release(fallBackCopyBuffer);
         }
+        releasePreviousFallBackCopyBuffers();
 
         try {
             in.close();
