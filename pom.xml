@@ -127,7 +127,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>3.5.0</version>
+          <version>3.6.3</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -541,6 +541,24 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-pmd-plugin</artifactId>
+
+        <!-- running aggregate-pmd causes weird issues with project artifact cache introduced in maven 3.5.2 so just run the non-forking variant here.
+             We invoke verify anyways before generating the site, so there is no need for pmd plugin to fork test-compile -->
+        <reportSets>
+          <reportSet>
+            <reports>
+              <report>pmd</report>
+              <report>cpd</report>
+            </reports>
+          </reportSet>
+          <reportSet>
+            <inherited>false</inherited>
+            <reports>
+              <report>aggregate-pmd-no-fork</report>
+              <report>aggregate-cpd</report>
+            </reports>
+          </reportSet>
+        </reportSets>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -555,6 +573,10 @@
         <configuration>
           <notimestamp>true</notimestamp>
           <show>private</show>
+
+          <!-- enable legacy mode (=prefer classpath over modulepath)
+               to avoid errors because parts of johnzon having an Automatic-Module-Name -->
+          <legacyMode>true</legacyMode>
         </configuration>
         <reportSets>
           <reportSet>
