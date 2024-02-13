@@ -18,18 +18,26 @@
  */
 package org.apache.johnzon.core;
 
+import jakarta.json.Json;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonReaderFactory;
+import jakarta.json.spi.JsonProvider;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import jakarta.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class JsonStreamParserImplTest {
     @Test
@@ -93,5 +101,71 @@ public class JsonStreamParserImplTest {
         assertEquals(
                 asList("START_OBJECT", "KEY_NAME", "VALUE_STRING", "{\"foo\":\"barbar\\barbarbar\"}", "END_OBJECT"),
                 events);
+    }
+
+    @Test
+    @Ignore("No real test, just run directly from your IDE")
+    public void largeStringPerformance() {
+        String json = "{\"data\":\"" + "a".repeat(50 * 1024 * 1024 + 1) + "\"}";
+
+        // Warmup
+        for (int i = 0; i < 10; i++) {
+            try (JsonReader reader = Json.createReader(new StringReader(json))) {
+                reader.readObject();
+            }
+        }
+
+        long start = System.currentTimeMillis();
+        try (JsonReader reader = Json.createReader(new StringReader(json))) {
+            reader.readObject();
+        }
+        System.err.println("Took " + (System.currentTimeMillis() - start) + "ms");
+    }
+
+    @Test
+    public void allBuffersReleased() {
+        String json = "{\"data\":\"" + "a".repeat(JsonParserFactoryImpl.DEFAULT_MAX_STRING_LENGTH * 2) + "\"}";
+
+        JsonReaderFactory readerFactory = JsonProvider.provider().createReaderFactory(Map.of(
+                JsonParserFactoryImpl.BUFFER_STRATEGY, TrackingBufferStrategy.class.getName()));
+
+        try (JsonReader reader = readerFactory.createReader(new StringReader(json))) {
+            reader.readObject();
+        }
+
+        assertTrue(TrackingBufferStrategy.TrackingBufferProvider.borrowed.isEmpty());
+    }
+
+    public static class TrackingBufferStrategy implements BufferStrategy {
+        private final BufferStrategy delegate = BufferStrategyFactory.valueOf("BY_INSTANCE");
+
+        @Override
+        public BufferProvider<char[]> newCharProvider(int size) {
+            return new TrackingBufferProvider(delegate.newCharProvider(size));
+        }
+
+        public static class TrackingBufferProvider implements BufferStrategy.BufferProvider<char[]> {
+            protected static List<char[]> borrowed = new ArrayList<>();
+
+            private final BufferStrategy.BufferProvider<char[]> delegate;
+
+            public TrackingBufferProvider(BufferStrategy.BufferProvider<char[]> delegate) {
+                this.delegate = delegate;
+            }
+
+            @Override
+            public char[] newBuffer() {
+                char[] result = delegate.newBuffer();
+                borrowed.add(result);
+
+                return result;
+            }
+
+            @Override
+            public void release(char[] value) {
+                borrowed.remove(value);
+                delegate.release(value);
+            }
+        }
     }
 }
