@@ -74,7 +74,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //this buffer is used to store current String or Number value in case that
     //within the value a buffer boundary is crossed or the string contains escaped characters
     private char[] fallBackCopyBuffer;
-    private boolean releaseFallBackCopyBufferLength = true;
+    private boolean releaseFallBackCopyBuffer = true;
     private int fallBackCopyBufferLength;
     // when boundaries of fallBackCopyBuffer have been reached
     private List<Buffer> previousFallBackCopyBuffers;
@@ -936,6 +936,11 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         index += fallBackCopyBufferLength;
 
         releasePreviousFallBackCopyBuffers();
+        if (releaseFallBackCopyBuffer) {
+            valueProvider.release(fallBackCopyBuffer);
+            releaseFallBackCopyBuffer = false;
+        }
+
         fallBackCopyBuffer = newBuffer;
         fallBackCopyBufferLength = index;
     }
@@ -1038,7 +1043,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         }
 
         bufferProvider.release(buffer);
-        if (releaseFallBackCopyBufferLength) {
+        if (releaseFallBackCopyBuffer) {
             valueProvider.release(fallBackCopyBuffer);
         }
         releasePreviousFallBackCopyBuffers();
