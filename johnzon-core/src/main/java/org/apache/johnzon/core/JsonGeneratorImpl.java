@@ -498,7 +498,13 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
             while (c != ESCAPE_CHAR && c != QUOTE_CHAR && c >= SPACE) {
 
                 //read fast
-                justWrite(c);
+                if (c == '<') {
+                    justWrite("\\u003C");
+                } else if (c == '>') {
+                    justWrite("\\u003E");
+                } else {
+                    justWrite(c);
+                }
 
                 if (i >= len - 1) {
                     return;
