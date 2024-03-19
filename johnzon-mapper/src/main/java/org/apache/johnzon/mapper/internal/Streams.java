@@ -39,7 +39,9 @@ public final class Streams {
     public static Reader noClose(final Reader reader) {
         return new DelegatingReader(reader) {
             @Override
-            public void close() throws IOException {} // No-op
+            public void close() throws IOException {
+                // no-op
+            }
         };
     }
     public static OutputStream noClose(final OutputStream outputStream) {
@@ -54,7 +56,9 @@ public final class Streams {
     public static InputStream noClose(final InputStream inputStream) {
         return new DelegatingInputStream(inputStream) {
             @Override
-            public void close() throws IOException {} // No-op
+            public void close() throws IOException {
+                // no-op
+            }
         };
     }
 }

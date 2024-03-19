@@ -22,7 +22,7 @@ import java.util.Objects;
 
 public class DelegatingOutputStream extends OutputStream {
 
-    private OutputStream outputStream;
+    private final OutputStream outputStream;
 
     public DelegatingOutputStream(OutputStream outputStream) {
         this.outputStream = Objects.requireNonNull(outputStream, "delegate outputStream must not be null");

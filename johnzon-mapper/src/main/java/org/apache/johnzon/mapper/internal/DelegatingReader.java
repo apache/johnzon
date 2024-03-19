@@ -23,7 +23,7 @@ import java.util.Objects;
 
 public class DelegatingReader extends Reader {
 
-    private Reader reader;
+    private final Reader reader;
 
     public DelegatingReader(Reader reader) {
         this.reader = Objects.requireNonNull(reader, "delegate reader must not be null");

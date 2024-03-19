@@ -21,7 +21,7 @@ import java.io.Writer;
 import java.util.Objects;
 
 public class DelegatingWriter extends Writer {
-    private Writer writer;
+    private final Writer writer;
 
     public DelegatingWriter(Writer writer) {
         this.writer = Objects.requireNonNull(writer, "delegate writer must not be null");
