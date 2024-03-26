@@ -72,6 +72,8 @@
     <module>johnzon-jsonschema</module>
     <module>johnzon-osgi</module>
     <module>johnzon-jsonlogic</module>
+
+    <module>tck</module>
   </modules>
 
   <dependencyManagement>
@@ -804,13 +806,6 @@
   </contributors>
 
   <profiles>
-    <profile>
-      <id>tck</id>
-      <modules>
-        <module>tck</module>
-      </modules>
-    </profile>
-
     <profile>
         <id>jdk9+</id>
         <activation>
