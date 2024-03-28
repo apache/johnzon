@@ -107,6 +107,27 @@
       <groupId>org.apache.openwebbeans</groupId>
       <artifactId>openwebbeans-spi</artifactId>
       <version>${owb.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.openwebbeans</groupId>
+      <artifactId>openwebbeans-se</artifactId>
+      <version>${owb.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.json.bind</groupId>
+      <artifactId>jakarta.json.bind-tck</artifactId>
+      <version>3.0.0</version>
+      <scope>test</scope>
+
+      <exclusions>
+        <exclusion>
+          <groupId>org.junit.jupiter</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
@@ -135,6 +156,108 @@
             <Provide-Capability>osgi.serviceloader;osgi.serviceloader=jakarta.json.bind.spi.JsonbProvider</Provide-Capability>
           </instructions>
         </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.2.0</version>
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>jakarta.json</groupId>
+                  <artifactId>jakarta.json-api</artifactId>
+                  <version>${jakarta-jsonp-api.version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.directory}/signaturedirectory</outputDirectory>
+                  <destFileName>jakarta.json-api.jar</destFileName>
+                </artifactItem>
+
+                <artifactItem>
+                  <groupId>jakarta.json.bind</groupId>
+                  <artifactId>jakarta.json.bind-api</artifactId>
+                  <version>${jakarta-jsonb-api.version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.directory}/signaturedirectory</outputDirectory>
+                  <destFileName>jakarta.json.bind-api.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.plugin.version}</version>
+
+        <!-- Explicitly configure providers so we can mix JUnit 4 (johnzon) and JUnit 5 (TCK) tests -->
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit4</artifactId>
+            <version>${surefire.plugin.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>${surefire.plugin.version}</version>
+          </dependency>
+
+          <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>5.7.2</version>
+          </dependency>
+        </dependencies>
+
+        <executions>
+          <execution>
+            <id>tck-test</id>
+
+            <goals>
+              <goal>test</goal>
+            </goals>
+
+            <configuration>
+              <dependenciesToScan>jakarta.json.bind:jakarta.json.bind-tck</dependenciesToScan>
+
+              <excludes>
+                <!-- don't run johnzon tests multiple times, handled in default-test already -->
+                <exclude>**/org/apache/johnzon/**</exclude>
+
+                <!-- https://github.com/jakartaee/jsonb-api/issues/344 -->
+                <exclude>**/SerializersCustomizationCDITest</exclude>
+
+                <!-- https://github.com/jakartaee/jsonb-api/issues/347 -->
+                <exclude>**/AnnotationTypeInfoTest</exclude>
+              </excludes>
+
+              <systemPropertyVariables>
+                <jimage.dir>${project.build.directory}/jimage</jimage.dir>
+                <signature.sigTestClasspath>${project.build.directory}/signaturedirectory/jakarta.json.bind-api.jar:${project.build.directory}/jimage/java.base:${project.build.directory}/jimage/java.rmi:${project.build.directory}/jimage/java.sql:${project.build.directory}/jimage/java.naming</signature.sigTestClasspath>
+
+                <!-- don't serialize BigDecimal/BigInteger as strings. Usually enabled by default in johnzon, see https://github.com/jakartaee/jsonb-api/issues/187 -->
+                <johnzon.use-bigdecimal-stringadapter>false</johnzon.use-bigdecimal-stringadapter>
+                <johnzon.use-biginteger-stringadapter>false</johnzon.use-biginteger-stringadapter>
+
+                <!-- needed to pass JSON-B 3 TCKs on jdk 13+, see https://github.com/jakartaee/jsonb-api/issues/272 -->
+                <java.locale.providers>COMPAT</java.locale.providers>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

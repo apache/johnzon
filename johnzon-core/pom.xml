@@ -33,6 +33,29 @@
     <staging.directory>${project.parent.reporting.outputDirectory}</staging.directory>
   </properties>
 
+
+  <dependencies>
+    <dependency>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-tck-tests</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.json</groupId>
+      <artifactId>jakarta.json-tck-tests-pluggability</artifactId>
+      <version>2.1.1</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.netbeans.tools</groupId>
+      <artifactId>sigtest-maven-plugin</artifactId>
+      <version>1.7</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -46,31 +69,100 @@
           </instructions>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+
+        <executions>
+          <execution>
+            <id>copy</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>jakarta.json</groupId>
+                  <artifactId>jakarta.json-api</artifactId>
+                  <version>${jakarta-jsonp-api.version}</version>
+                  <type>jar</type>
+                  <overWrite>true</overWrite>
+                  <outputDirectory>${project.build.directory}/signaturedirectory</outputDirectory>
+                  <destFileName>jakarta.json-api.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>${surefire.plugin.version}</version>
+
+        <!-- Explicitly configure providers so we can mix JUnit 4 (johnzon) and JUnit 5 (TCK) tests -->
+        <dependencies>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit4</artifactId>
+            <version>${surefire.plugin.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.apache.maven.surefire</groupId>
+            <artifactId>surefire-junit-platform</artifactId>
+            <version>${surefire.plugin.version}</version>
+          </dependency>
+        </dependencies>
+
+        <executions>
+          <execution>
+            <id>tck-test</id>
+
+            <goals>
+              <goal>test</goal>
+            </goals>
+
+            <configuration>
+              <dependenciesToScan>jakarta.json:jakarta.json-tck-tests</dependenciesToScan>
+
+              <!-- don't run johnzon tests multiple times, handled in default-test already -->
+              <excludes>
+                <exclude>**/org/apache/johnzon/**</exclude>
+              </excludes>
+
+              <systemPropertyVariables>
+                <jimage.dir>${project.build.directory}/jimage</jimage.dir>
+                <signature.sigTestClasspath>${project.build.directory}/signaturedirectory/jakarta.json-api.jar:${project.build.directory}/jimage/java.base:${project.build.directory}/jimage/java.rmi:${project.build.directory}/jimage/java.sql:${project.build.directory}/jimage/java.naming</signature.sigTestClasspath>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+
+          <execution>
+            <id>tck-pluggability</id>
+
+            <goals>
+              <goal>test</goal>
+            </goals>
+
+            <configuration>
+              <dependenciesToScan>jakarta.json:jakarta.json-tck-tests-pluggability</dependenciesToScan>
+
+              <!-- don't run johnzon tests multiple times, handled in default-test already -->
+              <excludes>
+                <exclude>**/org/apache/johnzon/**</exclude>
+              </excludes>
+
+              <!-- pluggability tests come with their own JsonProvider implementation,
+                   so we have to hide the johnzon one for these to run -->
+              <classesDirectory>${project.build.outputDirectory}/nowhere</classesDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
-
-<!-- avoid warnings at build time + this is not sufficient to run anyway (edit ts.jte)
-  <profiles>
-    <profile>
-      <id>jakartaee-tck</id>
-
-      <dependencies>
-        <dependency>
-          <groupId>org.eclipse.jakartaee.tck.local</groupId>
-          <artifactId>tsharness</artifactId>
-          <version>8.0-SNAPSHOT</version>
-          <scope>system</scope>
-          <systemPath>/opt/eclipse/javaeetck/lib/tsharness.jar</systemPath>
-        </dependency>
-        <dependency>
-          <groupId>org.eclipse.jakartaee.tck.local</groupId>
-          <artifactId>sonparsertests_appclient_vehicle_client</artifactId>
-          <version>8.0-SNAPSHOT</version>
-          <scope>system</scope>
-          <systemPath>/opt/eclipse/javaeetck/dist/com/sun/ts/tests/jsonp/api/jsonparsertests/jsonparsertests_appclient_vehicle_client.jar</systemPath>
-        </dependency>
-      </dependencies>
-    </profile>
-  </profiles>
--->
 </project>
