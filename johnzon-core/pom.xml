@@ -53,6 +53,13 @@
       <artifactId>sigtest-maven-plugin</artifactId>
       <version>1.7</version>
       <scope>test</scope>
+
+      <exclusions>
+        <exclusion>
+          <groupId>org.netbeans.tools</groupId>
+          <artifactId>ct-sym</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 

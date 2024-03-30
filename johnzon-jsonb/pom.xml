@@ -127,6 +127,10 @@
           <groupId>org.junit.jupiter</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.netbeans.tools</groupId>
+          <artifactId>ct-sym</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
   </dependencies>
