@@ -30,13 +30,13 @@ import org.apache.johnzon.websocket.mapper.JohnzonTextDecoder;
 import org.apache.johnzon.websocket.mapper.JohnzonTextEncoder;
 import org.apache.openejb.arquillian.common.IO;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.URI;
 import java.net.URL;
@@ -48,7 +48,7 @@ import jakarta.websocket.WebSocketContainer;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class MapperCodecTest {
     @Deployment(testable = false)
     public static WebArchive war() {

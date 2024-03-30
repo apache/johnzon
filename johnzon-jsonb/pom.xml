@@ -124,10 +124,6 @@
 
       <exclusions>
         <exclusion>
-          <groupId>org.junit.jupiter</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.netbeans.tools</groupId>
           <artifactId>ct-sym</artifactId>
         </exclusion>
@@ -205,26 +201,6 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${surefire.plugin.version}</version>
-
-        <!-- Explicitly configure providers so we can mix JUnit 4 (johnzon) and JUnit 5 (TCK) tests -->
-        <dependencies>
-          <dependency>
-            <groupId>org.apache.maven.surefire</groupId>
-            <artifactId>surefire-junit4</artifactId>
-            <version>${surefire.plugin.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>org.apache.maven.surefire</groupId>
-            <artifactId>surefire-junit-platform</artifactId>
-            <version>${surefire.plugin.version}</version>
-          </dependency>
-
-          <dependency>
-            <groupId>org.junit.jupiter</groupId>
-            <artifactId>junit-jupiter-engine</artifactId>
-            <version>5.7.2</version>
-          </dependency>
-        </dependencies>
 
         <executions>
           <execution>
