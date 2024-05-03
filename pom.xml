@@ -49,6 +49,7 @@
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
+    <surefire.plugin.version>3.2.5</surefire.plugin.version>
     <felix.plugin.version>5.1.9</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <bnd.version>6.1.0</bnd.version>
@@ -56,6 +57,7 @@
     <checkstyle.version>3.0.0</checkstyle.version> <!-- Increasing checkstyle to 3.1 or above will require changes to the checkstyleRules -->
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
+    <junit.version>5.10.2</junit.version>
     <owb.version>4.0.0</owb.version>
     <arquillian.jvm.args />
   </properties>
@@ -88,10 +90,17 @@
         <version>${jakarta-jsonb-api.version}</version>
         <scope>provided</scope>
       </dependency>
+
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.13.2</version>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
     </dependencies>
@@ -105,8 +114,8 @@
     </dependency>
 
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter-api</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
@@ -137,12 +146,12 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>3.1.2</version>
+          <version>${surefire.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-report-plugin</artifactId>
-          <version>3.1.2</version>
+          <version>${surefire.plugin.version}</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -804,13 +813,6 @@
   </contributors>
 
   <profiles>
-    <profile>
-      <id>tck</id>
-      <modules>
-        <module>tck</module>
-      </modules>
-    </profile>
-
     <profile>
         <id>jdk9+</id>
         <activation>

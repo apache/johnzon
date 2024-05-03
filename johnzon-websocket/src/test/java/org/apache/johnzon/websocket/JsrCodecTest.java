@@ -28,13 +28,13 @@ import org.apache.johnzon.websocket.internal.jsr.JsrEncoder;
 import org.apache.johnzon.websocket.jsr.JsrObjectDecoder;
 import org.apache.johnzon.websocket.jsr.JsrObjectEncoder;
 import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.arquillian.junit5.ArquillianExtension;
 import org.jboss.arquillian.test.api.ArquillianResource;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.jboss.shrinkwrap.api.spec.WebArchive;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.net.URI;
 import java.net.URL;
@@ -45,10 +45,10 @@ import jakarta.websocket.ContainerProvider;
 import jakarta.websocket.Session;
 import jakarta.websocket.WebSocketContainer;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@RunWith(Arquillian.class)
+@ExtendWith(ArquillianExtension.class)
 public class JsrCodecTest {
     @Deployment(testable = false)
     public static WebArchive war() {
