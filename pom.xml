@@ -526,9 +526,9 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/johnzon.git</connection>
-    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/johnzon.git</developerConnection>
-    <url>https://git-wip-us.apache.org/repos/asf?p=johnzon.git</url>
+    <connection>scm:git:https://gitbox.apache.org/repos/asf/johnzon.git</connection>
+    <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/johnzon.git</developerConnection>
+    <url>https://gitbox.apache.org/repos/asf?p=johnzon.git</url>
     <tag>HEAD</tag>
   </scm>
 
