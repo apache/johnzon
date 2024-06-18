@@ -141,6 +141,26 @@
     </dependency>
 
     <dependency>
+      <groupId>jakarta.json.bind</groupId>
+      <artifactId>jakarta.json.bind-api</artifactId>
+      <version>${jakarta-jsonb-api.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.json.bind</groupId>
+      <artifactId>jakarta.json.bind-api</artifactId>
+      <version>${jakarta-jsonb-api.version}</version>
+      <scope>compile</scope>
+      <classifier>sources</classifier>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.json.bind</groupId>
+      <artifactId>jakarta.json.bind-api</artifactId>
+      <version>${jakarta-jsonb-api.version}</version>
+      <scope>compile</scope>
+      <classifier>javadoc</classifier>
+    </dependency>
+    <dependency>
       <groupId>org.apache.johnzon</groupId>
       <artifactId>johnzon-jsonb</artifactId>
       <version>${project.version}</version>
