@@ -21,78 +21,72 @@ package org.apache.johnzon.core.io;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
-import java.nio.channels.Channels;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.CoderResult;
 
 /**
- * {@link java.io.OutputStreamWriter} delegating directly to a sun.nio.cs.StreamEncoder with a controlled underlying buffer size.
+ * Custom implementation of {@link Writer} that allows for wrapping an {@link OutputStream} with a controlled underlying buffer size.
+ *
  * It enables to wrap an {@link OutputStream} as a {@link Writer} but with a faster feedback than a default
  * {@link java.io.OutputStreamWriter} which uses a 8k buffer by default (encapsulated).
- * <p>
- * Note: the "flush error" can be of 2 characters (lcb in StreamEncoder) but we can't do much better when encoding.
  */
 public class BoundedOutputStreamWriter extends Writer {
-    private final Writer delegate;
+    private final OutputStream outputStream;
+    private final CharsetEncoder encoder;
+    private final ByteBuffer buffer;
 
     public BoundedOutputStreamWriter(final OutputStream outputStream,
                                      final Charset charset,
                                      final int maxSize) {
-        delegate = Channels.newWriter(
-                Channels.newChannel(outputStream),
-                charset.newEncoder()
-                        .onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE),
-                maxSize);
-    }
-
-    @Override
-    public void write(final int c) throws IOException {
-        delegate.write(c);
+        this.outputStream = outputStream;
+        this.encoder = charset.newEncoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        this.buffer = ByteBuffer.allocate(maxSize);
     }
 
     @Override
     public void write(final char[] chars, final int off, final int len) throws IOException {
-        delegate.write(chars, off, len);
-    }
-
-    @Override
-    public void write(final String str, final int off, final int len) throws IOException {
-        delegate.write(str, off, len);
+        appendToBuffer(CharBuffer.wrap(chars, off, len));
     }
 
     @Override
     public void flush() throws IOException {
-        delegate.flush();
+        flushInternal();
+        outputStream.flush();
     }
 
     @Override
     public void close() throws IOException {
-        delegate.close();
+        flushInternal();
+        outputStream.close();
     }
 
-    @Override
-    public void write(char[] cbuf) throws IOException {
-        delegate.write(cbuf);
+    private void appendToBuffer(CharBuffer charBuffer) throws IOException {
+        while (charBuffer.hasRemaining()) {
+            CoderResult coderResult = encoder.encode(charBuffer, buffer, false);
+
+            if (coderResult.isError()) {
+                coderResult.throwException();
+            }
+
+            // Input is not fully writable to buffer? -> time to flush
+            if (coderResult.isOverflow()) {
+                flushInternal();
+            }
+        }
     }
 
-    @Override
-    public void write(final String str) throws IOException {
-        delegate.write(str);
-    }
+    private void flushInternal() throws IOException {
+        buffer.flip();
+        while (buffer.hasRemaining()) {
+            outputStream.write(buffer.get());
+        }
 
-    @Override
-    public Writer append(final CharSequence csq) throws IOException {
-        return delegate.append(csq);
-    }
-
-    @Override
-    public Writer append(final CharSequence csq, final int start, final int end) throws IOException {
-        return delegate.append(csq, start, end);
-    }
-
-    @Override
-    public Writer append(final char c) throws IOException {
-        return delegate.append(c);
+        buffer.clear();
     }
 }
