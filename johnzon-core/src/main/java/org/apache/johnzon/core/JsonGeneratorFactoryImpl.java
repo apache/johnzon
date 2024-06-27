@@ -76,10 +76,10 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
         return new JsonGeneratorImpl(
-                boundedOutputStreamWriter <= 0 ?
-                        new OutputStreamWriter(out, defaultEncoding) :
-                        new BoundedOutputStreamWriter(out, defaultEncoding, boundedOutputStreamWriter),
-                getBufferProvider(out), pretty);
+            boundedOutputStreamWriter <= 0 ?
+                    new OutputStreamWriter(out, defaultEncoding) :
+                    new BoundedOutputStreamWriter(out, defaultEncoding, boundedOutputStreamWriter),
+            getBufferProvider(out), pretty);
     }
 
     @Override
