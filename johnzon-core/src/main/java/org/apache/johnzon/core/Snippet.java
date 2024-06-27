@@ -16,7 +16,7 @@
  */
 package org.apache.johnzon.core;
 
-import org.apache.johnzon.core.io.AutoFlushingBufferedWriter;
+import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -27,7 +27,6 @@ import jakarta.json.stream.JsonGeneratorFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -308,7 +307,7 @@ public class Snippet {
                     encoding = JsonGeneratorFactoryImpl.class.cast(generatorFactory).getDefaultEncoding();
                 }
 
-                this.mode = new Writing(max, new AutoFlushingBufferedWriter(new OutputStreamWriter(buffer, encoding), max));
+                this.mode = new Writing(max, new BoundedOutputStreamWriter(buffer, encoding, max));
             }
 
             public String get() {

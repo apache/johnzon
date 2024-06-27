@@ -20,20 +20,25 @@ package org.apache.johnzon.core.io;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.Charset;
 
 /**
- * A {@link BufferedWriter} that automatically flushes the underlying Writer when flushing its internal buffer
+ * A {@link BufferedWriter} that wraps an {@link OutputStreamWriter} and automatically flushes it when flushing its internal buffer.
+ * It enables to wrap an {@link OutputStream} as a {@link Writer} but with a faster feedback than a default
+ * {@link OutputStreamWriter} which uses a 8k buffer by default (encapsulated).
  */
-public class AutoFlushingBufferedWriter extends BufferedWriter {
+public class BoundedOutputStreamWriter extends BufferedWriter {
     private final int bufferSize;
 
     private int writtenSinceLastFlush = 0;
 
-    public AutoFlushingBufferedWriter(Writer out, int sz) {
-        super(out, sz);
+    public BoundedOutputStreamWriter(OutputStream outputStream, Charset charset, int maxSize) {
+        super(new OutputStreamWriter(outputStream, charset), maxSize);
 
-        this.bufferSize = sz;
+        this.bufferSize = maxSize;
     }
 
     // Only methods that are directly modifying the internal buffer in BufferedWriter should be overwritten here,

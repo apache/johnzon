@@ -18,7 +18,7 @@
  */
 package org.apache.johnzon.core;
 
-import org.apache.johnzon.core.io.AutoFlushingBufferedWriter;
+import org.apache.johnzon.core.io.BoundedOutputStreamWriter;
 
 import jakarta.json.stream.JsonGenerator;
 import jakarta.json.stream.JsonGeneratorFactory;
@@ -75,22 +75,21 @@ public class JsonGeneratorFactoryImpl extends AbstractJsonFactory implements Jso
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out) {
-        Writer writer = new OutputStreamWriter(out, defaultEncoding);
-        if (boundedOutputStreamWriter > 0) {
-            writer = new AutoFlushingBufferedWriter(writer, boundedOutputStreamWriter);
-        }
-
-        return new JsonGeneratorImpl(writer, getBufferProvider(out), pretty);
+        return new JsonGeneratorImpl(
+            boundedOutputStreamWriter <= 0 ?
+                    new OutputStreamWriter(out, defaultEncoding) :
+                    new BoundedOutputStreamWriter(out, defaultEncoding, boundedOutputStreamWriter),
+            getBufferProvider(out), pretty);
     }
 
     @Override
     public JsonGenerator createGenerator(final OutputStream out, final Charset charset) {
-        Writer writer = new OutputStreamWriter(out, charset == null ? defaultEncoding : charset);
-        if (boundedOutputStreamWriter > 0) {
-            writer = new AutoFlushingBufferedWriter(writer, boundedOutputStreamWriter);
-        }
-
-        return new JsonGeneratorImpl(writer, getBufferProvider(out), pretty);
+        final Charset cs = charset == null ? defaultEncoding : charset;
+        return new JsonGeneratorImpl(
+                boundedOutputStreamWriter <= 0 ?
+                        new OutputStreamWriter(out, cs) :
+                        new BoundedOutputStreamWriter(out, cs, boundedOutputStreamWriter),
+                getBufferProvider(out), pretty);
     }
 
     @Override
