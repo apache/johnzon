@@ -22,16 +22,18 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 
-public class BoundedOutputStreamWriterTest {
+public class AutoFlushingBufferedWriterTest {
     // sanity check
     @Test
     public void write() throws IOException {
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (final BoundedOutputStreamWriter writer = new BoundedOutputStreamWriter(outputStream, UTF_8, 10)) {
+        try (final Writer writer = new AutoFlushingBufferedWriter(new OutputStreamWriter(outputStream, UTF_8), 10)) {
             writer.write("ok");
             writer.write('1');
         }
@@ -42,7 +44,7 @@ public class BoundedOutputStreamWriterTest {
     @Test
     public void sizeLimit() throws IOException {
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (final BoundedOutputStreamWriter writer = new BoundedOutputStreamWriter(outputStream, UTF_8, 10)) {
+        try (final Writer writer = new AutoFlushingBufferedWriter(new OutputStreamWriter(outputStream, UTF_8), 10)) {
             writer.write("1234567890");
             assertEquals(0, outputStream.size()); // was not yet written since it matches buffer size
             writer.write('1');
@@ -55,7 +57,7 @@ public class BoundedOutputStreamWriterTest {
     @Test
     public void sizeLimit2() throws IOException {
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (final BoundedOutputStreamWriter writer = new BoundedOutputStreamWriter(outputStream, UTF_8, 2)) {
+        try (final Writer writer = new AutoFlushingBufferedWriter(new OutputStreamWriter(outputStream, UTF_8), 10)) {
             writer.write("1234567890");
             writer.write('1');
         }
