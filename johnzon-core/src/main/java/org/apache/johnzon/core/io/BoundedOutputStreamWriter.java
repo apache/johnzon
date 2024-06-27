@@ -18,81 +18,61 @@
  */
 package org.apache.johnzon.core.io;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.channels.Channels;
 import java.nio.charset.Charset;
-import java.nio.charset.CodingErrorAction;
 
 /**
- * {@link java.io.OutputStreamWriter} delegating directly to a sun.nio.cs.StreamEncoder with a controlled underlying buffer size.
+ * A {@link BufferedWriter} that wraps an {@link OutputStreamWriter} and automatically flushes it when flushing its internal buffer.
  * It enables to wrap an {@link OutputStream} as a {@link Writer} but with a faster feedback than a default
- * {@link java.io.OutputStreamWriter} which uses a 8k buffer by default (encapsulated).
- * <p>
- * Note: the "flush error" can be of 2 characters (lcb in StreamEncoder) but we can't do much better when encoding.
+ * {@link OutputStreamWriter} which uses a 8k buffer by default (encapsulated).
  */
-public class BoundedOutputStreamWriter extends Writer {
-    private final Writer delegate;
+public class BoundedOutputStreamWriter extends BufferedWriter {
+    private final int bufferSize;
 
-    public BoundedOutputStreamWriter(final OutputStream outputStream,
-                                     final Charset charset,
-                                     final int maxSize) {
-        delegate = Channels.newWriter(
-                Channels.newChannel(outputStream),
-                charset.newEncoder()
-                        .onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE),
-                maxSize);
+    private int writtenSinceLastFlush = 0;
+
+    public BoundedOutputStreamWriter(OutputStream outputStream, Charset charset, int maxSize) {
+        super(new OutputStreamWriter(outputStream, charset), maxSize);
+
+        this.bufferSize = maxSize;
+    }
+
+    // Only methods that are directly modifying the internal buffer in BufferedWriter should be overwritten here,
+    // otherwise we might track the same char being written twice
+
+    @Override
+    public void write(String s, int off, int len) throws IOException {
+        autoFlush();
+        super.write(s, off, len);
+
+        writtenSinceLastFlush += len;
     }
 
     @Override
-    public void write(final int c) throws IOException {
-        delegate.write(c);
+    public void write(char[] cbuf, int off, int len) throws IOException {
+        autoFlush();
+        super.write(cbuf, off, len);
+
+        writtenSinceLastFlush += len;
     }
 
     @Override
-    public void write(final char[] chars, final int off, final int len) throws IOException {
-        delegate.write(chars, off, len);
+    public void write(int c) throws IOException {
+        autoFlush();
+        super.write(c);
+
+        writtenSinceLastFlush += 1;
     }
 
-    @Override
-    public void write(final String str, final int off, final int len) throws IOException {
-        delegate.write(str, off, len);
-    }
+    private void autoFlush() throws IOException {
+        if (writtenSinceLastFlush >= bufferSize) {
+            flush();
 
-    @Override
-    public void flush() throws IOException {
-        delegate.flush();
-    }
-
-    @Override
-    public void close() throws IOException {
-        delegate.close();
-    }
-
-    @Override
-    public void write(char[] cbuf) throws IOException {
-        delegate.write(cbuf);
-    }
-
-    @Override
-    public void write(final String str) throws IOException {
-        delegate.write(str);
-    }
-
-    @Override
-    public Writer append(final CharSequence csq) throws IOException {
-        return delegate.append(csq);
-    }
-
-    @Override
-    public Writer append(final CharSequence csq, final int start, final int end) throws IOException {
-        return delegate.append(csq, start, end);
-    }
-
-    @Override
-    public Writer append(final char c) throws IOException {
-        return delegate.append(c);
+            writtenSinceLastFlush = 0;
+        }
     }
 }

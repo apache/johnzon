@@ -28,6 +28,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Writer;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -300,12 +301,13 @@ public class Snippet {
             public SnippetWriter(final int max) {
                 this.max = max;
                 this.buffer = new ByteArrayOutputStream(max);
-                this.mode = new Writing(max, new BoundedOutputStreamWriter(
-                        buffer,
-                        JsonGeneratorFactoryImpl.class.isInstance(generatorFactory) ?
-                                JsonGeneratorFactoryImpl.class.cast(generatorFactory).getDefaultEncoding() :
-                                UTF_8,
-                        max));
+
+                Charset encoding = UTF_8;
+                if (JsonGeneratorFactoryImpl.class.isInstance(generatorFactory)) {
+                    encoding = JsonGeneratorFactoryImpl.class.cast(generatorFactory).getDefaultEncoding();
+                }
+
+                this.mode = new Writing(max, new BoundedOutputStreamWriter(buffer, encoding, max));
             }
 
             public String get() {
