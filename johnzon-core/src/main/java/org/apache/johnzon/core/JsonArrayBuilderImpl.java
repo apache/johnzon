@@ -57,13 +57,13 @@ class JsonArrayBuilderImpl implements JsonArrayBuilder, Serializable {
                                 final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl jsonProvider) {
         this.bufferProvider = provider;
         this.rejectDuplicateKeysMode = rejectDuplicateKeysMode;
+        this.jsonProvider = jsonProvider;
         this.tmpList = new ArrayList<>();
         if (!initialData.isEmpty()) {
             for (Object initialValue : initialData) {
                 add(initialValue);
             }
         }
-        this.jsonProvider = jsonProvider;
     }
 
     @Override
