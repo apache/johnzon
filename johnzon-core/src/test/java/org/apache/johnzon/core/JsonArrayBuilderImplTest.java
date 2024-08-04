@@ -202,4 +202,17 @@ public class JsonArrayBuilderImplTest {
         JsonArray jsonArray2 = otherBuilder.build();
         Assert.assertEquals("[\"a\",\"b\",\"c\",\"d\"]", jsonArray2.toString());
     }
+
+    /**
+     * Testcase for <a href="https://issues.apache.org/jira/browse/JOHNZON-407">JOHNZON-407</a>
+     */
+    @Test
+    public void issue407() {
+        Collection<Object> initialData = new ArrayList<>();
+        initialData.add(BigDecimal.ONE);
+        initialData.add(BigInteger.ONE);
+
+        // This must not throw an exception
+        Json.createArrayBuilder(initialData).build();
+    }
 }
