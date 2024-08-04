@@ -30,6 +30,10 @@ public class DateConverter implements Converter<Date> {
     private final ThreadLocal<DateFormat> format;
 
     public DateConverter(final String pattern) {
+        if (pattern == null) {
+            throw new IllegalArgumentException("pattern must not be null");
+        }
+
         format = new ThreadLocal<DateFormat>() {
             @Override
             protected DateFormat initialValue() {
