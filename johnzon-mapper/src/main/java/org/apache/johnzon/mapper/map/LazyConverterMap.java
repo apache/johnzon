@@ -31,6 +31,7 @@ import org.apache.johnzon.mapper.converter.URIConverter;
 import org.apache.johnzon.mapper.converter.URLConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.util.DateUtil;
 
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -50,13 +51,10 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQueries;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -65,13 +63,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.time.temporal.ChronoField.DAY_OF_MONTH;
-import static java.time.temporal.ChronoField.HOUR_OF_DAY;
-import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
-import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
-import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
-import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
-import static java.time.temporal.ChronoField.YEAR;
 import static java.util.stream.Collectors.toSet;
 
 // important: override all usages,
@@ -312,7 +303,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 @Override
                 public OffsetDateTime fromString(final String text) {
                     try {
-                        return parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toOffsetDateTime();
+                        return DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toOffsetDateTime();
                     } catch (final DateTimeParseException dpe) {
                         return OffsetDateTime.parse(text);
                     }
@@ -344,7 +335,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 @Override
                 public ZonedDateTime fromString(final String text) {
                     try {
-                        return parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC);
+                        return DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC);
                     } catch (final DateTimeParseException dpe) {
                         return ZonedDateTime.parse(text);
                     }
@@ -377,7 +368,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 @Override
                 public LocalDateTime fromString(final String text) {
                     try {
-                        return parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toLocalDateTime();
+                        return DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toLocalDateTime();
                     } catch (final DateTimeParseException dpe) {
                         return LocalDateTime.parse(text);
                     }
@@ -409,7 +400,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 @Override
                 public LocalDate fromString(final String text) {
                     try {
-                        return parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toLocalDate();
+                        return DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toLocalDate();
                     } catch (final DateTimeParseException dpe) {
                         return LocalDate.parse(text);
                     }
@@ -440,7 +431,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
                 @Override
                 public Instant fromString(final String text) {
-                    return parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toInstant();
+                    return DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toInstant();
                 }
             }, Instant.class));
         }
@@ -468,7 +459,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
                 @Override
                 public GregorianCalendar fromString(final String text) {
-                    final ZonedDateTime zonedDateTime = parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC);
+                    final ZonedDateTime zonedDateTime = DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC);
                     final Calendar instance = GregorianCalendar.getInstance();
                     instance.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
                     instance.setTime(Date.from(zonedDateTime.toInstant()));
@@ -500,7 +491,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
                 @Override
                 public Calendar fromString(final String text) {
-                    final ZonedDateTime zonedDateTime = parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC);
+                    final ZonedDateTime zonedDateTime = DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC);
                     final Calendar instance = Calendar.getInstance();
                     instance.setTimeZone(TimeZone.getTimeZone(zonedDateTime.getZone()));
                     instance.setTime(Date.from(zonedDateTime.toInstant()));
@@ -529,7 +520,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     private Adapter<?, ?> addDateConverter(final AdapterKey key) {
         if (useShortISO8601Format) {
-            return add(key, new ConverterAdapter<>(new DateConverter("yyyyMMddHHmmssZ"), Date.class));
+            return add(key, new ConverterAdapter<>(DateConverter.ISO_8601_SHORT, Date.class));
         }
         final ZoneId zoneIDUTC = ZoneId.of("UTC");
         if (dateTimeFormatter != null) {
@@ -543,7 +534,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 @Override
                 public Date fromString(final String text) {
                     try {
-                        return Date.from(parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toInstant());
+                        return Date.from(DateUtil.parseZonedDateTime(text, dateTimeFormatter, zoneIDUTC).toInstant());
                     } catch (final DateTimeParseException dpe) {
                         return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
                     }
@@ -566,22 +557,6 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                 }
             }
         }, Date.class));
-    }
-
-    private static ZonedDateTime parseZonedDateTime(final String text, final DateTimeFormatter formatter, final ZoneId defaultZone) {
-        final TemporalAccessor parse = formatter.parse(text);
-        ZoneId zone = parse.query(TemporalQueries.zone());
-        if (Objects.isNull(zone)) {
-            zone = defaultZone;
-        }
-        final int year = parse.isSupported(YEAR) ? parse.get(YEAR) : 0;
-        final int month = parse.isSupported(MONTH_OF_YEAR) ? parse.get(MONTH_OF_YEAR) : 0;
-        final int day = parse.isSupported(DAY_OF_MONTH) ? parse.get(DAY_OF_MONTH) : 0;
-        final int hour = parse.isSupported(HOUR_OF_DAY) ? parse.get(HOUR_OF_DAY) : 0;
-        final int minute = parse.isSupported(MINUTE_OF_HOUR) ? parse.get(MINUTE_OF_HOUR) : 0;
-        final int second = parse.isSupported(SECOND_OF_MINUTE) ? parse.get(SECOND_OF_MINUTE) : 0;
-        final int millisecond = parse.isSupported(MILLI_OF_SECOND) ? parse.get(MILLI_OF_SECOND) : 0;
-        return ZonedDateTime.of(year, month, day, hour, minute, second, millisecond, zone);
     }
 
     private static void checkForDeprecatedTimeZone(final String text) {
