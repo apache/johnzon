@@ -394,7 +394,7 @@ public class DeserializationExceptionMessagesTest {
     public void dateFromString() throws Exception {
         assertMessage("{ \"date\" : \"Supercalifragilisticexpialidocious\" }",
                 "Widget property 'date' of type Date cannot be mapped to json string value: \"Supercalifragilisti...\n" +
-                        "java.text.ParseException: Unparseable date: \"Supercalifragilisticexpialidocious\"");
+                        "Text 'Supercalifragilisticexpialidocious' could not be parsed at index 0");
     }
 
     @Test

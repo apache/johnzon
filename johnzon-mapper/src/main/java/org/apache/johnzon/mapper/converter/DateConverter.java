@@ -19,36 +19,40 @@
 package org.apache.johnzon.mapper.converter;
 
 import org.apache.johnzon.mapper.Converter;
+import org.apache.johnzon.mapper.util.DateUtil;
 
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
+import java.util.Locale;
 
 public class DateConverter implements Converter<Date> {
-    // TODO: see if we can clean it
-    private final ThreadLocal<DateFormat> format;
+    // Almost ISO 8601 basic, but zone is defined by generic name instead of zone-offset
+    public static final DateConverter ISO_8601_SHORT = new DateConverter("yyyyMMddHHmmssv");
+
+    private static final ZoneId UTC = ZoneId.of("UTC");
+
+    private final DateTimeFormatter formatter;
 
     public DateConverter(final String pattern) {
-        format = new ThreadLocal<DateFormat>() {
-            @Override
-            protected DateFormat initialValue() {
-                return new SimpleDateFormat(pattern);
-            }
-        };
+        this.formatter = DateTimeFormatter.ofPattern(pattern, Locale.ROOT);
     }
 
     @Override
     public String toString(final Date instance) {
-        return format.get().format(instance);
+        return formatter.format(ZonedDateTime.ofInstant(instance.toInstant(), UTC));
     }
 
     @Override
     public Date fromString(final String text) {
         try {
-            return format.get().parse(text);
-        } catch (final ParseException e) {
-            throw new IllegalArgumentException(e);
+            return Date.from(DateUtil.parseZonedDateTime(text, formatter, UTC).toInstant());
+        } catch (final DateTimeParseException dpe) {
+            return Date.from(LocalDateTime.parse(text).toInstant(ZoneOffset.UTC));
         }
     }
 }
