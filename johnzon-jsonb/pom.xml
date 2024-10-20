@@ -241,6 +241,9 @@
                 <!-- needed to pass JSON-B 3 TCKs on jdk 13+, see https://github.com/jakartaee/jsonb-api/issues/272 -->
                 <java.locale.providers>COMPAT</java.locale.providers>
               </systemPropertyVariables>
+
+              <!-- This is required as a few tests in the TCK are depending on the Locale, see https://github.com/jakartaee/jsonb-api/issues/360 -->
+              <argLine>-Duser.language=en -Duser.region=US</argLine>
             </configuration>
           </execution>
         </executions>
