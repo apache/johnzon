@@ -29,6 +29,7 @@ import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.converter.StringConverter;
 import org.apache.johnzon.mapper.converter.URIConverter;
 import org.apache.johnzon.mapper.converter.URLConverter;
+import org.apache.johnzon.mapper.converter.UUIDConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
 import org.apache.johnzon.mapper.util.DateUtil;
@@ -58,6 +59,7 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -287,6 +289,9 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
                     return OffsetTime.parse(text);
                 }
             }, OffsetTime.class));
+        }
+        if (from == UUID.class) {
+            return add(key, new ConverterAdapter<>(new UUIDConverter(), UUID.class));
         }
         return null;
     }
