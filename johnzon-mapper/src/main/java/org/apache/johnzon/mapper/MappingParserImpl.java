@@ -498,6 +498,10 @@ public class MappingParserImpl implements MappingParser {
             return converter.to(jsonValue);
         }
 
+        if (jsonValue == null) {
+            return getNullValue(targetType);
+        }
+
         if (JsonValue.ValueType.OBJECT == valueType) {
             if (JsonObject.class == key.getTo() || JsonStructure.class == key.getTo()) {
                 return converter.to(jsonValue.asJsonObject());
@@ -598,20 +602,7 @@ public class MappingParserImpl implements MappingParser {
                             final Type type, final Adapter itemConverter, final JsonPointerTracker jsonPointer,
                             final Type rootType) {
         if (jsonValue == null) {
-            if (OptionalInt.class == type) {
-                return OptionalInt.empty();
-            }
-            if (OptionalDouble.class == type) {
-                return OptionalDouble.empty();
-            }
-            if (OptionalLong.class == type) {
-                return OptionalLong.empty();
-            }
-            if (type instanceof ParameterizedType && Optional.class == ((ParameterizedType)type).getRawType()) {
-                return Optional.empty();
-            }
-
-            return null;
+            return getNullValue(type);
         }
 
         JsonValue.ValueType valueType = jsonValue.getValueType();
@@ -750,6 +741,23 @@ public class MappingParserImpl implements MappingParser {
         final String snippet = config.getSnippet().of(jsonValue);
         final String description = ExceptionMessages.description(valueType);
         throw new MapperException("Unable to parse " + description + " to " + type + ": " + snippet);
+    }
+
+    private static Object getNullValue(final Type type) {
+        if (OptionalInt.class == type) {
+            return OptionalInt.empty();
+        }
+        if (OptionalDouble.class == type) {
+            return OptionalDouble.empty();
+        }
+        if (OptionalLong.class == type) {
+            return OptionalLong.empty();
+        }
+        if (type instanceof ParameterizedType && Optional.class == ((ParameterizedType) type).getRawType()) {
+            return Optional.empty();
+        }
+
+        return null;
     }
 
     private Object buildArray(final Type type, final JsonArray jsonArray, final Adapter itemConverter,

@@ -19,6 +19,8 @@ package org.apache.johnzon.jsonb;
  */
 
 
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbProperty;
 import org.junit.Test;
 
 import jakarta.json.Json;
@@ -39,6 +41,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -133,6 +136,39 @@ public class AdapterTest {
 
             final Foo2 read = jsonb.fromJson(toString, Foo2.class);
             assertEquals(foo.dummy.value, read.dummy.value);
+        }
+    }
+
+    @Test
+    public void adaptJsonWithCreator() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final String json = "{\"value\":\"orange\", \"dummy\":\"2\"}";
+
+            final Foo3 foo3 = jsonb.fromJson(json, Foo3.class);
+            assertEquals("orange", foo3.value);
+            assertEquals(2, foo3.dummy.value);
+        }
+    }
+
+    @Test
+    public void adaptJsonWithCreatorNull() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final String json = "{\"value\":\"orange\"}";
+
+            final Foo3 foo3 = jsonb.fromJson(json, Foo3.class);
+            assertEquals("orange", foo3.value);
+            assertNull( foo3.dummy);
+        }
+    }
+
+    @Test
+    public void adaptJsonWithFieldNull() throws Exception {
+        try (final Jsonb jsonb = JsonbBuilder.create()) {
+            final String json = "{\"value\":\"orange\"}";
+
+            final Foo4 foo4 = jsonb.fromJson(json, Foo4.class);
+            assertEquals("orange", foo4.value);
+            assertNull( foo4.dummy);
         }
     }
 
@@ -239,6 +275,26 @@ public class AdapterTest {
         }
     }
 
+    public static class Foo3 {
+        public String value;
+
+        @JsonbTypeAdapter(DummyAdapter.class)
+        public Dummy dummy;
+
+        @JsonbCreator
+        public Foo3(@JsonbProperty("dummy") @JsonbTypeAdapter(DummyAdapter.class) final Dummy dummy,
+                    @JsonbProperty("value") final String value) {
+            this.dummy = dummy;
+            this.value = value;
+        }
+    }
+
+    public static class Foo4 {
+        public String value;
+
+        @JsonbTypeAdapter(DummyAdapter.class)
+        public Dummy dummy;
+    }
 
     public static class Foo2 {
         @JsonbTypeAdapter(Dummy2Adapter.class)
@@ -391,4 +447,6 @@ public class AdapterTest {
         }
 
     }
+
+
 }
