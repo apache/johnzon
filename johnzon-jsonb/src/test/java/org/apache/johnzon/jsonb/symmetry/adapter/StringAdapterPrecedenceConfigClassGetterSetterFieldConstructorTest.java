@@ -50,10 +50,10 @@ public class StringAdapterPrecedenceConfigClassGetterSetterFieldConstructorTest 
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":\"test@domain.com\"}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Method.adaptFromJson}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Setter.adaptFromJson}", actual.toString());
         assertEquals("Constructor.adaptFromJson\n" +
                 "Contact.<init>\n" +
-                "Method.adaptFromJson\n" +
+                "Setter.adaptFromJson\n" +
                 "Contact.setEmail", calls());
     }
 
@@ -64,9 +64,9 @@ public class StringAdapterPrecedenceConfigClassGetterSetterFieldConstructorTest 
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":\"test@domain.com:Method.adaptToJson\"}", json);
+        assertEquals("{\"email\":\"test@domain.com:Getter.adaptToJson\"}", json);
         assertEquals("Contact.getEmail\n" +
-                "Method.adaptToJson", calls());
+                "Getter.adaptToJson", calls());
     }
 
     public static class Contact {
@@ -80,13 +80,13 @@ public class StringAdapterPrecedenceConfigClassGetterSetterFieldConstructorTest 
             this.email = email;
         }
 
-        @JsonbTypeAdapter(Adapter.Method.class)
+        @JsonbTypeAdapter(Adapter.Getter.class)
         public Email getEmail() {
             CALLS.called();
             return email;
         }
 
-        @JsonbTypeAdapter(Adapter.Method.class)
+        @JsonbTypeAdapter(Adapter.Setter.class)
         public void setEmail(final Email email) {
             CALLS.called();
             this.email = email;

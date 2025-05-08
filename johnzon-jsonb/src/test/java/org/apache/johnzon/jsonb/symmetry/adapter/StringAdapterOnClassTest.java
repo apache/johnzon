@@ -74,8 +74,8 @@ public abstract class StringAdapterOnClassTest extends SymmetryTest {
             return new Email(parts[0], parts[1], CALLS.called(this));
         }
 
-        public static final class Method extends Adapter {
-        }
+        public static final class Getter extends Adapter {}
+        public static final class Setter extends Adapter {}
 
         public static final class Field extends Adapter {
         }
