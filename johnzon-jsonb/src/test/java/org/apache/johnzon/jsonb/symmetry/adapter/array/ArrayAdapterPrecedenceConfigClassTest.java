@@ -51,7 +51,7 @@ public class ArrayAdapterPrecedenceConfigClassTest extends ArrayAdapterOnClassTe
 
     @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "{\"email\":\"test@domain.com\"}";
+        final String json = "{\"email\":[\"test\",\"domain.com\"]}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
         assertEquals("Contact{email=test@domain.com:EmailClass.adaptFromJson}", actual.toString());
         assertEquals("Contact.<init>\n" +
@@ -67,7 +67,7 @@ public class ArrayAdapterPrecedenceConfigClassTest extends ArrayAdapterOnClassTe
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":\"test@domain.com:EmailClass.adaptToJson\"}", json);
+        assertEquals("{\"email\":[\"test\",\"domain.com\",\"EmailClass.adaptToJson\"]}", json);
         assertEquals("Contact.getEmail\n" +
                 "EmailClass.adaptToJson", calls());
     }

@@ -61,16 +61,15 @@ public abstract class ArrayAdapterOnClassTest extends SymmetryTest {
         }
     }
 
-    public abstract static class Adapter implements JsonbAdapter<Email, String> {
+    public abstract static class Adapter implements JsonbAdapter<Email, String[]> {
 
         @Override
-        public String adaptToJson(final Email obj) {
-            return obj.user + "@" + obj.domain + ":" + CALLS.called(this);
+        public String[] adaptToJson(final Email obj) {
+            return new String[]{obj.user, obj.domain, CALLS.called(this)};
         }
 
         @Override
-        public Email adaptFromJson(final String obj) {
-            final String[] parts = obj.split("[@:]");
+        public Email adaptFromJson(final String[] parts) {
             return new Email(parts[0], parts[1], CALLS.called(this));
         }
 

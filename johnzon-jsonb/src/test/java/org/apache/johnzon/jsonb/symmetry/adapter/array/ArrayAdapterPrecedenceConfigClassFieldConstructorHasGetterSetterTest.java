@@ -50,7 +50,7 @@ public class ArrayAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTes
 
     @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "{\"email\":\"test@domain.com\"}";
+        final String json = "{\"email\":[\"test\",\"domain.com\"]}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
         assertEquals("Contact{email=test@domain.com:Field.adaptFromJson}", actual.toString());
         assertEquals("Constructor.adaptFromJson\n" +
@@ -66,7 +66,7 @@ public class ArrayAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTes
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":\"test@domain.com:Field.adaptToJson\"}", json);
+        assertEquals("{\"email\":[\"test\",\"domain.com\",\"Field.adaptToJson\"]}", json);
         assertEquals("Contact.getEmail\n" +
                 "Field.adaptToJson", calls());
     }

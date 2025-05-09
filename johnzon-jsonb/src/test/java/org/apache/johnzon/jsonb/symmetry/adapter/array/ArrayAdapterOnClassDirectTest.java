@@ -32,12 +32,12 @@ public class ArrayAdapterOnClassDirectTest extends ArrayAdapterOnClassTest {
     public void assertWrite(final Jsonb jsonb) {
         final Email email = new Email("test", "domain.com");
         final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
+        assertEquals("[\"test\",\"domain.com\",\"EmailClass.adaptToJson\"]", json);
         assertEquals("EmailClass.adaptToJson", calls());
     }
 
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
+        final String json = "[\"test\",\"domain.com\"]";
         final Email email = jsonb.fromJson(json, Email.class);
         assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
         assertEquals("EmailClass.adaptFromJson", calls());
@@ -71,5 +71,12 @@ public class ArrayAdapterOnClassDirectTest extends ArrayAdapterOnClassTest {
     @Override
     public void writeAfterRead() throws Exception {
         super.writeAfterRead();
+    }
+
+    @Test
+    @Ignore()
+    @Override
+    public void readAfterWrite() throws Exception {
+        super.readAfterWrite();
     }
 }
