@@ -18,8 +18,6 @@ package org.apache.johnzon.jsonb.symmetry.adapter;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,47 +27,51 @@ public class StringAdapterOnClassSimpleTest extends StringAdapterOnClassTest {
         return JsonbBuilder.create();
     }
 
+    @Override
+    public void assertRead(final Jsonb jsonb) {
+        final String json = "{\"email\":\"test@domain.com\"}";
+        final StringAdapterPrecedenceConfigClassTest.Contact actual = jsonb.fromJson(json, StringAdapterPrecedenceConfigClassTest.Contact.class);
+        assertEquals("Contact{email=test@domain.com:EmailClass.adaptFromJson}", actual.toString());
+        assertEquals("Contact.<init>\n" +
+                "EmailClass.adaptFromJson\n" +
+                "Contact.setEmail", calls());
+    }
+
+    @Override
     public void assertWrite(final Jsonb jsonb) {
         final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        final StringAdapterPrecedenceConfigClassTest.Contact contact = new StringAdapterPrecedenceConfigClassTest.Contact();
+        contact.setEmail(email);
+        reset();
+
+        final String json = jsonb.toJson(contact);
+        assertEquals("{\"email\":\"test@domain.com:EmailClass.adaptToJson\"}", json);
+        assertEquals("Contact.getEmail\n" +
+                "EmailClass.adaptToJson", calls());
     }
 
-    public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+    public static class Contact {
+
+        private Email email;
+
+        public Contact() {
+            CALLS.called();
+        }
+
+        public Email getEmail() {
+            CALLS.called();
+            return email;
+        }
+
+        public void setEmail(final Email email) {
+            CALLS.called();
+            this.email = email;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("Contact{email=%s}", email);
+        }
     }
 
-    /**
-     * Fails as the adapter is not found
-     */
-    @Test
-    @Ignore()
-    @Override
-    public void read() throws Exception {
-        super.read();
-    }
-
-    /**
-     * Fails as the adapter is not found
-     */
-    @Test
-    @Ignore()
-    @Override
-    public void readAfterRead() throws Exception {
-        super.readAfterRead();
-    }
-
-    /**
-     * Fails as the adapter is not found on the first read
-     */
-    @Test
-    @Ignore()
-    @Override
-    public void writeAfterRead() throws Exception {
-        super.writeAfterRead();
-    }
 }

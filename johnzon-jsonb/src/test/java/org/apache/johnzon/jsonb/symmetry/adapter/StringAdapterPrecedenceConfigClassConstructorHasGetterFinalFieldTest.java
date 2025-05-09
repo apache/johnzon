@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
  *  - EmailClass wins on write
  *
  * Question:
- *  - Should Config win?
+ *  - Should Config win on write?
  *    Adapters on the target type itself (Email) are effectively a hardcoded default adapter
  *    If a user wishes to alter this behavior for a specific operation via the config, why
  *    not let them?  This would be the most (only?) convenient way to change behavior without

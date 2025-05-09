@@ -21,12 +21,31 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbProperty;
-import org.junit.Ignore;
-import org.junit.Test;
+import jakarta.json.bind.annotation.JsonbTypeAdapter;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterPrecedenceConfigTest extends StringAdapterOnClassTest {
+/**
+ * JsonbTypeAdapter on
+ *  - Config
+ *  - Class
+ *
+ * Has
+ *  - Getter
+ *  - Final Field
+ *
+ * Outcome:
+ *  - EmailClass wins on read
+ *  - EmailClass wins on write
+ *
+ * Question:
+ *  - Should Config win on read and write?
+ *    Adapters on the target type itself (Email) are effectively a hardcoded default adapter
+ *    If a user wishes to alter this behavior for a specific operation via the config, why
+ *    not let them?  This would be the most (only?) convenient way to change behavior without
+ *    sweeping code change.
+ */
+public class StringAdapterPrecedenceConfigClassTest extends StringAdapterOnClassTest {
 
     @Override
     public Jsonb jsonb() {
@@ -37,31 +56,31 @@ public class StringAdapterPrecedenceConfigTest extends StringAdapterOnClassTest 
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":\"test@domain.com\"}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Config.adaptFromJson}", actual.toString());
-        assertEquals("Config.adaptFromJson\n" +
-                "Contact.<init>", calls());
+        assertEquals("Contact{email=test@domain.com:EmailClass.adaptFromJson}", actual.toString());
+        assertEquals("Contact.<init>\n" +
+                "EmailClass.adaptFromJson\n" +
+                "Contact.setEmail", calls());
     }
 
     @Override
     public void assertWrite(final Jsonb jsonb) {
         final Email email = new Email("test", "domain.com");
-        final Contact contact = new Contact(email);
+        final Contact contact = new Contact();
+        contact.setEmail(email);
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":\"test@domain.com:Config.adaptToJson\"}", json);
+        assertEquals("{\"email\":\"test@domain.com:EmailClass.adaptToJson\"}", json);
         assertEquals("Contact.getEmail\n" +
-                "Config.adaptToJson", calls());
+                "EmailClass.adaptToJson", calls());
     }
 
     public static class Contact {
 
-        private final Email email;
+        private Email email;
 
-        @JsonbCreator
-        public Contact(@JsonbProperty("email") final Email email) {
+        public Contact() {
             CALLS.called();
-            this.email = email;
         }
 
         public Email getEmail() {
@@ -69,49 +88,14 @@ public class StringAdapterPrecedenceConfigTest extends StringAdapterOnClassTest 
             return email;
         }
 
+        public void setEmail(final Email email) {
+            CALLS.called();
+            this.email = email;
+        }
+
         @Override
         public String toString() {
             return String.format("Contact{email=%s}", email);
         }
-    }
-
-    /**
-     * Fails as the read behavior is changed if a write is performed first.
-     */
-    @Test
-    @Ignore
-    @Override
-    public void readAfterWrite() throws Exception {
-        super.readAfterWrite();
-    }
-
-    /**
-     * Write behavior is not symmetrical with read
-     */
-    @Test
-    @Ignore
-    @Override
-    public void write() throws Exception {
-        super.write();
-    }
-
-    /**
-     * Write behavior is not symmetrical with read
-     */
-    @Test
-    @Ignore
-    @Override
-    public void writeAfterRead() throws Exception {
-        super.writeAfterRead();
-    }
-
-    /**
-     * Write behavior is not symmetrical with read
-     */
-    @Test
-    @Ignore
-    @Override
-    public void writeAfterWrite() throws Exception {
-        super.writeAfterWrite();
     }
 }
