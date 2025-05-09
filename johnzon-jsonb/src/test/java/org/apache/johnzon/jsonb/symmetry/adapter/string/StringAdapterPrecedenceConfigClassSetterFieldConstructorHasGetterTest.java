@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter;
+package org.apache.johnzon.jsonb.symmetry.adapter.string;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -27,26 +27,20 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * JsonbTypeAdapter on
+ *  - Field
  *  - Constructor
+ *  - Setter
  *  - Config
  *  - Class
  *
- * Has
- *  - Getter
- *  - Final Field
+ * Still has a getter
  *
- * Outcome:
- *  - Constructor wins on read
- *  - EmailClass wins on write
- *
- * Question:
- *  - Should Config win on write?
- *    Adapters on the target type itself (Email) are effectively a hardcoded default adapter
- *    If a user wishes to alter this behavior for a specific operation via the config, why
- *    not let them?  This would be the most (only?) convenient way to change behavior without
- *    sweeping code change.
+ * Outcome
+ *  - Setter wins on read
+ *  - Field wins on write
+ *  - Constructor adapter is called, but overwritten
  */
-public class StringAdapterPrecedenceConfigClassConstructorHasGetterFinalFieldTest extends StringAdapterOnClassTest {
+public class StringAdapterPrecedenceConfigClassSetterFieldConstructorHasGetterTest extends StringAdapterOnClassTest {
 
     @Override
     public Jsonb jsonb() {
@@ -57,9 +51,11 @@ public class StringAdapterPrecedenceConfigClassConstructorHasGetterFinalFieldTes
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":\"test@domain.com\"}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Constructor.adaptFromJson}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Setter.adaptFromJson}", actual.toString());
         assertEquals("Constructor.adaptFromJson\n" +
-                "Contact.<init>", calls());
+                "Contact.<init>\n" +
+                "Setter.adaptFromJson\n" +
+                "Contact.setEmail", calls());
     }
 
     @Override
@@ -69,14 +65,15 @@ public class StringAdapterPrecedenceConfigClassConstructorHasGetterFinalFieldTes
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":\"test@domain.com:EmailClass.adaptToJson\"}", json);
+        assertEquals("{\"email\":\"test@domain.com:Field.adaptToJson\"}", json);
         assertEquals("Contact.getEmail\n" +
-                "EmailClass.adaptToJson", calls());
+                "Field.adaptToJson", calls());
     }
 
     public static class Contact {
 
-        private final Email email;
+        @JsonbTypeAdapter(Adapter.Field.class)
+        private Email email;
 
         @JsonbCreator
         public Contact(@JsonbProperty("email") @JsonbTypeAdapter(Adapter.Constructor.class) final Email email) {
@@ -89,6 +86,11 @@ public class StringAdapterPrecedenceConfigClassConstructorHasGetterFinalFieldTes
             return email;
         }
 
+        @JsonbTypeAdapter(Adapter.Setter.class)
+        public void setEmail(final Email email) {
+            CALLS.called();
+            this.email = email;
+        }
 
         @Override
         public String toString() {

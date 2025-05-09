@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter;
+package org.apache.johnzon.jsonb.symmetry.adapter.string;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -34,14 +34,13 @@ import static org.junit.Assert.assertEquals;
  *
  * Has
  *  - Getter
- *  - Setter
+ *  - Final Field
  *
  *  Outcome:
- *   - Field wins on read
+ *   - Constructor wins on read
  *   - Field wins on write
- *   - Constructor adapter is called, but overwritten
  */
-public class StringAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTest extends StringAdapterOnClassTest {
+public class StringAdapterPrecedenceConfigClassFieldConstructorHasGetterFinalFieldTest extends StringAdapterOnClassTest {
 
     @Override
     public Jsonb jsonb() {
@@ -52,11 +51,9 @@ public class StringAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTe
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":\"test@domain.com\"}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Field.adaptFromJson}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Constructor.adaptFromJson}", actual.toString());
         assertEquals("Constructor.adaptFromJson\n" +
-                "Contact.<init>\n" +
-                "Field.adaptFromJson\n" +
-                "Contact.setEmail", calls());
+                "Contact.<init>", calls());
     }
 
     @Override
@@ -74,7 +71,7 @@ public class StringAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTe
     public static class Contact {
 
         @JsonbTypeAdapter(Adapter.Field.class)
-        private Email email;
+        private final Email email;
 
         @JsonbCreator
         public Contact(@JsonbProperty("email") @JsonbTypeAdapter(Adapter.Constructor.class) final Email email) {
@@ -87,10 +84,6 @@ public class StringAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTe
             return email;
         }
 
-        public void setEmail(final Email email) {
-            CALLS.called();
-            this.email = email;
-        }
 
         @Override
         public String toString() {

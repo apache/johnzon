@@ -14,75 +14,50 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter;
+package org.apache.johnzon.jsonb.symmetry.adapter.string;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbConfig;
-import jakarta.json.bind.annotation.JsonbCreator;
-import jakarta.json.bind.annotation.JsonbProperty;
-import jakarta.json.bind.annotation.JsonbTypeAdapter;
 
 import static org.junit.Assert.assertEquals;
 
-/**
- * JsonbTypeAdapter on
- *  - Config
- *  - Class
- *  - Constructor
- *  - Getter
- *  - Field
- *
- * Still has a setter
- *
- * Outcome
- *
- *  - Field wins on read
- *  - Getter wins on write
- *  - Constructor adapter is called, but overwritten
- */
-public class StringAdapterPrecedenceConfigClassGetterFieldConstructorHasSetterTest extends StringAdapterOnClassTest {
+public class StringAdapterOnClassSimpleTest extends StringAdapterOnClassTest {
 
-    @Override
     public Jsonb jsonb() {
-        return JsonbBuilder.create(new JsonbConfig().withAdapters(new Adapter.Config()));
+        return JsonbBuilder.create();
     }
 
     @Override
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":\"test@domain.com\"}";
-        final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Field.adaptFromJson}", actual.toString());
-        assertEquals("Constructor.adaptFromJson\n" +
-                "Contact.<init>\n" +
-                "Field.adaptFromJson\n" +
+        final StringAdapterPrecedenceConfigClassTest.Contact actual = jsonb.fromJson(json, StringAdapterPrecedenceConfigClassTest.Contact.class);
+        assertEquals("Contact{email=test@domain.com:EmailClass.adaptFromJson}", actual.toString());
+        assertEquals("Contact.<init>\n" +
+                "EmailClass.adaptFromJson\n" +
                 "Contact.setEmail", calls());
     }
 
     @Override
     public void assertWrite(final Jsonb jsonb) {
         final Email email = new Email("test", "domain.com");
-        final Contact contact = new Contact(email);
+        final StringAdapterPrecedenceConfigClassTest.Contact contact = new StringAdapterPrecedenceConfigClassTest.Contact();
+        contact.setEmail(email);
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":\"test@domain.com:Getter.adaptToJson\"}", json);
+        assertEquals("{\"email\":\"test@domain.com:EmailClass.adaptToJson\"}", json);
         assertEquals("Contact.getEmail\n" +
-                "Getter.adaptToJson", calls());
+                "EmailClass.adaptToJson", calls());
     }
 
     public static class Contact {
 
-        @JsonbTypeAdapter(Adapter.Field.class)
         private Email email;
 
-        @JsonbCreator
-        public Contact(@JsonbProperty("email") @JsonbTypeAdapter(Adapter.Constructor.class) final Email email) {
+        public Contact() {
             CALLS.called();
-            this.email = email;
         }
 
-        @JsonbTypeAdapter(Adapter.Getter.class)
         public Email getEmail() {
             CALLS.called();
             return email;
@@ -98,4 +73,5 @@ public class StringAdapterPrecedenceConfigClassGetterFieldConstructorHasSetterTe
             return String.format("Contact{email=%s}", email);
         }
     }
+
 }

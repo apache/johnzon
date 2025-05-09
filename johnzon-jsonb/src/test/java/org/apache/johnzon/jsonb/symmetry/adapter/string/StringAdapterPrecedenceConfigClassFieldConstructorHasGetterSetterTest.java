@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter;
+package org.apache.johnzon.jsonb.symmetry.adapter.string;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -29,18 +29,19 @@ import static org.junit.Assert.assertEquals;
  * JsonbTypeAdapter on
  *  - Field
  *  - Constructor
- *  - Setter
  *  - Config
  *  - Class
  *
- * Still has a getter
+ * Has
+ *  - Getter
+ *  - Setter
  *
- * Outcome
- *  - Setter wins on read
- *  - Field wins on write
- *  - Constructor adapter is called, but overwritten
+ *  Outcome:
+ *   - Field wins on read
+ *   - Field wins on write
+ *   - Constructor adapter is called, but overwritten
  */
-public class StringAdapterPrecedenceConfigClassSetterFieldConstructorHasGetterTest extends StringAdapterOnClassTest {
+public class StringAdapterPrecedenceConfigClassFieldConstructorHasGetterSetterTest extends StringAdapterOnClassTest {
 
     @Override
     public Jsonb jsonb() {
@@ -51,10 +52,10 @@ public class StringAdapterPrecedenceConfigClassSetterFieldConstructorHasGetterTe
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":\"test@domain.com\"}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Setter.adaptFromJson}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Field.adaptFromJson}", actual.toString());
         assertEquals("Constructor.adaptFromJson\n" +
                 "Contact.<init>\n" +
-                "Setter.adaptFromJson\n" +
+                "Field.adaptFromJson\n" +
                 "Contact.setEmail", calls());
     }
 
@@ -86,7 +87,6 @@ public class StringAdapterPrecedenceConfigClassSetterFieldConstructorHasGetterTe
             return email;
         }
 
-        @JsonbTypeAdapter(Adapter.Setter.class)
         public void setEmail(final Email email) {
             CALLS.called();
             this.email = email;
