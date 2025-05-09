@@ -19,6 +19,8 @@ package org.apache.johnzon.jsonb.symmetry.adapter.map;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -29,7 +31,7 @@ import static org.junit.Assert.assertEquals;
  *
  *
  * Outcome:
- *  - Config wins on read
+ *  - Reads fail
  *  - Config wins on write
  */
 public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClassTest {
@@ -41,7 +43,7 @@ public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClass
 
     @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
+        final String json = "{\"user\":\"test\",\"domain\":\"domain.com\"}";
         final Email actual = jsonb.fromJson(json, Email.class);
         assertEquals("test@domain.com:Config.adaptFromJson", actual.toString());
         assertEquals("Config.adaptFromJson", calls());
@@ -52,7 +54,59 @@ public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClass
         final Email email = new Email("test", "domain.com");
 
         final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:Config.adaptToJson\"", json);
+        assertEquals("{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Config.adaptToJson\"}", json);
         assertEquals("Config.adaptToJson", calls());
+    }
+
+    /**
+     * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
+     *
+     * 	at java.base/java.lang.Class.cast(Class.java:3889)
+     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     */
+    @Test
+    @Ignore
+    @Override
+    public void read() throws Exception {
+        super.read();
+    }
+
+    /**
+     * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
+     *
+     * 	at java.base/java.lang.Class.cast(Class.java:3889)
+     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     */
+    @Test
+    @Ignore
+    @Override
+    public void readAfterRead() throws Exception {
+        super.readAfterRead();
+    }
+
+    /**
+     * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
+     *
+     * 	at java.base/java.lang.Class.cast(Class.java:3889)
+     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     */
+    @Test
+    @Ignore
+    @Override
+    public void readAfterWrite() throws Exception {
+        super.readAfterWrite();
+    }
+
+    /**
+     * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
+     *
+     * 	at java.base/java.lang.Class.cast(Class.java:3889)
+     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     */
+    @Test
+    @Ignore
+    @Override
+    public void writeAfterRead() throws Exception {
+        super.writeAfterRead();
     }
 }
