@@ -27,7 +27,7 @@ import jakarta.json.bind.annotation.JsonbTypeDeserializer;
 import static org.junit.Assert.assertEquals;
 
 /**
- * JsonbTypeAdapter on
+ * Adapter on
  *  - Constructor
  *  - Config
  *  - Class
@@ -38,7 +38,7 @@ import static org.junit.Assert.assertEquals;
  *
  * Outcome:
  *  - Constructor wins on read
- *  - EmailClass wins on write
+ *  - Config wins on write
  *
  * Inconsistency:
  *  - Equivalent test for JsonbTypeAdapter the EmailClass adapter wins on write (likely bug in JsonbTypeAdapter code)

@@ -21,45 +21,37 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbProperty;
-import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import jakarta.json.bind.annotation.JsonbTypeDeserializer;
-import jakarta.json.bind.annotation.JsonbTypeSerializer;
 
 import static org.junit.Assert.assertEquals;
 
 /**
  * Adapter on
- *  - Field
  *  - Constructor
- *  - Getter
- *  - Setter
- *  - Config
  *  - Class
  *
- *  Setter wins on read
- *  Getter wins on write
+ * Has
+ *  - Getter
+ *  - Final Field
  *
- *  Constructor adapter is called, but overwritten
+ * Outcome:
+ *  - Constructor wins on read
+ *  - Email wins on write
  */
-public class SerializerPrecedenceConfigClassGetterSetterFieldConstructorTest extends SerializerOnClassTest {
+public class SerializerPrecedenceClassConstructorHasGetterFinalFieldTest extends SerializerOnClassTest {
 
     @Override
     public Jsonb jsonb() {
-        return JsonbBuilder.create(new JsonbConfig()
-                .withSerializers(new Adapter.Config())
-                .withDeserializers(new Adapter.Config())
-        );
+        return JsonbBuilder.create();
     }
 
     @Override
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\"}}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Setter.deserialize}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Constructor.deserialize}", actual.toString());
         assertEquals("Constructor.deserialize\n" +
-                "Contact.<init>\n" +
-                "Setter.deserialize\n" +
-                "Contact.setEmail", calls());
+                "Contact.<init>", calls());
     }
 
     @Override
@@ -69,16 +61,14 @@ public class SerializerPrecedenceConfigClassGetterSetterFieldConstructorTest ext
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Getter.serialize\"}}", json);
+        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}}", json);
         assertEquals("Contact.getEmail\n" +
-                "Getter.serialize", calls());
+                "EmailClass.serialize", calls());
     }
 
     public static class Contact {
 
-        @JsonbTypeDeserializer(Adapter.Field.class)
-        @JsonbTypeSerializer(Adapter.Field.class)
-        private Email email;
+        private final Email email;
 
         @JsonbCreator
         public Contact(@JsonbProperty("email") @JsonbTypeDeserializer(Adapter.Constructor.class) final Email email) {
@@ -86,17 +76,11 @@ public class SerializerPrecedenceConfigClassGetterSetterFieldConstructorTest ext
             this.email = email;
         }
 
-        @JsonbTypeSerializer(Adapter.Getter.class)
         public Email getEmail() {
             CALLS.called();
             return email;
         }
 
-        @JsonbTypeDeserializer(Adapter.Setter.class)
-        public void setEmail(final Email email) {
-            CALLS.called();
-            this.email = email;
-        }
 
         @Override
         public String toString() {

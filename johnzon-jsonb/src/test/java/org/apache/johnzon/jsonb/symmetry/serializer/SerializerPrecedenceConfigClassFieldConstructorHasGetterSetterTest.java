@@ -28,7 +28,7 @@ import jakarta.json.bind.annotation.JsonbTypeSerializer;
 import static org.junit.Assert.assertEquals;
 
 /**
- * JsonbTypeAdapter on
+ * Adapter on
  *  - Field
  *  - Constructor
  *  - Config

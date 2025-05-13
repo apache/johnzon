@@ -23,7 +23,7 @@ import jakarta.json.bind.JsonbConfig;
 import static org.junit.Assert.assertEquals;
 
 /**
- * JsonbTypeAdapter on
+ * Adapter on
  *  - Config
  *  - Class
  *
