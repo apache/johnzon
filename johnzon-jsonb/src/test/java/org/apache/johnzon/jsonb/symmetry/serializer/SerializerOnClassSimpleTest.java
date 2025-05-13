@@ -31,9 +31,9 @@ public class SerializerOnClassSimpleTest extends SerializerOnClassTest {
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\"}}";
         final SerializerPrecedenceConfigClassTest.Contact actual = jsonb.fromJson(json, SerializerPrecedenceConfigClassTest.Contact.class);
-        assertEquals("Contact{email=test@domain.com:EmailClass.adaptFromJson}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:EmailClass.deserialize}", actual.toString());
         assertEquals("Contact.<init>\n" +
-                "EmailClass.adaptFromJson\n" +
+                "EmailClass.deserialize\n" +
                 "Contact.setEmail", calls());
     }
 
@@ -45,9 +45,9 @@ public class SerializerOnClassSimpleTest extends SerializerOnClassTest {
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.adaptToJson\"}}", json);
+        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}}", json);
         assertEquals("Contact.getEmail\n" +
-                "EmailClass.adaptToJson", calls());
+                "EmailClass.serialize", calls());
     }
 
     public static class Contact {

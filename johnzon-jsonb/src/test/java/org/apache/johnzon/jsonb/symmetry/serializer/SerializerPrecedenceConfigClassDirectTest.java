@@ -38,15 +38,18 @@ public class SerializerPrecedenceConfigClassDirectTest extends SerializerOnClass
 
     @Override
     public Jsonb jsonb() {
-        return JsonbBuilder.create(new JsonbConfig().withAdapters(new Adapter.Config()));
+        return JsonbBuilder.create(new JsonbConfig()
+                .withSerializers(new Adapter.Config())
+                .withDeserializers(new Adapter.Config())
+        );
     }
 
     @Override
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"user\":\"test\",\"domain\":\"domain.com\"}";
         final Email actual = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:Config.adaptFromJson", actual.toString());
-        assertEquals("Config.adaptFromJson", calls());
+        assertEquals("test@domain.com:Config.deserialize", actual.toString());
+        assertEquals("Config.deserialize", calls());
     }
 
     @Override
@@ -54,8 +57,8 @@ public class SerializerPrecedenceConfigClassDirectTest extends SerializerOnClass
         final Email email = new Email("test", "domain.com");
 
         final String json = jsonb.toJson(email);
-        assertEquals("{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Config.adaptToJson\"}", json);
-        assertEquals("Config.adaptToJson", calls());
+        assertEquals("{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Config.serialize\"}", json);
+        assertEquals("Config.serialize", calls());
     }
 
     /**

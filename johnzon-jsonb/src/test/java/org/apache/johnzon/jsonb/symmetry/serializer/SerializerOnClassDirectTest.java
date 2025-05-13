@@ -32,14 +32,14 @@ public class SerializerOnClassDirectTest extends SerializerOnClassTest {
     public void assertWrite(final Jsonb jsonb) {
         final Email email = new Email("test", "domain.com");
         final String json = jsonb.toJson(email);
-        assertEquals("{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.adaptToJson\"}", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        assertEquals("{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}", json);
+        assertEquals("EmailClass.serialize", calls());
     }
 
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"user\":\"test\",\"domain\":\"domain.com\"}";
         final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        assertEquals("test@domain.com:EmailClass.deserialize", email.toString());
+        assertEquals("EmailClass.deserialize", calls());
     }
 }

@@ -22,6 +22,7 @@ import jakarta.json.bind.JsonbConfig;
 import jakarta.json.bind.annotation.JsonbCreator;
 import jakarta.json.bind.annotation.JsonbProperty;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
+import jakarta.json.bind.annotation.JsonbTypeDeserializer;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,15 +51,18 @@ public class SerializerPrecedenceConfigClassConstructorHasGetterFinalFieldTest e
 
     @Override
     public Jsonb jsonb() {
-        return JsonbBuilder.create(new JsonbConfig().withAdapters(new Adapter.Config()));
+        return JsonbBuilder.create(new JsonbConfig()
+                .withSerializers(new Adapter.Config())
+                .withDeserializers(new Adapter.Config())
+        );
     }
 
     @Override
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\"}}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:Constructor.adaptFromJson}", actual.toString());
-        assertEquals("Constructor.adaptFromJson\n" +
+        assertEquals("Contact{email=test@domain.com:Constructor.deserialize}", actual.toString());
+        assertEquals("Constructor.deserialize\n" +
                 "Contact.<init>", calls());
     }
 
@@ -69,9 +73,9 @@ public class SerializerPrecedenceConfigClassConstructorHasGetterFinalFieldTest e
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.adaptToJson\"}}", json);
+        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}}", json);
         assertEquals("Contact.getEmail\n" +
-                "EmailClass.adaptToJson", calls());
+                "EmailClass.serialize", calls());
     }
 
     public static class Contact {
@@ -79,7 +83,7 @@ public class SerializerPrecedenceConfigClassConstructorHasGetterFinalFieldTest e
         private final Email email;
 
         @JsonbCreator
-        public Contact(@JsonbProperty("email") @JsonbTypeAdapter(Adapter.Constructor.class) final Email email) {
+        public Contact(@JsonbProperty("email") @JsonbTypeDeserializer(Adapter.Constructor.class) final Email email) {
             CALLS.called();
             this.email = email;
         }

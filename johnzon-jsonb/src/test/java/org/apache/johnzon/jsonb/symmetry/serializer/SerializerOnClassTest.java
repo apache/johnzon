@@ -16,6 +16,8 @@
  */
 package org.apache.johnzon.jsonb.symmetry.serializer;
 
+import jakarta.json.bind.annotation.JsonbTypeDeserializer;
+import jakarta.json.bind.annotation.JsonbTypeSerializer;
 import jakarta.json.bind.serializer.DeserializationContext;
 import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.bind.serializer.JsonbSerializer;
@@ -41,6 +43,8 @@ public abstract class SerializerOnClassTest extends SymmetryTest {
         return CALLS.get();
     }
 
+    @JsonbTypeDeserializer(Adapter.EmailClass.class)
+    @JsonbTypeSerializer(Adapter.EmailClass.class)
     public static class Email {
         final String user;
         final String domain;
