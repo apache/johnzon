@@ -40,12 +40,8 @@ import static org.junit.Assert.assertEquals;
  *  - Constructor wins on read
  *  - EmailClass wins on write
  *
- * Question:
- *  - Should Config win on write?
- *    Adapters on the target type itself (Email) are effectively a hardcoded default adapter
- *    If a user wishes to alter this behavior for a specific operation via the config, why
- *    not let them?  This would be the most (only?) convenient way to change behavior without
- *    sweeping code change.
+ * Inconsistency:
+ *  - Equivalent test for JsonbTypeAdapter the EmailClass adapter wins on write (likely bug in JsonbTypeAdapter code)
  */
 public class SerializerPrecedenceConfigClassConstructorHasGetterFinalFieldTest extends SerializerOnClassTest {
 
@@ -73,9 +69,9 @@ public class SerializerPrecedenceConfigClassConstructorHasGetterFinalFieldTest e
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}}", json);
+        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Config.serialize\"}}", json);
         assertEquals("Contact.getEmail\n" +
-                "EmailClass.serialize", calls());
+                "Config.serialize", calls());
     }
 
     public static class Contact {
