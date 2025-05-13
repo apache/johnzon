@@ -36,19 +36,15 @@ import static org.junit.Assert.assertEquals;
  *  - Setter
  *
  * Outcome:
- *   - EmailClass wins on read
- *   - EmailClass wins on write
+ *   - Config wins on read
+ *   - Config wins on write
  *   - Constructor adapter is called, but overwritten
  *
- * Question:
- *  - Should Config win on write?
- *    Adapters on the target type itself (Email) are effectively a hardcoded default adapter
- *    If a user wishes to alter this behavior for a specific operation via the config, why
- *    not let them?  This would be the most (only?) convenient way to change behavior without
- *    sweeping code change.
+ * Inconsistency:
+ *  - Equivalent test for JsonbTypeAdapter the EmailClass adapter wins (likely bug in JsonbTypeAdapter code)
  *
+ * Possible bug:
  *  - Shouldn't the constructor win on read?
- *    Seems like a clear bug
  */
 public class SerializerPrecedenceConfigClassConstructorHasGetterSetterTest extends SerializerOnClassTest {
 
@@ -64,10 +60,10 @@ public class SerializerPrecedenceConfigClassConstructorHasGetterSetterTest exten
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\"}}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:EmailClass.deserialize}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Config.deserialize}", actual.toString());
         assertEquals("Constructor.deserialize\n" +
                 "Contact.<init>\n" +
-                "EmailClass.deserialize\n" +
+                "Config.deserialize\n" +
                 "Contact.setEmail", calls());
     }
 
@@ -78,9 +74,9 @@ public class SerializerPrecedenceConfigClassConstructorHasGetterSetterTest exten
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}}", json);
+        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Config.serialize\"}}", json);
         assertEquals("Contact.getEmail\n" +
-                "EmailClass.serialize", calls());
+                "Config.serialize", calls());
     }
 
     public static class Contact {
