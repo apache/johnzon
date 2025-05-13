@@ -19,7 +19,6 @@ package org.apache.johnzon.jsonb.symmetry.adapter.map;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import org.junit.Ignore;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 

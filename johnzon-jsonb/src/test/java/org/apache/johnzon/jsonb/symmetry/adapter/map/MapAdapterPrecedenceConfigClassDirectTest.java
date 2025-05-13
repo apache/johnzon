@@ -61,8 +61,8 @@ public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClass
     /**
      * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
      *
-     * 	at java.base/java.lang.Class.cast(Class.java:3889)
-     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     *  at java.base/java.lang.Class.cast(Class.java:3889)
+     *  at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
      */
     @Test
     @Ignore
@@ -74,8 +74,8 @@ public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClass
     /**
      * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
      *
-     * 	at java.base/java.lang.Class.cast(Class.java:3889)
-     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     *  at java.base/java.lang.Class.cast(Class.java:3889)
+     *  at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
      */
     @Test
     @Ignore
@@ -87,8 +87,8 @@ public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClass
     /**
      * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
      *
-     * 	at java.base/java.lang.Class.cast(Class.java:3889)
-     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     *  at java.base/java.lang.Class.cast(Class.java:3889)
+     *  at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
      */
     @Test
     @Ignore
@@ -100,8 +100,8 @@ public class MapAdapterPrecedenceConfigClassDirectTest extends MapAdapterOnClass
     /**
      * java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class
      *
-     * 	at java.base/java.lang.Class.cast(Class.java:3889)
-     * 	at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
+     *  at java.base/java.lang.Class.cast(Class.java:3889)
+     *  at org.apache.johnzon.jsonb.JsonbAccessMode.isReversedAdapter(JsonbAccessMode.java:875)
      */
     @Test
     @Ignore

@@ -100,6 +100,7 @@ public abstract class SerializerOnClassTest extends SymmetryTest {
                             domain = parser.getString();
                             break;
                         // skip "call"
+                        default: //ignore
                     }
                 } else if (event == JsonParser.Event.END_OBJECT) {
                     break;
