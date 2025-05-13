@@ -32,15 +32,11 @@ import static org.junit.Assert.assertEquals;
  *  - Final Field
  *
  * Outcome:
- *  - EmailClass wins on read
- *  - EmailClass wins on write
+ *  - Config wins on read
+ *  - Config wins on write
  *
- * Question:
- *  - Should Config win on read and write?
- *    Adapters on the target type itself (Email) are effectively a hardcoded default adapter
- *    If a user wishes to alter this behavior for a specific operation via the config, why
- *    not let them?  This would be the most (only?) convenient way to change behavior without
- *    sweeping code change.
+ * Inconsistency:
+ *  - Equivalent test for JsonbTypeAdapter the EmailClass adapter wins (likely bug in JsonbTypeAdapter code)
  */
 public class SerializerPrecedenceConfigClassTest extends SerializerOnClassTest {
 
@@ -56,9 +52,9 @@ public class SerializerPrecedenceConfigClassTest extends SerializerOnClassTest {
     public void assertRead(final Jsonb jsonb) {
         final String json = "{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\"}}";
         final Contact actual = jsonb.fromJson(json, Contact.class);
-        assertEquals("Contact{email=test@domain.com:EmailClass.deserialize}", actual.toString());
+        assertEquals("Contact{email=test@domain.com:Config.deserialize}", actual.toString());
         assertEquals("Contact.<init>\n" +
-                "EmailClass.deserialize\n" +
+                "Config.deserialize\n" +
                 "Contact.setEmail", calls());
     }
 
@@ -70,9 +66,9 @@ public class SerializerPrecedenceConfigClassTest extends SerializerOnClassTest {
         reset();
 
         final String json = jsonb.toJson(contact);
-        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"EmailClass.serialize\"}}", json);
+        assertEquals("{\"email\":{\"user\":\"test\",\"domain\":\"domain.com\",\"call\":\"Config.serialize\"}}", json);
         assertEquals("Contact.getEmail\n" +
-                "EmailClass.serialize", calls());
+                "Config.serialize", calls());
     }
 
     public static class Contact {
