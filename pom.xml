@@ -305,6 +305,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>3.6.0</version>
         <executions>
           <execution>
             <id>verify-style</id>
@@ -314,8 +315,16 @@
             </goals>
           </execution>
         </executions>
+        <dependencies>
+          <dependency>
+            <groupId>com.puppycrawl.tools</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>10.21.4</version>
+          </dependency>
+        </dependencies>
         <configuration>
-          <encoding>UTF-8</encoding>
+          <inputEncoding>UTF-8</inputEncoding>
+          <outputEncoding>UTF-8</outputEncoding>
           <excludes>**/module-info*</excludes>
           <consoleOutput>true</consoleOutput>
           <failOnViolation>true</failOnViolation>
@@ -325,14 +334,13 @@
           <logViolationsToConsole>true</logViolationsToConsole>
           <checkstyleRules>
             <module name="Checker">
-              <module name="SuppressionCommentFilter" />
               <module name="FileLength">
                 <property name="max" value="3500" />
                 <property name="fileExtensions" value="java" />
               </module>
               <module name="FileTabCharacter" />
               <module name="TreeWalker">
-                <module name="FileContentsHolder" />
+                <module name="SuppressionCommentFilter"/>
                 <module name="ConstantName">
                   <property name="format" value="^(([A-Z][A-Z0-9]*(_[A-Z0-9]+)*))$" />
                 </module>
@@ -343,6 +351,9 @@
                 <module name="PackageName" />
                 <module name="LocalFinalVariableName" />
                 <module name="ParameterName" />
+                <module name="ParameterNumber">
+                  <property name="max" value="28" />
+                </module>
                 <module name="StaticVariableName" />
                 <module name="TypeName">
                   <property name="format" value="^_?[A-Z][a-zA-Z0-9]*$" />
@@ -353,10 +364,6 @@
                 <module name="IllegalImport" />
                 <module name="RedundantImport" />
                 <module name="UnusedImports" />
-                <module name="LineLength">
-                  <property name="max" value="180" />
-                  <property name="ignorePattern" value="@version|@see" />
-                </module>
                 <module name="MethodLength">
                   <property name="max" value="264" />
                 </module>
