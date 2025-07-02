@@ -95,6 +95,7 @@ public class JsonbRecordTest {
         assertEquals(ref, jsonb.fromJson(expectedJson, Person.class));
     }
 
+    //CHECKSTYLE:OFF
     public record Person (String name, LocalDate birthday) {
         public int age() {
             return LocalDate.now().getYear() - birthday.getYear();
@@ -123,4 +124,5 @@ public class JsonbRecordTest {
             }
         }
     }
+    //CHECKSTYLE:ON
 }
