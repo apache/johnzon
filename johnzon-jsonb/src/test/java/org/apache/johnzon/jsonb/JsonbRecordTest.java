@@ -24,6 +24,8 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import jakarta.json.bind.annotation.JsonbProperty;
+
+import java.time.LocalDate;
 import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
@@ -82,6 +84,43 @@ public class JsonbRecordTest {
         @Override
         public int hashCode() {
             return Objects.hash(age, name);
+        }
+    }
+
+    @Test
+    public void roundTripWithActualJavaRecord() {
+        final var ref = new Person("john", LocalDate.of(1904, 12, 25));
+        final String expectedJson = "{\"age\":121,\"birthday\":\"1904-12-25\",\"name\":\"john\"}";
+        assertEquals(expectedJson, jsonb.toJson(ref));
+        assertEquals(ref, jsonb.fromJson(expectedJson, Person.class));
+    }
+
+    public record Person (String name, LocalDate birthday) {
+        public int age() {
+            return LocalDate.now().getYear() - birthday.getYear();
+        }
+
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private String name;
+            private LocalDate birthday;
+
+            public Builder name(String name) {
+                this.name = name;
+                return this;
+            }
+
+            public Builder birthday(LocalDate birthday) {
+                this.birthday = birthday;
+                return this;
+            }
+
+            public Person build() {
+                return new Person(name, birthday);
+            }
         }
     }
 }
