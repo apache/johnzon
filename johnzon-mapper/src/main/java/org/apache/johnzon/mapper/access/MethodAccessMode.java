@@ -26,7 +26,6 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
@@ -55,7 +54,6 @@ public class MethodAccessMode extends BaseAccessMode {
             readers.putAll(Stream.of(clazz.getMethods())
                 .filter(it -> it.getDeclaringClass() != Object.class && it.getParameterCount() == 0)
                 .filter(it -> !"toString".equals(it.getName()) && !"hashCode".equals(it.getName()))
-                .filter(it -> !Modifier.isStatic(it.getModifiers()))
                 .filter(it -> !isIgnored(it.getName()) && Meta.getAnnotation(it, JohnzonAny.class) == null)
                 .collect(toMap(m -> extractKey(m.getName(), m, null), it -> new MethodReader(it, it.getGenericReturnType()))));
         } else {
