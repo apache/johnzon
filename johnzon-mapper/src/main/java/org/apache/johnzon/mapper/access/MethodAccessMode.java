@@ -26,6 +26,7 @@ import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
@@ -53,6 +54,7 @@ public class MethodAccessMode extends BaseAccessMode {
         if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
             readers.putAll(Stream.of(clazz.getMethods())
                 .filter(it -> it.getDeclaringClass() != Object.class && it.getParameterCount() == 0)
+                .filter(it -> !Modifier.isStatic(it.getModifiers()))
                 .filter(it -> !"toString".equals(it.getName()) && !"hashCode".equals(it.getName()))
                 .filter(it -> !isIgnored(it.getName()) && Meta.getAnnotation(it, JohnzonAny.class) == null)
                 .collect(toMap(m -> extractKey(m.getName(), m, null), it -> new MethodReader(it, it.getGenericReturnType()))));
@@ -92,10 +94,10 @@ public class MethodAccessMode extends BaseAccessMode {
             final Method writeMethod = descriptor.getWriteMethod();
             if (writeMethod != null) {
                 writers.put(extractKey(descriptor.getName(), writeMethod, descriptor.getReadMethod()),
-                        new MethodWriter(writeMethod, writeMethod.getGenericParameterTypes()[0]));
+                            new MethodWriter(writeMethod, writeMethod.getGenericParameterTypes()[0]));
             } else if (supportGetterAsWritter
-                    && Collection.class.isAssignableFrom(descriptor.getPropertyType())
-                    && descriptor.getReadMethod() != null) {
+                       && Collection.class.isAssignableFrom(descriptor.getPropertyType())
+                       && descriptor.getReadMethod() != null) {
                 final Method readMethod = descriptor.getReadMethod();
                 writers.put(extractKey(descriptor.getName(), readMethod, null), new MethodGetterAsWriter(readMethod, readMethod.getGenericReturnType()));
             }
@@ -169,8 +171,8 @@ public class MethodAccessMode extends BaseAccessMode {
         @Override
         public String toString() {
             return "MethodDecoratedType{" +
-                    "method=" + method +
-                    '}';
+                   "method=" + method +
+                   '}';
         }
     }
 
