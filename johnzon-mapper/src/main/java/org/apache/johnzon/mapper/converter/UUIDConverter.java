@@ -18,26 +18,18 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.Converter;
 
-import java.util.Date;
+import java.util.UUID;
 
-// needed for openjpa for instance which proxies dates
-public class DateWithCopyConverter implements Adapter<Date, String> {
-    private final Adapter<Date, String> delegate;
-
-    public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<>(DateConverter.ISO_8601_SHORT, Date.class) : delegate;
+public class UUIDConverter implements Converter<UUID> {
+    @Override
+    public String toString(UUID instance) {
+        return instance.toString();
     }
 
     @Override
-    public Date to(final String s) {
-        return delegate.to(s);
-    }
-
-    @Override
-    public String from(final Date date) {
-        return delegate.from(new Date(date.getTime()));
+    public UUID fromString(String text) {
+        return UUID.fromString(text);
     }
 }

@@ -18,26 +18,30 @@
  */
 package org.apache.johnzon.mapper.converter;
 
-import org.apache.johnzon.mapper.Adapter;
-import org.apache.johnzon.mapper.internal.ConverterAdapter;
+import org.apache.johnzon.mapper.Mapper;
+import org.apache.johnzon.mapper.MapperBuilder;
+import org.junit.Test;
 
-import java.util.Date;
+import java.util.UUID;
 
-// needed for openjpa for instance which proxies dates
-public class DateWithCopyConverter implements Adapter<Date, String> {
-    private final Adapter<Date, String> delegate;
+import static org.junit.Assert.assertEquals;
 
-    public DateWithCopyConverter(final Adapter<Date, String> delegate) {
-        this.delegate = delegate == null ? new ConverterAdapter<>(DateConverter.ISO_8601_SHORT, Date.class) : delegate;
+public class UUIDConverterTest {
+    private static final UUID THE_UUID = UUID.randomUUID();
+
+    @Test
+    public void serialize() {
+        Mapper mapper = new MapperBuilder().build();
+        String json = mapper.writeObjectAsString(THE_UUID);
+
+        assertEquals("\"" + THE_UUID + "\"", json);
     }
 
-    @Override
-    public Date to(final String s) {
-        return delegate.to(s);
-    }
+    @Test
+    public void deserialize() {
+        Mapper mapper = new MapperBuilder().build();
+        UUID uuid = mapper.readObject("\"" + THE_UUID + "\"", UUID.class);
 
-    @Override
-    public String from(final Date date) {
-        return delegate.from(new Date(date.getTime()));
+        assertEquals(THE_UUID, uuid);
     }
 }
