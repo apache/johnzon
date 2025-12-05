@@ -26,6 +26,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>apache-johnzon</artifactId>
+  <packaging>pom</packaging>
   <name>Johnzon :: Distribution</name>
 
   <dependencies>
