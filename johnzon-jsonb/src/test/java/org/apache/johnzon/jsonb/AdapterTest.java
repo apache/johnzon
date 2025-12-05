@@ -198,6 +198,23 @@ public class AdapterTest {
         assertEquals("42", adaptedBazCollection.collection.get(0).value);
     }
 
+    @Test
+    public void testArrayOfClassWithTypeAdapter() {
+        final Jsonb jsonb = JsonbBuilder.create(
+                new JsonbConfig()
+                        .setProperty("johnzon.readAttributeBeforeWrite", true)
+                        .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL) /* assertEquals() order */);
+
+        Baz[] bazs = new Baz[]{new Baz("A"), new Baz("B")};
+        final String bazsJson = jsonb.toJson(bazs);
+        assertEquals("[\"A\",\"B\"]", bazsJson);
+
+
+        // and the other way around:
+        final Baz[] bazs2 = jsonb.fromJson(bazsJson, Baz[].class);
+        assertEquals(2, bazs2.length);
+    }
+
     public static class BarCollection {
         @JsonbTypeAdapter(BarAdapter.class)
         public List<Bar> collection;
@@ -280,6 +297,13 @@ public class AdapterTest {
 
     @JsonbTypeAdapter(BazAdapter.class)
     public static class Baz {
+        public Baz() {
+        }
+
+        public Baz(String value) {
+            this.value = value;
+        }
+
         public String value;
     }
 
