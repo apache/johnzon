@@ -1219,6 +1219,12 @@ public class MappingParserImpl implements MappingParser {
             }
             return adapter;
         }
+
+        final Mappings.ClassMapping classMapping = mappings.getClassMapping(aClass);
+        if (classMapping != null && classMapping.adapter != null) {
+            return classMapping.adapter;
+        }
+
         config.getNoParserAdapterTypes().add(aClass);
         return null;
     }
