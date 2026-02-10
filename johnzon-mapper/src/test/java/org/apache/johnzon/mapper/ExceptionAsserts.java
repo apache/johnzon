@@ -58,7 +58,7 @@ public class ExceptionAsserts {
     }
 
     public ExceptionAsserts assertMessage(final String expected) {
-        assertEquals(expected, throwable.getMessage());
+        assertEquals(expected.replace("\r\n", "\n"), throwable.getMessage().replace("\r\n", "\n"));
         return this;
     }
 
