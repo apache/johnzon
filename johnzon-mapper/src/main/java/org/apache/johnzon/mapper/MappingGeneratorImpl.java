@@ -131,7 +131,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 return;
             }
 
-            if (writePrimitives(object)) {
+            if (writePrimitives(object, generator)) {
                 return;
             }
 
@@ -228,7 +228,8 @@ public class MappingGeneratorImpl implements MappingGenerator {
     /**
      * @return {@code true} if it was a primitive, {@code false} if the value did not get handled
      */
-    private boolean writePrimitives(final Object value) {
+    private boolean writePrimitives(final Object value,
+                                    final JsonGenerator generator) {
         boolean handled = false;
         if (value == null) {
             return true; // fake a write
@@ -553,7 +554,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
             String valJsonPointer = jsonPointers == null ? null : jsonPointers.get(o);
             if (valJsonPointer != null) {
                 // write JsonPointer instead of the original object
-                writePrimitives(valJsonPointer);
+                writePrimitives(valJsonPointer, generator);
             } else {
                 ObjectConverter.Writer objectConverterToUse = objectConverter;
                 if (o != null && objectConverterToUse == null) {
@@ -696,7 +697,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
     private void writeItem(final Object o, final Collection<String> ignoredProperties, JsonPointerTracker jsonPointer) {
         if (o == null) {
             generator.writeNull();
-        } else if (!writePrimitives(o)) {
+        } else if (!writePrimitives(o, generator)) {
             if (Collection.class.isInstance(o)) {
                 doWriteIterable(Collection.class.cast(o), ignoredProperties, jsonPointer);
             } else if (o.getClass().isArray()) {
