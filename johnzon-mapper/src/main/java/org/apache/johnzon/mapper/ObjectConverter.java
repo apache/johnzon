@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import javax.json.JsonValue;
+import javax.json.stream.JsonGenerator;
 
 import java.lang.reflect.Type;
 
@@ -36,7 +37,7 @@ public final class ObjectConverter {
     }
 
     public interface Writer<T> extends MapperConverter {
-        void writeJson(T instance, MappingGenerator jsonbGenerator);
+        void writeJson(T instance, MappingGenerator jsonbGenerator, JsonGenerator generator);
 
         // returns true if it is for containers - if any - and not each container item (ex: list)
         default boolean isGlobal() {

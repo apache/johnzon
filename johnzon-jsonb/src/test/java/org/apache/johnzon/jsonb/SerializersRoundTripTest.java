@@ -564,7 +564,8 @@ public class SerializersRoundTripTest {
         original.color = Color.GREEN;*/
 
         try (final Jsonb jsonb = JsonbBuilder.create()) {
-            final Wrapper deserialized = jsonb.fromJson(jsonb.toJson(original), Wrapper.class);
+            final String json = jsonb.toJson(original);
+            final Wrapper deserialized = jsonb.fromJson(json, Wrapper.class);
             assertEquals(original, deserialized);
         }
     }

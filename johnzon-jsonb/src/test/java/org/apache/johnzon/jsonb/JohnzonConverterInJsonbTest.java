@@ -27,6 +27,7 @@ import javax.json.JsonObject;
 import javax.json.JsonValue;
 import javax.json.bind.Jsonb;
 import javax.json.bind.spi.JsonbProvider;
+import javax.json.stream.JsonGenerator;
 
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonConverter;
@@ -88,8 +89,8 @@ public class JohnzonConverterInJsonbTest {
         private static final String TIMESTAMP_JSON_KEY = "timestamp";
 
         @Override
-        public void writeJson(TestDTO instance, MappingGenerator jsonbGenerator) {
-            jsonbGenerator.getJsonGenerator().write(TIMESTAMP_JSON_KEY, instance.instant.atZone(ZoneId.of("UTC")).toString());
+        public void writeJson(TestDTO instance, MappingGenerator jsonbGenerator, JsonGenerator generator) {
+            generator.write(TIMESTAMP_JSON_KEY, instance.instant.atZone(ZoneId.of("UTC")).toString());
         }
 
         @Override

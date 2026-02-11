@@ -264,7 +264,8 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                 final JsonbDateFormat dateFormat = getAnnotation(parameter, JsonbDateFormat.class);
                 final JsonbNumberFormat numberFormat = getAnnotation(parameter, JsonbNumberFormat.class);
                 final JohnzonConverter johnzonConverter = getAnnotation(parameter, JohnzonConverter.class);
-                if (adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null) {
+                final JsonbTypeDeserializer deserializer = getAnnotation(parameter, JsonbTypeDeserializer.class);
+                if (adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null && deserializer == null) {
                     converters[i] = defaultConverters.get(parameter.getType());
                     itemConverters[i] = null;
                 } else {
@@ -283,6 +284,63 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                             }
                         } else if (johnzonConverter != null) {
                             objectConverters[i] = (ObjectConverter.Codec<?>) johnzonConverter.value().newInstance();
+
+                        } else if (deserializer != null) {
+                            final Class<? extends JsonbDeserializer> value = deserializer.value();
+                            final JohnzonAdapterFactory.Instance<? extends JsonbDeserializer> instance = newInstance(value);
+                            final ParameterizedType pt = this.types.findParameterizedType(value, JsonbDeserializer.class);
+                            final Class<?> mappedType = this.types.findParamType(pt, JsonbDeserializer.class);
+                            toRelease.add(instance);
+                            final JsonBuilderFactory builderFactoryInstance = builderFactory.get();
+                            final Type[] arguments = this.types.findParameterizedType(value, JsonbDeserializer.class).getActualTypeArguments();
+                            final boolean global = arguments.length == 1 && arguments[0] != null && arguments[0].equals(parameter.getType());
+                            objectConverters[i] = new ObjectConverter.Codec() {
+                                private final ConcurrentMap<Type, BiFunction<JsonValue, MappingParser, Object>> impl =
+                                    new ConcurrentHashMap<>();
+                                @Override
+                                public Object fromJson(final JsonValue value, final Type targetType, final MappingParser parser) {
+                                    final JsonbDeserializer jsonbDeserializer = instance.getValue();
+                                    if (global || targetType == mappedType) { // fast test and matches most cases
+                                        return mapItem(value, targetType, parser, jsonbDeserializer);
+                                    }
+
+                                    BiFunction<JsonValue, MappingParser, Object> fn = impl.get(targetType);
+                                    if (fn == null) {
+                                        if (value.getValueType() == JsonValue.ValueType.ARRAY) {
+                                            if (ParameterizedType.class.isInstance(targetType)) {
+                                                final ParameterizedType parameterizedType = ParameterizedType.class.cast(targetType);
+                                                final Class<?> paramType = JsonbAccessMode.this.types.findParamType(parameterizedType, Collection.class);
+                                                if (paramType != null && (mappedType == null /*Object*/ || mappedType.isAssignableFrom(paramType))) {
+                                                    final Collector<Object, ?, ? extends Collection<Object>> collector =
+                                                        Set.class.isAssignableFrom(
+                                                            JsonbAccessMode.this.types.asClass(parameterizedType.getRawType())) ? toSet() : toList();
+                                                    fn = (json, mp) -> json.asJsonArray().stream()
+                                                                           .map(i -> mapItem(i, paramType, mp, jsonbDeserializer))
+                                                                           .collect(collector);
+                                                }
+                                            }
+                                        }
+                                        if (fn == null) {
+                                            fn = (json, mp) -> mapItem(json, targetType, mp, jsonbDeserializer);
+                                        }
+                                        impl.putIfAbsent(targetType, fn);
+                                    }
+                                    return fn.apply(value, parser);
+                                }
+
+                                private Object mapItem(final JsonValue jsonValue, final Type targetType,
+                                                       final MappingParser parser, final JsonbDeserializer jsonbDeserializer) {
+                                    return jsonbDeserializer.deserialize(
+                                        JsonValueParserAdapter.createFor(jsonValue, parserFactory),
+                                        new JohnzonDeserializationContext(parser, builderFactoryInstance, jsonProvider),
+                                        targetType);
+                                }
+
+                                @Override
+                                public void writeJson(final Object instance, final MappingGenerator jsonbGenerator, JsonGenerator generator) {
+                                    // no-op, it's for factories only
+                                }
+                            };
                         }
                     } catch (final InstantiationException | IllegalAccessException e) {
                         throw new IllegalArgumentException(e);
@@ -607,8 +665,9 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
 
             final WriterConverters writerConverters = new WriterConverters(annotations, types);
             final JsonbProperty property = annotations.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = annotations.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = isNillable(property, nillable);
+            final JsonbNillable propertyNillable = annotations.getAnnotation(JsonbNillable.class);
+            final JsonbNillable classOrPackageNillable = annotations.getClassOrPackageAnnotation(JsonbNillable.class);
+            final boolean isNillable = isNillable(property, propertyNillable, classOrPackageNillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Reader() {
                 @Override
@@ -725,8 +784,9 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
 
             final ReaderConverters converters = new ReaderConverters(initialWriter);
             final JsonbProperty property = initialWriter.getAnnotation(JsonbProperty.class);
-            final JsonbNillable nillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
-            final boolean isNillable = isNillable(property, nillable);
+            final JsonbNillable propertyNillable = initialWriter.getAnnotation(JsonbNillable.class);
+            final JsonbNillable classOrPackageNillable = initialWriter.getClassOrPackageAnnotation(JsonbNillable.class);
+            final boolean isNillable = isNillable(property, propertyNillable, classOrPackageNillable);
             final String key = property == null || property.value().isEmpty() ? naming.translateName(entry.getKey()) : property.value();
             if (result.put(key, new Writer() {
                 @Override
@@ -829,12 +889,14 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                 });
     }
 
-    private boolean isNillable(final JsonbProperty property, final JsonbNillable nillable) {
-        if (property != null) {
+    private boolean isNillable(final JsonbProperty property, final JsonbNillable propertyNillable, final JsonbNillable classOrPackageNillable) {
+        if (propertyNillable != null) {
+            return propertyNillable.value();
+        } else if (property != null) {
             return property.nillable();
         }
-        if (nillable != null) {
-            return nillable.value();
+        if (classOrPackageNillable != null) {
+            return classOrPackageNillable.value();
         }
         return globalIsNillable;
     }
@@ -1121,8 +1183,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                 final JsonbSerializer jsonbSerializer = instance.getValue();
                 writer = new ObjectConverter.Writer() {
                     @Override
-                    public void writeJson(final Object instance, final MappingGenerator jsonbGenerator) {
-                        final JsonGenerator generator = jsonbGenerator.getJsonGenerator();
+                    public void writeJson(final Object instance, final MappingGenerator jsonbGenerator, JsonGenerator generator) {
                         jsonbSerializer.serialize(instance, generator, new JohnzonSerializationContext(jsonbGenerator));
                     }
 

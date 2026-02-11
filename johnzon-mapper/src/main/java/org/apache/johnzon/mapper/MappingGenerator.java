@@ -24,15 +24,10 @@ import javax.json.stream.JsonGenerator;
  * Handles writing Json for Objects.
  * Internally it uses a {@link JsonGenerator} to write JSON
  *
- * To write JSON-P structure elements you can use the {@link #getJsonGenerator()} method.
+ * To write JSON-P structure elements you can use the {@link JsonGenerator}.
  *
  */
 public interface MappingGenerator {
-
-    /**
-     * @return the {@link JsonGenerator} used internally to write the JSON output.
-     */
-    JsonGenerator getJsonGenerator();
 
     /**
      * Write the given Object o into the current JSON layer.

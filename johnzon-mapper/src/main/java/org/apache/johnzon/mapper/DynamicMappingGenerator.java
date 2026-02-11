@@ -23,6 +23,7 @@ import javax.json.stream.JsonGenerator;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+@Deprecated
 public class DynamicMappingGenerator implements MappingGenerator {
     private final MappingGenerator delegate;
     private final Runnable writeStart;
@@ -40,33 +41,16 @@ public class DynamicMappingGenerator implements MappingGenerator {
         this.writeEnd = writeEnd;
         this.keyName = keyName;
     }
-
-    protected JsonGenerator getRawJsonGenerator() {
-        return delegate.getJsonGenerator();
-    }
-
-    @Override
-    public JsonGenerator getJsonGenerator() {
-        return generator == null ? generator = new InObjectOrPrimitiveJsonGenerator(
-                getRawJsonGenerator(), writeStart, keyName, writeEnd) : generator;
-    }
+    
 
     @Override
     public MappingGenerator writeObject(final String key, final Object o, final JsonGenerator generator) {
-        return delegate.writeObject(key, o, ensureGenerator(generator));
+        return delegate.writeObject(key, o, generator);
     }
 
     @Override
     public MappingGenerator writeObject(final Object o, final JsonGenerator generator) {
-        return delegate.writeObject(o, ensureGenerator(generator));
-    }
-
-    private JsonGenerator ensureGenerator(final JsonGenerator generator) {
-        if (this.generator != null && this.generator != generator && this.generator.delegate != generator) {
-            this.generator = null;
-            reset();
-        }
-        return getJsonGenerator(); // ensure we wrap it
+        return delegate.writeObject(o, generator);
     }
 
     protected void reset() {
@@ -592,25 +576,6 @@ public class DynamicMappingGenerator implements MappingGenerator {
         public SkipEnclosingWriteEnd(final MappingGenerator delegate, final String keyName, final JsonGenerator generator) {
             super(delegate, NOOP, NOOP, keyName);
             this.rawGenerator = generator;
-        }
-
-        @Override
-        protected JsonGenerator getRawJsonGenerator() {
-            return rawGenerator;
-        }
-
-        @Override
-        public JsonGenerator getJsonGenerator() {
-            if (skippingGenerator == null) {
-                skippingGenerator = new SkipLastWriteEndGenerator(super.getJsonGenerator());
-            }
-            return skippingGenerator;
-        }
-
-        @Override
-        protected void reset() {
-            super.reset();
-            skippingGenerator = null;
         }
     }
 }
