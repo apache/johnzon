@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -200,9 +201,9 @@ public class ObjectTypeTest {
 
     public static class TestWithTypeConverter implements ObjectConverter.Codec<Dog> {
         @Override
-        public void writeJson(Dog instance, MappingGenerator mappingGenerator) {
-            mappingGenerator.getJsonGenerator().write("//javaType", instance.getClass().getName());
-            mappingGenerator.writeObject(instance, mappingGenerator.getJsonGenerator());
+        public void writeJson(Dog instance, MappingGenerator mappingGenerator, JsonGenerator generator) {
+            generator.write("//javaType", instance.getClass().getName());
+            mappingGenerator.writeObject(instance, generator);
         }
 
         @Override
@@ -420,8 +421,8 @@ public class ObjectTypeTest {
         }
 
         @Override
-        public void writeJson(Poodle instance, MappingGenerator jsonbGenerator) {
-            jsonbGenerator.getJsonGenerator().write("poodleName", instance.getName());
+        public void writeJson(Poodle instance, MappingGenerator jsonbGenerator, JsonGenerator generator) {
+            generator.write("poodleName", instance.getName());
         }
 
         @Override

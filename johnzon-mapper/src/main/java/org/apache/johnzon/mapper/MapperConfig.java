@@ -25,6 +25,8 @@ import org.apache.johnzon.mapper.map.LazyConverterMap;
 
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
+
 import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Collection;
@@ -48,7 +50,7 @@ public /* DON'T MAKE IT HIDDEN */ class MapperConfig implements Cloneable {
 
     private static final ObjectConverter.Codec NO_CONVERTER = new ObjectConverter.Codec() {
         @Override
-        public void writeJson(Object instance, MappingGenerator jsonbGenerator) {
+        public void writeJson(Object instance, MappingGenerator jsonbGenerator, JsonGenerator generator) {
             // just a dummy
         }
 

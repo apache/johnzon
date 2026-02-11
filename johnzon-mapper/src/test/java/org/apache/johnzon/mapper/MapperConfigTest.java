@@ -27,6 +27,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 
 import java.lang.reflect.Type;
 import java.nio.charset.StandardCharsets;
@@ -189,7 +190,7 @@ public class MapperConfigTest {
 
     private static class TheConverter<T> implements ObjectConverter.Codec<T>{
         @Override
-        public void writeJson(T instance, MappingGenerator jsonbGenerator) {
+        public void writeJson(T instance, MappingGenerator jsonbGenerator, JsonGenerator generator) {
             // dummy
         }
 
@@ -202,7 +203,7 @@ public class MapperConfigTest {
 
     private static abstract class TheAbstractConverter<T extends TheInterface> implements ObjectConverter.Codec<T> {
         @Override
-        public void writeJson(T instance, MappingGenerator jsonbGenerator) {
+        public void writeJson(T instance, MappingGenerator jsonbGenerator, JsonGenerator generator) {
             // dummy
         }
 

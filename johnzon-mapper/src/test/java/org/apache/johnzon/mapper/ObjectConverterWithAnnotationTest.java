@@ -24,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
 
 import java.beans.ConstructorProperties;
 import java.lang.reflect.Type;
@@ -388,11 +389,11 @@ public class ObjectConverterWithAnnotationTest {
 
 
         @Override
-        public void writeJson(Bike instance, MappingGenerator jsonbGenerator) {
-            jsonbGenerator.getJsonGenerator().write(MANUFACTURER_ID, MANUFACTURERS.indexOf(instance.getManufacturer()));
+        public void writeJson(Bike instance, MappingGenerator jsonbGenerator, JsonGenerator generator) {
+            generator.write(MANUFACTURER_ID, MANUFACTURERS.indexOf(instance.getManufacturer()));
 
             // i know you should never use this in production but its good for our sample ;)
-            jsonbGenerator.getJsonGenerator().write(TYPE_INDEX, instance.getType().ordinal());
+            generator.write(TYPE_INDEX, instance.getType().ordinal());
         }
 
         @Override

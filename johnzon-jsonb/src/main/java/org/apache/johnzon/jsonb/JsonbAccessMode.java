@@ -337,7 +337,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                                 }
 
                                 @Override
-                                public void writeJson(final Object instance, final MappingGenerator jsonbGenerator) {
+                                public void writeJson(final Object instance, final MappingGenerator jsonbGenerator, JsonGenerator generator) {
                                     // no-op, it's for factories only
                                 }
                             };
@@ -1183,8 +1183,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                 final JsonbSerializer jsonbSerializer = instance.getValue();
                 writer = new ObjectConverter.Writer() {
                     @Override
-                    public void writeJson(final Object instance, final MappingGenerator jsonbGenerator) {
-                        final JsonGenerator generator = jsonbGenerator.getJsonGenerator();
+                    public void writeJson(final Object instance, final MappingGenerator jsonbGenerator, JsonGenerator generator) {
                         jsonbSerializer.serialize(instance, generator, new JohnzonSerializationContext(jsonbGenerator));
                     }
 

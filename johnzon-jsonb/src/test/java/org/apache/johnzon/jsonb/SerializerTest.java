@@ -69,7 +69,7 @@ public class SerializerTest {
         nameHolder.name.detailName = new DetailName();
         nameHolder.name.detailName.name = "Another Test String";
         assertEquals(
-                "{\"detailName\":{\"name\":\"Another Test String\",\"detail\":true},\"name\":{\"name\":\"Test String\"}}",
+                "{\"name\":{\"detailName\":{\"name\":\"Another Test String\",\"detail\":true},\"name\":\"Test String\"}}",
                 jsonb.toJson(nameHolder));
 
     }

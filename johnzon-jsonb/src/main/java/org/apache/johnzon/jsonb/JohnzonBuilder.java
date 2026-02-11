@@ -321,9 +321,9 @@ public class JohnzonBuilder implements JsonbBuilder {
                     throw new IllegalArgumentException("We only support serializer on Class for now");
                 }
                 builder.addObjectConverter(
-                    Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator) ->
+                    Class.class.cast(args[0]), (ObjectConverter.Writer) (instance, jsonbGenerator, generator) ->
                         s.serialize(
-                                instance, jsonbGenerator.getJsonGenerator(),
+                                instance, generator,
                                 new JohnzonSerializationContext(jsonbGenerator)));
             });
         });
