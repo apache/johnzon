@@ -74,6 +74,7 @@
     <module>johnzon-jsonschema</module>
     <module>johnzon-osgi</module>
     <module>johnzon-jsonlogic</module>
+    <module>johnzon-bundle</module>
   </modules>
 
   <dependencyManagement>
