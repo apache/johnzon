@@ -77,6 +77,20 @@ public final class ArrayUtil {
     }
 
 
+    public static List<Boolean> asList(final boolean[] vals) {
+        return new AbstractList<Boolean>() {
+            @Override
+            public Boolean get(int index) {
+                return vals[index];
+            }
+
+            @Override
+            public int size() {
+                return vals.length;
+            }
+        };
+    }
+
     public static List<Integer> asList(final int[] vals) {
         return new AbstractList<Integer>() {
             @Override
