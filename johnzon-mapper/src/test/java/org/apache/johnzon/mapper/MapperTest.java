@@ -110,8 +110,17 @@ public class MapperTest {
     }
 
     @Test
-    public void mapToJsonArray() {
+    public void mapToJsonArrayIntPrimitive() {
         int[] anArray = new int[]{3, 4, 5};
+        final JsonValue structure = new MapperBuilder().build().toStructure(anArray);
+        assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
+        final JsonArray jsonArray = structure.asJsonArray();
+        assertEquals("[3,4,5]", jsonArray.toString());
+    }
+
+    @Test
+    public void mapToJsonArrayLongPrimitive() {
+        long[] anArray = new long[]{3, 4, 5};
         final JsonValue structure = new MapperBuilder().build().toStructure(anArray);
         assertEquals(JsonValue.ValueType.ARRAY, structure.getValueType());
         final JsonArray jsonArray = structure.asJsonArray();

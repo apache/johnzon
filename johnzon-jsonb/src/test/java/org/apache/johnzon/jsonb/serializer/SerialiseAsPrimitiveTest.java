@@ -18,12 +18,13 @@ package org.apache.johnzon.jsonb.serializer;
 
 import java.lang.reflect.Type;
 
+import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.junit.Rule;
 import org.junit.Test;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 import javax.json.bind.annotation.JsonbTypeDeserializer;
 import javax.json.bind.annotation.JsonbTypeSerializer;
+import javax.json.bind.config.PropertyOrderStrategy;
 import javax.json.bind.serializer.DeserializationContext;
 import javax.json.bind.serializer.JsonbDeserializer;
 import javax.json.bind.serializer.JsonbSerializer;
@@ -36,8 +37,12 @@ import static org.junit.Assert.assertTrue;
  * This test checks a JsonbSerialize/JsonbDeserialize roundtrip when using a primitive as placeholder
  */
 public class SerialiseAsPrimitiveTest {
-    
-    
+
+    @Rule
+    public final JsonbRule jsonb = new JsonbRule()
+            .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL);
+
+
     public static class TestConstant {
         public final static TestConstant VAL_1 = new TestConstant("A");
         public final static TestConstant VAL_2 = new TestConstant("B");
@@ -100,28 +105,27 @@ public class SerialiseAsPrimitiveTest {
 
     public static class ConstantJsonbDeserializer implements JsonbDeserializer<TestConstant> {
 
-    @Override
-    public TestConstant deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
-        if (rtType instanceof TestConstant) {
-            final String key = parser.getString();
-            if (key != null) {
-                return TestConstant.getByCode(key);
+        @Override
+        public TestConstant deserialize(JsonParser parser, DeserializationContext ctx, Type rtType) {
+            if (rtType instanceof TestConstant) {
+                final String key = parser.getString();
+                if (key != null) {
+                    return TestConstant.getByCode(key);
+                }
             }
+
+            return null;
         }
-        
-        return null;
     }
-}
 
 
 
     @Test
-    public void testEnumJsonb() {
+    public void testEnumJsonb() throws Exception {
         ConstantUsage enumVerwender = new ConstantUsage();
         enumVerwender.setI(1);
         enumVerwender.setTestConstant(TestConstant.VAL_2);
         
-        Jsonb jsonb = JsonbBuilder.create();
         final String json = jsonb.toJson(enumVerwender);
         assertTrue(json.contains("\"testConstant\":\"B\""));
     }
