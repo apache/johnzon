@@ -94,6 +94,8 @@ public class Mapper implements Closeable {
             writeObject(ArrayUtil.asList((float[]) object), stream);
         } else if (object instanceof double[]) {
             writeObject(ArrayUtil.asList((double[]) object), stream);
+        } else if (object instanceof boolean[]) {
+            writeObject(ArrayUtil.asList((boolean[]) object), stream);
         } else {
             writeObject(Arrays.asList((T[]) object), stream);
         }

@@ -18,12 +18,13 @@ package org.apache.johnzon.jsonb.serializer;
 
 import java.lang.reflect.Type;
 
+import org.apache.johnzon.jsonb.test.JsonbRule;
+import org.junit.Rule;
 import org.junit.Test;
 
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.annotation.JsonbTypeDeserializer;
 import jakarta.json.bind.annotation.JsonbTypeSerializer;
+import jakarta.json.bind.config.PropertyOrderStrategy;
 import jakarta.json.bind.serializer.DeserializationContext;
 import jakarta.json.bind.serializer.JsonbDeserializer;
 import jakarta.json.bind.serializer.JsonbSerializer;
@@ -36,8 +37,12 @@ import static org.junit.Assert.assertTrue;
  * This test checks a JsonbSerialize/JsonbDeserialize roundtrip when using a primitive as placeholder
  */
 public class SerialiseAsPrimitiveTest {
-    
-    
+
+    @Rule
+    public final JsonbRule jsonb = new JsonbRule()
+            .withPropertyOrderStrategy(PropertyOrderStrategy.LEXICOGRAPHICAL);
+
+
     public static class TestConstant {
         public final static TestConstant VAL_1 = new TestConstant("A");
         public final static TestConstant VAL_2 = new TestConstant("B");
@@ -120,8 +125,7 @@ public class SerialiseAsPrimitiveTest {
         ConstantUsage enumVerwender = new ConstantUsage();
         enumVerwender.setI(1);
         enumVerwender.setTestConstant(TestConstant.VAL_2);
-        
-        Jsonb jsonb = JsonbBuilder.create();
+
         final String json = jsonb.toJson(enumVerwender);
         assertTrue(json.contains("\"testConstant\":\"B\""));
     }

@@ -101,6 +101,16 @@ public class JohnzonJsonbTest {
         rule.toJson(input, output);
         assertEquals("[0,1,2,3,4,5,6]", new String(output.toByteArray(), StandardCharsets.UTF_8));
     }
+    @Test
+    public void longArrayWithType() {
+        long[] input = new long[] { 0L, 1L, 2L, 3L, 4L, 5L, 6L };
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        // See JOHNZON-424
+        rule.toJson(input, long[].class, output);
+
+        assertEquals("[0,1,2,3,4,5,6]", new String(output.toByteArray(), StandardCharsets.UTF_8));
+    }
 
     @Test
     public void shortArray() {
@@ -115,6 +125,17 @@ public class JohnzonJsonbTest {
         boolean[] input = new boolean[] { true, false };
         final ByteArrayOutputStream output = new ByteArrayOutputStream();
         rule.toJson(input, output);
+        assertEquals("[true,false]", new String(output.toByteArray(), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void booleanArrayWithType() {
+        boolean[] input = new boolean[] { true, false };
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        // See JOHNZON-424, JOHNZON-425
+        rule.toJson(input, byte[].class, output);
+
         assertEquals("[true,false]", new String(output.toByteArray(), StandardCharsets.UTF_8));
     }
 

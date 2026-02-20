@@ -401,7 +401,7 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
     public void toJson(final Object inObject, final Type runtimeType, final OutputStream stream) throws JsonbException {
         final Object object = unwrapOptional(inObject);
         if (object != null && isArray(runtimeType)) {
-            delegate.writeArray((Object[]) object, stream);
+            delegate.writeArray(object, stream);
         } else if (isCollection(runtimeType)) {
             delegate.writeArray(Collection.class.cast(object), stream);
         } else if (ijson && isNotObjectOrArray(object)) {
