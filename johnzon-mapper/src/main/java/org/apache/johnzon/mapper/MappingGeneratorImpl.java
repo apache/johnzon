@@ -477,11 +477,9 @@ public class MappingGeneratorImpl implements MappingGenerator {
                     BaseStream.class.cast(value).iterator(), value);
         } else if (Iterator.class.isAssignableFrom(type)) {
             if (objectConverter != null) {
-                generator.writeStartObject(key);
-                //X TODO 2 writeStartObject? sounds fishy...
-                writeWithObjectConverter(new DynamicMappingGenerator(this,
-                        () -> generator.writeStartObject(key), generator::writeEnd, key), objectConverter, value, generator);
-                generator.writeEnd();
+                DeferredStartJsonGenerator deferredStartJsonGenerator = new DeferredStartJsonGenerator(generator, key);
+                objectConverter.writeJson(value, this, deferredStartJsonGenerator);
+                deferredStartJsonGenerator.writeEnd();
             } else {
                 writeIterator(itemConverter, key, objectConverter, ignoredProperties, jsonPointer, generator,
                         Iterator.class.cast(value), value);
@@ -523,14 +521,6 @@ public class MappingGeneratorImpl implements MappingGenerator {
                 deferredStartGenerator.writeEnd();
             }
         }
-    }
-
-    @Deprecated
-    private void writeWithObjectConverter(final DynamicMappingGenerator dynamicMappingGenerator,
-                                          final ObjectConverter.Writer objectConverter,
-                                          final Object value, JsonGenerator generator) {
-        objectConverter.writeJson(value, dynamicMappingGenerator, generator);
-        dynamicMappingGenerator.flushIfNeeded();
     }
 
     private void writeIterator(final Adapter itemConverter, final String key,
