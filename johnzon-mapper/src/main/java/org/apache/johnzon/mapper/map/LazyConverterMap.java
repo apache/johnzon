@@ -85,8 +85,11 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     private boolean useShortISO8601Format = true;
     private DateTimeFormatter dateTimeFormatter;
-    private boolean useBigIntegerStringAdapter = false; // Jakarta JSON-B 3.0 Section 3.4.1 (BigDecimal MUST be a JSON number)
-    private boolean useBigDecimalStringAdapter = false; // Jakarta JSON-B 3.0 Section 3.4.1 (BigDecimal MUST be a JSON number)
+    // I-JSON (RFC 7493 Section 2.2): BigX exceed IEEE 754 double, string is safer by default.
+    // Set -Djohnzon.use-big-number-stringadapter=false for strict JSON-B 3.0 / TCK compliance.
+    private static final boolean IJSON_BIG_NUMBER_DEFAULT = !Boolean.getBoolean("johnzon.use-big-number-stringadapter.disabled");
+    private boolean useBigIntegerStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
+    private boolean useBigDecimalStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
 
     public void setUseShortISO8601Format(final boolean useShortISO8601Format) {
         this.useShortISO8601Format = useShortISO8601Format;
