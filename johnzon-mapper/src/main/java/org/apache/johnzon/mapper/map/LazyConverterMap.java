@@ -85,8 +85,8 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     private boolean useShortISO8601Format = true;
     private DateTimeFormatter dateTimeFormatter;
-    private boolean useBigIntegerStringAdapter = true;
-    private boolean useBigDecimalStringAdapter = true;
+    private boolean useBigIntegerStringAdapter = false; // Jakarta JSON-B 3.0 Section 3.4.1 (BigDecimal MUST be a JSON number)
+    private boolean useBigDecimalStringAdapter = false; // Jakarta JSON-B 3.0 Section 3.4.1 (BigDecimal MUST be a JSON number)
 
     public void setUseShortISO8601Format(final boolean useShortISO8601Format) {
         this.useShortISO8601Format = useShortISO8601Format;
@@ -163,10 +163,10 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         if (from == String.class) {
             return add(key, new ConverterAdapter<>(new StringConverter(), String.class));
         }
-        if (from == BigDecimal.class && useBigIntegerStringAdapter) {
+        if (from == BigDecimal.class && useBigDecimalStringAdapter) {
             return add(key, new ConverterAdapter<>(new BigDecimalConverter(), BigDecimal.class));
         }
-        if (from == BigInteger.class && useBigDecimalStringAdapter) {
+        if (from == BigInteger.class && useBigIntegerStringAdapter) {
             return add(key, new ConverterAdapter<>(new BigIntegerConverter(), BigInteger.class));
         }
         if (from == Locale.class) {
