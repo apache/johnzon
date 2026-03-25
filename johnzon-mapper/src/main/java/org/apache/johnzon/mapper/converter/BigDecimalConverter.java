@@ -25,7 +25,9 @@ import java.math.BigDecimal;
 public class BigDecimalConverter implements Converter<BigDecimal> {
     @Override
     public String toString(final BigDecimal instance) {
-        return instance.toString();
+        // when using the converter, user expects the decimal notation
+        // otherwise, JsonNumber will give the E (scientific) notation
+        return instance.toPlainString();
     }
 
     @Override

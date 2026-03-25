@@ -55,10 +55,13 @@ public class LiteralTest {
                 return expectedJson.indexOf(o1) - expectedJson.indexOf(o2);
             }
         };
-        new MapperBuilder().setAttributeOrder(attributeOrder).build().writeObject(nc, sw);
+        new MapperBuilder().setAttributeOrder(attributeOrder)
+                .setUseBigDecimalStringAdapter(false).setUseBigIntegerStringAdapter(false)
+                .build().writeObject(nc, sw);
         assertEquals(expectedJson, sw.toString());
-        final NumberClass read = new MapperBuilder().setAttributeOrder(attributeOrder).build()
-                .readObject(new StringReader(sw.toString()), NumberClass.class);
+        final NumberClass read = new MapperBuilder().setAttributeOrder(attributeOrder)
+                .setUseBigDecimalStringAdapter(false).setUseBigIntegerStringAdapter(false)
+                .build().readObject(new StringReader(sw.toString()), NumberClass.class);
         assertEquals(nc, read);
 
     }

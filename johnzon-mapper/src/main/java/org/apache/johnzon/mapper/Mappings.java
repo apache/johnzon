@@ -681,6 +681,12 @@ public class Mappings {
 
             if (Date.class.isAssignableFrom(type) && copyDate) {
                 converter = new DateWithCopyConverter(Adapter.class.cast(adapters.get(new AdapterKey(Date.class, String.class))));
+            } else if (type == BigDecimal.class || type == BigInteger.class) {
+                // BigDecimal/BigInteger are "primitives" in the mapper so they bypass
+                // config.findAdapter() in writeValue(). Use a direct get() to trigger
+                // lazy loading and respect useBigDecimalStringAdapter/useBigIntegerStringAdapter.
+                // this makes it symetric with READ
+                converter = adapters.get(new AdapterKey(type, String.class));
             } else {
                 for (final Map.Entry<AdapterKey, Adapter<?, ?>> adapterEntry : adapters.entrySet()) {
                     if (adapterEntry.getKey().getFrom() == adapterEntry.getKey().getTo()) { // String -> String

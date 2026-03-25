@@ -529,6 +529,16 @@ public class MapperBuilder {
         return this;
     }
 
+    public MapperBuilder setUseBigIntegerStringAdapter(final boolean convertBigIntegerToString) {
+        adapters.setUseBigIntegerStringAdapter(convertBigIntegerToString);
+        return this;
+    }
+
+    public MapperBuilder setUseBigDecimalStringAdapter(final boolean convertBigDecimalToString) {
+        adapters.setUseBigDecimalStringAdapter(convertBigDecimalToString);
+        return this;
+    }
+
     public MapperBuilder setUseBigDecimalForObjectNumbers(final boolean value) {
         this.useBigDecimalForObjectNumbers = value;
         return this;

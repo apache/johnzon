@@ -85,6 +85,11 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     private boolean useShortISO8601Format = true;
     private DateTimeFormatter dateTimeFormatter;
+    // I-JSON (RFC 7493 Section 2.2): BigX exceed IEEE 754 double, string is safer by default.
+    // Set -Djohnzon.use-ijson-big-number-stringadapter.disabled=true for strict JSON-B 3.0 / TCK compliance.
+    private static final boolean IJSON_BIG_NUMBER_DEFAULT = !Boolean.getBoolean("johnzon.use-ijson-big-number-stringadapter.disabled");
+    private boolean useBigIntegerStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
+    private boolean useBigDecimalStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
 
     public void setUseShortISO8601Format(final boolean useShortISO8601Format) {
         this.useShortISO8601Format = useShortISO8601Format;
@@ -92,6 +97,14 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     public void setDateTimeFormatter(final DateTimeFormatter dateTimeFormatter) {
         this.dateTimeFormatter = dateTimeFormatter;
+    }
+
+    public void setUseBigDecimalStringAdapter(final boolean useBigDecimalStringAdapter) {
+        this.useBigDecimalStringAdapter = useBigDecimalStringAdapter;
+    }
+
+    public void setUseBigIntegerStringAdapter(final boolean useBigIntegerStringAdapter) {
+        this.useBigIntegerStringAdapter = useBigIntegerStringAdapter;
     }
 
     @Override
@@ -153,10 +166,10 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         if (from == String.class) {
             return add(key, new ConverterAdapter<>(new StringConverter(), String.class));
         }
-        if (from == BigDecimal.class) {
+        if (from == BigDecimal.class && useBigDecimalStringAdapter) {
             return add(key, new ConverterAdapter<>(new BigDecimalConverter(), BigDecimal.class));
         }
-        if (from == BigInteger.class) {
+        if (from == BigInteger.class && useBigIntegerStringAdapter) {
             return add(key, new ConverterAdapter<>(new BigIntegerConverter(), BigInteger.class));
         }
         if (from == Locale.class) {

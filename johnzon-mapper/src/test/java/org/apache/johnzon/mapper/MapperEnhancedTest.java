@@ -137,7 +137,7 @@ public class MapperEnhancedTest {
             public int compare(String o1, String o2) {
                 return json.indexOf(o1) - json.indexOf(o2);
             }
-        }).build().writeObject(tc2, sw);
+        }).setUseBigDecimalStringAdapter(false).build().writeObject(tc2, sw);
         assertEquals(json, sw.toString());
     }
 
