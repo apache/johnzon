@@ -19,10 +19,16 @@
 package org.apache.johnzon.mapper;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
+import org.apache.johnzon.mapper.internal.AdapterKey;
+import org.apache.johnzon.mapper.map.LazyConverterMap;
 import org.junit.Test;
 
 public class NumberSerializationTest {
@@ -46,11 +52,91 @@ public class NumberSerializationTest {
         mapper.close();
     }
 
+    /**
+     * Bug: BigDecimalConverter used toString() which produces scientific notation
+     * (e.g. "7.33915E-7"). Should use toPlainString() to produce "0.000000733915".
+     */
+    @Test
+    public void bigDecimalConverterUsesPlainNotation() {
+        final BigDecimalConverter converter = new BigDecimalConverter();
+        final BigDecimal smallValue = new BigDecimal("0.000000733915");
+        final String result = converter.toString(smallValue);
+        assertEquals("BigDecimalConverter should use plain notation, not scientific",
+                "0.000000733915", result);
+    }
+
+    /**
+     * Bug fix: useBigDecimalStringAdapter and useBigIntegerStringAdapter flags
+     * were swapped in LazyConverterMap. Each flag must control its own type.
+     * Both default to true (string) for I-JSON (RFC 7493) interoperability.
+     */
+    @Test
+    public void bigDecimalStringAdapterFlagControlsBigDecimal() {
+        // Default: BigDecimal adapter is ON (useBigDecimalStringAdapter=true)
+        final LazyConverterMap defaultAdapters = new LazyConverterMap();
+        assertNotNull("BigDecimal adapter should be active by default",
+                defaultAdapters.get(new AdapterKey(BigDecimal.class, String.class)));
+        // Disabled: BigDecimal adapter is OFF
+        final LazyConverterMap disabledAdapters = new LazyConverterMap();
+        disabledAdapters.setUseBigDecimalStringAdapter(false);
+        assertNull("BigDecimal adapter should be null when flag is false",
+                disabledAdapters.get(new AdapterKey(BigDecimal.class, String.class)));
+    }
+
+    @Test
+    public void bigIntegerStringAdapterFlagControlsBigInteger() {
+        // Default: BigInteger adapter is ON (useBigIntegerStringAdapter=true)
+        final LazyConverterMap adapters = new LazyConverterMap();
+        assertNotNull("BigInteger adapter should be active by default",
+                adapters.get(new AdapterKey(BigInteger.class, String.class)));
+        // Disabled: BigInteger adapter is OFF
+        final LazyConverterMap adapters2 = new LazyConverterMap();
+        adapters2.setUseBigIntegerStringAdapter(false);
+        assertNull("BigInteger adapter should be null when flag is false",
+                adapters2.get(new AdapterKey(BigInteger.class, String.class)));
+    }
+
+    /**
+     * With useBigDecimalStringAdapter=true (default), BigDecimal fields
+     * should be serialized as JSON strings using plain notation.
+     */
+    @Test
+    public void bigDecimalDefaultSerializesAsString() {
+        try (final Mapper mapper = new MapperBuilder().build()) {
+            final BigDecimalHolder holder = new BigDecimalHolder();
+            holder.score = new BigDecimal("0.000000733915");
+            final String json = mapper.writeObjectAsString(holder);
+            // Default: BigDecimal as string with plain notation (I-JSON interoperability)
+            assertEquals("{\"score\":\"0.000000733915\"}", json);
+        }
+    }
+
+    /**
+     * With useBigDecimalStringAdapter=false, BigDecimal fields should be
+     * serialized as JSON numbers (strict JSON-B 3.0 / TCK compliance).
+     */
+    @Test
+    public void bigDecimalWithAdapterDisabledSerializesAsNumber() {
+        try (final Mapper mapper = new MapperBuilder()
+                .setUseBigDecimalStringAdapter(false)
+                .build()) {
+            final BigDecimalHolder holder = new BigDecimalHolder();
+            holder.score = new BigDecimal("0.000000733915");
+            final String json = mapper.writeObjectAsString(holder);
+            // Adapter disabled: BigDecimal as JSON number (scientific notation is valid per RFC 8259)
+            assertEquals("{\"score\":7.33915E-7}", json);
+        }
+    }
+
     public static class Holder {
         public long value;
     }
 
     public static class Num {
         public Number value;
+    }
+
+    public static class BigDecimalHolder {
+        public BigDecimal score;
     }
 }
