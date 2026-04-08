@@ -62,6 +62,11 @@ public class JsonbRule implements TestRule, Jsonb, JsonbExtension {
         return this;
     }
 
+    public JsonbRule withProperty(final String propertyName, final Object value) {
+        config.setProperty(propertyName, value);
+        return this;
+    }
+
     @Override
     public Statement apply(final Statement statement, final Description description) {
         return new Statement() {

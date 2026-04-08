@@ -165,6 +165,12 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("johnzon.useBigDecimalForFloats")
                 .map(this::toBool)
                 .ifPresent(builder::setUseBigDecimalForFloats);
+        config.getProperty("johnzon.useBigIntegerStringAdapter")
+                .map(this::toBool)
+                .ifPresent(builder::setUseBigIntegerStringAdapter);
+        config.getProperty("johnzon.useBigDecimalStringAdapter")
+                .map(this::toBool)
+                .ifPresent(builder::setUseBigDecimalStringAdapter);
         config.getProperty("johnzon.deduplicateObjects")
                 .map(this::toBool)
                 .ifPresent(builder::setDeduplicateObjects);
