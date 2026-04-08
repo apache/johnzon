@@ -14,30 +14,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import java.time.LocalTime;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.5 — LocalTime uses ISO_LOCAL_TIME format: {@code HH:mm:ss}.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.dates.DatesMappingTest#testLocalTimeMapping()
+ */
+public class LocalTimeSimpleTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
+    public static class Widget {
+
+        private LocalTime value;
+
+        public LocalTime getValue() {
+            return value;
+        }
+
+        public void setValue(final LocalTime value) {
+            this.value = value;
+        }
     }
 
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        final Widget widget = new Widget();
+        widget.setValue(LocalTime.of(10, 30, 45));
+        assertEquals("{\"value\":\"10:30:45\"}", jsonb.toJson(widget));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        final Widget widget = jsonb.fromJson("{\"value\":\"10:30:45\"}", Widget.class);
+        assertEquals(LocalTime.of(10, 30, 45), widget.getValue());
     }
 }

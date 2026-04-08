@@ -14,30 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.4 / RFC 8259 Section 3 — Boolean maps to JSON true/false.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.basictypes.BasicJavaTypesMappingTest
+ */
+public class BooleanDirectTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
-    }
-
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        assertEquals("true", jsonb.toJson(true));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        assertEquals(true, jsonb.fromJson("true", Boolean.class));
     }
 }

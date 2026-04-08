@@ -872,8 +872,11 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
 
     private boolean isReversedAdapter(final Class<?> payloadType, final Class<?> aClass, final Adapter<?, ?> instance) {
         if (TypeAwareAdapter.class.isInstance(instance)) {
-            return payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getTo()))
-                    && !payloadType.isAssignableFrom(Class.class.cast(TypeAwareAdapter.class.cast(instance).getFrom()));
+            final Class<?> to = toClass(TypeAwareAdapter.class.cast(instance).getTo());
+            final Class<?> from = toClass(TypeAwareAdapter.class.cast(instance).getFrom());
+            return to != null && from != null
+                    && payloadType.isAssignableFrom(to)
+                    && !payloadType.isAssignableFrom(from);
         }
         final Type[] genericInterfaces = aClass.getGenericInterfaces();
         return Stream.of(genericInterfaces).filter(ParameterizedType.class::isInstance)
@@ -887,6 +890,16 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                     final Class<?> superclass = aClass.getSuperclass();
                     return superclass != Object.class && isReversedAdapter(payloadType, superclass, instance);
                 });
+    }
+
+    private Class<?> toClass(final Type type) {
+        if (Class.class.isInstance(type)) {
+            return Class.class.cast(type);
+        }
+        if (ParameterizedType.class.isInstance(type)) {
+            return toClass(ParameterizedType.class.cast(type).getRawType());
+        }
+        return null;
     }
 
     private boolean isNillable(final JsonbProperty property, final JsonbNillable propertyNillable, final JsonbNillable classOrPackageNillable) {

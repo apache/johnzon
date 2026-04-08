@@ -18,8 +18,6 @@ package org.apache.johnzon.jsonb.symmetry.adapter.array;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,42 +39,5 @@ public class ArrayAdapterOnClassDirectTest extends ArrayAdapterOnClassTest {
         final Email email = jsonb.fromJson(json, Email.class);
         assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
         assertEquals("EmailClass.adaptFromJson", calls());
-    }
-
-    /**
-     * Fails as the adapter is not found
-     */
-    @Test
-    @Ignore()
-    @Override
-    public void read() throws Exception {
-        super.read();
-    }
-
-    /**
-     * Fails as the adapter is not found
-     */
-    @Test
-    @Ignore()
-    @Override
-    public void readAfterRead() throws Exception {
-        super.readAfterRead();
-    }
-
-    /**
-     * Fails as the adapter is not found on the first read
-     */
-    @Test
-    @Ignore()
-    @Override
-    public void writeAfterRead() throws Exception {
-        super.writeAfterRead();
-    }
-
-    @Test
-    @Ignore()
-    @Override
-    public void readAfterWrite() throws Exception {
-        super.readAfterWrite();
     }
 }

@@ -14,30 +14,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.4 / RFC 8259 Section 6 — Byte maps to JSON Number.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.basictypes.BasicJavaTypesMappingTest
+ */
+public class ByteSimpleTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
+    public static class Widget {
+
+        private Byte value;
+
+        public Byte getValue() {
+            return value;
+        }
+
+        public void setValue(final Byte value) {
+            this.value = value;
+        }
     }
 
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        final Widget widget = new Widget();
+        widget.setValue((byte) 42);
+        assertEquals("{\"value\":42}", jsonb.toJson(widget));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        final Widget widget = jsonb.fromJson("{\"value\":42}", Widget.class);
+        assertEquals(Byte.valueOf((byte) 42), widget.getValue());
     }
 }
