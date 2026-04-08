@@ -14,30 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import java.time.Duration;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.5 — Duration uses ISO 8601 duration format: {@code PTnHnMnS}.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.dates.DatesMappingTest#testDurationMapping()
+ */
+public class DurationDirectTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
-    }
-
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        assertEquals("\"PT1H30M\"", jsonb.toJson(Duration.parse("PT1H30M")));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        assertEquals(Duration.parse("PT1H30M"), jsonb.fromJson("\"PT1H30M\"", Duration.class));
     }
 }

@@ -19,8 +19,6 @@ package org.apache.johnzon.jsonb.symmetry.adapter.array;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbConfig;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
@@ -56,33 +54,5 @@ public class ArrayAdapterPrecedenceConfigClassDirectTest extends ArrayAdapterOnC
         final String json = jsonb.toJson(email);
         assertEquals("[\"test\",\"domain.com\",\"Config.adaptToJson\"]", json);
         assertEquals("Config.adaptToJson", calls());
-    }
-
-    @Test
-    @Ignore
-    @Override
-    public void read() throws Exception {
-        super.read();
-    }
-
-    @Test
-    @Ignore
-    @Override
-    public void readAfterRead() throws Exception {
-        super.readAfterRead();
-    }
-
-    @Test
-    @Ignore
-    @Override
-    public void readAfterWrite() throws Exception {
-        super.readAfterWrite();
-    }
-
-    @Test
-    @Ignore
-    @Override
-    public void writeAfterRead() throws Exception {
-        super.writeAfterRead();
     }
 }

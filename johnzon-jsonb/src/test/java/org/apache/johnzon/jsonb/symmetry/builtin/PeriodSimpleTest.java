@@ -14,30 +14,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import java.time.Period;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.5 — Period uses ISO 8601 period format: {@code PnYnMnD}.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.dates.DatesMappingTest#testPeriodMapping()
+ */
+public class PeriodSimpleTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
+    public static class Widget {
+
+        private Period value;
+
+        public Period getValue() {
+            return value;
+        }
+
+        public void setValue(final Period value) {
+            this.value = value;
+        }
     }
 
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        final Widget widget = new Widget();
+        widget.setValue(Period.of(1, 2, 3));
+        assertEquals("{\"value\":\"P1Y2M3D\"}", jsonb.toJson(widget));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        final Widget widget = jsonb.fromJson("{\"value\":\"P1Y2M3D\"}", Widget.class);
+        assertEquals(Period.of(1, 2, 3), widget.getValue());
     }
 }

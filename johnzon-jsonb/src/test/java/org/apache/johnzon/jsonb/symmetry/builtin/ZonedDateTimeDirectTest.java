@@ -14,30 +14,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.5 — ZonedDateTime uses ISO_ZONED_DATE_TIME format,
+ * which includes the zone ID in brackets: {@code 2024-01-15T10:30:45+01:00[Europe/Paris]}.
+ *
+ * <p>Uses Europe/Paris (CET, UTC+1 in January) like the TCK.</p>
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.dates.DatesMappingTest#testZonedDateTimeMapping()
+ */
+public class ZonedDateTimeDirectTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
-    }
+    private static final ZonedDateTime VALUE =
+            ZonedDateTime.of(2024, 1, 15, 10, 30, 45, 0, ZoneId.of("Europe/Paris"));
 
+    private static final String JSON = "\"2024-01-15T10:30:45+01:00[Europe/Paris]\"";
+
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        assertEquals(JSON, jsonb.toJson(VALUE));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        assertEquals(VALUE, jsonb.fromJson(JSON, ZonedDateTime.class));
     }
 }

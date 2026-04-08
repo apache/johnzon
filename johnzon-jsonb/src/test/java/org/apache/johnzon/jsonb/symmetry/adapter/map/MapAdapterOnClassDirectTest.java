@@ -18,11 +18,9 @@ package org.apache.johnzon.jsonb.symmetry.adapter.map;
 
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
-import org.junit.Ignore;
 
 import static org.junit.Assert.assertEquals;
 
-@Ignore("java.lang.ClassCastException: Cannot cast sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl to java.lang.Class")
 public class MapAdapterOnClassDirectTest extends MapAdapterOnClassTest {
 
     public Jsonb jsonb() {

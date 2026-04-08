@@ -14,30 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import java.time.Instant;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.5 — Instant uses ISO 8601 format: {@code yyyy-MM-dd'T'HH:mm:ssZ}.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.dates.DatesMappingTest#testInstantMapping()
+ */
+public class InstantDirectTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
-    }
-
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        assertEquals("\"2024-01-15T10:30:45Z\"", jsonb.toJson(Instant.parse("2024-01-15T10:30:45Z")));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        assertEquals(Instant.parse("2024-01-15T10:30:45Z"), jsonb.fromJson("\"2024-01-15T10:30:45Z\"", Instant.class));
     }
 }

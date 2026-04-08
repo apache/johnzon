@@ -114,6 +114,35 @@ public class MappingParserImpl implements MappingParser {
         if (JsonStructure.class == targetType || JsonObject.class == targetType || JsonValue.class == targetType) {
             return (T) jsonValue;
         }
+
+        // Resolve class-level adapter (e.g. @JsonbTypeAdapter) before type-specific handling.
+        // The adapter converts from a JSON-friendly type (String, String[], Map, etc.) to the target POJO.
+        // We first parse the JSON into the adapter's expected type, then apply the adapter.
+        // Precedence: Config adapter > class annotation adapter (matching write behavior).
+        if (jsonValue != null && Class.class.isInstance(targetType) && !Mappings.isPrimitive(targetType)) {
+            final Mappings.ClassMapping existing = mappings.getClassMapping(targetType);
+            Adapter<?, ?> classAdapter = existing != null && existing.adapter != null
+                    ? existing.adapter : null;
+            if (classAdapter == null) {
+                classAdapter = config.findAdapter(targetType);
+            }
+            if (classAdapter == null) {
+                classAdapter = config.getAccessMode().findAdapter(Class.class.cast(targetType));
+            }
+            if (classAdapter != null && TypeAwareAdapter.class.isInstance(classAdapter)) {
+                final Type adapterToType = TypeAwareAdapter.class.cast(classAdapter).getTo();
+                if (!targetType.equals(adapterToType)) {
+                    final Object intermediate;
+                    if (adapterToType instanceof Class && JsonValue.class.isAssignableFrom((Class<?>) adapterToType)) {
+                        intermediate = jsonValue;
+                    } else {
+                        intermediate = readObject(jsonValue, adapterToType, false, skippedConverters);
+                    }
+                    return (T) ((Adapter) classAdapter).to(intermediate);
+                }
+            }
+        }
+
         if (JsonObject.class.isInstance(jsonValue)) {
             return (T) buildObject(
                     targetType, JsonObject.class.cast(jsonValue), applyObjectConverter,

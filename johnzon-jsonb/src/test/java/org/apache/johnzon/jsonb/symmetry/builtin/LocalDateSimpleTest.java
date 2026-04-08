@@ -14,30 +14,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.johnzon.jsonb.symmetry.adapter.string;
+package org.apache.johnzon.jsonb.symmetry.builtin;
 
 import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
+import java.time.LocalDate;
 
 import static org.junit.Assert.assertEquals;
 
-public class StringAdapterOnClassDirectTest extends StringAdapterOnClassTest {
+/**
+ * JSON-B 3.0 Section 3.5 — LocalDate uses ISO_LOCAL_DATE format: {@code yyyy-MM-dd}.
+ *
+ * @see ee.jakarta.tck.json.bind.defaultmapping.dates.DatesMappingTest#testLocalDateMapping()
+ */
+public class LocalDateSimpleTest extends BuiltInSymmetryTest {
 
-    public Jsonb jsonb() {
-        return JsonbBuilder.create();
+    public static class Widget {
+
+        private LocalDate value;
+
+        public LocalDate getValue() {
+            return value;
+        }
+
+        public void setValue(final LocalDate value) {
+            this.value = value;
+        }
     }
 
+    @Override
     public void assertWrite(final Jsonb jsonb) {
-        final Email email = new Email("test", "domain.com");
-        final String json = jsonb.toJson(email);
-        assertEquals("\"test@domain.com:EmailClass.adaptToJson\"", json);
-        assertEquals("EmailClass.adaptToJson", calls());
+        final Widget widget = new Widget();
+        widget.setValue(LocalDate.of(2024, 1, 15));
+        assertEquals("{\"value\":\"2024-01-15\"}", jsonb.toJson(widget));
     }
 
+    @Override
     public void assertRead(final Jsonb jsonb) {
-        final String json = "\"test@domain.com\"";
-        final Email email = jsonb.fromJson(json, Email.class);
-        assertEquals("test@domain.com:EmailClass.adaptFromJson", email.toString());
-        assertEquals("EmailClass.adaptFromJson", calls());
+        final Widget widget = jsonb.fromJson("{\"value\":\"2024-01-15\"}", Widget.class);
+        assertEquals(LocalDate.of(2024, 1, 15), widget.getValue());
     }
 }
