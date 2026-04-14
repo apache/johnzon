@@ -233,6 +233,16 @@ public class JohnzonBuilder implements JsonbBuilder {
                         Integer.parseInt(it.toString()))
                 .ifPresent(builder::setSnippetMaxLength);
 
+        or(config.getProperty("johnzon.use-biginteger-stringadapter"),
+                () -> Optional.ofNullable(System.getProperty("johnzon.use-biginteger-stringadapter")))
+                .map(Object::toString).map(Boolean::parseBoolean)
+                .ifPresent(builder::setUseBigIntegerStringAdapter);
+
+        or(config.getProperty("johnzon.use-bigdecimal-stringadapter"),
+                () -> Optional.ofNullable(System.getProperty("johnzon.use-bigdecimal-stringadapter")))
+                .map(Object::toString).map(Boolean::parseBoolean)
+                .ifPresent(builder::setUseBigDecimalStringAdapter);
+
         // user adapters
         final Types types = new Types();
 
@@ -453,6 +463,10 @@ public class JohnzonBuilder implements JsonbBuilder {
         config.getProperty("org.apache.johnzon.supports-comments").ifPresent(b -> map.put("org.apache.johnzon.supports-comments", b));
         config.getProperty("org.apache.johnzon.buffer-strategy").ifPresent(b -> map.put("org.apache.johnzon.buffer-strategy", b));
         return map;
+    }
+
+    private static <T> Optional<T> or(Optional<T> first, Supplier<Optional<T>> second) {
+        return first.isPresent() ? first : second.get();
     }
 
     private static abstract class Lazy<T> implements Supplier<T> {

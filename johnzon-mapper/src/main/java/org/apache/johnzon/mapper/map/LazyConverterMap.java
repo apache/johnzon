@@ -86,8 +86,8 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
     private boolean useShortISO8601Format = true;
     private DateTimeFormatter dateTimeFormatter;
     // I-JSON (RFC 7493 Section 2.2): BigX exceed IEEE 754 double, string is safer by default.
-    // Set -Djohnzon.use-ijson-big-number-stringadapter.disabled=true for strict JSON-B 3.0 / TCK compliance.
-    private static final boolean IJSON_BIG_NUMBER_DEFAULT = !Boolean.getBoolean("johnzon.use-ijson-big-number-stringadapter.disabled");
+    // Set -Djohnzon.use-big-number-stringadapter=false for strict JSON-B 3.0 / TCK compliance.
+    private static final boolean IJSON_BIG_NUMBER_DEFAULT = !Boolean.getBoolean("johnzon.use-big-number-stringadapter.disabled");
     private boolean useBigIntegerStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
     private boolean useBigDecimalStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
 
@@ -99,11 +99,11 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         this.dateTimeFormatter = dateTimeFormatter;
     }
 
-    public void setUseBigDecimalStringAdapter(final boolean useBigDecimalStringAdapter) {
+    public void setUseBigDecimalStringAdapter(boolean useBigDecimalStringAdapter) {
         this.useBigDecimalStringAdapter = useBigDecimalStringAdapter;
     }
 
-    public void setUseBigIntegerStringAdapter(final boolean useBigIntegerStringAdapter) {
+    public void setUseBigIntegerStringAdapter(boolean useBigIntegerStringAdapter) {
         this.useBigIntegerStringAdapter = useBigIntegerStringAdapter;
     }
 
@@ -139,13 +139,13 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     public Set<AdapterKey> adapterKeys() {
         return Stream.concat(
-                super.keySet().stream()
-                        .filter(it -> super.get(it) != NO_ADAPTER),
-                Stream.of(Date.class, URI.class, URL.class, Class.class, String.class, BigDecimal.class, BigInteger.class,
-                        Locale.class, Period.class, Duration.class, Calendar.class, GregorianCalendar.class, TimeZone.class,
-                        ZoneId.class, ZoneOffset.class, SimpleTimeZone.class, Instant.class, LocalDateTime.class, LocalDate.class,
-                        ZonedDateTime.class, OffsetDateTime.class, OffsetTime.class)
-                        .map(it -> new AdapterKey(it, String.class, true)))
+                        super.keySet().stream()
+                                .filter(it -> super.get(it) != NO_ADAPTER),
+                        Stream.of(Date.class, URI.class, URL.class, Class.class, String.class, BigDecimal.class, BigInteger.class,
+                                        Locale.class, Period.class, Duration.class, Calendar.class, GregorianCalendar.class, TimeZone.class,
+                                        ZoneId.class, ZoneOffset.class, SimpleTimeZone.class, Instant.class, LocalDateTime.class, LocalDate.class,
+                                        ZonedDateTime.class, OffsetDateTime.class, OffsetTime.class)
+                                .map(it -> new AdapterKey(it, String.class, true)))
                 .collect(toSet());
     }
 
