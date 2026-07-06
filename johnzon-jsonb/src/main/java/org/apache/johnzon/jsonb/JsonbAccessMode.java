@@ -260,11 +260,11 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                                         .orElseGet(() -> naming.translateName(parameter.getName())) :
                                 naming.translateName(parameter.getName()));
 
-                final JsonbTypeAdapter adapter = getAnnotation(parameter, JsonbTypeAdapter.class);
-                final JsonbDateFormat dateFormat = getAnnotation(parameter, JsonbDateFormat.class);
-                final JsonbNumberFormat numberFormat = getAnnotation(parameter, JsonbNumberFormat.class);
+                final JsonbTypeAdapter adapter = getAnnotationOnParameterOrParameterType(parameter, JsonbTypeAdapter.class);
+                final JsonbDateFormat dateFormat = getAnnotationOnParameterOrParameterType(parameter, JsonbDateFormat.class);
+                final JsonbNumberFormat numberFormat = getAnnotationOnParameterOrParameterType(parameter, JsonbNumberFormat.class);
                 final JohnzonConverter johnzonConverter = getAnnotation(parameter, JohnzonConverter.class);
-                final JsonbTypeDeserializer deserializer = getAnnotation(parameter, JsonbTypeDeserializer.class);
+                final JsonbTypeDeserializer deserializer = getAnnotationOnParameterOrParameterType(parameter, JsonbTypeDeserializer.class);
                 if (adapter == null && dateFormat == null && numberFormat == null && johnzonConverter == null && deserializer == null) {
                     converters[i] = defaultConverters.get(parameter.getType());
                     itemConverters[i] = null;
@@ -1052,6 +1052,14 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
             return annotation;
         }
         return Meta.findMeta(param.getAnnotations(), api);
+    }
+
+    private static <T extends Annotation> T getAnnotationOnParameterOrParameterType(final Parameter param, final Class<T> api) {
+        final T annotation = getAnnotation(param, api);
+        if (annotation != null) {
+            return annotation;
+        }
+        return Meta.getAnnotation(param.getType(), api);
     }
 
     @Override
