@@ -20,18 +20,28 @@ package org.apache.johnzon.mapper.reflection;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class Records {
     private static final Method IS_RECORD;
+    private static final Method GET_RECORD_COMPONENTS;
+    private static final Method GET_NAME;
 
     static {
         Method isRecord = null;
+        Method getRecordComponents = null;
+        Method getName = null;
         try {
             isRecord = Class.class.getMethod("isRecord");
-        } catch (final NoSuchMethodException e) {
+            getRecordComponents = Class.class.getMethod("getRecordComponents");
+            getName = Class.forName("java.lang.reflect.RecordComponent").getMethod("getName");
+        } catch (final NoSuchMethodException | ClassNotFoundException e) {
             // no-op
         }
         IS_RECORD = isRecord;
+        GET_RECORD_COMPONENTS = getRecordComponents;
+        GET_NAME = getName;
     }
 
     private Records() {
@@ -43,6 +53,25 @@ public final class Records {
             return IS_RECORD != null && Boolean.class.cast(IS_RECORD.invoke(clazz));
         } catch (final InvocationTargetException | IllegalAccessException e) {
             return false;
+        }
+    }
+
+    /**
+     * @return the record component names of {@code clazz}, or {@code null} if it is not a record.
+     */
+    public static Set<String> componentNames(final Class<?> clazz) {
+        if (!isRecord(clazz)) {
+            return null;
+        }
+        try {
+            final Object[] components = Object[].class.cast(GET_RECORD_COMPONENTS.invoke(clazz));
+            final Set<String> names = new HashSet<>(components.length);
+            for (final Object component : components) {
+                names.add(String.class.cast(GET_NAME.invoke(component)));
+            }
+            return names;
+        } catch (final InvocationTargetException | IllegalAccessException e) {
+            return null;
         }
     }
 }
