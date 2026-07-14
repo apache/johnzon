@@ -22,7 +22,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
+import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -81,6 +83,42 @@ public class NumberSerializationTest {
         disabledAdapters.setUseBigDecimalStringAdapter(false);
         assertNull("BigDecimal adapter should be null when flag is false",
                 disabledAdapters.get(new AdapterKey(BigDecimal.class, String.class)));
+    }
+
+    @Test
+    public void bigIntegerLongExponent() {
+        String poc = "1e200000000";
+        Mapper mapper = new MapperBuilder().build();
+        {
+            final Object number = mapper.readObject(new StringReader(poc), byte.class);
+            assertNotNull(number);
+        }
+
+        {
+            final Object number = mapper.readObject(new StringReader(poc), long.class);
+            assertNotNull(number);
+        }
+
+        {
+            final Object number = mapper.readObject(new StringReader(poc), int.class);
+            assertNotNull(number);
+        }
+
+        try {
+            final Object number = mapper.readObject(new StringReader(poc), BigInteger.class);
+            fail();
+        } catch (ArithmeticException ae) {
+            // all fine
+        }
+
+        try {
+            final BigDecimal number = mapper.readObject(new StringReader(poc), BigDecimal.class);
+            final String strval = number.toBigIntegerExact().toString();
+            fail();
+        } catch (ArithmeticException ae) {
+            // all fine
+        }
+
     }
 
     @Test

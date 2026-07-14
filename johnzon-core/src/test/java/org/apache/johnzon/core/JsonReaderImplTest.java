@@ -25,11 +25,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
@@ -142,6 +144,62 @@ public class JsonReaderImplTest {
         JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
         String newJson = jsonValue.toString();
         assertEquals(json, newJson);
+    }
+
+    @Test
+    public void parseBigInteger() {
+        String json = "1e15";
+        JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
+        String newJson = jsonValue.toString();
+        assertEquals("1E+15", newJson);
+
+        assertTrue(jsonValue instanceof JsonNumber);
+        final BigInteger bigInteger = ((JsonNumber) jsonValue).bigIntegerValue();
+        assertEquals("1000000000000000", bigInteger.toString());
+    }
+
+
+    @Test
+    public void parseBigIntegerFailOnTooLongExponent() {
+        String json = "1e150000000";
+        JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
+        String newJson = jsonValue.toString();
+        assertEquals("1E+150000000", newJson);
+
+        assertTrue(jsonValue instanceof JsonNumber);
+
+        try {
+            ((JsonNumber) jsonValue).bigIntegerValue();
+            fail();
+        } catch (ArithmeticException ae) {
+            // all fine
+        }
+
+        try {
+            ((JsonNumber) jsonValue).bigIntegerValueExact();
+            fail();
+        } catch (ArithmeticException ae) {
+            // all fine
+        }
+
+        final long longVal = ((JsonNumber) jsonValue).longValue();
+        final int intVal = ((JsonNumber) jsonValue).intValue();
+        final double doubleVal = ((JsonNumber) jsonValue).doubleValue();
+
+        try {
+            final long lve = ((JsonNumber) jsonValue).longValueExact();
+            fail();
+        } catch (ArithmeticException ae) {
+            // all fine
+        }
+
+        try {
+            final long lve = ((JsonNumber) jsonValue).intValueExact();
+            fail();
+        } catch (ArithmeticException ae) {
+            // all fine
+        }
+
     }
 
     /**
