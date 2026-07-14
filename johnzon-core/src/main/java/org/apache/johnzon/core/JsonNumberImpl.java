@@ -55,6 +55,7 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public int intValueExact() {
+        maxBigDecimalScale.accept(value);
         checkFractionalPart();
         return value.intValueExact();
     }
@@ -66,6 +67,7 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public long longValueExact() {
+        maxBigDecimalScale.accept(value);
         checkFractionalPart();
         return value.longValueExact();
     }
@@ -89,6 +91,7 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
 
     @Override
     public BigDecimal bigDecimalValue() {
+        maxBigDecimalScale.accept(value);
         return value;
     }
 
