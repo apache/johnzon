@@ -89,9 +89,16 @@
     
     <footer>
         <![CDATA[
-        <div class="row span16"><div>Apache Johnzon, Apache, the Apache feather logo, and the Apache Johnzon project logos are trademarks of The Apache Software Foundation.
+        <div class="row span16"><div>Copyright &copy; 2014-2026 The Apache Software Foundation.<br/>
+        Apache Johnzon, Apache, the Apache logo, and the Apache Johnzon project logos are trademarks of The Apache Software Foundation.
         All other marks mentioned may be trademarks or registered trademarks of their respective owners.</div>
-        <a href="${project.url}/privacy-policy.html">Privacy Policy</a>
+        <a href="https://www.apache.org/">Foundation</a> |
+        <a href="https://www.apache.org/events/current-event.html">Events</a> |
+        <a href="https://www.apache.org/licenses/">License</a> |
+        <a href="https://www.apache.org/security/">Security</a> |
+        <a href="https://www.apache.org/foundation/sponsorship.html">Sponsorship</a> |
+        <a href="https://www.apache.org/foundation/thanks.html">Thanks</a> |
+        <a href="https://privacy.apache.org/policies/privacy-policy-public.html">Privacy</a>
         </div>
         ]]>
     </footer>

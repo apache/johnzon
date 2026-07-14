@@ -23,6 +23,9 @@ import org.junit.Rule;
 import org.junit.Test;
 
 import jakarta.json.bind.adapter.JsonbAdapter;
+import jakarta.json.bind.annotation.JsonbCreator;
+import jakarta.json.bind.annotation.JsonbProperty;
+import jakarta.json.bind.annotation.JsonbTypeAdapter;
 
 import static org.junit.Assert.assertEquals;
 
@@ -41,6 +44,18 @@ public class JsonbAdapterTest {
 
         // then
         assertEquals("\"#336699\"", json);
+    }
+
+    @Test
+    public void adapterAtConstructorParameterRecognized() {
+        // given
+        String json = "{\"innerValue\": \"value\"}";
+
+        // when
+        OuterObject object = jsonbRule.fromJson(json, OuterObject.class);
+
+        // then
+        assertEquals("value", object.innerObject.value);
     }
 
     interface ValueType<T> {
@@ -74,6 +89,39 @@ public class JsonbAdapterTest {
         @Override
         public ColorId adaptFromJson(String s) throws Exception {
             return new ColorId(s);
+        }
+    }
+
+    public static class OuterObject {
+
+        private InnerObject innerObject;
+
+        @JsonbCreator
+        public OuterObject(@JsonbProperty("innerValue") InnerObject object) {
+            innerObject = object;
+        }
+    }
+
+    @JsonbTypeAdapter(InnerObjectAdapter.class)
+    static class InnerObject {
+
+        private String value;
+
+        public InnerObject(String value) {
+            this.value = value;
+        }
+    }
+
+    public static class InnerObjectAdapter implements JsonbAdapter<InnerObject, String> {
+
+        @Override
+        public String adaptToJson(InnerObject object) throws Exception {
+            return object.value;
+        }
+
+        @Override
+        public InnerObject adaptFromJson(String value) throws Exception {
+            return new InnerObject(value);
         }
     }
 }
