@@ -31,11 +31,13 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -161,45 +163,55 @@ public class JsonReaderImplTest {
 
     @Test
     public void parseBigIntegerFailOnTooLongExponent() {
-        String json = "1e150000000";
+        String json = "1e1500000000";
         JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
         String newJson = jsonValue.toString();
-        assertEquals("1E+150000000", newJson);
+        assertEquals("1E+1500000000", newJson);
 
         assertTrue(jsonValue instanceof JsonNumber);
 
+        final JsonNumber jsonNumber = (JsonNumber) jsonValue;
+
         try {
-            ((JsonNumber) jsonValue).bigIntegerValue();
+            jsonNumber.bigIntegerValue();
             fail();
         } catch (ArithmeticException ae) {
             // all fine
         }
 
         try {
-            ((JsonNumber) jsonValue).bigIntegerValueExact();
+            jsonNumber.bigIntegerValueExact();
             fail();
         } catch (ArithmeticException ae) {
             // all fine
         }
 
-        final long longVal = ((JsonNumber) jsonValue).longValue();
-        final int intVal = ((JsonNumber) jsonValue).intValue();
-        final double doubleVal = ((JsonNumber) jsonValue).doubleValue();
+        // we don't need to assert the return values, it's just to trigger timeouts
+        final long longVal = jsonNumber.longValue();
+        final int intVal = jsonNumber.intValue();
+        final double doubleVal = jsonNumber.doubleValue();
+        jsonNumber.numberValue();
+        jsonNumber.isIntegral();
+        jsonNumber.hashCode();
 
+        assertArithmeticException(()-> jsonNumber.equals(new JsonNumberImpl(BigDecimal.valueOf(1, 1000000000),
+                ((JsonProviderImpl)JsonProviderImpl.provider())::checkBigDecimalScale)));
+
+        assertArithmeticException(()-> jsonNumber.bigDecimalValue().longValueExact());
+
+        assertArithmeticException(()-> jsonNumber.longValueExact());
+        assertArithmeticException(()-> jsonNumber.intValueExact());
+
+
+    }
+
+    private void assertArithmeticException(Supplier<?> supplier) {
         try {
-            final long lve = ((JsonNumber) jsonValue).longValueExact();
+            supplier.get();
             fail();
         } catch (ArithmeticException ae) {
             // all fine
         }
-
-        try {
-            final long lve = ((JsonNumber) jsonValue).intValueExact();
-            fail();
-        } catch (ArithmeticException ae) {
-            // all fine
-        }
-
     }
 
     /**
