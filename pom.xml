@@ -102,6 +102,13 @@
         <version>${junit.version}</version>
         <scope>test</scope>
       </dependency>
+
+      <dependency>
+        <groupId>commons-io</groupId>
+        <artifactId>commons-io</artifactId>
+        <version>20030203.000550</version>
+        <scope>provided</scope>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
