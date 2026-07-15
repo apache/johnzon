@@ -59,6 +59,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -98,6 +99,8 @@ public class MapperBuilder {
     private Map<Class<?>, String[]> ignoredForFields = new HashMap<Class<?>, String[]>();
     private Map<Class<?>, Class<?>> interfaceImplementationMapping = new HashMap<>();
     private BaseAccessMode.FieldFilteringStrategy fieldFilteringStrategy = null;
+    private Set<String> accessModeExcludedMethods = null;
+    private boolean supportAllRecordAttributes;
     private boolean primitiveConverters;
     private boolean failOnUnknownProperties;
     private SerializeValueFilter serializeValueFilter;
@@ -185,6 +188,27 @@ public class MapperBuilder {
                 throw new IllegalArgumentException("fieldFilteringStrategy can't be set with this access mode: " + accessMode);
             }
             BaseAccessMode.class.cast(accessMode).setFieldFilteringStrategy(fieldFilteringStrategy);
+        }
+        if (accessModeExcludedMethods != null) {
+            if (MethodAccessMode.class.isInstance(accessMode)) {
+                MethodAccessMode.class.cast(accessMode).setExcludedMethods(accessModeExcludedMethods);
+            } else if (FieldAndMethodAccessMode.class.isInstance(accessMode)) {
+                FieldAndMethodAccessMode.class.cast(accessMode).setExcludedMethods(accessModeExcludedMethods);
+            }
+        }
+        if (supportAllRecordAttributes) {
+            if (MethodAccessMode.class.isInstance(accessMode)) {
+                MethodAccessMode.class.cast(accessMode).setSupportAllRecordAttributes(true);
+            } else if (FieldAndMethodAccessMode.class.isInstance(accessMode)) {
+                FieldAndMethodAccessMode.class.cast(accessMode).setSupportAllRecordAttributes(true);
+            }
+        }
+        if (version >= 0) {
+            if (MethodAccessMode.class.isInstance(accessMode)) {
+                MethodAccessMode.class.cast(accessMode).setVersion(version);
+            } else if (FieldAndMethodAccessMode.class.isInstance(accessMode)) {
+                FieldAndMethodAccessMode.class.cast(accessMode).setVersion(version);
+            }
         }
         if (!ignoredForFields.isEmpty()) {
             if (BaseAccessMode.class.isInstance(accessMode)) {
@@ -363,6 +387,16 @@ public class MapperBuilder {
             default:
                 throw new IllegalArgumentException("Unknown field filter strategy: " + mode);
         }
+    }
+
+    public MapperBuilder setAccessModeExcludedMethods(final Set<String> excludedMethods) {
+        this.accessModeExcludedMethods = excludedMethods;
+        return this;
+    }
+
+    public MapperBuilder setSupportAllRecordAttributes(final boolean supportAllRecordAttributes) {
+        this.supportAllRecordAttributes = supportAllRecordAttributes;
+        return this;
     }
 
     public MapperBuilder setSupportHiddenAccess(final boolean supportHiddenAccess) {
