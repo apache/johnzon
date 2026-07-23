@@ -34,6 +34,8 @@ import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.Map;
 
+import static org.apache.johnzon.core.Strings.toUnicode;
+
 class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private final transient Writer writer;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
@@ -547,11 +549,6 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
     private static final String UNICODE_PREFIX = "\\u";
     private static final String UNICODE_PREFIX_HELPER = "000";
 
-    private static String toUnicode(final char c) {
-        final String hex = UNICODE_PREFIX_HELPER + Integer.toHexString(c);
-        final String s = UNICODE_PREFIX + hex.substring(hex.length() - 4);
-        return s;
-    }
 
     private void justWrite(final String value) {
         final int valueLength = value.length();
