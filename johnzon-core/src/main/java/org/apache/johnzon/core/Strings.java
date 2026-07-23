@@ -102,7 +102,7 @@ class Strings implements JsonChars {
         }
     }
 
-    private static String toUnicode(final char c) {
+    public static String toUnicode(final char c) {
         final String found = UNICODE_CACHE.get(c);
         if (found != null) {
             return found;
