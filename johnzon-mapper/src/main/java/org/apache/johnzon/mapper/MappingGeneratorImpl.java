@@ -279,17 +279,17 @@ public class MappingGeneratorImpl implements MappingGenerator {
         return handled;
     }
 
-    private boolean writePrimitives(final String key, final Class<?> type, final Object value,
-                                    final JsonGenerator generator) {
+
+    private boolean writePrimitives(final String key, final Class<?> type, final Object value, final JsonGenerator generator) {
         boolean handled = false;
         if (type == String.class) {
             generator.write(key, value.toString());
             handled = true;
         } else if (JsonValue.class.isAssignableFrom(type)) {
-            generator.write(key, JsonValue.class.cast(value));
+            generator.write(key, (JsonValue)value);
             handled = true;
-        } else if (type == long.class || type == Long.class) {
-            final long longValue = Long.class.cast(value).longValue();
+        } else if (type == Long.class) {
+            final long longValue = ((Long) value).longValue();
             if (isInJsRange(longValue)) {
                 generator.write(key, longValue);
             } else {
@@ -297,21 +297,21 @@ public class MappingGeneratorImpl implements MappingGenerator {
             }
             handled = true;
         } else if (isInt(type)) {
-            generator.write(key, Number.class.cast(value).intValue());
+            generator.write(key, ((Number) value).intValue());
             handled = true;
         } else if (isFloat(type)) {
-            if (type == Float.class || type == float.class) {
-                if (!Float.isNaN(Float.class.cast(value))) {
+            if (type == Float.class) {
+                if (!Float.isNaN((Float) value)) {
                     generator.write(key, new BigDecimal(value.toString()));
                 }
             } else {
-                final double doubleValue = Number.class.cast(value).doubleValue();
+                final double doubleValue = ((Number) value).doubleValue();
                 if (!Double.isNaN(doubleValue)) {
                     generator.write(key, doubleValue);
                 }
             }
             handled = true;
-        } else if (type == boolean.class || type == Boolean.class) {
+        } else if (type == Boolean.class) {
             generator.write(key, Boolean.class.cast(value));
             handled = true;
         } else if (type == BigDecimal.class) {
@@ -320,7 +320,7 @@ public class MappingGeneratorImpl implements MappingGenerator {
         } else if (type == BigInteger.class) {
             generator.write(key, BigInteger.class.cast(value));
             handled = true;
-        } else if (type == char.class || type == Character.class) {
+        } else if (type == Character.class) {
             generator.write(key, Character.class.cast(value).toString());
             handled = true;
         }
@@ -329,14 +329,13 @@ public class MappingGeneratorImpl implements MappingGenerator {
 
 
     private static boolean isInt(final Class<?> type) {
-        return type == int.class || type == Integer.class
-                || type == byte.class || type == Byte.class
-                || type == short.class || type == Short.class;
+        // no need to check for primitives, as those are already converted to wrapper types
+        return type == Integer.class || type == Byte.class || type == Short.class;
     }
 
     private static boolean isFloat(final Class<?> type) {
-        return type == double.class || type == Double.class
-                || type == float.class || type == Float.class;
+        // no need to check for primitives, as those are already converted to wrapper types
+        return type == Double.class || type == Float.class;
     }
 
 
