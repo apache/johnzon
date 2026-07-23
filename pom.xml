@@ -52,7 +52,7 @@
     <felix.plugin.version>5.1.9</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <bnd.version>6.1.0</bnd.version>
-    <cxf.version>4.0.0</cxf.version>
+    <cxf.version>4.0.9</cxf.version>
     <checkstyle.version>3.0.0</checkstyle.version> <!-- Increasing checkstyle to 3.1 or above will require changes to the checkstyleRules -->
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
