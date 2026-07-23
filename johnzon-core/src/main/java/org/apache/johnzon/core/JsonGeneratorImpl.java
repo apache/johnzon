@@ -660,9 +660,13 @@ class JsonGeneratorImpl implements JsonGenerator, JsonChars, Serializable {
         if (peek == GeneratorState.START_ARRAY || peek == GeneratorState.IN_ARRAY) {
             writeIndent();
         }
-        justWrite(QUOTE_CHAR);
-        writeEscaped0(value);
-        justWrite(QUOTE_CHAR);
+        if (value == null) {
+            writeValue(NULL);
+        } else {
+            justWrite(QUOTE_CHAR);
+            writeEscaped0(value);
+            justWrite(QUOTE_CHAR);
+        }
         alignState();
     }
 
