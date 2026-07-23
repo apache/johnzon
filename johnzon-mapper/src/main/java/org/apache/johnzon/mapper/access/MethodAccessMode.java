@@ -31,7 +31,6 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
@@ -40,7 +39,6 @@ import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.JohnzonRecord;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.ObjectConverter;
-import org.apache.johnzon.mapper.reflection.Records;
 
 public class MethodAccessMode extends BaseAccessMode {
     private final boolean supportGetterAsWritter;
@@ -54,13 +52,9 @@ public class MethodAccessMode extends BaseAccessMode {
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<>();
         if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
-            // real records expose exactly their components, only @JohnzonRecord classes
-            // fall back on "any no-arg instance method" since they carry no component metadata
-            final Set<String> components = Records.componentNames(clazz);
             readers.putAll(Stream.of(clazz.getMethods())
                 .filter(it -> it.getDeclaringClass() != Object.class && it.getParameterCount() == 0)
                 .filter(it -> !Modifier.isStatic(it.getModifiers()))
-                .filter(it -> components == null || components.contains(it.getName()))
                 .filter(it -> !"toString".equals(it.getName()) && !"hashCode".equals(it.getName()))
                 .filter(it -> !isIgnored(it.getName()) && Meta.getAnnotation(it, JohnzonAny.class) == null)
                 .collect(toMap(m -> extractKey(m.getName(), m, null), it -> new MethodReader(it, it.getGenericReturnType()))));
