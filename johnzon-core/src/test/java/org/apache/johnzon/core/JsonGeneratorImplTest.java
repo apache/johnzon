@@ -74,6 +74,30 @@ public class JsonGeneratorImplTest {
     }
 
     @Test
+    public void writeKeyWriteNullBigDecimalAttribute() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer)
+            .writeStartObject().write("foo", (BigDecimal) null).writeEnd().close();
+        assertEquals("{\"foo\":null}", writer.toString());
+    }
+
+    @Test
+    public void writeKeyWriteNullBigIntegerAttribute() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer)
+            .writeStartObject().write("foo", (BigInteger) null).writeEnd().close();
+        assertEquals("{\"foo\":null}", writer.toString());
+    }
+
+    @Test
+    public void writeKeyWriteNullStringAttribute() {
+        final StringWriter writer = new StringWriter();
+        Json.createGenerator(writer)
+            .writeStartObject().write("foo", (String) null).writeEnd().close();
+        assertEquals("{\"foo\":null}", writer.toString());
+    }
+
+    @Test
     public void closeOnce() throws Throwable {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final JsonGenerator generator = Json.createGenerator(baos).writeStartObject().writeEnd();
