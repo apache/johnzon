@@ -71,6 +71,12 @@
       <version>2.4.240</version>
       <scope>test</scope>
     </dependency>
+    <dependency> <!-- to build real records while compiling at a pre-record language level -->
+      <groupId>org.apache.xbean</groupId>
+      <artifactId>xbean-asm9-shaded</artifactId>
+      <version>4.20</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <properties>
