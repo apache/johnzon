@@ -18,25 +18,17 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 /**
- * TODO: this whole class can be removed once we switch to Java17++
+ * TODO: this whole class can be removed once we switch to Java16++
+ * @deprecated use Class.isRecord() once we switch to Java16++
  */
+@Deprecated
 public final class Records {
 
-    private static final Method IS_RECORD;
     private static final Class RECORD_CLASS;
     static {
-        Method isRecord = null;
-        try {
-            isRecord = Class.class.getMethod("isRecord");
-        } catch (final NoSuchMethodException e) {
-            // no-op
-        }
-        IS_RECORD = isRecord;
-
         Class recordClass = null;
         try {
             recordClass = Class.forName("java.lang.Record");
@@ -50,18 +42,8 @@ public final class Records {
         // no-op
     }
 
+    @Deprecated
     public static boolean isRecord(final Class<?> clazz) {
-        if (IS_RECORD == null) {
-            return false;
-        }
-        if (clazz.getSuperclass() != RECORD_CLASS) {
-            return false;
-        }
-
-        try {
-            return Boolean.class.cast(IS_RECORD.invoke(clazz));
-        } catch (final InvocationTargetException | IllegalAccessException e) {
-            return false;
-        }
+        return clazz.getSuperclass() == RECORD_CLASS && (clazz.getModifiers() & Modifier.FINAL) != 0;
     }
 }
