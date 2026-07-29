@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 
 public final class Records {
     private static final Method IS_RECORD;
+    private static final Class RECORD_CLASS;
 
     static {
         Method isRecord = null;
@@ -32,6 +33,14 @@ public final class Records {
             // no-op
         }
         IS_RECORD = isRecord;
+
+        Class recordClass = null;
+        try {
+            recordClass = Class.forName("java.lang.Record");
+        } catch (final ClassNotFoundException e) {
+            // no-op
+        }
+        RECORD_CLASS = recordClass;
     }
 
     private Records() {
@@ -39,8 +48,15 @@ public final class Records {
     }
 
     public static boolean isRecord(final Class<?> clazz) {
+        if (IS_RECORD == null) {
+            return false;
+        }
+        if (clazz.getSuperclass() != RECORD_CLASS) {
+            return false;
+        }
+
         try {
-            return IS_RECORD != null && Boolean.class.cast(IS_RECORD.invoke(clazz));
+            return Boolean.class.cast(IS_RECORD.invoke(clazz));
         } catch (final InvocationTargetException | IllegalAccessException e) {
             return false;
         }
