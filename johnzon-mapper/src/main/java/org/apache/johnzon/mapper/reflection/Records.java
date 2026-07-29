@@ -21,10 +21,13 @@ package org.apache.johnzon.mapper.reflection;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+/**
+ * TODO: this whole class can be removed once we switch to Java17++
+ */
 public final class Records {
+
     private static final Method IS_RECORD;
     private static final Class RECORD_CLASS;
-
     static {
         Method isRecord = null;
         try {
