@@ -20,6 +20,7 @@ package org.apache.johnzon.jsonschema;
 
 import static java.util.Arrays.asList;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.ArrayList;
@@ -221,35 +222,60 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
     private Function<JsonValue, Stream<ValidationResult.ValidationError>> buildAdditionalPropertiesValidations(final String[] path,
                                                                                                      final JsonObject schema,
                                                                                                      final Function<JsonValue, JsonValue> valueProvider) {
-        return ofNullable(schema.get("additionalProperties"))
-                .filter(it -> it.getValueType() == JsonValue.ValueType.OBJECT)
-                .map(it -> {
-                    Predicate<String> excluded = s -> false;
-                    if (schema.containsKey("properties")) {
-                        final Set<String> properties = schema.getJsonObject("properties").keySet();
-                        excluded = excluded.and(s -> !properties.contains(s));
-                    }
-                    if (schema.containsKey("patternProperties")) {
-                        final List<Predicate<CharSequence>> properties = schema.getJsonObject("patternProperties").keySet().stream()
-                                                                               .map(regexFactory.get())
-                                                                               .collect(toList());
-                        excluded = excluded.and(s -> properties.stream().noneMatch(p -> p.test(s)));
-                    }
-                    final Predicate<String> excludeAttrRef = excluded;
-                    final JsonObject currentSchema = it.asJsonObject();
-                    return (Function<JsonValue, Stream<ValidationResult.ValidationError>>) validable -> {
-                        if (validable.getValueType() != JsonValue.ValueType.OBJECT) {
-                            return Stream.empty();
-                        }
-                        return validable.asJsonObject().entrySet().stream()
-                                        .filter(e -> excludeAttrRef.test(e.getKey()))
-                                        .flatMap(e -> buildValidator(
-                                                Stream.concat(Stream.of(path), Stream.of(e.getKey())).toArray(String[]::new),
-                                                currentSchema,
-                                                new ChainedValueAccessor(valueProvider, e.getKey())).apply(validable));
-                    };
-                })
-                .orElse(NO_VALIDATION);
+        final JsonValue additionalProperties = schema.get("additionalProperties");
+        if (additionalProperties == null || additionalProperties.getValueType() == JsonValue.ValueType.TRUE) {
+            return NO_VALIDATION;
+        }
+        if (additionalProperties.getValueType() != JsonValue.ValueType.OBJECT &&
+                additionalProperties.getValueType() != JsonValue.ValueType.FALSE) {
+            return NO_VALIDATION;
+        }
+
+        // a property is "additional" when it is neither declared in "properties" nor matched by "patternProperties"
+        Predicate<String> additional = s -> true;
+        if (schema.containsKey("properties")) {
+            final Set<String> properties = schema.getJsonObject("properties").keySet();
+            additional = additional.and(s -> !properties.contains(s));
+        }
+        if (schema.containsKey("patternProperties")) {
+            final List<Predicate<CharSequence>> properties = schema.getJsonObject("patternProperties").keySet().stream()
+                                                                   .map(regexFactory.get())
+                                                                   .collect(toList());
+            additional = additional.and(s -> properties.stream().noneMatch(p -> p.test(s)));
+        }
+        final Predicate<String> isAdditional = additional;
+
+        if (additionalProperties.getValueType() == JsonValue.ValueType.FALSE) {
+            return root -> {
+                final JsonValue validable = extractValidable(root, valueProvider);
+                if (validable == null || validable.getValueType() != JsonValue.ValueType.OBJECT) {
+                    return Stream.empty();
+                }
+                return validable.asJsonObject().keySet().stream()
+                                .filter(isAdditional)
+                                .map(key -> new ValidationResult.ValidationError(
+                                        Stream.concat(Stream.of(path), Stream.of(key)).collect(joining("/", "/", "")),
+                                        "Additional property '" + key + "' is not allowed"));
+            };
+        }
+
+        final JsonObject currentSchema = additionalProperties.asJsonObject();
+        return root -> {
+            final JsonValue validable = extractValidable(root, valueProvider);
+            if (validable == null || validable.getValueType() != JsonValue.ValueType.OBJECT) {
+                return Stream.empty();
+            }
+            return validable.asJsonObject().keySet().stream()
+                            .filter(isAdditional)
+                            .flatMap(key -> buildValidator(
+                                    Stream.concat(Stream.of(path), Stream.of(key)).toArray(String[]::new),
+                                    currentSchema,
+                                    new ChainedValueAccessor(valueProvider, key)).apply(root));
+        };
+    }
+
+    private static JsonValue extractValidable(final JsonValue root, final Function<JsonValue, JsonValue> valueProvider) {
+        return valueProvider == null ? root : valueProvider.apply(root);
     }
 
     private Function<JsonValue, Stream<ValidationResult.ValidationError>> toFunction(

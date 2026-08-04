@@ -39,7 +39,7 @@ public class PatternValidation implements ValidationExtension {
 
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        if (model.getSchema().getString("type", "object").equals("string")) {
+        if (SchemaType.isString(model.getSchema())) {
             return Optional.ofNullable(model.getSchema().get("pattern"))
                     .filter(val -> val.getValueType() == JsonValue.ValueType.STRING)
                     .map(pattern -> new Impl(model.toPointer(), model.getValueProvider(), predicateFactory.apply(JsonString.class.cast(pattern).getString())));

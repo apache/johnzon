@@ -32,7 +32,7 @@ import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 public class ExclusiveMaximumValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        if (model.getSchema().getString("type", "object").equals("number")) {
+        if (SchemaType.isNumber(model.getSchema())) {
             return Optional.ofNullable(model.getSchema().get("exclusiveMaximum"))
                     .filter(v -> v.getValueType() == JsonValue.ValueType.NUMBER)
                     .map(m -> new Impl(model.toPointer(), model.getValueProvider(), JsonNumber.class.cast(m).doubleValue()));

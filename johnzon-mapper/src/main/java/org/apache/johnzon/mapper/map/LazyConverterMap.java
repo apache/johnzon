@@ -23,7 +23,6 @@ import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.BigIntegerConverter;
-import org.apache.johnzon.mapper.converter.ClassConverter;
 import org.apache.johnzon.mapper.converter.DateConverter;
 import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.converter.StringConverter;
@@ -141,7 +140,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         return Stream.concat(
                         super.keySet().stream()
                                 .filter(it -> super.get(it) != NO_ADAPTER),
-                        Stream.of(Date.class, URI.class, URL.class, Class.class, String.class, BigDecimal.class, BigInteger.class,
+                        Stream.of(Date.class, URI.class, URL.class, String.class, BigDecimal.class, BigInteger.class,
                                         Locale.class, Period.class, Duration.class, Calendar.class, GregorianCalendar.class, TimeZone.class,
                                         ZoneId.class, ZoneOffset.class, SimpleTimeZone.class, Instant.class, LocalDateTime.class, LocalDate.class,
                                         ZonedDateTime.class, OffsetDateTime.class, OffsetTime.class)
@@ -160,9 +159,9 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         if (from == URL.class) {
             return add(key, new ConverterAdapter<>(new URLConverter(), URL.class));
         }
-        if (from == Class.class) {
-            return add(key, new ConverterAdapter<>(new ClassConverter(), Class.class));
-        }
+        // no Class.class converter on purpose: deserializing a java.lang.Class from a - potentially untrusted -
+        // document lets the payload pick which class gets loaded, register a ClassConverter with its allow-lists
+        // explicitly if you need it
         if (from == String.class) {
             return add(key, new ConverterAdapter<>(new StringConverter(), String.class));
         }

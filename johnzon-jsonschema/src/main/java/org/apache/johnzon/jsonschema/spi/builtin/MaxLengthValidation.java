@@ -33,7 +33,7 @@ import org.apache.johnzon.jsonschema.spi.ValidationExtension;
 public class MaxLengthValidation implements ValidationExtension {
     @Override
     public Optional<Function<JsonValue, Stream<ValidationResult.ValidationError>>> create(final ValidationContext model) {
-        if (model.getSchema().getString("type", "object").equals("string")) {
+        if (SchemaType.isString(model.getSchema())) {
             return Optional.ofNullable(model.getSchema().get("maxLength"))
                     .filter(v -> v.getValueType() == JsonValue.ValueType.NUMBER)
                     .map(m -> new Impl(model.toPointer(), model.getValueProvider(), JsonNumber.class.cast(m).intValue()));

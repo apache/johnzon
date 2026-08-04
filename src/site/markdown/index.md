@@ -202,6 +202,20 @@ public class MyModel {
 }
 ]]></pre>
 
+##### Mapping java.lang.Class
+
+`ClassConverter` is *not* registered by default: reading a `java.lang.Class` from a document lets the document
+pick which class is loaded, so it must be registered explicitly with the classes it is allowed to load - both
+allow-lists (exact names and name prefixes) default to empty, ie any incoming class name is rejected:
+
+<pre class="prettyprint linenums"><![CDATA[
+new MapperBuilder()
+    .addConverter(Class.class, new ClassConverter(
+        List.of("com.company.handler.Default"),   // allowed class names
+        List.of("com.company.handler.")))         // allowed class name prefixes
+    .build();
+]]></pre>
+
 #### @JohnzonProperty
 
 Sometimes the json name is not java friendly (_foo or foo-bar or even 200 for instance). For that cases
