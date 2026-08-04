@@ -57,7 +57,7 @@
     <!-- JVM values for surefire plugin -->
     <surefire.jvm.params>-Xms1024m -Xmx2048m -Dfile.encoding=UTF-8</surefire.jvm.params>
     <junit.version>5.14.4</junit.version>
-    <owb.version>4.0.0</owb.version>
+    <owb.version>4.1.1</owb.version>
     <arquillian.jvm.args />
   </properties>
 

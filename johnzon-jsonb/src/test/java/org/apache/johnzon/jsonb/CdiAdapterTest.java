@@ -22,7 +22,6 @@ import org.apache.johnzon.jsonb.cdi.JohnzonCdiExtension;
 import org.apache.webbeans.config.WebBeansContext;
 import org.apache.webbeans.config.WebBeansFinder;
 import org.apache.webbeans.corespi.DefaultSingletonService;
-import org.apache.webbeans.corespi.scanner.xbean.CdiArchive;
 import org.apache.webbeans.corespi.se.DefaultScannerService;
 import org.apache.webbeans.lifecycle.StandaloneLifeCycle;
 import org.apache.webbeans.proxy.OwbNormalScopeProxy;
@@ -46,15 +45,15 @@ import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.adapter.JsonbAdapter;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import java.lang.annotation.Annotation;
-import java.net.MalformedURLException;
-import java.net.URI;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
@@ -68,18 +67,15 @@ public class CdiAdapterTest {
         final Map<Class<?>, Object> services = new HashMap<>();
         services.put(ScannerService.class, new DefaultScannerService() {
             @Override
-            protected void configure() {
-                initFinder();
+            public Map<BeanArchiveService.BeanArchiveInformation, Set<Class<?>>> getBeanClassesPerBda() {
+                final Map<BeanArchiveService.BeanArchiveInformation, Set<Class<?>>> beanClassesPerBda = super.getBeanClassesPerBda();
+
                 final DefaultBeanArchiveInformation information = new DefaultBeanArchiveInformation("file://foo");
                 information.setBeanDiscoveryMode(BeanArchiveService.BeanDiscoveryMode.ALL);
-                try {
-                    archive.classesByUrl().put(information.getBdaUrl(), new CdiArchive.FoundClasses(
-                            URI.create(information.getBdaUrl()).toURL(), asList(
-                            Service.class.getName(), ModelAdapter.class.getName()),
-                            information));
-                } catch (final MalformedURLException e) {
-                    throw new IllegalStateException(e);
-                }
+
+                beanClassesPerBda.put(information, new HashSet<>(Arrays.asList(Service.class, ModelAdapter.class)));
+
+                return beanClassesPerBda;
             }
         });
         services.put(ResourceInjectionService.class, new ResourceInjectionService() {
