@@ -67,7 +67,7 @@ public class ClassConverter implements Converter<Class<?>> {
         try {
             // never initialize, the class must not run its static blocks just because it was named in a document
             return Class.forName(text, false, Thread.currentThread().getContextClassLoader());
-        } catch (final ClassNotFoundException e) {
+        } catch (final ClassNotFoundException | NoClassDefFoundError e) {
             throw new IllegalArgumentException(e);
         }
     }
