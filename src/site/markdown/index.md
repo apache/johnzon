@@ -47,7 +47,7 @@ You'll surely want to add the API as dependency too:
 <dependency>
   <groupId>jakarta.json</groupId>
   <artifactId>jakarta.json-api</artifactId>
-  <version>2.1.2</version>
+  <version>2.1.3</version>
   <scope>provided</scope> <!-- or compile if your environment doesn't provide it -->
 </dependency>
 ]]></pre>
@@ -434,35 +434,35 @@ if you write in the servlet context an attribute named `org.apache.johnzon.webso
 
 Encoders:
 
-*  `org.apache.johnzon.websocket.jsr.JsrObjectEncoder`
-*  `org.apache.johnzon.websocket.jsr.JsrArrayEncoder`
-*  `org.apache.johnzon.websocket.jsr.JsrStructureEncoder`
+* `org.apache.johnzon.websocket.jsr.JsrObjectEncoder`
+* `org.apache.johnzon.websocket.jsr.JsrArrayEncoder`
+* `org.apache.johnzon.websocket.jsr.JsrStructureEncoder`
 
 Decoders:
 
-*  `org.apache.johnzon.websocket.jsr.JsrObjectDecoder`
-*  `org.apache.johnzon.websocket.jsr.JsrArrayDecoder`
-*  `org.apache.johnzon.websocket.jsr.JsrStructureDecoder`
+* `org.apache.johnzon.websocket.jsr.JsrObjectDecoder`
+* `org.apache.johnzon.websocket.jsr.JsrArrayDecoder`
+* `org.apache.johnzon.websocket.jsr.JsrStructureDecoder`
 
 #### Mapper integration
 
 Encoder:
 
-*  `org.apache.johnzon.websocket.mapper.JohnzonTextEncoder`
+* `org.apache.johnzon.websocket.mapper.JohnzonTextEncoder`
 
 Decoder:
 
-*  `org.apache.johnzon.websocket.mapper.JohnzonTextDecoder`
+* `org.apache.johnzon.websocket.mapper.JohnzonTextDecoder`
 
 #### JSON-B integration
 
 Encoder:
 
-*  `org.apache.johnzon.websocket.jsonb.JsonbTextEncoder`
+* `org.apache.johnzon.websocket.jsonb.JsonbTextEncoder`
 
 Decoder:
 
-*  `org.apache.johnzon.websocket.jsonb.JsonbTextDecoder`
+* `org.apache.johnzon.websocket.jsonb.JsonbTextDecoder`
 
 #### Sample
 

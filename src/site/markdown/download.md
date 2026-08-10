@@ -34,9 +34,10 @@ Read more about [how we sign Apache Releases](http://www.apache.org/info/verific
 
 ----------
 
-## Johnzon-2.0.x
+## Johnzon-2.x
 
-Apache Johnzon 2.0.x implements the JSON-P 2.1 and JSON-B 3.0 specifications which are in line with the Jakarta EE Platform 10. This version is not backward compatible due to the namespace change from `javax` to `jakarta`. 
+Apache Johnzon 2.x implements the JSON-P 2.1 and JSON-B 3.0 specifications which are in line with the Jakarta EE Platform 10.
+This version is not backward compatible to Johnzon-1.x due to the namespace change from `javax` to `jakarta`. 
 Apache Johnzon does not implement Jakarta EE 9 per se, because there was no change in terms of APIs except the namespace change. 
 So we decided to use Apache Johnzon 1.2.x bellow and publish a Jakarta compatible version using bytecode transformation. All artifacts can be used with the classifier `jakarta`.
 
@@ -46,16 +47,16 @@ Binaries should be obtained from [maven central](https://repo.maven.apache.org/m
 
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
-* [apache-johnzon-2.0.1-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-2.0.1/apache-johnzon-2.0.1-src.zip)
-* [apache-johnzon-2.0.1-src.zip.sha512](https://downloads.apache.org/johnzon/johnzon-2.0.1/apache-johnzon-2.0.1-src.zip.sha512)
-* [apache-johnzon-2.0.1-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-2.0.1/apache-johnzon-2.0.1-src.zip.asc)
-* [apache-johnzon-2.0.1-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-2.0.1/apache-johnzon-2.0.1-src.tar.gz)
-* [apache-johnzon-2.0.1-src.tar.gz.sha512](https://downloads.apache.org/johnzon/johnzon-2.0.1/apache-johnzon-2.0.1-src.tar.gz.sha512)
-* [apache-johnzon-2.0.1-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-2.0.1/apache-johnzon-2.0.1-src.tar.gz.asc)
+* [apache-johnzon-2.2.0-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-2.2.0/apache-johnzon-2.2.0-src.zip)
+* [apache-johnzon-2.2.0-src.zip.sha512](https://downloads.apache.org/johnzon/johnzon-2.2.0/apache-johnzon-2.2.0-src.zip.sha512)
+* [apache-johnzon-2.2.0-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-2.2.0/apache-johnzon-2.2.0-src.zip.asc)
+* [apache-johnzon-2.2.0-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-2.2.0/apache-johnzon-2.2.0-src.tar.gz)
+* [apache-johnzon-2.2.0-src.tar.gz.sha512](https://downloads.apache.org/johnzon/johnzon-2.2.0/apache-johnzon-2.2.0-src.tar.gz.sha512)
+* [apache-johnzon-2.2.0-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-2.2.0/apache-johnzon-2.2.0-src.tar.gz.asc)
 
-## Johnzon-1.2.x
+## Johnzon-1.3.x
 
-Apache Johnzon 1.2.x implements the JSON-P 1.1 and JSON-B 1.0 specifications which are in line with the Jakarta EE Platform 8.
+Apache Johnzon 1.2.x and 1.3.x implement the JSON-P 1.1 and JSON-B 1.0 specifications which are in line with the Jakarta EE Platform 8.
 
 
 #### Binaries
@@ -64,42 +65,23 @@ Binaries should be obtained from [maven central](https://repo.maven.apache.org/m
 
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
-* [apache-johnzon-1.2.21-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.zip)
-* [apache-johnzon-1.2.21-src.zip.sha512](https://downloads.apache.org/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.zip.sha512)
-* [apache-johnzon-1.2.21-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.zip.asc)
-* [apache-johnzon-1.2.21-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.tar.gz)
-* [apache-johnzon-1.2.21-src.tar.gz.sha512](https://downloads.apache.org/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.tar.gz.sha512)
-* [apache-johnzon-1.2.21-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-1.2.21/apache-johnzon-1.2.21-src.tar.gz.asc)
+* [apache-johnzon-1.3.0-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.zip)
+* [apache-johnzon-1.3.0-src.zip.sha512](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.zip.sha512)
+* [apache-johnzon-1.3.0-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.zip.asc)
+* [apache-johnzon-1.3.0-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.tar.gz)
+* [apache-johnzon-1.3.0-src.tar.gz.sha512](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.tar.gz.sha512)
+* [apache-johnzon-1.3.0-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.tar.gz.asc)
 
 ## Johnzon-1.0.x
 
 Apache Johnzon 1.0.x implements the JSON-P 1.0 specification and a preliminary version of the JSON-B 1.0.
 This corresponds to JavaEE 7 level.
+This version is EOL!
 
-#### Binaries
-The binary distribution contains all Johnzon modules.
-
-* [apache-johnzon-1.0.2-bin.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip)
-* [apache-johnzon-1.0.2-bin.zip.sha256](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip.sha256)
-* [apache-johnzon-1.0.2-bin.zip.asc](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.zip.asc)
-* [apache-johnzon-1.0.2-bin.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.tar.gz)
-* [apache-johnzon-1.0.2-bin.tar.gz.sha256](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.tar.gz.sha256)
-* [apache-johnzon-1.0.2-bin.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-bin.tar.gz.asc)
-
-#### Source
-Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
-
-* [apache-johnzon-1.0.2-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.zip)
-* [apache-johnzon-1.0.2-src.zip.sha256](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.zip.sha256)
-* [apache-johnzon-1.0.2-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.zip.asc)
-* [apache-johnzon-1.0.2-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.tar.gz)
-* [apache-johnzon-1.0.2-src.tar.gz.sha256](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.tar.gz.sha256)
-* [apache-johnzon-1.0.2-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-1.0.2/apache-johnzon-1.0.2-src.tar.gz.asc)
--------
 
 ### Maven Dependencies
 
-#### APIs for Johnzon-2.0.x (Jakarta EE 10)
+#### APIs for Johnzon-2.x (Jakarta EE 10++)
 
 Since Java EE got open sourced to become Jakarta EE, the APIs can be used without license restrictions, so we moved away from our Apache APIs.
 
@@ -116,7 +98,7 @@ Since Java EE got open sourced to become Jakarta EE, the APIs can be used withou
         <scope>provided</scope>
     </dependency>
 
-#### APIs for Johnzon-1.1.x (JavaEE 8)
+#### APIs for Johnzon-1.2.x and 1.3.x (JavaEE 8)
 
     <dependency>
         <groupId>org.apache.geronimo.specs</groupId>
@@ -128,20 +110,6 @@ Since Java EE got open sourced to become Jakarta EE, the APIs can be used withou
         <groupId>org.apache.geronimo.specs</groupId>
         <artifactId>geronimo-jsonb_1.0_spec</artifactId>
         <version>1.2</version>
-    </dependency>
-
-#### APIs for Johnzon-1.0.x (JavaEE 7)
-
-    <dependency>
-        <groupId>org.apache.geronimo.specs</groupId>
-        <artifactId>geronimo-json_1.0_spec</artifactId>
-        <version>1.0-alpha-1</version>
-    </dependency>
-
-    <dependency>
-        <groupId>org.apache.geronimo.specs</groupId>
-        <artifactId>geronimo-jsonb_1.0_spec</artifactId>
-        <version>1.0</version>
     </dependency>
 
 Note that you should set the scope of those dependencies to either `provided` or `compile` depending on whether your environment already provide them or not.
