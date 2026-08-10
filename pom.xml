@@ -48,7 +48,7 @@
     <johnzon.site.url>https://svn.apache.org/repos/asf/johnzon/site/publish/</johnzon.site.url>
     <pubsub.url>scm:svn:${johnzon.site.url}</pubsub.url>
     <staging.directory>${project.build.directory}/site</staging.directory>
-    <surefire.plugin.version>3.2.5</surefire.plugin.version>
+    <surefire.plugin.version>3.5.6</surefire.plugin.version>
     <felix.plugin.version>5.1.9</felix.plugin.version>
     <bnd.version.policy>[$(version;==;$(@)),$(version;+;$(@)))</bnd.version.policy>
     <bnd.version>6.1.0</bnd.version>
