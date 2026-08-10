@@ -11,3 +11,4 @@ target
 .checkstyle
 *.sig
 *.patch
+*.log

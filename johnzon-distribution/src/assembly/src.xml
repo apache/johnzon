@@ -36,6 +36,7 @@
       <useDefaultExcludes>true</useDefaultExcludes>
       <excludes>
         <exclude>**/flume-og/**</exclude>
+        <exclude>**/*.log</exclude>
         <!-- build output -->
         <exclude>%regex[(?!((?!${project.build.directory}/)[^/]+/)*src/).*${project.build.directory}.*]</exclude>
         <exclude>%regex[(?!((?!${project.build.directory}/)[^/]+/)*src/)(.*/)?maven-eclipse\.xml]</exclude>
