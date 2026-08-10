@@ -160,6 +160,11 @@
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-site-plugin</artifactId>
           <version>3.12.1</version>
         </plugin>
@@ -450,6 +455,29 @@
           <argLine>${surefire.jvm.params}</argLine>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
+      </plugin>
+
+      <!-- Clean invalid XML characters from surefire reports before site generation
+           Jakarta EE TCK tests may write non-characters (U+FFFF, U+FFFE) to test output -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>clean-surefire-xml</id>
+            <phase>pre-site</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <replaceregexp match="[\uFFFF\uFFFE]" replace="" flags="g">
+                  <fileset dir="${project.basedir}" includes="**/target/surefire-reports/*.xml"/>
+                </replaceregexp>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
