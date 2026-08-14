@@ -705,12 +705,203 @@ public class JsonSchemaValidatorTest {
         assertTrue(validator.apply(jsonFactory.createObjectBuilder()
                 .add("1", 1)
                 .build()).isSuccess());
-        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder()
                 .add("1", "test")
                 .build()).isSuccess());
 
         validator.close();
     }
-    
 
+    @Test
+    public void additionalPropertiesSubSchemaSkipsDeclaredProperties() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("name", jsonFactory.createObjectBuilder().add("type", "string")))
+                .add("patternProperties", jsonFactory.createObjectBuilder()
+                        .add("^x-", jsonFactory.createObjectBuilder().add("type", "string")))
+                .add("additionalProperties", jsonFactory.createObjectBuilder().add("type", "number"))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("name", "test")
+                .add("x-vendor", "test")
+                .add("other", 1)
+                .build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder()
+                .add("name", "test")
+                .add("other", "not a number")
+                .build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void additionalPropertiesFalse() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("name", jsonFactory.createObjectBuilder().add("type", "string")))
+                .add("additionalProperties", false)
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("name", "alice").build()).isSuccess());
+
+        final ValidationResult result = validator.apply(jsonFactory.createObjectBuilder()
+                .add("name", "alice")
+                .add("role", "admin")
+                .build());
+        assertFalse(result.isSuccess());
+        final Collection<ValidationResult.ValidationError> errors = result.getErrors();
+        assertEquals(1, errors.size());
+        final ValidationResult.ValidationError error = errors.iterator().next();
+        assertEquals("/role", error.getField());
+        assertEquals("Additional property 'role' is not allowed", error.getMessage());
+
+        validator.close();
+    }
+
+    @Test
+    public void additionalPropertiesTrue() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("name", jsonFactory.createObjectBuilder().add("type", "string")))
+                .add("additionalProperties", true)
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("name", "alice")
+                .add("role", "admin")
+                .build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void additionalPropertiesNested() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("nested", jsonFactory.createObjectBuilder()
+                                .add("type", "object")
+                                .add("properties", jsonFactory.createObjectBuilder()
+                                        .add("name", jsonFactory.createObjectBuilder().add("type", "string")))
+                                .add("additionalProperties", false)))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("nested", jsonFactory.createObjectBuilder().add("name", "alice"))
+                .build()).isSuccess());
+        // a sibling of "nested" is not a property of "nested" so it must not be reported
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                .add("nested", jsonFactory.createObjectBuilder().add("name", "alice"))
+                .add("sibling", "whatever")
+                .build()).isSuccess());
+
+        final ValidationResult result = validator.apply(jsonFactory.createObjectBuilder()
+                .add("nested", jsonFactory.createObjectBuilder()
+                        .add("name", "alice")
+                        .add("role", "admin"))
+                .build());
+        assertFalse(result.isSuccess());
+        assertEquals("/nested/role", result.getErrors().iterator().next().getField());
+
+        validator.close();
+    }
+
+    @Test
+    public void nullableTypeArrayKeepsStringConstraints() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("name", jsonFactory.createObjectBuilder()
+                                .add("type", jsonFactory.createArrayBuilder().add("string").add("null"))
+                                .add("pattern", "^[a-z]+$")
+                                .add("minLength", 2)
+                                .add("maxLength", 5)))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().addNull("name").build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("name", "abc").build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("name", "a').drop()").build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("name", "a").build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("name", "abcdef").build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void nullableTypeArrayKeepsNumberConstraints() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("age", jsonFactory.createObjectBuilder()
+                                .add("type", jsonFactory.createArrayBuilder().add("number").add("null"))
+                                .add("minimum", 0)
+                                .add("maximum", 100)
+                                .add("multipleOf", 5)))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().addNull("age").build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 50).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", -5).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", 105).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", 51).build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void nullableTypeArrayKeepsExclusiveBounds() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("age", jsonFactory.createObjectBuilder()
+                                .add("type", jsonFactory.createArrayBuilder().add("number").add("null"))
+                                .add("exclusiveMinimum", 0)
+                                .add("exclusiveMaximum", 10)))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 5).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", 0).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", 10).build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void integerTypeKeepsNumberConstraints() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("age", jsonFactory.createObjectBuilder()
+                                .add("type", "integer")
+                                .add("minimum", 0)
+                                .add("maximum", 100)))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 30).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", -1).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", 101).build()).isSuccess());
+
+        validator.close();
+    }
+
+    @Test
+    public void nullableIntegerTypeArray() {
+        final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("age", jsonFactory.createObjectBuilder()
+                                .add("type", jsonFactory.createArrayBuilder().add("integer").add("null"))))
+                .build());
+
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().addNull("age").build()).isSuccess());
+        assertTrue(validator.apply(jsonFactory.createObjectBuilder().add("age", 30).build()).isSuccess());
+        assertFalse(validator.apply(jsonFactory.createObjectBuilder().add("age", 30.3).build()).isSuccess());
+
+        validator.close();
+    }
 }
