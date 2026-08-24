@@ -45,7 +45,12 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
     }
 
     private int distance(final String o1) {
-        return distances.computeIfAbsent(o1, this::slowDistance);
+        return distances.getOrDefault(o1, slowDistance(o1));
+    }
+
+    private int cache(final String o1, final int distance) {
+        distances.putIfAbsent(o1, distance);
+        return distance;
     }
 
     private int slowDistance(String o1) {
@@ -54,20 +59,20 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
         while (current != null && current != Object.class) {
             try {
                 current.getDeclaredField(o1);
-                return i;
+                return cache(o1, i);
             } catch (final NoSuchFieldException e) {
                 // no-op
             }
             final String methodSuffix = Character.toUpperCase(o1.charAt(0)) + (o1.length() > 1 ? o1.substring(1) : "");
             try {
                 current.getDeclaredMethod("get" + methodSuffix);
-                return i;
+                return cache(o1, i);
             } catch (final Exception e) {
                 // no-op
             }
             try {
                 current.getDeclaredMethod("is" + methodSuffix);
-                return i;
+                return cache(o1, i);
             } catch (final Exception e) {
                 // no-op
             }
