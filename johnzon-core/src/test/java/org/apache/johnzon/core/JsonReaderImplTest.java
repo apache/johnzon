@@ -21,6 +21,8 @@ package org.apache.johnzon.core;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
@@ -34,6 +36,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -618,6 +621,27 @@ public class JsonReaderImplTest {
         assertEquals(1, object.getJsonObject("//object").size());
         assertEquals("fdmcd", object.getJsonObject("//object").getString("sub"));
         reader.close();
+    }
+
+    @Test
+    public void unfinishedCommentMustNotHang() {
+        final JsonReaderFactory factory = Json.createReaderFactory(new HashMap<String, Object>() {{
+            put("org.apache.johnzon.supports-comments", true);
+        }});
+
+        // unfinished line comment at EOF
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            try (JsonReader reader = factory.createReader(new StringReader("{\"a\": //"))) {
+                assertThrows(JsonParsingException.class, reader::readObject);
+            }
+        }, "Unfinished line comment at end of stream must throw a parsing exception, not hang");
+
+        // unfinished block comment at EOF
+        assertTimeoutPreemptively(Duration.ofSeconds(5), () -> {
+            try (JsonReader reader = factory.createReader(new StringReader("{\"a\": /*"))) {
+                assertThrows(JsonParsingException.class, reader::readObject);
+            }
+        }, "Unfinished block comment at end of stream must throw a parsing exception, not hang");
     }
 
     @Test

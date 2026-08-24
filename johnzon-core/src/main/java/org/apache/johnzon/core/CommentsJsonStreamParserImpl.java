@@ -52,10 +52,13 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
     protected Event defaultHandling(final char c) {
         if (c == '/') {
             char next = readNextChar();
-            if (next == '/') { // fail
+            if (next == '/') { // line comment
                 do {
                     next = readNextChar();
-                } while (next != EOL);
+                } while (next != EOL && next != CR && next != EOF);
+                if (next == EOF) {
+                    throw uexc("Unterminated comment");
+                }
                 return next();
             } else if (next == '*') {
                 next = 0;
@@ -63,7 +66,10 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
                 do {
                     previous = next;
                     next = readNextNonWhitespaceChar(readNextChar());
-                } while (next != '/' || previous != '*');
+                } while ((next != '/' || previous != '*') && next != EOF);
+                if (next == EOF) {
+                    throw uexc("Unterminated comment");
+                }
                 readNextNonWhitespaceChar(next);
                 return next();
             }

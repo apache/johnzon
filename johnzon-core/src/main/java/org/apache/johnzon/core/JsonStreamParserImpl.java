@@ -1107,7 +1107,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
                 + location + ". Reason is [[" + message + "]]", location);
     }
 
-    private JsonParsingException uexc(final String message) {
+    protected JsonParsingException uexc(final String message) {
         final char c = bufferPos < 0 ? 0 : buffer[bufferPos];
         return uexc(c, message);
     }
