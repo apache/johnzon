@@ -18,13 +18,17 @@
  */
 package org.apache.johnzon.jsonb.order;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class PerHierarchyAndLexicographicalOrderFieldComparator implements Comparator<String> {
     private final Class<?> clazz;
     private final Map<String, Integer> distances = new ConcurrentHashMap<>();
+    private final AtomicBoolean populated = new AtomicBoolean();
 
     public PerHierarchyAndLexicographicalOrderFieldComparator(final Class<?> clazz) {
         this.clazz = clazz;
@@ -32,53 +36,69 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
 
     @Override
     public int compare(final String o1, final String o2) {
-        if (o1.equals(o2)) {
+        if (o1 != null ? o1.equals(o2) : o2 == null) {
             return 0;
         }
-        final int d1 = distance(o1);
-        final int d2 = distance(o2);
+        populateDistances();
+        final Integer d1 = o1 == null ? null : distances.get(o1);
+        final Integer d2 = o2 == null ? null : distances.get(o2);
+        if (d1 == null || d2 == null) {
+            return compareStrings(o1, o2);
+        }
         final int res = d2 - d1; // reversed!
         if (res == 0) {
-            return o1.compareTo(o2);
+            return compareStrings(o1, o2);
         }
         return res;
     }
 
-    private int distance(final String o1) {
-        return distances.getOrDefault(o1, slowDistance(o1));
-    }
-
-    private int cache(final String o1, final int distance) {
-        distances.putIfAbsent(o1, distance);
-        return distance;
-    }
-
-    private int slowDistance(String o1) {
-        Class<?> current = clazz;
-        int i = 0;
-        while (current != null && current != Object.class) {
-            try {
-                current.getDeclaredField(o1);
-                return cache(o1, i);
-            } catch (final NoSuchFieldException e) {
-                // no-op
+    private void populateDistances() {
+        if (!populated.get()) {
+            synchronized (this) {
+                if (populated.compareAndSet(false, true)) {
+                    Class<?> current = clazz;
+                    int level = 0;
+                    while (current != null && current != Object.class) {
+                        for (final Field field : current.getDeclaredFields()) {
+                            distances.putIfAbsent(field.getName(), level);
+                        }
+                        for (final Method method : current.getDeclaredMethods()) {
+                            if (method.getParameterCount() != 0 || method.getReturnType() == void.class) {
+                                continue;
+                            }
+                            final String name = method.getName();
+                            if (name.length() > 3 && name.startsWith("get")) {
+                                distances.putIfAbsent(decapitalize(name.substring(3)), level);
+                            } else if (name.length() > 2 && name.startsWith("is")
+                                    && (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class)) {
+                                distances.putIfAbsent(decapitalize(name.substring(2)), level);
+                            }
+                        }
+                        level++;
+                        current = current.getSuperclass();
+                    }
+                }
             }
-            final String methodSuffix = Character.toUpperCase(o1.charAt(0)) + (o1.length() > 1 ? o1.substring(1) : "");
-            try {
-                current.getDeclaredMethod("get" + methodSuffix);
-                return cache(o1, i);
-            } catch (final Exception e) {
-                // no-op
-            }
-            try {
-                current.getDeclaredMethod("is" + methodSuffix);
-                return cache(o1, i);
-            } catch (final Exception e) {
-                // no-op
-            }
-            i++;
-            current = current.getSuperclass();
         }
-        return i;
+    }
+
+    private String decapitalize(final String value) {
+        if (value.isEmpty()) {
+            return value;
+        }
+        if (value.length() > 1 && Character.isUpperCase(value.charAt(0)) && Character.isUpperCase(value.charAt(1))) {
+            return value;
+        }
+        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
+    }
+
+    private int compareStrings(final String o1, final String o2) {
+        if (o1 == null) {
+            return o2 == null ? 0 : 1;
+        }
+        if (o2 == null) {
+            return -1;
+        }
+        return o1.compareTo(o2);
     }
 }
