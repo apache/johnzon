@@ -20,7 +20,12 @@ package org.apache.johnzon.mapper.jsonp;
 
 import java.math.BigDecimal;
 import java.util.Map;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import jakarta.json.JsonArray;
 import jakarta.json.JsonObject;
@@ -31,6 +36,7 @@ import jakarta.json.stream.JsonParser;
 public class RewindableJsonParser implements JsonParser {
     private final JsonParser delegate;
     private Event last;
+    private boolean pendingRewind;
 
     public RewindableJsonParser(final JsonParser delegate) {
         this.delegate = delegate;
@@ -42,12 +48,28 @@ public class RewindableJsonParser implements JsonParser {
 
     @Override
     public boolean hasNext() {
-        return delegate.hasNext();
+        return pendingRewind || delegate.hasNext();
     }
 
     @Override
     public Event next() {
+        if (pendingRewind) {
+            pendingRewind = false;
+            return last;
+        }
         return last = delegate.next();
+    }
+
+    @Override
+    public Event currentEvent() {
+        if (last == null) {
+            if (!delegate.hasNext()) { // value adapters without event stream
+                return delegate.currentEvent();
+            }
+            last = delegate.next();
+            pendingRewind = true;
+        }
+        return last;
     }
 
     @Override
@@ -87,41 +109,73 @@ public class RewindableJsonParser implements JsonParser {
 
     @Override
     public JsonObject getObject() {
-        return delegate.getObject();
+        return trackResult(delegate::getObject);
     }
 
     @Override
     public JsonValue getValue() {
-        return delegate.getValue();
+        return trackResult(delegate::getValue);
     }
 
     @Override
     public JsonArray getArray() {
-        return delegate.getArray();
+        return trackResult(delegate::getArray);
     }
 
     @Override
     public Stream<JsonValue> getArrayStream() {
-        return delegate.getArrayStream();
+        return trackStream(delegate.getArrayStream());
     }
 
     @Override
     public Stream<Map.Entry<String, JsonValue>> getObjectStream() {
-        return delegate.getObjectStream();
+        return trackStream(delegate.getObjectStream());
     }
 
     @Override
     public Stream<JsonValue> getValueStream() {
-        return delegate.getValueStream();
+        return trackStream(delegate.getValueStream());
     }
 
     @Override
     public void skipArray() {
-        delegate.skipArray();
+        trackAdvance(delegate::skipArray);
     }
 
     @Override
     public void skipObject() {
-        delegate.skipObject();
+        trackAdvance(delegate::skipObject);
+    }
+
+    private <T> T trackResult(final Supplier<T> operation) {
+        pendingRewind = false;
+        final T result = operation.get();
+        last = delegate.currentEvent();
+        return result;
+    }
+
+    private void trackAdvance(final Runnable operation) {
+        pendingRewind = false;
+        operation.run();
+        last = delegate.currentEvent();
+    }
+
+    private <T> Stream<T> trackStream(final Stream<T> stream) {
+        pendingRewind = false;
+        last = delegate.currentEvent();
+        final boolean parallel = stream.isParallel();
+        final Spliterator<T> spliterator = stream.spliterator();
+        final Spliterator<T> tracking = new Spliterators.AbstractSpliterator<T>(
+                spliterator.estimateSize(), spliterator.characteristics()) {
+            @Override
+            public boolean tryAdvance(final Consumer<? super T> action) {
+                try {
+                    return spliterator.tryAdvance(action);
+                } finally {
+                    last = delegate.currentEvent();
+                }
+            }
+        };
+        return StreamSupport.stream(tracking, parallel).onClose(stream::close);
     }
 }
