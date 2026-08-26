@@ -28,8 +28,6 @@ import jakarta.json.stream.JsonLocation;
 import jakarta.json.stream.JsonParser;
 import jakarta.json.stream.JsonParserFactory;
 
-import org.apache.johnzon.mapper.jsonp.RewindableJsonParser;
-
 class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     
     private static class JsonStringParserAdapter extends JsonValueParserAdapter<JsonString> {
@@ -73,7 +71,7 @@ class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     
     public static JsonParser createFor(final JsonValue jsonValue,
                                        final Supplier<JsonParserFactory> parserFactoryProvider) {
-        return new RewindableJsonParser(doCreate(jsonValue, parserFactoryProvider));
+        return doCreate(jsonValue, parserFactoryProvider);
     }
 
     private static JsonParser doCreate(final JsonValue jsonValue,
