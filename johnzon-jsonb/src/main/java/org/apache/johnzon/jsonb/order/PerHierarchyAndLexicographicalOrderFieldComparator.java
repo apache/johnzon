@@ -22,10 +22,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.johnzon.mapper.util.BeanUtil;
+
 public class PerHierarchyAndLexicographicalOrderFieldComparator implements Comparator<String> {
+    private static final Comparator<String> NULLS_LAST = Comparator.nullsLast(Comparator.naturalOrder());
+
     private final Class<?> clazz;
     private final Map<String, Integer> distances = new ConcurrentHashMap<>();
     private final AtomicBoolean populated = new AtomicBoolean();
@@ -36,18 +41,18 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
 
     @Override
     public int compare(final String o1, final String o2) {
-        if (o1 != null ? o1.equals(o2) : o2 == null) {
+        if (Objects.equals(o1, o2)) {
             return 0;
         }
         populateDistances();
         final Integer d1 = o1 == null ? null : distances.get(o1);
         final Integer d2 = o2 == null ? null : distances.get(o2);
         if (d1 == null || d2 == null) {
-            return compareStrings(o1, o2);
+            return NULLS_LAST.compare(o1, o2);
         }
         final int res = d2 - d1; // reversed!
         if (res == 0) {
-            return compareStrings(o1, o2);
+            return NULLS_LAST.compare(o1, o2);
         }
         return res;
     }
@@ -68,10 +73,10 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
                             }
                             final String name = method.getName();
                             if (name.length() > 3 && name.startsWith("get")) {
-                                distances.putIfAbsent(decapitalize(name.substring(3)), level);
+                                distances.putIfAbsent(BeanUtil.decapitalize(name.substring(3)), level);
                             } else if (name.length() > 2 && name.startsWith("is")
                                     && (method.getReturnType() == boolean.class || method.getReturnType() == Boolean.class)) {
-                                distances.putIfAbsent(decapitalize(name.substring(2)), level);
+                                distances.putIfAbsent(BeanUtil.decapitalize(name.substring(2)), level);
                             }
                         }
                         level++;
@@ -80,25 +85,5 @@ public class PerHierarchyAndLexicographicalOrderFieldComparator implements Compa
                 }
             }
         }
-    }
-
-    private String decapitalize(final String value) {
-        if (value.isEmpty()) {
-            return value;
-        }
-        if (value.length() > 1 && Character.isUpperCase(value.charAt(0)) && Character.isUpperCase(value.charAt(1))) {
-            return value;
-        }
-        return Character.toLowerCase(value.charAt(0)) + value.substring(1);
-    }
-
-    private int compareStrings(final String o1, final String o2) {
-        if (o1 == null) {
-            return o2 == null ? 0 : 1;
-        }
-        if (o2 == null) {
-            return -1;
-        }
-        return o1.compareTo(o2);
     }
 }
