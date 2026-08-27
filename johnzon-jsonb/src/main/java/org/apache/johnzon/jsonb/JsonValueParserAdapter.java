@@ -28,8 +28,6 @@ import jakarta.json.stream.JsonLocation;
 import jakarta.json.stream.JsonParser;
 import jakarta.json.stream.JsonParserFactory;
 
-import org.apache.johnzon.mapper.jsonp.RewindableJsonParser;
-
 class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     
     private static class JsonStringParserAdapter extends JsonValueParserAdapter<JsonString> {
@@ -73,7 +71,7 @@ class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     
     public static JsonParser createFor(final JsonValue jsonValue,
                                        final Supplier<JsonParserFactory> parserFactoryProvider) {
-        return new RewindableJsonParser(doCreate(jsonValue, parserFactoryProvider));
+        return doCreate(jsonValue, parserFactoryProvider);
     }
 
     private static JsonParser doCreate(final JsonValue jsonValue,
@@ -101,6 +99,20 @@ class JsonValueParserAdapter<T extends JsonValue> implements JsonParser {
     @Override
     public Event next() {
         throw new UnsupportedOperationException("next() no supported for " + jsonValue.getValueType());
+    }
+
+    @Override
+    public Event currentEvent() {
+        switch (jsonValue.getValueType()) {
+            case STRING: return Event.VALUE_STRING;
+            case NUMBER: return Event.VALUE_NUMBER;
+            case TRUE: return Event.VALUE_TRUE;
+            case FALSE: return Event.VALUE_FALSE;
+            case NULL: return Event.VALUE_NULL;
+            case OBJECT: return Event.START_OBJECT;
+            case ARRAY: return Event.START_ARRAY;
+            default: throw new UnsupportedOperationException("currentEvent() not supported for " + jsonValue.getValueType());
+        }
     }
 
     @Override

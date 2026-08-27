@@ -55,8 +55,7 @@ public class JohnzonDeserializationContext implements DeserializationContext {
     }
 
     private JsonValue read(final JsonParser parser) {
-        final JsonParser.Event next = /*RewindableJsonParser.class.isInstance(parser) ?
-                RewindableJsonParser.class.cast(parser).getLast() : */ parser.next();
+        final JsonParser.Event next = parser.next();
         switch (next) {
             case START_OBJECT: {
                 final JsonObjectBuilder objectBuilder = builderFactory.createObjectBuilder();
