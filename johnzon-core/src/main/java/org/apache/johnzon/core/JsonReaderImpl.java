@@ -20,10 +20,8 @@ package org.apache.johnzon.core;
 
 
 import jakarta.json.JsonArray;
-import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonNumber;
 import jakarta.json.JsonObject;
-import jakarta.json.JsonObjectBuilder;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
@@ -33,14 +31,16 @@ import jakarta.json.stream.JsonParsingException;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
+import java.util.Arrays;
+
 public class JsonReaderImpl implements JsonReader {
     private final JohnzonJsonParser parser;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
-    private JsonProviderImpl provider;
+    private final JsonProviderImpl provider;
     private final RejectDuplicateKeysMode rejectDuplicateKeysMode;
     private boolean closed = false;
 
-    private boolean subStreamReader;
+    private final boolean subStreamReader;
 
     public JsonReaderImpl(final JsonParser parser, final BufferStrategy.BufferProvider<char[]> bufferProvider,
                           final RejectDuplicateKeysMode rejectDuplicateKeysMode, final JsonProviderImpl provider) {
@@ -91,19 +91,17 @@ public class JsonReaderImpl implements JsonReader {
 
         switch (next) {
             case START_OBJECT:
-                final JsonObjectBuilder objectBuilder = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode, provider);
-                parseObject(objectBuilder);
+                final JsonObject object = JsonObject.class.cast(parseStructure(next));
                 if (!subStreamReader && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
-                return objectBuilder.build();
+                return object;
             case START_ARRAY:
-                final JsonArrayBuilder arrayBuilder = new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode, provider);
-                parseArray(arrayBuilder);
+                final JsonArray array = JsonArray.class.cast(parseStructure(next));
                 if (!subStreamReader && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
                 }
-                return arrayBuilder.build();
+                return array;
             case VALUE_STRING:
                 final JsonStringImpl string = new JsonStringImpl(parser.getString());
                 if (!subStreamReader && parser.hasNext()) {
@@ -170,115 +168,143 @@ public class JsonReaderImpl implements JsonReader {
         }
     }
 
-    private void parseObject(final JsonObjectBuilder builder) {
-        String key = null;
+    // IMPORTANT: keep it iterative and not recursive to use the heap
+    private JsonValue parseStructure(final JsonParser.Event first) {
+        final StructureStack parents = new StructureStack();
+        Object current = isObject(first) ?
+                new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode, provider) :
+                new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode, provider);
+        String currentKey = null;
         while (parser.hasNext()) {
             final JsonParser.Event next = parser.next();
             switch (next) {
+                case START_OBJECT:
+                case START_ARRAY:
+                    parents.push(current, currentKey);
+                    current = isObject(next) ?
+                            new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode, provider) :
+                            new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode, provider);
+                    currentKey = null;
+                    break;
+
                 case KEY_NAME:
-                    key = parser.getString();
+                    if (!(current instanceof JsonObjectBuilderImpl)) {
+                        throw new JsonParsingException("array doesn't have keys", parser.getLocation());
+                    }
+                    currentKey = parser.getString();
                     break;
 
                 case VALUE_STRING:
-                    builder.add(key, new JsonStringImpl(parser.getString()));
-                    break;
-
-                case START_OBJECT:
-                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode, provider);
-                    parseObject(subObject);
-                    builder.add(key, subObject);
-                    break;
-
-                case START_ARRAY:
-                    JsonArrayBuilder subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode, provider);
-                    parseArray(subArray);
-                    builder.add(key, subArray);
+                    add(current, currentKey, new JsonStringImpl(parser.getString()));
                     break;
 
                 case VALUE_NUMBER:
-                    if (parser.isIntegralNumber() && parser.isNotTooLong()) {
-                        builder.add(key, new JsonLongImpl(parser.getLong()));
+                    if (parser.isFitLong()) {
+                        add(current, currentKey, new JsonLongImpl(parser.getLong()));
                     } else {
-                        builder.add(key, new JsonNumberImpl(parser.getBigDecimal(), provider::checkBigDecimalScale));
+                        add(current, currentKey, new JsonNumberImpl(parser.getBigDecimal(), provider::checkBigDecimalScale));
                     }
                     break;
 
                 case VALUE_NULL:
-                    builder.addNull(key);
+                    if (current instanceof JsonObjectBuilderImpl) {
+                        JsonObjectBuilderImpl.class.cast(current).addNull(currentKey);
+                    } else {
+                        JsonArrayBuilderImpl.class.cast(current).addNull();
+                    }
                     break;
 
                 case VALUE_TRUE:
-                    builder.add(key, true);
+                    add(current, currentKey, JsonValue.TRUE);
                     break;
 
                 case VALUE_FALSE:
-                    builder.add(key, false);
+                    add(current, currentKey, JsonValue.FALSE);
                     break;
 
                 case END_OBJECT:
-                    return;
+                    if (!(current instanceof JsonObjectBuilderImpl)) {
+                        throw new JsonParsingException("'}', shouldn't occur", parser.getLocation());
+                    }
+                    final JsonObject builtObject = JsonObjectBuilderImpl.class.cast(current).build();
+                    if (parents.isEmpty()) {
+                        return builtObject;
+                    }
+                    parents.pop();
+                    current = parents.builder;
+                    currentKey = parents.key;
+                    if (current instanceof JsonObjectBuilderImpl) {
+                        JsonObjectBuilderImpl.class.cast(current).add(currentKey, builtObject);
+                    } else {
+                        JsonArrayBuilderImpl.class.cast(current).add(builtObject);
+                    }
+                    break;
 
                 case END_ARRAY:
-                    throw new JsonParsingException("']', shouldn't occur", parser.getLocation());
+                    if (!(current instanceof JsonArrayBuilderImpl)) {
+                        throw new JsonParsingException("']', shouldn't occur", parser.getLocation());
+                    }
+                    final JsonArray builtArray = JsonArrayBuilderImpl.class.cast(current).build();
+                    if (parents.isEmpty()) {
+                        return builtArray;
+                    }
+                    parents.pop();
+                    current = parents.builder;
+                    currentKey = parents.key;
+                    if (current instanceof JsonObjectBuilderImpl) {
+                        JsonObjectBuilderImpl.class.cast(current).add(currentKey, builtArray);
+                    } else {
+                        JsonArrayBuilderImpl.class.cast(current).add(builtArray);
+                    }
+                    break;
 
                 default:
                     throw new JsonParsingException(next.name() + ", shouldn't occur", parser.getLocation());
             }
         }
+        throw new JsonParsingException("Unexpected end of structure", parser.getLocation());
     }
 
-    private void parseArray(final JsonArrayBuilder builder) {
-        while (parser.hasNext()) {
-            final JsonParser.Event next = parser.next();
-            switch (next) {
-                case VALUE_STRING:
-                    builder.add(new JsonStringImpl(parser.getString()));
-                    break;
+    private static boolean isObject(final JsonParser.Event event) {
+        return event == JsonParser.Event.START_OBJECT;
+    }
 
-                case VALUE_NUMBER:
-                    if (parser.isFitLong()) {
-                        builder.add(new JsonLongImpl(parser.getLong()));
-                    } else {
-                        builder.add(new JsonNumberImpl(parser.getBigDecimal(), provider::checkBigDecimalScale));
-                    }
-                    break;
+    private static void add(final Object builder, final String key, final JsonValue value) {
+        if (builder instanceof JsonObjectBuilderImpl) {
+            JsonObjectBuilderImpl.class.cast(builder).add(key, value);
+        } else {
+            JsonArrayBuilderImpl.class.cast(builder).add(value);
+        }
+    }
 
-                case START_OBJECT:
-                    JsonObjectBuilder subObject = new JsonObjectBuilderImpl(emptyMap(), bufferProvider, rejectDuplicateKeysMode, provider);
-                    parseObject(subObject);
-                    builder.add(subObject);
-                    break;
+    // backing by arrays enables to limit the memory impact of this "wrapper"
+    private static final class StructureStack {
+        private Object[] builders = new Object[16];
+        private String[] keys = new String[16];
+        private int depth;
+        private Object builder;
+        private String key;
 
-                case START_ARRAY:
-                    JsonArrayBuilder subArray = null;
-                    parseArray(subArray = new JsonArrayBuilderImpl(emptyList(), bufferProvider, rejectDuplicateKeysMode, provider));
-                    builder.add(subArray);
-                    break;
+        private boolean isEmpty() {
+            return depth == 0;
+        }
 
-                case END_ARRAY:
-                    return;
-
-                case VALUE_NULL:
-                    builder.addNull();
-                    break;
-
-                case VALUE_TRUE:
-                    builder.add(true);
-                    break;
-
-                case VALUE_FALSE:
-                    builder.add(false);
-                    break;
-
-                case KEY_NAME:
-                    throw new JsonParsingException("array doesn't have keys", parser.getLocation());
-
-                case END_OBJECT:
-                    throw new JsonParsingException("'}', shouldn't occur", parser.getLocation());
-
-                default:
-                    throw new JsonParsingException(next.name() + ", shouldn't occur", parser.getLocation());
+        private void push(final Object builder, final String key) {
+            if (depth == builders.length) {
+                builders = Arrays.copyOf(builders, builders.length << 1);
+                keys = Arrays.copyOf(keys, keys.length << 1);
             }
+            builders[depth] = builder;
+            keys[depth] = key;
+            depth++;
+        }
+
+        private void pop() {
+            depth--;
+            builder = builders[depth];
+            key = keys[depth];
+            builders[depth] = null;
+            keys[depth] = null;
         }
     }
 

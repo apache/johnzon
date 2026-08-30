@@ -53,6 +53,7 @@ import jakarta.json.JsonReaderFactory;
 import jakarta.json.JsonString;
 import jakarta.json.JsonStructure;
 import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonParser;
 import jakarta.json.stream.JsonParsingException;
 
 import org.junit.Test;
@@ -738,6 +739,123 @@ public class JsonReaderImplTest {
     public void testInvalidNumber() {
         String jsonWithIllegalNumber = "{\"val\":12.34-2}";
         JsonReaderImpl.class.cast(Json.createReader(new StringReader(jsonWithIllegalNumber))).readObject();
+    }
+
+    @Test
+    public void deeplyNestedObjectsParseWithoutStackOverflow() {
+        final int depth = 50_000;
+        final StringBuilder json = new StringBuilder();
+        final char[] close = new char[depth];
+        for (int i = 0; i < depth; i++) {
+            json.append("{\"a\":");
+            close[depth - 1 - i] = '}';
+        }
+        json.append('0').append(close);
+
+        final JsonValue value = Json.createReader(new StringReader(json.toString())).readObject();
+        assertEquals(depth, nestingDepth(value));
+        assertEquals(JsonValue.ValueType.NUMBER, innermost(value).getValueType());
+    }
+
+    @Test
+    public void deeplyNestedArraysParseWithoutStackOverflow() {
+        final int depth = 50_000;
+        final StringBuilder json = new StringBuilder();
+        final char[] close = new char[depth];
+        for (int i = 0; i < depth; i++) {
+            json.append('[');
+            close[depth - 1 - i] = ']';
+        }
+        json.append('0').append(close);
+
+        final JsonValue value = Json.createReader(new StringReader(json.toString())).readArray();
+        assertEquals(depth, nestingDepth(value));
+        assertEquals(JsonValue.ValueType.NUMBER, innermost(value).getValueType());
+    }
+
+    @Test
+    public void deeplyMixedNestedStructuresParseWithoutStackOverflow() {
+        final int depth = 50_000;
+        final StringBuilder json = new StringBuilder();
+        final char[] close = new char[depth];
+        for (int i = 0; i < depth; i++) {
+            final boolean object = i % 2 == 0;
+            json.append(object ? "{\"a\":" : "[");
+            close[depth - 1 - i] = object ? '}' : ']';
+        }
+        json.append('0').append(close);
+
+        final JsonValue value = Json.createReader(new StringReader(json.toString())).read();
+        assertEquals(depth, nestingDepth(value));
+        assertEquals(JsonValue.ValueType.NUMBER, innermost(value).getValueType());
+    }
+
+    @Test
+    public void deeplyNestedObjectThroughStreamParserParsesWithoutStackOverflow() {
+        final int depth = 50_000;
+        final StringBuilder json = new StringBuilder();
+        final char[] close = new char[depth];
+        for (int i = 0; i < depth; i++) {
+            json.append("{\"a\":");
+            close[depth - 1 - i] = '}';
+        }
+        json.append('0').append(close);
+
+        final JsonParser parser = Json.createParser(new StringReader(json.toString()));
+        assertEquals(JsonParser.Event.START_OBJECT, parser.next());
+        assertEquals(depth, nestingDepth(parser.getObject()));
+    }
+
+    @Test
+    public void malformedDeepNestingThrowsParsingException() {
+        final StringBuilder json = new StringBuilder();
+        for (int i = 0; i < 50_000; i++) {
+            json.append('[');
+        }
+        json.append('}');
+        for (int i = 0; i < 50_000; i++) {
+            json.append(']');
+        }
+
+        assertThrows(JsonParsingException.class, () -> Json.createReader(new StringReader(json.toString())).readArray());
+    }
+
+    @Test
+    public void truncatedDeepNestingThrowsParsingException() {
+        final StringBuilder json = new StringBuilder("{\"a\":");
+        for (int i = 0; i < 10_000; i++) {
+            json.append("{\"a\":");
+        }
+
+        assertThrows(JsonParsingException.class, () -> Json.createReader(new StringReader(json.toString())).readObject());
+    }
+
+    private static int nestingDepth(final JsonValue value) {
+        int depth = 0;
+        JsonValue current = value;
+        while (current instanceof JsonStructure) {
+            if (current instanceof JsonObject) {
+                current = JsonObject.class.cast(current).get("a");
+            } else {
+                final JsonArray array = JsonArray.class.cast(current);
+                current = array.isEmpty() ? null : array.get(0);
+            }
+            depth++;
+        }
+        return depth;
+    }
+
+    private static JsonValue innermost(final JsonValue value) {
+        JsonValue current = value;
+        while (current instanceof JsonStructure) {
+            if (current instanceof JsonObject) {
+                current = JsonObject.class.cast(current).get("a");
+            } else {
+                final JsonArray array = JsonArray.class.cast(current);
+                current = array.isEmpty() ? JsonValue.NULL : array.get(0);
+            }
+        }
+        return current;
     }
 
 }
