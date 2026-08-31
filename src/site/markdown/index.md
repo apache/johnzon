@@ -600,6 +600,28 @@ validator.close();
 factory.close();
 ]]></pre>
 
+#### Fail fast validation
+
+By default, the validator evaluates *all* keywords of the schema and aggregates every error it finds. When validating
+untrusted inputs, it means a cheap keyword failure (like `maxItems`) does not prevent expensive ones (like `uniqueItems`)
+from being evaluated on the whole payload.
+
+Setting `factory.setFailFast(true)` makes the validation stop at the first failing keyword:
+
+<pre class="prettyprint linenums"><![CDATA[
+final JsonSchemaValidatorFactory factory = new JsonSchemaValidatorFactory();
+factory.setFailFast(true); // recommended when validating untrusted inputs
+final JsonSchemaValidator validator = factory.newInstance(schema);
+]]></pre>
+
+Keywords are evaluated with the cheap structural ones first (`type`, `minItems`/`maxItems`, `minLength`/`maxLength`,
+`pattern`, ...) and the recursive ones last (`items`, `uniqueItems`, `properties`), so a failing keyword short-circuits
+the expensive ones and, recursively, whole subtrees. The valid/invalid result is identical in both modes, only the
+reported error list is reduced to the first failing keyword errors.
+
+Note that `uniqueItems` is evaluated using a comparator based order, O(n log n) in the worst case, so it does not suffer
+from hash collision amplifications even when it is evaluated.
+
 Known limitations are (feel free to do a PR on github to add these missing features):
 
 * Doesn't support references in the schema

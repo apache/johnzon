@@ -47,3 +47,15 @@ Johnzon does some sanity checks on this value but at some point we recommend you
 
 If you know you don't need such big types, prefer using plain primitives (or wrappers).
 
+## JSON Schema validation
+
+If you validate untrusted payloads with johnzon-jsonschema, prefer setting `JsonSchemaValidatorFactory#setFailFast(boolean)` to `true`.
+
+By default all keywords of the schema are evaluated and all errors are aggregated. With fail fast enabled the first failing
+keyword stops the validation: since the cheap structural keywords (`type`, `minItems`/`maxItems`, `minLength`/`maxLength`,
+`pattern`, ...) are evaluated before the expensive ones (`uniqueItems`, nested `properties`, ...), a hostile payload is
+rejected without paying for the whole schema. The valid/invalid verdict is identical in both modes, only the number of
+reported errors changes.
+
+See the JSON Schema section of the [index](./index.html) page for more details.
+

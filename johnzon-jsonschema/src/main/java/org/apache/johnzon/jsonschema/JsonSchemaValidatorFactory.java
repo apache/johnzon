@@ -80,12 +80,34 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
     // js is closer to default and actually most used in the industry
     private final AtomicReference<Function<String, Predicate<CharSequence>>> regexFactory = new AtomicReference<>(this::newRegexFactory);
 
+    private boolean failFast = false;
+
     private Predicate<CharSequence> newRegexFactory(final String regex) {
         try {
             return new JavascriptRegex(regex);
         } catch (final RuntimeException re) {
             return new JavaRegex(regex);
         }
+    }
+
+    public boolean isFailFast() {
+        return failFast;
+    }
+
+    /**
+     * When {@code true}, validation stops at the first failing keyword instead of evaluating
+     * all keywords and aggregating all errors. The valid/invalid verdict is identical, only
+     * the reported errors are reduced to the first failing keyword ones. Since keywords are
+     * evaluated with the cheap structural ones first ({@code type}, {@code maxItems}, ...),
+     * enabling it prevents expensive keywords ({@code uniqueItems}, nested {@code properties}, ...)
+     * from being evaluated on hostile payloads, which is recommended when validating untrusted inputs.
+     *
+     * @param failFast whether to stop the validation at the first failing keyword
+     * @return this
+     */
+    public JsonSchemaValidatorFactory setFailFast(final boolean failFast) {
+        this.failFast = failFast;
+        return this;
     }
 
     public JsonSchemaValidatorFactory() {
@@ -156,7 +178,7 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
                 Stream.concat(
                         directValidations.stream(),
                         Stream.of(nestedValidations, dynamicNestedValidations, fallbackNestedValidations))
-                    .collect(toList()));
+                    .collect(toList()), failFast);
     }
 
     private Stream<Function<JsonValue, Stream<ValidationResult.ValidationError>>> buildDirectValidations(final String[] path,
@@ -280,23 +302,35 @@ public class JsonSchemaValidatorFactory implements AutoCloseable {
 
     private Function<JsonValue, Stream<ValidationResult.ValidationError>> toFunction(
             final List<Function<JsonValue, Stream<ValidationResult.ValidationError>>> validations) {
-        return new ValidationsFunction(validations);
+        return new ValidationsFunction(validations, failFast);
     }
 
     private static class ValidationsFunction implements Function<JsonValue, Stream<ValidationResult.ValidationError>> {
         private final List<Function<JsonValue, Stream<ValidationResult.ValidationError>>> delegates;
+        private final boolean failFast;
 
-        private ValidationsFunction(final List<Function<JsonValue, Stream<ValidationResult.ValidationError>>> validations) {
+        private ValidationsFunction(final List<Function<JsonValue, Stream<ValidationResult.ValidationError>>> validations,
+                                    final boolean failFast) {
             // unwrap when possible to simplify the stack and make toString readable (debug)
             this.delegates = validations.stream()
                     .flatMap(it -> ValidationsFunction.class.isInstance(it) ? ValidationsFunction.class.cast(it).delegates.stream() : Stream.of(it))
                     .filter(it -> it != NO_VALIDATION)
                     .collect(toList());
+            this.failFast = failFast;
         }
 
         @Override
         public Stream<ValidationResult.ValidationError> apply(final JsonValue jsonValue) {
-            return delegates.stream().flatMap(v -> v.apply(jsonValue));
+            if (!failFast) {
+                return delegates.stream().flatMap(v -> v.apply(jsonValue));
+            }
+            for (final Function<JsonValue, Stream<ValidationResult.ValidationError>> delegate : delegates) {
+                final List<ValidationResult.ValidationError> errors = delegate.apply(jsonValue).collect(toList());
+                if (!errors.isEmpty()) {
+                    return errors.stream();
+                }
+            }
+            return Stream.empty();
         }
 
         @Override

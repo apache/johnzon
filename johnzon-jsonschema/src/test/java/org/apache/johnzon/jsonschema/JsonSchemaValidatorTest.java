@@ -30,6 +30,7 @@ import java.util.Collection;
 import jakarta.json.Json;
 import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonObject;
 import jakarta.json.JsonValue;
 
 import org.junit.AfterClass;
@@ -727,6 +728,121 @@ public class JsonSchemaValidatorTest {
                             .add(jsonFactory.createArrayBuilder()))
                     .build()).isSuccess());
         }
+    }
+
+    @Test
+    public void failFastSkipsUniqueItemsWhenMaxItemsFails() {
+        final JsonSchemaValidatorFactory failFastFactory = new JsonSchemaValidatorFactory();
+        failFastFactory.setFailFast(true);
+        try (final JsonSchemaValidator validator = failFastFactory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("maxItems", 2)
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            final JsonArrayBuilder names = jsonFactory.createArrayBuilder();
+            for (int i = 0; i < 20000; i++) {
+                final StringBuilder value = new StringBuilder(30);
+                for (int bit = 0; bit < 15; bit++) {
+                    value.append(((i >> bit) & 1) == 0 ? "Aa" : "BB");
+                }
+                names.add(value.toString());
+            }
+            final ValidationResult result = validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", names)
+                    .build());
+            assertFalse(result.isSuccess());
+            assertEquals(1, result.getErrors().size());
+            final ValidationResult.ValidationError error = result.getErrors().iterator().next();
+            assertTrue(error.getMessage(), error.getMessage().startsWith("Too much items"));
+        }
+    }
+
+    @Test
+    public void failFastStillReportsUniqueItemsWhenMaxItemsPasses() {
+        final JsonSchemaValidatorFactory failFastFactory = new JsonSchemaValidatorFactory();
+        failFastFactory.setFailFast(true);
+        try (final JsonSchemaValidator validator = failFastFactory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("maxItems", 2)
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            final ValidationResult result = validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder().add(1).add(1))
+                    .build());
+            assertFalse(result.isSuccess());
+            assertEquals(1, result.getErrors().size());
+            final ValidationResult.ValidationError error = result.getErrors().iterator().next();
+            assertTrue(error.getMessage(), error.getMessage().startsWith("duplicated items"));
+        }
+    }
+
+    @Test
+    public void failFastSkipsNestedValidationsOnFirstError() {
+        final JsonSchemaValidatorFactory failFastFactory = new JsonSchemaValidatorFactory();
+        failFastFactory.setFailFast(true);
+        try (final JsonSchemaValidator validator = failFastFactory.newInstance(nestedTypesSchema())) {
+            final ValidationResult result = validator.apply(nestedTypesPayload());
+            assertFalse(result.isSuccess());
+            assertEquals(1, result.getErrors().size());
+        }
+    }
+
+    @Test
+    public void defaultFactoryAggregatesAllErrors() {
+        try (final JsonSchemaValidator validator = factory.newInstance(nestedTypesSchema())) {
+            final ValidationResult result = validator.apply(nestedTypesPayload());
+            assertFalse(result.isSuccess());
+            assertEquals(2, result.getErrors().size());
+        }
+    }
+
+    @Test
+    public void failFastAndAggregateBothAcceptValidPayload() {
+        final JsonSchemaValidatorFactory failFastFactory = new JsonSchemaValidatorFactory();
+        failFastFactory.setFailFast(true);
+        try (final JsonSchemaValidator failFastValidator = failFastFactory.newInstance(nestedTypesSchema());
+             final JsonSchemaValidator aggregateValidator = factory.newInstance(nestedTypesSchema())) {
+            assertTrue(failFastValidator.apply(nestedTypesValidPayload()).isSuccess());
+            assertTrue(aggregateValidator.apply(nestedTypesValidPayload()).isSuccess());
+        }
+    }
+
+    private JsonObject nestedTypesSchema() {
+        return jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("a", jsonFactory.createObjectBuilder().add("type", "string"))
+                        .add("b", jsonFactory.createObjectBuilder()
+                                .add("type", "object")
+                                .add("properties", jsonFactory.createObjectBuilder()
+                                        .add("x", jsonFactory.createObjectBuilder().add("type", "number"))
+                                        .build()))
+                        .build())
+                .build();
+    }
+
+    private JsonObject nestedTypesPayload() {
+        return jsonFactory.createObjectBuilder()
+                .add("a", 123)
+                .add("b", jsonFactory.createObjectBuilder().add("x", "not a number"))
+                .build();
+    }
+
+    private JsonObject nestedTypesValidPayload() {
+        return jsonFactory.createObjectBuilder()
+                .add("a", "some string")
+                .add("b", jsonFactory.createObjectBuilder().add("x", 1))
+                .build();
     }
 
     @Test
