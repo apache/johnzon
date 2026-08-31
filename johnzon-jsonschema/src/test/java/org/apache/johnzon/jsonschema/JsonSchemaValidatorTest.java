@@ -28,7 +28,9 @@ import java.math.BigInteger;
 import java.util.Collection;
 
 import jakarta.json.Json;
+import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonBuilderFactory;
+import jakarta.json.JsonValue;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -609,6 +611,122 @@ public class JsonSchemaValidatorTest {
                 .build()).isSuccess());
 
         validator.close();
+    }
+
+    @Test
+    public void uniqueItemsWithHashCollisionAttack() {
+        try (final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            final JsonArrayBuilder names = jsonFactory.createArrayBuilder();
+            for (int i = 0; i < 20000; i++) {
+                final StringBuilder value = new StringBuilder(30);
+                for (int bit = 0; bit < 15; bit++) {
+                    value.append(((i >> bit) & 1) == 0 ? "Aa" : "BB");
+                }
+                names.add(value.toString());
+            }
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", names)
+                    .build()).isSuccess());
+        }
+    }
+
+    @Test
+    public void uniqueItemsWithMathematicallyEqualNumbers() {
+        try (final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            assertFalse(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder().add(1).add(1.0))
+                    .build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder().add(1).add(2).add(3.0))
+                    .build()).isSuccess());
+        }
+    }
+
+    @Test
+    public void uniqueItemsWithObjectPropertyOrderIgnored() {
+        try (final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            assertFalse(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder()
+                            .add(jsonFactory.createObjectBuilder().add("a", 1).add("b", 2))
+                            .add(jsonFactory.createObjectBuilder().add("b", 2).add("a", 1)))
+                    .build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder()
+                            .add(jsonFactory.createObjectBuilder().add("a", 1).add("b", 2))
+                            .add(jsonFactory.createObjectBuilder().add("b", 2).add("a", 3)))
+                    .build()).isSuccess());
+        }
+    }
+
+    @Test
+    public void uniqueItemsWithNestedArrays() {
+        try (final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            assertFalse(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder()
+                            .add(jsonFactory.createArrayBuilder().add(1).add(2))
+                            .add(jsonFactory.createArrayBuilder().add(1).add(2)))
+                    .build()).isSuccess());
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder()
+                            .add(jsonFactory.createArrayBuilder().add(1).add(2))
+                            .add(jsonFactory.createArrayBuilder().add(2).add(1)))
+                    .build()).isSuccess());
+        }
+    }
+
+    @Test
+    public void uniqueItemsWithMixedTypes() {
+        try (final JsonSchemaValidator validator = factory.newInstance(jsonFactory.createObjectBuilder()
+                .add("type", "object")
+                .add("properties", jsonFactory.createObjectBuilder()
+                        .add("names", jsonFactory.createObjectBuilder()
+                                .add("type", "array")
+                                .add("uniqueItems", true)
+                                .build())
+                        .build())
+                .build())) {
+            assertTrue(validator.apply(jsonFactory.createObjectBuilder()
+                    .add("names", jsonFactory.createArrayBuilder()
+                            .add(1)
+                            .add("1")
+                            .add(JsonValue.TRUE)
+                            .addNull()
+                            .add(jsonFactory.createObjectBuilder())
+                            .add(jsonFactory.createArrayBuilder()))
+                    .build()).isSuccess());
+        }
     }
 
     @Test

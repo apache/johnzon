@@ -19,9 +19,10 @@
 package org.apache.johnzon.jsonschema.spi.builtin;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -48,13 +49,17 @@ public class UniqueItemsValidation implements ValidationExtension {
 
         @Override
         protected Stream<ValidationResult.ValidationError> onArray(final JsonArray array) {
-            final Collection<JsonValue> uniques = new HashSet<>(array);
-            if (array.size() != uniques.size()) {
-                final Collection<JsonValue> duplicated = new ArrayList<>(array);
-                duplicated.removeAll(uniques);
-                return Stream.of(new ValidationResult.ValidationError(pointer, "duplicated items: " + duplicated));
+            final Set<JsonValue> uniques = new TreeSet<>(JsonValueComparator.INSTANCE);
+            final List<JsonValue> duplicated = new ArrayList<>();
+            for (final JsonValue item : array) {
+                if (!uniques.add(item)) {
+                    duplicated.add(item);
+                }
             }
-            return Stream.empty();
+            if (duplicated.isEmpty()) {
+                return Stream.empty();
+            }
+            return Stream.of(new ValidationResult.ValidationError(pointer, "duplicated items: " + duplicated));
         }
 
         @Override
