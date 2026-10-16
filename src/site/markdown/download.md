@@ -65,12 +65,12 @@ Binaries should be obtained from [maven central](https://repo.maven.apache.org/m
 
 #### Source
 Should you want to build any of the above binaries, this source bundle is the right one and covers them all.
-* [apache-johnzon-1.3.0-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.zip)
-* [apache-johnzon-1.3.0-src.zip.sha512](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.zip.sha512)
-* [apache-johnzon-1.3.0-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.zip.asc)
-* [apache-johnzon-1.3.0-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.tar.gz)
-* [apache-johnzon-1.3.0-src.tar.gz.sha512](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.tar.gz.sha512)
-* [apache-johnzon-1.3.0-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-1.3.0/apache-johnzon-1.3.0-src.tar.gz.asc)
+* [apache-johnzon-1.3.1-src.zip](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.3.1/apache-johnzon-1.3.1-src.zip)
+* [apache-johnzon-1.3.1-src.zip.sha512](https://downloads.apache.org/johnzon/johnzon-1.3.1/apache-johnzon-1.3.1-src.zip.sha512)
+* [apache-johnzon-1.3.1-src.zip.asc](https://downloads.apache.org/johnzon/johnzon-1.3.1/apache-johnzon-1.3.1-src.zip.asc)
+* [apache-johnzon-1.3.1-src.tar.gz](https://www.apache.org/dyn/closer.lua/johnzon/johnzon-1.3.1/apache-johnzon-1.3.1-src.tar.gz)
+* [apache-johnzon-1.3.1-src.tar.gz.sha512](https://downloads.apache.org/johnzon/johnzon-1.3.1/apache-johnzon-1.3.1-src.tar.gz.sha512)
+* [apache-johnzon-1.3.1-src.tar.gz.asc](https://downloads.apache.org/johnzon/johnzon-1.3.1/apache-johnzon-1.3.1-src.tar.gz.asc)
 
 ## Johnzon-1.0.x
 
