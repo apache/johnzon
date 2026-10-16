@@ -72,6 +72,7 @@
 
     <menu name="Security">
       <item name="Report vulnerability" href="/security.html"/>
+      <item name="Known vulnerabilities" href="/vulnerabilities.html"/>
     </menu>
 
     <menu name="ASF">

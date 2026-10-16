@@ -38,6 +38,8 @@ should be addressed to the [mailing list](http://johnzon.apache.org/mail-lists.h
 
 The private security mailing address is: security (at) apache (dot) org
 
+Known vulnerabilities are listed on the [vulnerabilities](./vulnerabilities.html) page.
+
 ## BigInteger and Java
 
 JSON-P/JSON-B exposes API using `BigDecimal` and `BigInteger`.
