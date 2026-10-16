@@ -31,3 +31,14 @@ To report a new vulnerability, see [Report vulnerability](./security.html).
 
 Unsafe reflection: `ClassConverter` resolves and statically initializes a class named in untrusted JSON.
 Exploitation needs a mapped POJO with a `Class` attribute and a class with a harmful static initializer on the classpath.
+
+## [CVE-2023-33008](https://www.cve.org/CVERecord?id=CVE-2023-33008): Prevent inefficient internal conversion from BigDecimal at large scale
+
+* **Severity:** Important
+* **Affected:** Apache Johnzon through 1.2.20
+* **Fixed in:** 1.2.21
+* **Credit:** PJ Fanning (reporter)
+* **Announcement:** [lists.apache.org](https://lists.apache.org/thread/qbg14djo95gfpk7o560lr8wcrzfyw43l)
+
+Denial of service: JSON input with very large numbers (e.g. `1e20000000`) deserialized into `BigDecimal` can cause a slow conversion.
+Johnzon 1.2.21 limits the `BigDecimal` scale to 1000 by default. See also [BigInteger and Java](./security.html#BigInteger_and_Java).
