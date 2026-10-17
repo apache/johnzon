@@ -36,6 +36,7 @@ import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
+import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 
@@ -209,24 +210,10 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         final AccessMode accessMode = config.getProperty("johnzon.accessMode")
                 .map(this::toAccessMode)
-                .orElseGet(() -> new JsonbAccessMode(
+                .orElseGet(() -> newJsonbAccessMode(
                         propertyNamingStrategy, orderValue, visibilityStrategy,
-                        !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
-                        builder.getAdapters(),
-                        factory, jsonp, builderFactorySupplier, parserFactoryProvider,
-                        config.getProperty("johnzon.accessModeDelegate")
-                                .map(this::toAccessMode)
-                                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, false, true)),
-                        // this changes in v3 of the spec so let's use this behavior which makes everyone happy by default
-                        config.getProperty("johnzon.failOnMissingCreatorValues")
-                                .map(this::toBool)
-                                .orElseGet(() -> config.getProperty("jsonb.creator-parameters-required")
-                                        .map(this::toBool)
-                                        .orElse(false)),
-                        isNillable,
-                        config.getProperty("johnzon.supportsPrivateAccess")
-                                .map(this::toBool)
-                                .orElse(false)));
+                        namingStrategyValue, factory, builderFactorySupplier, parserFactoryProvider,
+                        isNillable));
         builder.setAccessMode(accessMode);
 
         config.getProperty("johnzon.snippetMaxLength")
@@ -234,6 +221,12 @@ public class JohnzonBuilder implements JsonbBuilder {
                         Number.class.cast(it).intValue() :
                         Integer.parseInt(it.toString()))
                 .ifPresent(builder::setSnippetMaxLength);
+
+        config.getProperty("johnzon.version")
+                .map(it -> Number.class.isInstance(it)?
+                        Number.class.cast(it).intValue() :
+                        Integer.parseInt(it.toString()))
+                .ifPresent(builder::setVersion);
 
         config.getProperty("johnzon.use-biginteger-stringadapter")
                 .or(() -> Optional.ofNullable(System.getProperty("johnzon.use-biginteger-stringadapter")))
@@ -379,6 +372,75 @@ public class JohnzonBuilder implements JsonbBuilder {
 
     private Integer toInt(final Object v) {
         return !Integer.class.isInstance(v) ? Integer.parseInt(v.toString()) : Integer.class.cast(v);
+    }
+
+    private Set<String> toExcludedMethods(final Object v) {
+        if (Set.class.isInstance(v)) {
+            return Set.class.cast(v);
+        }
+        final String str = v.toString().trim();
+        if (str.isEmpty()) {
+            return Set.of();
+        }
+        final Set<String> result = new HashSet<>();
+        for (final String s : str.split(",")) {
+            result.add(s.trim());
+        }
+        return result;
+    }
+
+    private JsonbAccessMode newJsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy,
+                                               final String orderValue,
+                                               final PropertyVisibilityStrategy visibilityStrategy,
+                                               final Optional<Object> namingStrategyValue,
+                                               final JohnzonAdapterFactory factory,
+                                               final Supplier<JsonBuilderFactory> builderFactorySupplier,
+                                               final Supplier<JsonParserFactory> parserFactoryProvider,
+                                               final boolean isNillable) {
+        final AccessMode delegateMode = config.getProperty("johnzon.accessModeDelegate")
+                .map(this::toAccessMode)
+                .orElseGet(() -> new FieldAndMethodAccessMode(true, true, false, false, true));
+        if (MethodAccessMode.class.isInstance(delegateMode)) {
+            ifExcludedMethods()
+                    .ifPresent(MethodAccessMode.class.cast(delegateMode)::setExcludedMethods);
+            ifSupportAllRecordAttributes()
+                    .ifPresent(v -> MethodAccessMode.class.cast(delegateMode).setSupportAllRecordAttributes(v.booleanValue()));
+        } else if (FieldAndMethodAccessMode.class.isInstance(delegateMode)) {
+            ifExcludedMethods()
+                    .ifPresent(FieldAndMethodAccessMode.class.cast(delegateMode)::setExcludedMethods);
+            ifSupportAllRecordAttributes()
+                    .ifPresent(v -> FieldAndMethodAccessMode.class.cast(delegateMode).setSupportAllRecordAttributes(v.booleanValue()));
+        }
+        return new JsonbAccessMode(
+                propertyNamingStrategy, orderValue, visibilityStrategy,
+                !namingStrategyValue.orElse("").equals(PropertyNamingStrategy.CASE_INSENSITIVE),
+                builder.getAdapters(),
+                factory, jsonp, builderFactorySupplier, parserFactoryProvider,
+                delegateMode,
+                config.getProperty("johnzon.failOnMissingCreatorValues")
+                        .map(this::toBool)
+                        .orElseGet(() -> config.getProperty("jsonb.creator-parameters-required")
+                                .map(this::toBool)
+                                .orElse(false)),
+                isNillable,
+                config.getProperty("johnzon.supportsPrivateAccess")
+                        .map(this::toBool)
+                        .orElse(false),
+                config.getProperty("johnzon.version")
+                        .map(it -> Number.class.isInstance(it) ?
+                                Number.class.cast(it).intValue() :
+                                Integer.parseInt(it.toString()))
+                        .orElse(-1));
+    }
+
+    private Optional<Boolean> ifSupportAllRecordAttributes() {
+        return config.getProperty("johnzon.accessMode.supportAllRecordAttributes")
+                .map(this::toBool);
+    }
+
+    private Optional<Set<String>> ifExcludedMethods() {
+        return config.getProperty("johnzon.accessMode.excludedMethods")
+                .map(this::toExcludedMethods);
     }
 
     private AccessMode toAccessMode(final Object s) {

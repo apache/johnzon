@@ -37,6 +37,7 @@ import org.apache.johnzon.mapper.Cleanable;
 import org.apache.johnzon.mapper.Converter;
 import org.apache.johnzon.mapper.JohnzonAny;
 import org.apache.johnzon.mapper.JohnzonConverter;
+import org.apache.johnzon.mapper.JohnzonIgnore;
 import org.apache.johnzon.mapper.JohnzonRecord;
 import org.apache.johnzon.mapper.MapperConverter;
 import org.apache.johnzon.mapper.MappingGenerator;
@@ -156,6 +157,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
     private final Types types = new Types();
     private final boolean globalIsNillable;
     private final boolean supportsPrivateAccess;
+    private final int version;
 
     // CHECKSTYLE:OFF
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
@@ -167,6 +169,24 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                            final boolean failOnMissingCreatorValues,
                            final boolean globalIsNillable,
                            final boolean supportsPrivateAccess) {
+        // CHECKSTYLE:ON
+        this(
+                propertyNamingStrategy, orderValue, visibilityStrategy, caseSensitive, defaultConverters, factory,
+                jsonProvider, builderFactory, parserFactory, delegate, failOnMissingCreatorValues, globalIsNillable,
+                supportsPrivateAccess, 0);
+    }
+
+    // CHECKSTYLE:OFF
+    public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
+                           final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
+                           final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory,
+                           final JsonProvider jsonProvider, final Supplier<JsonBuilderFactory> builderFactory,
+                           final Supplier<JsonParserFactory> parserFactory,
+                           final AccessMode delegate,
+                           final boolean failOnMissingCreatorValues,
+                           final boolean globalIsNillable,
+                           final boolean supportsPrivateAccess,
+                           final int version) {
         // CHECKSTYLE:ON
         this.globalIsNillable = globalIsNillable;
         this.naming = propertyNamingStrategy;
@@ -181,6 +201,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
         this.parserFactory = parserFactory;
         this.failOnMissingCreatorValues = failOnMissingCreatorValues;
         this.supportsPrivateAccess = supportsPrivateAccess;
+        this.version = version;
     }
 
     @Override
@@ -951,6 +972,10 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
 
     private boolean isTransient(final DecoratedType t) {
         if (t.getAnnotation(JsonbTransient.class) != null) {
+            return true;
+        }
+        final JohnzonIgnore johnzonIgnore = t.getAnnotation(JohnzonIgnore.class);
+        if (johnzonIgnore != null && johnzonIgnore.minVersion() >= 0 && version < johnzonIgnore.minVersion()) {
             return true;
         }
         // TODO: spec requirement, this sounds wrong since you cant customize 2 kind of serializations on the same model

@@ -34,6 +34,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 // annotated entity overrides the other one, methods are used instead of field if both are there
 public class FieldAndMethodAccessMode extends BaseAccessMode {
@@ -66,6 +67,30 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
         this(useConstructor, acceptHiddenConstructor, useGettersAsWriter, true, false);
     }
 
+    public Set<String> getExcludedMethods() {
+        return methods.getExcludedMethods();
+    }
+
+    public void setExcludedMethods(final Set<String> excludedMethods) {
+        methods.setExcludedMethods(excludedMethods);
+    }
+
+    public boolean isSupportAllGetters() {
+        return methods.isSupportAllGetters();
+    }
+
+    public void setSupportAllRecordAttributes(final boolean supportAllRecordAttributes) {
+        methods.setSupportAllRecordAttributes(supportAllRecordAttributes);
+    }
+
+    public int getVersion() {
+        return methods.getVersion();
+    }
+
+    public void setVersion(final int version) {
+        methods.setVersion(version);
+    }
+
 
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
@@ -94,6 +119,15 @@ public class FieldAndMethodAccessMode extends BaseAccessMode {
                             skip = true;
                         }
                         break;
+                    }
+                }
+                if (!skip) {
+                    final JohnzonIgnore ignore = Meta.getAnnotation(m, JohnzonIgnore.class);
+                    if (ignore != null) {
+                        final int minVersion = ignore.minVersion();
+                        if (minVersion < 0 || (methods.getVersion() >= 0 && methods.getVersion() < minVersion)) {
+                            skip = true;
+                        }
                     }
                 }
             } else if (!ignoreVisibilityFilter && m != null) {

@@ -18,7 +18,11 @@
  */
 package org.apache.johnzon.mapper.reflection;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * TODO: this whole class can be removed once we switch to Java16++
@@ -28,6 +32,8 @@ import java.lang.reflect.Modifier;
 public final class Records {
 
     private static final Class RECORD_CLASS;
+    private static final Method GET_RECORD_COMPONENTS;
+    private static final Method GET_NAME;
     static {
         Class recordClass = null;
         try {
@@ -36,6 +42,18 @@ public final class Records {
             // no-op
         }
         RECORD_CLASS = recordClass;
+        Method getRecordComponents = null;
+        Method getName = null;
+        if (recordClass != null) {
+            try {
+                getRecordComponents = Class.class.getMethod("getRecordComponents");
+                getName = getRecordComponents.getReturnType().getComponentType().getMethod("getName");
+            } catch (final NoSuchMethodException e) {
+                // no-op
+            }
+        }
+        GET_RECORD_COMPONENTS = getRecordComponents;
+        GET_NAME = getName;
     }
 
     private Records() {
@@ -45,5 +63,24 @@ public final class Records {
     @Deprecated
     public static boolean isRecord(final Class<?> clazz) {
         return clazz.getSuperclass() == RECORD_CLASS && (clazz.getModifiers() & Modifier.FINAL) != 0;
+    }
+
+    /**
+     * @return the record component names of {@code clazz}, or {@code null} if it is not a record.
+     */
+    public static Set<String> componentNames(final Class<?> clazz) {
+        if (!isRecord(clazz) || GET_RECORD_COMPONENTS == null) {
+            return null;
+        }
+        try {
+            final Object[] components = Object[].class.cast(GET_RECORD_COMPONENTS.invoke(clazz));
+            final Set<String> names = new HashSet<>(components.length);
+            for (final Object component : components) {
+                names.add(String.class.cast(GET_NAME.invoke(component)));
+            }
+            return names;
+        } catch (final InvocationTargetException | IllegalAccessException e) {
+            return null;
+        }
     }
 }

@@ -30,33 +30,71 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.apache.johnzon.mapper.Adapter;
 import org.apache.johnzon.mapper.JohnzonAny;
+import org.apache.johnzon.mapper.JohnzonIgnore;
 import org.apache.johnzon.mapper.JohnzonProperty;
 import org.apache.johnzon.mapper.JohnzonRecord;
 import org.apache.johnzon.mapper.MapperException;
 import org.apache.johnzon.mapper.ObjectConverter;
+import org.apache.johnzon.mapper.reflection.Records;
 
 public class MethodAccessMode extends BaseAccessMode {
     private final boolean supportGetterAsWritter;
+    private Set<String> excludedMethods = Set.of("toString", "hashCode");
+    private boolean supportAllRecordAttributes;
+    private int version = -1;
 
     public MethodAccessMode(final boolean useConstructor, final boolean acceptHiddenConstructor, final boolean supportGetterAsWritter) {
         super(useConstructor, acceptHiddenConstructor);
         this.supportGetterAsWritter = supportGetterAsWritter;
     }
 
+    public Set<String> getExcludedMethods() {
+        return excludedMethods;
+    }
+
+    public void setExcludedMethods(final Set<String> excludedMethods) {
+        this.excludedMethods = excludedMethods == null || excludedMethods.isEmpty()
+                ? Set.of("toString", "hashCode")
+                : new HashSet<>(excludedMethods);
+    }
+
+    public boolean isSupportAllGetters() {
+        return supportAllRecordAttributes;
+    }
+
+    public void setSupportAllRecordAttributes(final boolean supportAllRecordAttributes) {
+        this.supportAllRecordAttributes = supportAllRecordAttributes;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(final int version) {
+        this.version = version;
+    }
+
     @Override
     public Map<String, Reader> doFindReaders(final Class<?> clazz) {
         final Map<String, Reader> readers = new HashMap<>();
         if (isRecord(clazz) || Meta.getAnnotation(clazz, JohnzonRecord.class) != null) {
+            // real records expose exactly their components, only @JohnzonRecord classes
+            // fall back on "any no-arg instance method" since they carry no component metadata
+            final Set<String> components = Records.componentNames(clazz);
             readers.putAll(Stream.of(clazz.getMethods())
                 .filter(it -> it.getDeclaringClass() != Object.class && it.getParameterCount() == 0)
                 .filter(it -> !Modifier.isStatic(it.getModifiers()))
-                .filter(it -> !"toString".equals(it.getName()) && !"hashCode".equals(it.getName()))
+                .filter(it -> supportAllRecordAttributes || components == null || components.contains(it.getName()))
+                .filter(it -> !excludedMethods.contains(it.getName()))
                 .filter(it -> !isIgnored(it.getName()) && Meta.getAnnotation(it, JohnzonAny.class) == null)
+                .filter(it -> !isAlwaysIgnored(it))
                 .collect(toMap(m -> extractKey(m.getName(), m, null), it -> new MethodReader(it, it.getGenericReturnType()))));
         } else {
             final PropertyDescriptor[] propertyDescriptors = getPropertyDescriptors(clazz);
@@ -64,7 +102,8 @@ public class MethodAccessMode extends BaseAccessMode {
                 final Method readMethod = descriptor.getReadMethod();
                 final String name = descriptor.getName();
                 if (readMethod != null && readMethod.getDeclaringClass() != Object.class) {
-                    if (isIgnored(name) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null) {
+                    if (isIgnored(name) || Meta.getAnnotation(readMethod, JohnzonAny.class) != null
+                            || isAlwaysIgnored(readMethod)) {
                         continue;
                     }
                     readers.put(extractKey(name, readMethod, null), new MethodReader(readMethod, readMethod.getGenericReturnType()));
@@ -73,7 +112,9 @@ public class MethodAccessMode extends BaseAccessMode {
                     try {
                         final Method method = clazz.getMethod(
                                 "is" + Character.toUpperCase(name.charAt(0)) + (name.length() > 1 ? name.substring(1) : ""));
-                        readers.put(extractKey(name, method, null), new MethodReader(method, method.getGenericReturnType()));
+                        if (!isAlwaysIgnored(method)) {
+                            readers.put(extractKey(name, method, null), new MethodReader(method, method.getGenericReturnType()));
+                        }
                     } catch (final NoSuchMethodException e) {
                         // no-op
                     }
@@ -115,6 +156,18 @@ public class MethodAccessMode extends BaseAccessMode {
 
     protected boolean isIgnored(final String name) {
         return name.equals("metaClass") || name.contains("$");
+    }
+
+    private boolean isAlwaysIgnored(final Method method) {
+        final JohnzonIgnore ignore = Meta.getAnnotation(method, JohnzonIgnore.class);
+        if (ignore == null) {
+            return false;
+        }
+        final int minVersion = ignore.minVersion();
+        if (minVersion < 0) {
+            return true;
+        }
+        return version >= 0 && version < minVersion;
     }
 
     private PropertyDescriptor[] getPropertyDescriptors(final Class<?> clazz) {
