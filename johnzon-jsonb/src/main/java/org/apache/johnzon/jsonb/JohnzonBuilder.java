@@ -102,7 +102,6 @@ public class JohnzonBuilder implements JsonbBuilder {
         }
         final Supplier<JsonBuilderFactory> builderFactorySupplier = createJsonBuilderFactory();
         final Supplier<JsonParserFactory> parserFactoryProvider = createJsonParserFactory();
-
         if (config == null) {
             config = new JsonbConfig();
         }
@@ -114,8 +113,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         final int maxBigDecimalScale = config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(BigDecimalConverter.DEFAULT_MAX_SCALE);
         builder.setMaxBigDecimalScale(maxBigDecimalScale);
         config.getProperty("org.apache.johnzon.max-string-length").map(this::toInt).ifPresent(builder::setMaxSize);
-        builder.setMaxNumberLength(config.getProperty("org.apache.johnzon.max-number-length").map(this::toInt)
-                .orElse(BigDecimalConverter.DEFAULT_MAX_NUMBER_LENGTH));
+        builder.setMaxNumberLength(config.getProperty("org.apache.johnzon.max-number-length").map(this::toInt).orElse(BigDecimalConverter.DEFAULT_MAX_NUMBER_LENGTH));
         builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
                 toBool(System.getProperty("johnzon.support-enum-container-deserialization", config.getProperty("johnzon.support-enum-container-deserialization")
                         .map(String::valueOf).orElse("true"))));
