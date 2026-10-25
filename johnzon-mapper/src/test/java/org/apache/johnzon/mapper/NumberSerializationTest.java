@@ -123,37 +123,13 @@ public class NumberSerializationTest {
     @Test
     public void bigIntegerLongExponent() {
         String poc = "1e200000000";
-        Mapper mapper = new MapperBuilder().build();
-        {
-            final Object number = mapper.readObject(new StringReader(poc), byte.class);
-            assertNotNull(number);
+        try (Mapper mapper = new MapperBuilder().build()) {
+            assertRejected(() -> mapper.readObject(new StringReader(poc), byte.class));
+            assertRejected(() -> mapper.readObject(new StringReader(poc), long.class));
+            assertRejected(() -> mapper.readObject(new StringReader(poc), int.class));
+            assertRejected(() -> mapper.readObject(new StringReader(poc), BigInteger.class));
+            assertRejected(() -> mapper.readObject(new StringReader(poc), BigDecimal.class));
         }
-
-        {
-            final Object number = mapper.readObject(new StringReader(poc), long.class);
-            assertNotNull(number);
-        }
-
-        {
-            final Object number = mapper.readObject(new StringReader(poc), int.class);
-            assertNotNull(number);
-        }
-
-        try {
-            final Object number = mapper.readObject(new StringReader(poc), BigInteger.class);
-            fail();
-        } catch (ArithmeticException ae) {
-            // all fine
-        }
-
-        try {
-            final BigDecimal number = mapper.readObject(new StringReader(poc), BigDecimal.class);
-            final String strval = number.toBigIntegerExact().toString();
-            fail();
-        } catch (ArithmeticException ae) {
-            // all fine
-        }
-
     }
 
     @Test
