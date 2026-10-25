@@ -19,7 +19,6 @@
 package org.apache.johnzon.core;
 
 import jakarta.json.Json;
-import jakarta.json.JsonNumber;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.spi.JsonProvider;
@@ -61,19 +60,16 @@ public class JsonStreamParserImplTest {
     }
 
     @Test
-    public void getValueKeepsCompactNumberGuarded() {
+    public void getValueChecksScale() {
         final JsonProviderImpl provider = new JsonProviderImpl();
         provider.setMaxBigDecimalScale(2);
         try (JohnzonJsonParser parser = (JohnzonJsonParser) provider.createParser(new StringReader("[1e3]"))) {
             assertEquals(JsonParser.Event.START_ARRAY, parser.next());
             assertEquals(JsonParser.Event.VALUE_NUMBER, parser.next());
-            assertEquals(1000, parser.getInt());
-            assertEquals(1000L, parser.getLong());
+            assertThrows(ArithmeticException.class, parser::getInt);
+            assertThrows(ArithmeticException.class, parser::getLong);
             assertThrows(ArithmeticException.class, parser::getBigDecimal);
-            final JsonNumber number = (JsonNumber) parser.getValue();
-            assertEquals("1E+3", number.toString());
-            assertThrows(ArithmeticException.class, number::bigDecimalValue);
-            assertThrows(ArithmeticException.class, number::numberValue);
+            assertThrows(ArithmeticException.class, parser::getValue);
         }
     }
 

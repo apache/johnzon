@@ -307,15 +307,10 @@ class JsonInMemoryParser extends JohnzonJsonParserImpl {
 
     @Override
     public BigDecimal getBigDecimal() {
-        return checkBigDecimalScale(getBigDecimalUnchecked());
-    }
-
-    @Override
-    BigDecimal getBigDecimalUnchecked() {
         if (currentEvent != Event.VALUE_NUMBER) {
             throw new IllegalStateException("getBigDecimal is for numbers");
         }
-        return JsonNumber.class.cast(currentValue).bigDecimalValue();
+        return checkBigDecimalScale(JsonNumber.class.cast(currentValue).bigDecimalValue());
     }
 
     @Override

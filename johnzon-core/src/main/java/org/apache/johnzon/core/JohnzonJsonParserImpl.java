@@ -62,12 +62,6 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
         return value;
     }
 
-    // Only use this for safe primitive conversions or to construct a guarded JsonNumberImpl.
-    BigDecimal getBigDecimalUnchecked() {
-        return getBigDecimal();
-    }
-
-
     @Override
     public Event next() {
         manualNext = true;
@@ -120,7 +114,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
                 if (isFitLong()) {
                     return new JsonLongImpl(getLong());
                 }
-                return new JsonNumberImpl(getBigDecimalUnchecked(), provider::checkBigDecimalScale);
+                return new JsonNumberImpl(getBigDecimal(), provider::checkBigDecimalScale);
             default:
                 throw new IllegalStateException(current + " doesn't support getValue()");
         }

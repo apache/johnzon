@@ -31,7 +31,6 @@ import jakarta.json.stream.JsonParsingException;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 
 public class JsonReaderImpl implements JsonReader {
@@ -67,12 +66,6 @@ public class JsonReaderImpl implements JsonReader {
 
         this.subStreamReader = subStreamReader;
         this.rejectDuplicateKeysMode = rejectDuplicateKeys;
-    }
-
-    private BigDecimal getBigDecimalUnchecked() {
-        return parser instanceof JohnzonJsonParserImpl
-                ? ((JohnzonJsonParserImpl) parser).getBigDecimalUnchecked()
-                : parser.getBigDecimal();
     }
 
     @Override
@@ -135,7 +128,7 @@ public class JsonReaderImpl implements JsonReader {
                 if (parser.isFitLong()) {
                     number = new JsonLongImpl(parser.getLong());
                 } else {
-                    number = new JsonNumberImpl(getBigDecimalUnchecked(), provider::checkBigDecimalScale);
+                    number = new JsonNumberImpl(parser.getBigDecimal(), provider::checkBigDecimalScale);
                 }
                 if (!subStreamReader && parser.hasNext()) {
                     throw new JsonParsingException("Expected end of file", parser.getLocation());
@@ -209,7 +202,7 @@ public class JsonReaderImpl implements JsonReader {
                     if (parser.isFitLong()) {
                         add(current, currentKey, new JsonLongImpl(parser.getLong()));
                     } else {
-                        add(current, currentKey, new JsonNumberImpl(getBigDecimalUnchecked(), provider::checkBigDecimalScale));
+                        add(current, currentKey, new JsonNumberImpl(parser.getBigDecimal(), provider::checkBigDecimalScale));
                     }
                     break;
 

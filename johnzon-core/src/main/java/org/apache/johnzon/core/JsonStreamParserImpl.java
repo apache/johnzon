@@ -1048,12 +1048,12 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             final Integer retVal = fallBackCopyBufferLength > 0 ? parseIntegerFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
                     : parseIntegerFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
-                return getBigDecimalUnchecked().intValue();
+                return getBigDecimal().intValue();
             } else {
                 return retVal.intValue();
             }
         } else {
-            return getBigDecimalUnchecked().intValue();
+            return getBigDecimal().intValue();
         }
     }
 
@@ -1069,12 +1069,12 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             final Long retVal = fallBackCopyBufferLength > 0 ? parseLongFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
                     : parseLongFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
-                return getBigDecimalUnchecked().longValue();
+                return getBigDecimal().longValue();
             } else {
                 return retVal.longValue();
             }
         } else {
-            return getBigDecimalUnchecked().longValue();
+            return getBigDecimal().longValue();
         }
 
     }
@@ -1093,23 +1093,19 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     @Override
     public BigDecimal getBigDecimal() {
-        return checkBigDecimalScale(getBigDecimalUnchecked());
-    }
-
-    @Override
-    BigDecimal getBigDecimalUnchecked() {
         if (previousEvent != VALUE_NUMBER) {
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getBigDecimal()");
             //        } else if (currentBigDecimalNumber != null) {
             //            return currentBigDecimalNumber;
         } else if (isCurrentNumberIntegral && currentIntegralNumber != Integer.MIN_VALUE) {
-            return new BigDecimal(currentIntegralNumber);
+            return checkBigDecimalScale(new BigDecimal(currentIntegralNumber));
         }
 
         combinePreviousFallbackBuffersToCurrent();
         //if there a content in the value buffer read from them, if not use main buffer
-        return /*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
+        final BigDecimal value = fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
                 fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer));
+        return checkBigDecimalScale(value);
     }
 
     @Override

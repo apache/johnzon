@@ -27,20 +27,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import jakarta.json.Json;
 import jakarta.json.JsonArray;
@@ -167,54 +164,8 @@ public class JsonReaderImplTest {
 
     @Test
     public void parseBigIntegerFailOnTooLongExponent() {
-        String json = "1e1500000000";
-        JsonValue jsonValue = Json.createReader(new StringReader(json)).readValue();
-        String newJson = jsonValue.toString();
-        assertEquals("1E+1500000000", newJson);
-
-        assertTrue(jsonValue instanceof JsonNumber);
-
-        final JsonNumber jsonNumber = (JsonNumber) jsonValue;
-
-        try {
-            jsonNumber.bigIntegerValue();
-            fail();
-        } catch (ArithmeticException ae) {
-            // all fine
-        }
-
-        try {
-            jsonNumber.bigIntegerValueExact();
-            fail();
-        } catch (ArithmeticException ae) {
-            // all fine
-        }
-
-        // we don't need to assert the return values, it's just to trigger timeouts
-        final long longVal = jsonNumber.longValue();
-        final int intVal = jsonNumber.intValue();
-        final double doubleVal = jsonNumber.doubleValue();
-        assertArithmeticException(jsonNumber::numberValue);
-        jsonNumber.isIntegral();
-        jsonNumber.hashCode();
-
-        assertArithmeticException(()-> jsonNumber.equals(new JsonNumberImpl(BigDecimal.valueOf(1, 1000000000),
-                ((JsonProviderImpl)JsonProviderImpl.provider())::checkBigDecimalScale)));
-
-        assertArithmeticException(()-> jsonNumber.bigDecimalValue().longValueExact());
-
-        assertArithmeticException(()-> jsonNumber.longValueExact());
-        assertArithmeticException(()-> jsonNumber.intValueExact());
-
-
-    }
-
-    private void assertArithmeticException(Supplier<?> supplier) {
-        try {
-            supplier.get();
-            fail();
-        } catch (ArithmeticException ae) {
-            // all fine
+        try (JsonReader reader = Json.createReader(new StringReader("1e1500000000"))) {
+            assertThrows(ArithmeticException.class, reader::readValue);
         }
     }
 
