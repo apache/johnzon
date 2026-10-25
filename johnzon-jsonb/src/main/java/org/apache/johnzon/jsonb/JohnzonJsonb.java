@@ -42,6 +42,7 @@ import java.io.StringReader;
 import java.io.Writer;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collection;
 import java.util.List;
@@ -523,9 +524,9 @@ public class JohnzonJsonb implements Jsonb, AutoCloseable, JsonbExtension {
                     return (T) Short.valueOf((short) jsonNumber.intValue());
                 }
                 if (BigInteger.class == type) {
-                    return (T) jsonNumber.bigIntegerValue();
+                    return delegate.readObject(json, BigInteger.class);
                 }
-                return (T) jsonNumber.bigDecimalValue();
+                return delegate.readObject(json, BigDecimal.class);
             case OBJECT:
             case ARRAY:
                 return delegate.readObject(JsonStructure.class.cast(json), type);

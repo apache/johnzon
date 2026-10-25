@@ -22,6 +22,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.json.Json;
+import javax.json.JsonNumber;
 import javax.json.JsonReader;
 import javax.json.JsonReaderFactory;
 import javax.json.spi.JsonProvider;
@@ -29,6 +30,7 @@ import javax.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,8 +40,52 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 public class JsonStreamParserImplTest {
+    @Test
+    public void getBigDecimalChecksDefaultScale() {
+        final JsonProviderImpl provider = new JsonProviderImpl();
+        assertEquals(new BigDecimal("1e1000"), parseBigDecimal(provider, "1e1000"));
+        assertThrows(ArithmeticException.class, () -> parseBigDecimal(provider, "1e1001"));
+        assertThrows(ArithmeticException.class, () -> parseBigDecimal(provider, "1e-1001"));
+    }
+
+    @Test
+    public void getBigDecimalChecksConfiguredScale() {
+        final JsonProviderImpl provider = new JsonProviderImpl();
+        provider.setMaxBigDecimalScale(2);
+        assertEquals(new BigDecimal("1e2"), parseBigDecimal(provider, "1e2"));
+        assertEquals(new BigDecimal("1e-2"), parseBigDecimal(provider, "1e-2"));
+        assertThrows(ArithmeticException.class, () -> parseBigDecimal(provider, "1e3"));
+        assertThrows(ArithmeticException.class, () -> parseBigDecimal(provider, "1e-3"));
+    }
+
+    @Test
+    public void getValueKeepsCompactNumberGuarded() {
+        final JsonProviderImpl provider = new JsonProviderImpl();
+        provider.setMaxBigDecimalScale(2);
+        try (JohnzonJsonParser parser = (JohnzonJsonParser) provider.createParser(new StringReader("[1e3]"))) {
+            assertEquals(JsonParser.Event.START_ARRAY, parser.next());
+            assertEquals(JsonParser.Event.VALUE_NUMBER, parser.next());
+            assertEquals(1000, parser.getInt());
+            assertEquals(1000L, parser.getLong());
+            assertThrows(ArithmeticException.class, parser::getBigDecimal);
+            final JsonNumber number = (JsonNumber) parser.getValue();
+            assertEquals("1E+3", number.toString());
+            assertThrows(ArithmeticException.class, number::bigDecimalValue);
+            assertThrows(ArithmeticException.class, number::numberValue);
+        }
+    }
+
+    private BigDecimal parseBigDecimal(final JsonProviderImpl provider, final String value) {
+        try (JsonParser parser = provider.createParser(new StringReader("[" + value + "]"))) {
+            assertEquals(JsonParser.Event.START_ARRAY, parser.next());
+            assertEquals(JsonParser.Event.VALUE_NUMBER, parser.next());
+            return parser.getBigDecimal();
+        }
+    }
+
     @Test
     public void ensureNoArrayBoundErrorWhenOverflow() throws IOException {
         final String json = new JsonObjectBuilderImpl(

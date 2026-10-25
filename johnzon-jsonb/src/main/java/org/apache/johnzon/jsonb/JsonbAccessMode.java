@@ -49,6 +49,7 @@ import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.Meta;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.ReversedAdapter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
@@ -156,6 +157,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
     private final Types types = new Types();
     private final boolean globalIsNillable;
     private final boolean supportsPrivateAccess;
+    private final int maxBigDecimalScale;
 
     // CHECKSTYLE:OFF
     public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
@@ -167,6 +169,23 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                            final boolean failOnMissingCreatorValues,
                            final boolean globalIsNillable,
                            final boolean supportsPrivateAccess) {
+        this(propertyNamingStrategy, orderValue, visibilityStrategy, caseSensitive, defaultConverters, factory,
+                jsonProvider, builderFactory, parserFactory, delegate, failOnMissingCreatorValues,
+                globalIsNillable, supportsPrivateAccess, BigDecimalConverter.DEFAULT_MAX_SCALE);
+    }
+    // CHECKSTYLE:ON
+
+    // CHECKSTYLE:OFF
+    public JsonbAccessMode(final PropertyNamingStrategy propertyNamingStrategy, final String orderValue,
+                           final PropertyVisibilityStrategy visibilityStrategy, final boolean caseSensitive,
+                           final Map<AdapterKey, Adapter<?, ?>> defaultConverters, final JohnzonAdapterFactory factory,
+                           final JsonProvider jsonProvider, final Supplier<JsonBuilderFactory> builderFactory,
+                           final Supplier<JsonParserFactory> parserFactory,
+                           final AccessMode delegate,
+                           final boolean failOnMissingCreatorValues,
+                           final boolean globalIsNillable,
+                           final boolean supportsPrivateAccess,
+                           final int maxBigDecimalScale) {
         // CHECKSTYLE:ON
         this.globalIsNillable = globalIsNillable;
         this.naming = propertyNamingStrategy;
@@ -181,6 +200,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
         this.parserFactory = parserFactory;
         this.failOnMissingCreatorValues = failOnMissingCreatorValues;
         this.supportsPrivateAccess = supportsPrivateAccess;
+        this.maxBigDecimalScale = maxBigDecimalScale;
     }
 
     @Override
@@ -543,7 +563,7 @@ public class JsonbAccessMode implements AccessMode, Closeable, Cleanable<Class<?
                 converter = null; // todo: should we fallback on numberformat?
             }
         } else if (numberFormat != null) {  // TODO: support lists?
-            converter = new ConverterAdapter<>(new JsonbNumberConverter(numberFormat), Number.class);
+            converter = new ConverterAdapter<>(new JsonbNumberConverter(numberFormat, maxBigDecimalScale), Number.class);
         } else {
             converter = new ConverterAdapter<>(new JsonbValueConverter(), Object.class);
         }

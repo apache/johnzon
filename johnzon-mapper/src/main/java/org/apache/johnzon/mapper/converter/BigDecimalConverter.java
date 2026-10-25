@@ -23,15 +23,53 @@ import org.apache.johnzon.mapper.Converter;
 import java.math.BigDecimal;
 
 public class BigDecimalConverter implements Converter<BigDecimal> {
+    public static final int DEFAULT_MAX_SCALE = Integer.getInteger("johnzon.max-big-decimal-scale", 1000);
+
+    private final int maxScale;
+
+    public BigDecimalConverter() {
+        this(DEFAULT_MAX_SCALE);
+    }
+
+    // parses JSON strings the JSON-P provider never saw as numbers, so its max-big-decimal-scale check does not apply
+    public BigDecimalConverter(final int maxScale) {
+        this.maxScale = maxScale;
+    }
+
     @Override
     public String toString(final BigDecimal instance) {
         // when using the converter, user expects the decimal notation
         // otherwise, JsonNumber will give the E (scientific) notation
+        checkScale(instance);
         return instance.toPlainString();
     }
 
     @Override
     public BigDecimal fromString(final String text) {
-        return new BigDecimal(text);
+        final BigDecimal value = new BigDecimal(text);
+        checkScale(value);
+        return value;
+    }
+
+    /**
+     * Checks a decimal obtained without parsing a string, for example from a JSON-P provider.
+     * @param value the decimal to validate
+     * @throws ArithmeticException if its absolute scale exceeds this converter's limit
+     */
+    public void checkScale(final BigDecimal value) {
+        checkScale(value, maxScale);
+    }
+
+    /**
+     * @param value the decimal to validate
+     * @param maxScale the maximum absolute scale
+     * @throws ArithmeticException if the absolute scale of the value exceeds maxScale
+     */
+    public static void checkScale(final BigDecimal value, final int maxScale) {
+        if (Math.abs((long) value.scale()) > maxScale) {
+            throw new ArithmeticException(String.format(
+                    "BigDecimal scale (%d) limit exceeds maximum allowed (%d)",
+                    value.scale(), maxScale));
+        }
     }
 }

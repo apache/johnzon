@@ -17,6 +17,7 @@
 package org.apache.johnzon.core;
 
 
+import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.Map;
@@ -54,6 +55,16 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
 
     protected JohnzonJsonParserImpl(final JsonProviderImpl provider) {
         this.provider = provider;
+    }
+
+    protected final BigDecimal checkBigDecimalScale(final BigDecimal value) {
+        provider.checkBigDecimalScale(value);
+        return value;
+    }
+
+    // Only use this for safe primitive conversions or to construct a guarded JsonNumberImpl.
+    BigDecimal getBigDecimalUnchecked() {
+        return getBigDecimal();
     }
 
 
@@ -109,7 +120,7 @@ public abstract class JohnzonJsonParserImpl implements JohnzonJsonParser {
                 if (isFitLong()) {
                     return new JsonLongImpl(getLong());
                 }
-                return new JsonNumberImpl(getBigDecimal(), provider::checkBigDecimalScale);
+                return new JsonNumberImpl(getBigDecimalUnchecked(), provider::checkBigDecimalScale);
             default:
                 throw new IllegalStateException(current + " doesn't support getValue()");
         }
