@@ -27,6 +27,7 @@ import javax.json.JsonArrayBuilder;
 import javax.json.JsonObject;
 import javax.json.JsonWriter;
 import javax.json.JsonWriterFactory;
+import javax.json.stream.JsonParsingException;
 
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -43,15 +44,15 @@ public class OverflowTest {
             put(JsonParserFactoryImpl.BUFFER_LENGTH, "2");
         }}).createReader(new StringReader("{\"a\":\"b\",\n\"another\":\"value\"}")).readObject();
 
-        // oversized
+        // value spans input buffers
         final JsonObject object = Json.createReaderFactory(new HashMap<String, Object>() {{
-            put(JsonParserFactoryImpl.MAX_STRING_LENGTH, "10");
+            put(JsonParserFactoryImpl.MAX_STRING_LENGTH, "20");
             put(JsonParserFactoryImpl.BUFFER_LENGTH, "2");
         }}).createReader(new StringReader("{\"a\":\"b\",\n\"another\":\"value very long\"}")).readObject();
         assertEquals("value very long", object.getString("another"));
     }
 
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    @Test(expected = JsonParsingException.class)
     public void ko() {
         Json.createReaderFactory(new HashMap<String, Object>() {{
             put(JsonParserFactoryImpl.MAX_STRING_LENGTH, "10");

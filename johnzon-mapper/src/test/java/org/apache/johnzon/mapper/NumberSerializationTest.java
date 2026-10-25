@@ -69,7 +69,7 @@ public class NumberSerializationTest {
 
     @Test
     public void bigDecimalConverterChecksScaleBeforePlainString() {
-        final BigDecimalConverter converter = new BigDecimalConverter(2);
+        final BigDecimalConverter converter = new BigDecimalConverter(2, 1000);
         assertEquals("100", converter.toString(new BigDecimal("1e2")));
         assertEquals("0.01", converter.toString(new BigDecimal("1e-2")));
         assertRejected(() -> converter.toString(new BigDecimal("1e3")));
@@ -247,7 +247,7 @@ public class NumberSerializationTest {
     public void minimumBigDecimalScaleRejected() {
         final BigDecimal value = new BigDecimal(BigInteger.ONE, Integer.MIN_VALUE);
         try {
-            new BigDecimalConverter(1000).checkScale(value);
+            new BigDecimalConverter(1000, 1000).checkScale(value);
             fail("expected the minimum scale to be rejected");
         } catch (final ArithmeticException expected) {
             // The scale's absolute value must not overflow an int.
@@ -257,7 +257,7 @@ public class NumberSerializationTest {
     @Test
     public void numericBigDecimalHonorsConverterLimit() {
         try (final Mapper mapper = new MapperBuilder()
-                .addConverter(BigDecimal.class, new BigDecimalConverter(2)).build()) {
+                .addConverter(BigDecimal.class, new BigDecimalConverter(2, 1000)).build()) {
             assertEquals(new BigDecimal("1e2"), readScore(mapper, "{\"score\":1e2}"));
             assertEquals(new BigDecimal("1e-2"), readScore(mapper, "{\"score\":1e-2}"));
             assertScaleRejected(mapper, "{\"score\":1e3}");
@@ -309,7 +309,7 @@ public class NumberSerializationTest {
     @Test
     public void scaleChangesPreserveRegisteredConverter() {
         try (final Mapper mapper = new MapperBuilder()
-                .addConverter(BigDecimal.class, new BigDecimalConverter(4)).setMaxBigDecimalScale(2).build()) {
+                .addConverter(BigDecimal.class, new BigDecimalConverter(4, 1000)).setMaxBigDecimalScale(2).build()) {
             assertEquals(new BigDecimal("1e3"), readScore(mapper, "{\"score\":\"1e3\"}"));
             assertScaleRejected(mapper, "{\"score\":\"1e5\"}");
         }

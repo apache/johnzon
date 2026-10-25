@@ -37,7 +37,8 @@ public class DynamicBufferResizingTest {
     public void main() throws Exception {
         final JsonbConfig config = new JsonbConfig()
                 .withFormatting(Boolean.TRUE)
-                .withBinaryDataStrategy(BinaryDataStrategy.BASE_64);
+                .withBinaryDataStrategy(BinaryDataStrategy.BASE_64)
+                .setProperty("org.apache.johnzon.max-string-length", 1_000_000);
         Jsonb jsonb = JsonbBuilder.create(config);
 
         final Request request = new Request("Screenshot.png", "image/png", new byte[558140]);

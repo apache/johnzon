@@ -20,6 +20,8 @@ package org.apache.johnzon.core;
 
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -55,8 +57,9 @@ public class JsonParserStreamingTest {
             while (impl.hasNext()) {
                 impl.next();
             }
-        } catch (final ArrayIndexOutOfBoundsException aioobe) {
-            assertEquals("Buffer too small for such a long string", aioobe.getMessage());
+            fail("expected a JsonParsingException");
+        } catch (final JsonParsingException expected) {
+            assertTrue(expected.getMessage().contains("Maximum string/number length"));
         }
     }
 

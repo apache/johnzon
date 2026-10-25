@@ -32,6 +32,15 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
     }
 
     public CommentsJsonStreamParserImpl(final InputStream inputStream,
+                                        final int maxStringLength,
+                                        final int maxNumberLength,
+                                        final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                                        final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                        final boolean autoAdjust, final JsonProviderImpl provider) {
+        super(inputStream, maxStringLength, maxNumberLength, bufferProvider, valueBuffer, autoAdjust, provider);
+    }
+
+    public CommentsJsonStreamParserImpl(final InputStream inputStream,
                                         final Charset encoding,
                                         final int maxStringLength,
                                         final BufferStrategy.BufferProvider<char[]> bufferProvider,
@@ -40,12 +49,31 @@ public class CommentsJsonStreamParserImpl extends JsonStreamParserImpl {
         super(inputStream, encoding, maxStringLength, bufferProvider, valueBuffer, autoAdjust, provider);
     }
 
+    public CommentsJsonStreamParserImpl(final InputStream inputStream,
+                                        final Charset encoding,
+                                        final int maxStringLength,
+                                        final int maxNumberLength,
+                                        final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                                        final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                        final boolean autoAdjust, final JsonProviderImpl provider) {
+        super(inputStream, encoding, maxStringLength, maxNumberLength, bufferProvider, valueBuffer, autoAdjust, provider);
+    }
+
     public CommentsJsonStreamParserImpl(final Reader reader,
                                         final int maxStringLength,
                                         final BufferStrategy.BufferProvider<char[]> bufferProvider,
                                         final BufferStrategy.BufferProvider<char[]> valueBuffer,
                                         final boolean autoAdjust, final JsonProviderImpl provider) {
         super(reader, maxStringLength, bufferProvider, valueBuffer, autoAdjust, provider);
+    }
+
+    public CommentsJsonStreamParserImpl(final Reader reader,
+                                        final int maxStringLength,
+                                        final int maxNumberLength,
+                                        final BufferStrategy.BufferProvider<char[]> bufferProvider,
+                                        final BufferStrategy.BufferProvider<char[]> valueBuffer,
+                                        final boolean autoAdjust, final JsonProviderImpl provider) {
+        super(reader, maxStringLength, maxNumberLength, bufferProvider, valueBuffer, autoAdjust, provider);
     }
 
     @Override

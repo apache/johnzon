@@ -24,16 +24,18 @@ import java.math.BigDecimal;
 
 public class BigDecimalConverter implements Converter<BigDecimal> {
     public static final int DEFAULT_MAX_SCALE = Integer.getInteger("johnzon.max-big-decimal-scale", 1000);
+    public static final int DEFAULT_MAX_NUMBER_LENGTH = Integer.getInteger("org.apache.johnzon.max-number-length", 1000);
 
     private final int maxScale;
+    private final int maxLength;
 
     public BigDecimalConverter() {
-        this(DEFAULT_MAX_SCALE);
+        this(DEFAULT_MAX_SCALE, DEFAULT_MAX_NUMBER_LENGTH);
     }
 
-    // parses JSON strings the JSON-P provider never saw as numbers, so its max-big-decimal-scale check does not apply
-    public BigDecimalConverter(final int maxScale) {
+    public BigDecimalConverter(final int maxScale, final int maxLength) {
         this.maxScale = maxScale;
+        this.maxLength = maxLength;
     }
 
     @Override
@@ -46,6 +48,10 @@ public class BigDecimalConverter implements Converter<BigDecimal> {
 
     @Override
     public BigDecimal fromString(final String text) {
+        if (text.length() > maxLength) {
+            throw new NumberFormatException(String.format(
+                    "Number length (%d) exceeds maximum allowed (%d)", text.length(), maxLength));
+        }
         final BigDecimal value = new BigDecimal(text);
         checkScale(value);
         return value;
