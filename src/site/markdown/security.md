@@ -53,10 +53,17 @@ The default maximum is 1000. The `johnzon.max-big-decimal-scale` system property
 JSON numbers converted to `BigDecimal` or `BigInteger` through a separately configured Johnzon JSON-P
 provider must satisfy both the provider's limit and the Mapper's limit.
 
-The scale limit does not restrict the number of digits or the total JSON input size. Apply suitable input-size
-limits and validate numeric range and precision for your application. Custom adapters are responsible for
-validating numbers they construct or format. If you do not need large numeric types, prefer primitive types
-or their wrappers.
+The scale limit does not restrict the number of digits. JSON numbers have a separate length limit of 1000 characters
+by default. The count includes a sign, decimal point, and exponent. Set the
+`org.apache.johnzon.max-number-length` system property or pass the key in a Johnzon JSON-P parser or reader
+factory configuration. `MapperBuilder#setMaxNumberLength(int)` and the JSON-B property with
+the same name configure their default `BigDecimal`/`BigInteger` string adapters and Johnzon reader factories.
+A supplied reader factory or explicitly registered converter keeps its own limit. With a Johnzon reader factory,
+quoted numeric values must also fit its `org.apache.johnzon.max-string-length` limit.
+
+Neither limit restricts the total JSON input size. Apply suitable input-size limits and validate numeric range
+and precision for your application. Custom adapters are responsible for validating numbers they construct or
+format. If you do not need large numeric types, prefer primitive types or their wrappers.
 
 ## JSON Schema validation
 

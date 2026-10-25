@@ -23,12 +23,12 @@ import jakarta.json.JsonNumber;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonReaderFactory;
 import jakarta.json.spi.JsonProvider;
+import jakarta.json.stream.JsonParsingException;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import jakarta.json.stream.JsonParser;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -118,7 +117,7 @@ public class JsonStreamParserImplTest {
     }
 
     @Test
-    public void ensureNoArrayBoundErrorWhenOverflow() throws IOException {
+    public void stringAcrossBuffersExceedsLimit() {
         final String json = new JsonObjectBuilderImpl(
             emptyMap(),
             BufferStrategyFactory.valueOf("QUEUE").newCharProvider(100),
@@ -132,21 +131,14 @@ public class JsonStreamParserImplTest {
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
                 BufferStrategyFactory.valueOf("QUEUE").newCharProvider(10),
                 true, (JsonProviderImpl) JsonProviderImpl.provider());
-        final List<String> events = new ArrayList<>();
-        while (parser.hasNext()) {
-            final JsonParser.Event event = parser.next();
-            events.add(event.name());
-            switch (event) {
-                case VALUE_STRING:
-                    events.add(parser.getString());
-                    break;
-                default:
-            }
+        try (JsonParser parsed = parser) {
+            final JsonParsingException error = assertThrows(JsonParsingException.class, () -> {
+                while (parsed.hasNext()) {
+                    parsed.next();
+                }
+            });
+            assertTrue(error.getMessage().contains("Maximum string/number length"));
         }
-        parser.close();
-        assertEquals(
-                asList("START_OBJECT", "KEY_NAME", "VALUE_STRING", "{\"foo\":\"barbar\\barbarbar\"}", "END_OBJECT"),
-                events);
     }
 
     @Test
@@ -173,7 +165,8 @@ public class JsonStreamParserImplTest {
         String json = "{\"data\":\"" + "a".repeat(JsonParserFactoryImpl.DEFAULT_MAX_STRING_LENGTH * 2) + "\"}";
 
         JsonReaderFactory readerFactory = JsonProvider.provider().createReaderFactory(Map.of(
-                JsonParserFactoryImpl.BUFFER_STRATEGY, TrackingBufferStrategy.class.getName()));
+                JsonParserFactoryImpl.BUFFER_STRATEGY, TrackingBufferStrategy.class.getName(),
+                JsonParserFactoryImpl.MAX_STRING_LENGTH, JsonParserFactoryImpl.DEFAULT_MAX_STRING_LENGTH * 3));
 
         try (JsonReader reader = readerFactory.createReader(new StringReader(json))) {
             reader.readObject();

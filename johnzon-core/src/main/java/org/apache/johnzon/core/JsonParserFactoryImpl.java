@@ -35,7 +35,10 @@ import static java.util.Optional.ofNullable;
 public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonParserFactory {
     public static final String MAX_STRING_LENGTH = "org.apache.johnzon.max-string-length";
     public static final int DEFAULT_MAX_STRING_LENGTH = Integer.getInteger(MAX_STRING_LENGTH, 256 * 1024); //256kB
-    
+
+    public static final String MAX_NUMBER_LENGTH = "org.apache.johnzon.max-number-length";
+    public static final int DEFAULT_MAX_NUMBER_LENGTH = Integer.getInteger(MAX_NUMBER_LENGTH, 1000);
+
     public static final String AUTO_ADJUST_STRING_BUFFER = "org.apache.johnzon.auto-adjust-buffer";
     public static final String BUFFER_LENGTH = "org.apache.johnzon.default-char-buffer";
     public static final int DEFAULT_BUFFER_LENGTH = Integer.getInteger(BUFFER_LENGTH, 64 * 1024); //64k
@@ -44,10 +47,11 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
     public static final boolean DEFAULT_SUPPORTS_COMMENT = Boolean.getBoolean(SUPPORTS_COMMENTS); //default is false;
 
     static final Collection<String> SUPPORTED_CONFIG_KEYS = asList(
-        BUFFER_STRATEGY, MAX_STRING_LENGTH, BUFFER_LENGTH, SUPPORTS_COMMENTS, AUTO_ADJUST_STRING_BUFFER, ENCODING
+        BUFFER_STRATEGY, MAX_STRING_LENGTH, MAX_NUMBER_LENGTH, BUFFER_LENGTH, SUPPORTS_COMMENTS, AUTO_ADJUST_STRING_BUFFER, ENCODING
     );
-      
+
     private final int maxSize;
+    private final int maxNumberLength;
     private final BufferStrategy.BufferProvider<char[]> bufferProvider;
     private final BufferStrategy.BufferProvider<char[]> valueBufferProvider;
     private final boolean supportsComments;
@@ -65,8 +69,9 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
         }
 
         this.maxSize = getInt(MAX_STRING_LENGTH, DEFAULT_MAX_STRING_LENGTH);
+        this.maxNumberLength = getInt(MAX_NUMBER_LENGTH, DEFAULT_MAX_NUMBER_LENGTH);
         this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
-        this.valueBufferProvider = getBufferProvider().newCharProvider(maxSize);
+        this.valueBufferProvider = getBufferProvider().newCharProvider(Math.max(maxSize, maxNumberLength));
         this.supportsComments = getBool(SUPPORTS_COMMENTS, DEFAULT_SUPPORTS_COMMENT);
         this.autoAdjustBuffers = getBool(AUTO_ADJUST_STRING_BUFFER, true);
         this.defaultEncoding = ofNullable(getString(ENCODING, null)).map(Charset::forName).orElse(null);
@@ -81,26 +86,26 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
             return getDefaultJsonParserImpl(in, defaultEncoding);
         }
         if (supportsComments) {
-            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
+            return new CommentsJsonStreamParserImpl(in, maxSize, maxNumberLength, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
         }
         //UTF Auto detection RFC 4627
-        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
+        return new JsonStreamParserImpl(in, maxSize, maxNumberLength, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
     }
 
     private JsonStreamParserImpl getDefaultJsonParserImpl(final InputStream in, final Charset charset) {
         if (supportsComments) {
-            return new CommentsJsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
+            return new CommentsJsonStreamParserImpl(in, charset, maxSize, maxNumberLength, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
         }
         //use provided charset
-        return new JsonStreamParserImpl(in, charset, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
+        return new JsonStreamParserImpl(in, charset, maxSize, maxNumberLength, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
     }
 
     private JsonStreamParserImpl getDefaultJsonParserImpl(final Reader in) {
         if (supportsComments) {
-            return new CommentsJsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
+            return new CommentsJsonStreamParserImpl(in, maxSize, maxNumberLength, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
         }
         //no charset necessary
-        return new JsonStreamParserImpl(in, maxSize, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
+        return new JsonStreamParserImpl(in, maxSize, maxNumberLength, bufferProvider, valueBufferProvider, autoAdjustBuffers, provider);
     }
 
     @Override

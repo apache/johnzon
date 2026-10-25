@@ -23,6 +23,16 @@ import org.apache.johnzon.mapper.Converter;
 import java.math.BigInteger;
 
 public class BigIntegerConverter implements Converter<BigInteger> {
+    private final int maxLength;
+
+    public BigIntegerConverter() {
+        this(BigDecimalConverter.DEFAULT_MAX_NUMBER_LENGTH);
+    }
+
+    public BigIntegerConverter(final int maxLength) {
+        this.maxLength = maxLength;
+    }
+
     @Override
     public String toString(final BigInteger instance) {
         return instance.toString();
@@ -30,6 +40,10 @@ public class BigIntegerConverter implements Converter<BigInteger> {
 
     @Override
     public BigInteger fromString(final String text) {
+        if (text.length() > maxLength) {
+            throw new NumberFormatException(String.format(
+                    "Number length (%d) exceeds maximum allowed (%d)", text.length(), maxLength));
+        }
         return new BigInteger(text);
     }
 }

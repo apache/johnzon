@@ -1357,14 +1357,15 @@ public class JsonParserTest {
        
     }
     
-    @Test(expected = JsonParsingException.class)
-    public void maxStringNumberFail() {
+    @Test
+    public void maxStringNumberUsesNumberLimit() {
         // using a reader as wrapper of parser
-        Json.createReaderFactory(new HashMap<String, Object>() {
+        final JsonArray array = Json.createReaderFactory(new HashMap<String, Object>() {
             {
                 put("org.apache.johnzon.max-string-length", "5");
             }
-        }).createReader(new ByteArrayInputStream("[12.333]".getBytes())).read();
+        }).createReader(new ByteArrayInputStream("[12.333]".getBytes())).readArray();
+        assertEquals(new BigDecimal("12.333"), array.getJsonNumber(0).bigDecimalValue());
        
     }
     

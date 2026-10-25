@@ -73,6 +73,7 @@ public class MapperBuilder {
     private JsonBuilderFactory builderFactory;
     private boolean supportHiddenAccess = true;
     private int maxSize = -1;
+    private int maxNumberLength = BigDecimalConverter.DEFAULT_MAX_NUMBER_LENGTH;
     private int bufferSize = -1;
     private String bufferStrategy;
     private boolean autoAdjustStringBuffers;
@@ -157,6 +158,7 @@ public class MapperBuilder {
                 if (maxSize > 0) {
                     config.put("org.apache.johnzon.max-string-length", maxSize);
                 }
+                config.put("org.apache.johnzon.max-number-length", maxNumberLength);
                 if (bufferSize > 0) {
                     config.put("org.apache.johnzon.default-char-buffer", bufferSize);
                 }
@@ -342,6 +344,22 @@ public class MapperBuilder {
 
     public MapperBuilder setMaxSize(final int size) {
         this.maxSize = size;
+        return this;
+    }
+
+    public MapperBuilder setMaxNumberLength(final int maxNumberLength) {
+        if (this.maxNumberLength == maxNumberLength) {
+            return this;
+        }
+        if (adaptersShared) {
+            adapters = adapters.copy();
+            adaptersShared = false;
+        }
+        if (createdFactories.remove(readerFactory)) {
+            readerFactory = null;
+        }
+        this.maxNumberLength = maxNumberLength;
+        adapters.setMaxNumberLength(maxNumberLength);
         return this;
     }
 
@@ -566,18 +584,20 @@ public class MapperBuilder {
      * @return this builder
      */
     public MapperBuilder setMaxBigDecimalScale(final int maxBigDecimalScale) {
-        if (this.maxBigDecimalScale != maxBigDecimalScale && adaptersShared) {
-            // mappers built so far keep their own limit
-            adapters = adapters.copy();
-            adaptersShared = false;
+        if (this.maxBigDecimalScale != maxBigDecimalScale) {
+            if (adaptersShared) {
+                // mappers built so far keep their own limit
+                adapters = adapters.copy();
+                adaptersShared = false;
+            }
             if (provider != null && provider == createdProvider) {
                 provider = null;
                 readerFactory = createdFactories.contains(readerFactory) ? null : readerFactory;
                 generatorFactory = createdFactories.contains(generatorFactory) ? null : generatorFactory;
                 builderFactory = createdFactories.contains(builderFactory) ? null : builderFactory;
+                createdFactories.clear();
             }
             createdProvider = null;
-            createdFactories.clear();
         }
         this.maxBigDecimalScale = maxBigDecimalScale;
         adapters.setMaxBigDecimalScale(maxBigDecimalScale);

@@ -66,6 +66,11 @@ The generator factory supports the standard properties (pretty one for example) 
 * `org.apache.johnzon.default-char-buffer-generator` (int): buffer size of the generator, it enables to work in memory to flush less often (for performances).
 * `org.apache.johnzon.boundedoutputstreamwriter` (int): when converting an `OuputStream` to a `Writer` it defines the buffer size (if > 0) +- 2 charaters (for the encoding logic). It enables a faster flushing to the actual underlying output stream combined with `org.apache.johnzon.default-char-buffer-generator`.
 
+##### JsonParserFactory and JsonReaderFactory
+
+* `org.apache.johnzon.max-number-length` (positive int): maximum characters in a JSON number, 1000 by default. The sign, decimal point, and exponent are included. Set it in the factory configuration or as a system property for the default.
+* `org.apache.johnzon.max-string-length` (positive int): maximum characters in a JSON string, 262144 by default. The limit applies across input buffers.
+
 ### JSON-P Strict Compliance (stable)
 
 **This has been removed with Johnzon 2.0.x, johnzon-core is now JSON-P compliant by default.**
@@ -108,6 +113,12 @@ mapper.writeObject(object, outputStream);
 
 final MySuperObject otherObject = mapper.readObject(inputStream, MySuperObject.class);
 ]]></pre>
+
+`MapperBuilder#setMaxNumberLength(int)` sets the limit for JSON numbers read through a Johnzon reader factory
+and for `BigDecimal` and `BigInteger` values read from JSON strings by the default string adapters. The default
+is 1000 characters, or the value of the `org.apache.johnzon.max-number-length` system property. If you supply
+a reader factory or register a converter, configure its limit separately. With a Johnzon reader factory, quoted
+numeric values must also fit its string-length limit.
 
 The mapper uses a direct java to json representation.
 
@@ -361,6 +372,8 @@ JsonbConfig specific properties:
 
 * johnzon.use-big-decimal-for-object: true to use BigDecimal for numbers not typed (Object), false to adjust the type to the number size, true by default.
 * johnzon.max-big-decimal-scale: Maximum absolute `BigDecimal` scale for built-in conversions, 1000 by default.
+* org.apache.johnzon.max-number-length: Maximum characters in a `BigDecimal`/`BigInteger` value read from a JSON string by the default string adapters, 1000 by default. Also applies to JSON numbers when using the Johnzon JSON-P provider. Overrides the system property for this JSON-B instance.
+* org.apache.johnzon.max-string-length: Maximum characters in a JSON string when using the Johnzon JSON-P provider, 262144 by default. A quoted numeric value must satisfy this limit before conversion.
 * johnzon.support-enum-container-deserialization: prevent EnumMap/EnumSet instantiation, true by default.
 * johnzon.attributeOrder: Comparator instance to sort properties by name.
 * johnzon.deduplicateObjects: should instances be deduplicated.

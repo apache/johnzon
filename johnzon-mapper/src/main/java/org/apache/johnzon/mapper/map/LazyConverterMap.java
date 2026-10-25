@@ -90,6 +90,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
     private boolean useBigIntegerStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
     private boolean useBigDecimalStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
     private int maxBigDecimalScale = BigDecimalConverter.DEFAULT_MAX_SCALE;
+    private int maxNumberLength = BigDecimalConverter.DEFAULT_MAX_NUMBER_LENGTH;
 
     public void setUseShortISO8601Format(final boolean useShortISO8601Format) {
         this.useShortISO8601Format = useShortISO8601Format;
@@ -113,7 +114,18 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         }
         this.maxBigDecimalScale = maxBigDecimalScale;
         replaceAll((key, adapter) -> adapter instanceof BigDecimalStringAdapter
-                ? new BigDecimalStringAdapter(maxBigDecimalScale) : adapter);
+                ? new BigDecimalStringAdapter(maxBigDecimalScale, maxNumberLength) : adapter);
+    }
+
+    public void setMaxNumberLength(final int maxNumberLength) {
+        if (this.maxNumberLength == maxNumberLength) {
+            return;
+        }
+        this.maxNumberLength = maxNumberLength;
+        replaceAll((key, adapter) -> adapter instanceof BigDecimalStringAdapter
+                ? new BigDecimalStringAdapter(maxBigDecimalScale, maxNumberLength)
+                : adapter instanceof BigIntegerStringAdapter
+                        ? new BigIntegerStringAdapter(maxNumberLength) : adapter);
     }
 
     public LazyConverterMap copy() {
@@ -123,6 +135,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         copy.useBigIntegerStringAdapter = useBigIntegerStringAdapter;
         copy.useBigDecimalStringAdapter = useBigDecimalStringAdapter;
         copy.maxBigDecimalScale = maxBigDecimalScale;
+        copy.maxNumberLength = maxNumberLength;
         forEach(copy::put);
         return copy;
     }
@@ -187,10 +200,10 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
             return add(key, new ConverterAdapter<>(new StringConverter(), String.class));
         }
         if (from == BigDecimal.class && useBigDecimalStringAdapter) {
-            return add(key, new BigDecimalStringAdapter(maxBigDecimalScale));
+            return add(key, new BigDecimalStringAdapter(maxBigDecimalScale, maxNumberLength));
         }
         if (from == BigInteger.class && useBigIntegerStringAdapter) {
-            return add(key, new ConverterAdapter<>(new BigIntegerConverter(), BigInteger.class));
+            return add(key, new BigIntegerStringAdapter(maxNumberLength));
         }
         if (from == Locale.class) {
             return add(key, new LocaleConverter());
@@ -630,8 +643,14 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
     }
 
     private static class BigDecimalStringAdapter extends ConverterAdapter<BigDecimal> {
-        private BigDecimalStringAdapter(final int maxScale) {
-            super(new BigDecimalConverter(maxScale), BigDecimal.class);
+        private BigDecimalStringAdapter(final int maxScale, final int maxLength) {
+            super(new BigDecimalConverter(maxScale, maxLength), BigDecimal.class);
+        }
+    }
+
+    private static class BigIntegerStringAdapter extends ConverterAdapter<BigInteger> {
+        private BigIntegerStringAdapter(final int maxLength) {
+            super(new BigIntegerConverter(maxLength), BigInteger.class);
         }
     }
 

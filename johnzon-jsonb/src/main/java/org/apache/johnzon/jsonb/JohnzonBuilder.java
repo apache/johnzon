@@ -113,7 +113,9 @@ public class JohnzonBuilder implements JsonbBuilder {
         builder.setUseBigDecimalForObjectNumbers(config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
         final int maxBigDecimalScale = config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(BigDecimalConverter.DEFAULT_MAX_SCALE);
         builder.setMaxBigDecimalScale(maxBigDecimalScale);
-
+        config.getProperty("org.apache.johnzon.max-string-length").map(this::toInt).ifPresent(builder::setMaxSize);
+        builder.setMaxNumberLength(config.getProperty("org.apache.johnzon.max-number-length").map(this::toInt)
+                .orElse(BigDecimalConverter.DEFAULT_MAX_NUMBER_LENGTH));
         builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
                 toBool(System.getProperty("johnzon.support-enum-container-deserialization", config.getProperty("johnzon.support-enum-container-deserialization")
                         .map(String::valueOf).orElse("true"))));
@@ -469,6 +471,7 @@ public class JohnzonBuilder implements JsonbBuilder {
         }
         config.getProperty("org.apache.johnzon.default-char-buffer").ifPresent(b -> map.put("org.apache.johnzon.default-char-buffer", b));
         config.getProperty("org.apache.johnzon.max-string-length").ifPresent(b -> map.put("org.apache.johnzon.max-string-length", b));
+        config.getProperty("org.apache.johnzon.max-number-length").ifPresent(b -> map.put("org.apache.johnzon.max-number-length", b));
         config.getProperty("org.apache.johnzon.supports-comments").ifPresent(b -> map.put("org.apache.johnzon.supports-comments", b));
         config.getProperty("org.apache.johnzon.buffer-strategy").ifPresent(b -> map.put("org.apache.johnzon.buffer-strategy", b));
         return map;
