@@ -40,14 +40,23 @@ The private security mailing address is: security (at) apache (dot) org
 
 Known vulnerabilities are listed on the [vulnerabilities](./vulnerabilities.html) page.
 
-## BigInteger and Java
+<a id="BigInteger_and_Java"></a>
+## BigDecimal and BigInteger
 
-JSON-P/JSON-B exposes API using `BigDecimal` and `BigInteger`.
-The bridge between these two types is `BigDecimal#toBigInteger` which has a slow implementation in Java without careness or scale max validation.
+JSON-P, Mapper, and JSON-B can represent JSON numbers as `BigDecimal` or `BigInteger`.
+Converting a `BigDecimal` with a large absolute scale to `BigInteger` or plain decimal notation can take substantial time and memory.
 
-Johnzon does some sanity checks on this value but at some point we recommend you to stay away from these API and handle big numbers using `String` type and parse them yourself since you are the only ones knowing the correct functional and relevant validation of the scale before a instantiation.
+Johnzon's built-in numeric conversions check the absolute `BigDecimal` scale before these operations.
+The default maximum is 1000. The `johnzon.max-big-decimal-scale` system property changes this default;
+`JsonProviderImpl#setMaxBigDecimalScale`, `MapperBuilder#setMaxBigDecimalScale`, and the JSON-B
+`johnzon.max-big-decimal-scale` property configure their respective components. On built-in paths,
+JSON numbers converted to `BigDecimal` or `BigInteger` through a separately configured Johnzon JSON-P
+provider must satisfy both the provider's limit and the Mapper's limit.
 
-If you know you don't need such big types, prefer using plain primitives (or wrappers).
+The scale limit does not restrict the number of digits or the total JSON input size. Apply suitable input-size
+limits and validate numeric range and precision for your application. Custom adapters are responsible for
+validating numbers they construct or format. If you do not need large numeric types, prefer primitive types
+or their wrappers.
 
 ## JSON Schema validation
 

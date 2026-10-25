@@ -19,15 +19,21 @@
 package org.apache.johnzon.core;
 
 import jakarta.json.JsonNumber;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.function.Consumer;
 
 final class JsonNumberImpl implements JsonNumber, Serializable {
+    private static final class DeserializationScaleChecker {
+        private static final Consumer<BigDecimal> INSTANCE = new JsonProviderImpl()::checkBigDecimalScale;
+    }
+
     private final BigDecimal value;
     private transient Integer hashCode = null;
-    private transient Consumer<BigDecimal> maxBigDecimalScale = (bigDecimal) -> {}; // for deserialization?
+    private transient Consumer<BigDecimal> maxBigDecimalScale;
 
     JsonNumberImpl(final BigDecimal decimal, final Consumer<BigDecimal> maxBigDecimalScale) {
         this.maxBigDecimalScale = maxBigDecimalScale;
@@ -38,8 +44,15 @@ final class JsonNumberImpl implements JsonNumber, Serializable {
         this.value = decimal;
     }
 
+    private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        // The original provider callback is transient; restore the default limit after deserialization.
+        maxBigDecimalScale = DeserializationScaleChecker.INSTANCE;
+    }
+
     @Override
     public Number numberValue() {
+        maxBigDecimalScale.accept(value);
         return value;
     }
 

@@ -41,4 +41,4 @@ Exploitation needs a mapped POJO with a `Class` attribute and a class with a har
 * **Announcement:** [lists.apache.org](https://lists.apache.org/thread/qbg14djo95gfpk7o560lr8wcrzfyw43l)
 
 Denial of service: JSON input with very large numbers (e.g. `1e20000000`) deserialized into `BigDecimal` can cause a slow conversion.
-Johnzon 1.2.21 limits the `BigDecimal` scale to 1000 by default. See also [BigInteger and Java](./security.html#BigInteger_and_Java).
+Johnzon 1.2.21 limits the `BigDecimal` scale to 1000 by default. See also [BigDecimal and BigInteger](./security.html#BigDecimal_and_BigInteger).

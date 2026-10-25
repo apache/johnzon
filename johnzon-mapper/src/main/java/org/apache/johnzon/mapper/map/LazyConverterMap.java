@@ -89,6 +89,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
     private static final boolean IJSON_BIG_NUMBER_DEFAULT = !Boolean.getBoolean("johnzon.use-big-number-stringadapter.disabled");
     private boolean useBigIntegerStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
     private boolean useBigDecimalStringAdapter = IJSON_BIG_NUMBER_DEFAULT;
+    private int maxBigDecimalScale = BigDecimalConverter.DEFAULT_MAX_SCALE;
 
     public void setUseShortISO8601Format(final boolean useShortISO8601Format) {
         this.useShortISO8601Format = useShortISO8601Format;
@@ -104,6 +105,26 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
 
     public void setUseBigIntegerStringAdapter(boolean useBigIntegerStringAdapter) {
         this.useBigIntegerStringAdapter = useBigIntegerStringAdapter;
+    }
+
+    public void setMaxBigDecimalScale(final int maxBigDecimalScale) {
+        if (this.maxBigDecimalScale == maxBigDecimalScale) {
+            return;
+        }
+        this.maxBigDecimalScale = maxBigDecimalScale;
+        replaceAll((key, adapter) -> adapter instanceof BigDecimalStringAdapter
+                ? new BigDecimalStringAdapter(maxBigDecimalScale) : adapter);
+    }
+
+    public LazyConverterMap copy() {
+        final LazyConverterMap copy = new LazyConverterMap();
+        copy.useShortISO8601Format = useShortISO8601Format;
+        copy.dateTimeFormatter = dateTimeFormatter;
+        copy.useBigIntegerStringAdapter = useBigIntegerStringAdapter;
+        copy.useBigDecimalStringAdapter = useBigDecimalStringAdapter;
+        copy.maxBigDecimalScale = maxBigDecimalScale;
+        forEach(copy::put);
+        return copy;
     }
 
     @Override
@@ -166,7 +187,7 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
             return add(key, new ConverterAdapter<>(new StringConverter(), String.class));
         }
         if (from == BigDecimal.class && useBigDecimalStringAdapter) {
-            return add(key, new ConverterAdapter<>(new BigDecimalConverter(), BigDecimal.class));
+            return add(key, new BigDecimalStringAdapter(maxBigDecimalScale));
         }
         if (from == BigInteger.class && useBigIntegerStringAdapter) {
             return add(key, new ConverterAdapter<>(new BigIntegerConverter(), BigInteger.class));
@@ -606,6 +627,12 @@ public class LazyConverterMap extends ConcurrentHashMap<AdapterKey, Adapter<?, ?
         return instance.get(Calendar.HOUR_OF_DAY) != 0 ||
                 (instance.isSet(Calendar.MINUTE) && instance.get(Calendar.MINUTE) != 0) ||
                 (instance.isSet(Calendar.SECOND) && instance.get(Calendar.SECOND) != 0);
+    }
+
+    private static class BigDecimalStringAdapter extends ConverterAdapter<BigDecimal> {
+        private BigDecimalStringAdapter(final int maxScale) {
+            super(new BigDecimalConverter(maxScale), BigDecimal.class);
+        }
     }
 
     private <T extends Calendar> T fromCalendar(final String text, final Function<ZonedDateTime, T> calendarSupplier) {

@@ -19,6 +19,7 @@
 package org.apache.johnzon.mapper;
 
 import org.apache.johnzon.mapper.access.AccessMode;
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.CharacterConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 import org.apache.johnzon.mapper.internal.ConverterAdapter;
@@ -202,10 +203,10 @@ public class MappingParserImpl implements MappingParser {
                 return (T) Short.valueOf((short) number.intValue());
             }
             if (targetType == BigDecimal.class || Number.class == targetType) {
-                return (T) number.bigDecimalValue();
+                return (T) toBigDecimal(number);
             }
             if (targetType == BigInteger.class) {
-                return (T) number.bigIntegerValue();
+                return (T) toBigDecimal(number).toBigInteger();
             }
         }
         if (JsonArray.class.isInstance(jsonValue)) {
@@ -318,7 +319,7 @@ public class MappingParserImpl implements MappingParser {
                             final JsonValue jsonValue = value.getValue();
                             if (JsonNumber.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), config.isUseBigDecimalForObjectNumbers() ?
-                                        JsonNumber.class.cast(jsonValue).bigDecimalValue() : toNumberValue(JsonNumber.class.cast(jsonValue)));
+                                        toBigDecimal(JsonNumber.class.cast(jsonValue)) : toNumberValue(JsonNumber.class.cast(jsonValue)));
                             } else if (JsonString.class.isInstance(jsonValue) && any) {
                                 map.put(value.getKey(), JsonString.class.cast(jsonValue).getString());
                             } else {
@@ -513,9 +514,16 @@ public class MappingParserImpl implements MappingParser {
             return longValue;
         }
         if (config.isUseBigDecimalForFloats()) {
-            return jsonNumber.bigDecimalValue();
+            return toBigDecimal(jsonNumber);
         }
         return jsonNumber.doubleValue();
+    }
+
+    // bigDecimalValue() applies the provider limit, which differs from the mapper one when the provider or reader factory is supplied
+    private BigDecimal toBigDecimal(final JsonNumber number) {
+        final BigDecimal value = number.bigDecimalValue();
+        BigDecimalConverter.checkScale(value, config.getMaxBigDecimalScale());
+        return value;
     }
 
     private Object convertTo(final Adapter converter, final JsonValue jsonValue, final JsonPointerTracker jsonPointer,
@@ -562,6 +570,12 @@ public class MappingParserImpl implements MappingParser {
             }
         }
         if (NUMBER.equals(valueType)) {
+            if (ConverterAdapter.class.isInstance(converter)
+                    && BigDecimalConverter.class == ConverterAdapter.class.cast(converter).getConverter().getClass()) {
+                final BigDecimal value = toBigDecimal(JsonNumber.class.cast(jsonValue));
+                BigDecimalConverter.class.cast(ConverterAdapter.class.cast(converter).getConverter()).checkScale(value);
+                return value;
+            }
             if (key != null) {
                 if (Long.class == key.getTo() || long.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue).longValue());
@@ -572,9 +586,9 @@ public class MappingParserImpl implements MappingParser {
                 } else if (Float.class == key.getTo() || float.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue).doubleValue());
                 } else if (BigInteger.class == key.getTo()) {
-                    return converter.to(JsonNumber.class.cast(jsonValue).bigIntegerValue());
+                    return converter.to(toBigDecimal(JsonNumber.class.cast(jsonValue)).toBigInteger());
                 } else if (BigDecimal.class == key.getTo() ||  Number.class == key.getTo()) {
-                    return converter.to(JsonNumber.class.cast(jsonValue).bigDecimalValue());
+                    return converter.to(toBigDecimal(JsonNumber.class.cast(jsonValue)));
                 } else if (JsonNumber.class == key.getTo()) {
                     return converter.to(JsonNumber.class.cast(jsonValue));
                 }
@@ -719,11 +733,11 @@ public class MappingParserImpl implements MappingParser {
             }
 
             if (type == BigInteger.class) {
-                return number.bigIntegerValue();
+                return toBigDecimal(number).toBigInteger();
             }
 
             if (type == BigDecimal.class ||  Number.class == type) {
-                return number.bigDecimalValue();
+                return toBigDecimal(number);
             }
 
             if (type == Integer.class || type == int.class) {

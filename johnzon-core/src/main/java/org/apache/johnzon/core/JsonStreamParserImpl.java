@@ -978,12 +978,12 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             final Integer retVal = fallBackCopyBufferLength > 0 ? parseIntegerFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
                     : parseIntegerFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
-                return getBigDecimal().intValue();
+                return getBigDecimalUnchecked().intValue();
             } else {
                 return retVal.intValue();
             }
         } else {
-            return getBigDecimal().intValue();
+            return getBigDecimalUnchecked().intValue();
         }
     }
 
@@ -999,12 +999,12 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             final Long retVal = fallBackCopyBufferLength > 0 ? parseLongFromChars(fallBackCopyBuffer, 0, fallBackCopyBufferLength)
                     : parseLongFromChars(buffer, startOfValueInBuffer, endOfValueInBuffer);
             if (retVal == null) {
-                return getBigDecimal().longValue();
+                return getBigDecimalUnchecked().longValue();
             } else {
                 return retVal.longValue();
             }
         } else {
-            return getBigDecimal().longValue();
+            return getBigDecimalUnchecked().longValue();
         }
 
     }
@@ -1023,6 +1023,11 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     @Override
     public BigDecimal getBigDecimal() {
+        return checkBigDecimalScale(getBigDecimalUnchecked());
+    }
+
+    @Override
+    BigDecimal getBigDecimalUnchecked() {
         if (previousEvent != VALUE_NUMBER) {
             throw new IllegalStateException(EVT_MAP[previousEvent] + " doesn't support getBigDecimal()");
             //        } else if (currentBigDecimalNumber != null) {
@@ -1033,8 +1038,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         combinePreviousFallbackBuffersToCurrent();
         //if there a content in the value buffer read from them, if not use main buffer
-        return (/*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
-                fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer)));
+        return /*currentBigDecimalNumber = */fallBackCopyBufferLength > 0 ? new BigDecimal(fallBackCopyBuffer, 0,
+                fallBackCopyBufferLength) : new BigDecimal(buffer, startOfValueInBuffer, (endOfValueInBuffer - startOfValueInBuffer));
     }
 
     @Override

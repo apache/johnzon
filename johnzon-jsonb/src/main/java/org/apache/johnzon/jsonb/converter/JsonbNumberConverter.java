@@ -18,7 +18,10 @@
  */
 package org.apache.johnzon.jsonb.converter;
 
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
+
 import jakarta.json.bind.annotation.JsonbNumberFormat;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -31,8 +34,14 @@ import java.util.function.Supplier;
 public class JsonbNumberConverter extends JsonbLocaleParserConverterBase<Number> {
     private final Supplier<NumberFormat> delegateFactory; // NumberFormat is not thread safe
     private final Queue<NumberFormat> pool = new ArrayBlockingQueue<>(30); // configurable?
+    private final int maxBigDecimalScale;
 
     public JsonbNumberConverter(final JsonbNumberFormat numberFormat) {
+        this(numberFormat, BigDecimalConverter.DEFAULT_MAX_SCALE);
+    }
+
+    public JsonbNumberConverter(final JsonbNumberFormat numberFormat, final int maxBigDecimalScale) {
+        this.maxBigDecimalScale = maxBigDecimalScale;
         final String locale = numberFormat.locale();
         final String format = numberFormat.value();
         final boolean customLocale = !JsonbNumberFormat.DEFAULT_LOCALE.equals(locale);
@@ -49,6 +58,9 @@ public class JsonbNumberConverter extends JsonbLocaleParserConverterBase<Number>
 
     @Override
     public String toString(final Number instance) {
+        if (instance instanceof BigDecimal) {
+            BigDecimalConverter.checkScale((BigDecimal) instance, maxBigDecimalScale);
+        }
         return execute(f -> f.format(instance));
     }
 

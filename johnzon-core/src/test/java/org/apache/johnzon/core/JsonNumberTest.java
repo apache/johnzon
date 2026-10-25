@@ -32,9 +32,39 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 public class JsonNumberTest {
+    @Test
+    public void numberValueChecksConfiguredScale() {
+        final JsonProviderImpl provider = new JsonProviderImpl();
+        provider.setMaxBigDecimalScale(2);
+
+        Assert.assertEquals(new BigDecimal("1e2"), provider.createValue(new BigDecimal("1e2")).numberValue());
+        Assert.assertEquals(new BigDecimal("1e-2"), provider.createValue(new BigDecimal("1e-2")).numberValue());
+        assertThrows(ArithmeticException.class, () -> provider.createValue(new BigDecimal("1e3")).numberValue());
+        assertThrows(ArithmeticException.class, () -> provider.createValue(new BigDecimal("1e-3")).numberValue());
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void minimumScaleRejected() {
+        final JsonProviderImpl provider = new JsonProviderImpl();
+        provider.createValue(new BigDecimal(BigInteger.ONE, Integer.MIN_VALUE)).bigDecimalValue();
+    }
+
+    @Test
+    public void exponentBeyondIntegerScaleRangeRejected() {
+        final JsonProviderImpl provider = new JsonProviderImpl();
+        try (final jakarta.json.JsonReader reader = provider.createReader(new StringReader("[1e2147483648]"))) {
+            reader.readArray().getJsonNumber(0).bigDecimalValue();
+        } catch (final ArithmeticException | NumberFormatException e) {
+            // Older JDKs reject this exponent while parsing; newer JDKs must reject its scale.
+            return;
+        }
+        fail("expected the minimum scale to be rejected");
+    }
+
     @Test
     public void nonZeroFractional() {
         final JsonNumber number = Json.createArrayBuilder()

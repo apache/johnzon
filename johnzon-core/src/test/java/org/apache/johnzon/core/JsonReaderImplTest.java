@@ -194,7 +194,7 @@ public class JsonReaderImplTest {
         final long longVal = jsonNumber.longValue();
         final int intVal = jsonNumber.intValue();
         final double doubleVal = jsonNumber.doubleValue();
-        jsonNumber.numberValue();
+        assertArithmeticException(jsonNumber::numberValue);
         jsonNumber.isIntegral();
         jsonNumber.hashCode();
 

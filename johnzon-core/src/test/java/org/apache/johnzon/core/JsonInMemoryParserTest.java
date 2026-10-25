@@ -20,13 +20,36 @@ package org.apache.johnzon.core;
 
 import org.junit.Test;
 
+import jakarta.json.JsonArray;
 import jakarta.json.stream.JsonParser;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class JsonInMemoryParserTest {
+    @Test
+    public void getBigDecimalChecksReceivingProviderScale() {
+        final JsonProviderImpl permissiveProvider = new JsonProviderImpl();
+        permissiveProvider.setMaxBigDecimalScale(4);
+        final JsonArray array = permissiveProvider.createArrayBuilder()
+                .add(new BigDecimal("1e2"))
+                .add(new BigDecimal("1e3"))
+                .build();
+
+        final JsonProviderImpl strictProvider = new JsonProviderImpl();
+        strictProvider.setMaxBigDecimalScale(2);
+        try (JsonParser parser = strictProvider.createParserFactory(Collections.emptyMap()).createParser(array)) {
+            assertEquals(JsonParser.Event.START_ARRAY, parser.next());
+            assertEquals(JsonParser.Event.VALUE_NUMBER, parser.next());
+            assertEquals(new BigDecimal("1e2"), parser.getBigDecimal());
+            assertEquals(JsonParser.Event.VALUE_NUMBER, parser.next());
+            assertThrows(ArithmeticException.class, parser::getBigDecimal);
+        }
+    }
+
     @Test
     public void testSpecCurrentEvent() {
         JsonParser parser = new JsonInMemoryParser(

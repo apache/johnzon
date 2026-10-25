@@ -360,6 +360,7 @@ to use for deserialization.
 JsonbConfig specific properties:
 
 * johnzon.use-big-decimal-for-object: true to use BigDecimal for numbers not typed (Object), false to adjust the type to the number size, true by default.
+* johnzon.max-big-decimal-scale: Maximum absolute `BigDecimal` scale for built-in conversions, 1000 by default.
 * johnzon.support-enum-container-deserialization: prevent EnumMap/EnumSet instantiation, true by default.
 * johnzon.attributeOrder: Comparator instance to sort properties by name.
 * johnzon.deduplicateObjects: should instances be deduplicated.

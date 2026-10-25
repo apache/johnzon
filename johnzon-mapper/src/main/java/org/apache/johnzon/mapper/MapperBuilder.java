@@ -30,6 +30,7 @@ import org.apache.johnzon.mapper.access.FieldAccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
 import org.apache.johnzon.mapper.access.MethodAccessMode;
 import org.apache.johnzon.mapper.access.KnownNotOpenedJavaTypesAccessMode;
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.BooleanConverter;
 import org.apache.johnzon.mapper.converter.ByteConverter;
 import org.apache.johnzon.mapper.converter.CachedDelegateConverter;
@@ -105,7 +106,10 @@ public class MapperBuilder {
     private Boolean deduplicateObjects = null;
     private boolean useJsRange;
     private boolean useBigDecimalForObjectNumbers;
-    private int maxBigDecimalScale = 1000;
+    private int maxBigDecimalScale = BigDecimalConverter.DEFAULT_MAX_SCALE;
+    private boolean adaptersShared;
+    private JsonProvider createdProvider; // owned by this builder, so it carries maxBigDecimalScale
+    private final Collection<Object> createdFactories = new ArrayList<>();
     private boolean supportEnumContainerDeserialization = true;
     private Function<Class<?>, MapperConfig.CustomEnumConverter<?>> enumConverterFactory = type -> new EnumConverter(type);
     private boolean skipAccessModeWrapper;
@@ -127,6 +131,7 @@ public class MapperBuilder {
                 provider = JsonProvider.provider();
                 JsonProviderUtil.setMaxBigDecimalScale(provider, maxBigDecimalScale);
                 this.provider = provider;
+                createdProvider = provider;
             }
             final Map<String, Object> config = new HashMap<String, Object>();
             if (bufferStrategy != null) {
@@ -141,6 +146,7 @@ public class MapperBuilder {
                     config.put(JsonGenerator.PRETTY_PRINTING, true);
                 }
                 generatorFactory = provider.createGeneratorFactory(config);
+                createdFactories.add(generatorFactory);
             }
 
             if (readerFactory == null) {
@@ -158,13 +164,16 @@ public class MapperBuilder {
                     config.put("org.apache.johnzon.auto-adjust-buffer", true);
                 }
                 readerFactory = provider.createReaderFactory(config);
+                createdFactories.add(readerFactory);
             }
         } else if (this.provider == null) {
             this.provider = JsonProvider.provider();
             JsonProviderUtil.setMaxBigDecimalScale(provider, maxBigDecimalScale);
+            createdProvider = provider;
         }
         if (builderFactory == null) {
             builderFactory = provider.createBuilderFactory(emptyMap());
+            createdFactories.add(builderFactory);
         }
 
         if (accessMode == null) {
@@ -229,6 +238,7 @@ public class MapperBuilder {
             adapters.put(new AdapterKey(boolean.class, String.class), adapters.get(new AdapterKey(Boolean.class, String.class)));
         }
 
+        adaptersShared = true;
         return new Mapper(
                 readerFactory, generatorFactory, builderFactory, provider,
                 new MapperConfig(
@@ -545,8 +555,32 @@ public class MapperBuilder {
         return this;
     }
 
+    /**
+     * Sets the absolute scale limit for BigDecimal values read through the mapper's built-in conversions.
+     * JSON numbers must also pass the JSON-P provider's limit; a supplied provider or reader factory
+     * keeps its own limit, so the stricter one applies. A registered {@link BigDecimalConverter}
+     * adds its own limit for JSON numbers and replaces this one for JSON strings.
+     * Custom adapters are responsible for validating values they create themselves.
+     * The limit also applies before the default BigDecimal string adapter writes plain notation.
+     * @param maxBigDecimalScale the maximum absolute scale
+     * @return this builder
+     */
     public MapperBuilder setMaxBigDecimalScale(final int maxBigDecimalScale) {
+        if (this.maxBigDecimalScale != maxBigDecimalScale && adaptersShared) {
+            // mappers built so far keep their own limit
+            adapters = adapters.copy();
+            adaptersShared = false;
+            if (provider != null && provider == createdProvider) {
+                provider = null;
+                readerFactory = createdFactories.contains(readerFactory) ? null : readerFactory;
+                generatorFactory = createdFactories.contains(generatorFactory) ? null : generatorFactory;
+                builderFactory = createdFactories.contains(builderFactory) ? null : builderFactory;
+            }
+            createdProvider = null;
+            createdFactories.clear();
+        }
         this.maxBigDecimalScale = maxBigDecimalScale;
+        adapters.setMaxBigDecimalScale(maxBigDecimalScale);
         return this;
     }
 

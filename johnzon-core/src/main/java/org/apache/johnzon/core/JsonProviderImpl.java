@@ -268,7 +268,7 @@ public class JsonProviderImpl extends JsonProvider implements Serializable {
         // should be fine enough. Maybe we should externalize so users can pick something better if they need to
         // it becomes their responsibility to fix the limit and may expose them to a DoS attack
         final int limit = maxBigDecimalScale;
-        final int absScale = Math.abs(value.scale());
+        final long absScale = Math.abs((long) value.scale());
 
         if (absScale > limit) {
             throw new ArithmeticException(String.format(

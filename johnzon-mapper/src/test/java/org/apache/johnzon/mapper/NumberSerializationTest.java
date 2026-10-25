@@ -67,6 +67,41 @@ public class NumberSerializationTest {
                 "0.000000733915", result);
     }
 
+    @Test
+    public void bigDecimalConverterChecksScaleBeforePlainString() {
+        final BigDecimalConverter converter = new BigDecimalConverter(2);
+        assertEquals("100", converter.toString(new BigDecimal("1e2")));
+        assertEquals("0.01", converter.toString(new BigDecimal("1e-2")));
+        assertRejected(() -> converter.toString(new BigDecimal("1e3")));
+        assertRejected(() -> converter.toString(new BigDecimal("1e-3")));
+    }
+
+    @Test
+    public void bigDecimalStringAdapterChecksScaleWhenWriting() {
+        try (final Mapper mapper = new MapperBuilder().setMaxBigDecimalScale(2).build()) {
+            final BigDecimalHolder holder = new BigDecimalHolder();
+            holder.score = new BigDecimal("1e2");
+            assertEquals("{\"score\":\"100\"}", mapper.writeObjectAsString(holder));
+            holder.score = new BigDecimal("1e3");
+            assertRejected(() -> mapper.writeObjectAsString(holder));
+        }
+    }
+
+    @Test
+    public void bigIntegerFromJsonValueChecksMapperScale() {
+        final org.apache.johnzon.core.JsonProviderImpl sourceProvider = new org.apache.johnzon.core.JsonProviderImpl();
+        sourceProvider.setMaxBigDecimalScale(2000);
+        try (final Mapper mapper = new MapperBuilder().setMaxBigDecimalScale(2)
+                .setUseBigIntegerStringAdapter(false).build()) {
+            assertEquals(new BigInteger("100"), mapper.readObject(
+                    sourceProvider.createValue(new BigDecimal("1e2")), BigInteger.class));
+            assertRejected(() -> mapper.readObject(
+                    sourceProvider.createValue(new BigDecimal("1e3")), BigInteger.class));
+            assertRejected(() -> mapper.readObject(sourceProvider.createObjectBuilder()
+                    .add("value", new BigDecimal("1e3")).build(), BigIntegerHolder.class));
+        }
+    }
+
     /**
      * Bug fix: useBigDecimalStringAdapter and useBigIntegerStringAdapter flags
      * were swapped in LazyConverterMap. Each flag must control its own type.
@@ -166,6 +201,202 @@ public class NumberSerializationTest {
         }
     }
 
+    @Test
+    public void bigDecimalNumberPropertyRejectsScaleAboveDefaultLimit() {
+        try (final Mapper mapper = new MapperBuilder().build()) {
+            assertScaleRejected(mapper, "{\"score\":1e1001}");
+            assertScaleRejected(mapper, "{\"score\":1e-1001}");
+        }
+    }
+
+    @Test
+    public void bigDecimalStringPropertyRejectsScaleAboveDefaultLimit() {
+        try (final Mapper mapper = new MapperBuilder().build()) {
+            assertScaleRejected(mapper, "{\"score\":\"1e1001\"}");
+            assertScaleRejected(mapper, "{\"score\":\"1E+1001\"}");
+        }
+    }
+
+    @Test
+    public void bigDecimalNumberPropertyRejectsScaleWithoutAdapter() {
+        try (final Mapper mapper = new MapperBuilder().setUseBigDecimalStringAdapter(false).build()) {
+            assertScaleRejected(mapper, "{\"score\":1e1001}");
+        }
+    }
+
+    @Test
+    public void bigDecimalPropertyWithinScale() {
+        try (final Mapper mapper = new MapperBuilder().build()) {
+            assertEquals(new BigDecimal("1.25"), readScore(mapper, "{\"score\":1.25}"));
+            assertEquals(new BigDecimal("1.25"), readScore(mapper, "{\"score\":\"1.25\"}"));
+            assertEquals(new BigDecimal("1e1000"), readScore(mapper, "{\"score\":1e1000}"));
+            assertEquals(new BigDecimal("1e1000"), readScore(mapper, "{\"score\":\"1e1000\"}"));
+        }
+    }
+
+    @Test
+    public void bigDecimalPropertyConfiguredScale() {
+        try (final Mapper mapper = new MapperBuilder().setMaxBigDecimalScale(2000).build()) {
+            assertEquals(new BigDecimal("1e2000"), readScore(mapper, "{\"score\":1e2000}"));
+            assertEquals(new BigDecimal("1e2000"), readScore(mapper, "{\"score\":\"1e2000\"}"));
+            assertScaleRejected(mapper, "{\"score\":\"1e2001\"}");
+        }
+    }
+
+    @Test
+    public void minimumBigDecimalScaleRejected() {
+        final BigDecimal value = new BigDecimal(BigInteger.ONE, Integer.MIN_VALUE);
+        try {
+            new BigDecimalConverter(1000).checkScale(value);
+            fail("expected the minimum scale to be rejected");
+        } catch (final ArithmeticException expected) {
+            // The scale's absolute value must not overflow an int.
+        }
+    }
+
+    @Test
+    public void numericBigDecimalHonorsConverterLimit() {
+        try (final Mapper mapper = new MapperBuilder()
+                .addConverter(BigDecimal.class, new BigDecimalConverter(2)).build()) {
+            assertEquals(new BigDecimal("1e2"), readScore(mapper, "{\"score\":1e2}"));
+            assertEquals(new BigDecimal("1e-2"), readScore(mapper, "{\"score\":1e-2}"));
+            assertScaleRejected(mapper, "{\"score\":1e3}");
+            assertScaleRejected(mapper, "{\"score\":1e-3}");
+            assertScaleRejected(mapper, "{\"score\":\"1e3\"}");
+        }
+    }
+
+    @Test
+    public void numericBigDecimalHonorsMapperLimitWithExplicitProvider() {
+        final org.apache.johnzon.core.JsonProviderImpl provider = new org.apache.johnzon.core.JsonProviderImpl();
+        try (final Mapper mapper = new MapperBuilder().setProvider(provider).setMaxBigDecimalScale(2).build()) {
+            assertScaleRejected(mapper, "{\"score\":1e3}");
+            assertScaleRejected(mapper, "{\"score\":\"1e3\"}");
+            assertEquals(1000, provider.getMaxBigDecimalScale());
+        }
+    }
+
+    @Test
+    public void cachedBigDecimalAdapterHonorsScaleChanges() {
+        final MapperBuilder builder = new MapperBuilder().setMaxBigDecimalScale(4);
+        builder.getAdapters().get(new AdapterKey(BigDecimal.class, String.class));
+        try (final Mapper mapper = builder.setMaxBigDecimalScale(2).build()) {
+            assertScaleRejected(mapper, "{\"score\":\"1e3\"}");
+        }
+        try (final Mapper mapper = builder.setMaxBigDecimalScale(4).build()) {
+            assertEquals(new BigDecimal("1e3"), readScore(mapper, "{\"score\":\"1e3\"}"));
+        }
+        try (final Mapper mapper = builder.setMaxBigDecimalScale(2).build()) {
+            assertScaleRejected(mapper, "{\"score\":\"1e3\"}");
+        }
+    }
+
+    @Test
+    public void earlyBigDecimalAdapterHasDefaultLimit() {
+        final MapperBuilder builder = new MapperBuilder();
+        final Adapter<?, ?> adapter = builder.getAdapters().get(new AdapterKey(BigDecimal.class, String.class));
+        try {
+            ((Adapter<BigDecimal, String>) adapter).to("1e1001");
+            fail("expected the default scale limit before build");
+        } catch (final ArithmeticException expected) {
+            // An early lookup must not create an unlimited converter.
+        }
+        try (final Mapper mapper = builder.build()) {
+            assertScaleRejected(mapper, "{\"score\":\"1e1001\"}");
+        }
+    }
+
+    @Test
+    public void scaleChangesPreserveRegisteredConverter() {
+        try (final Mapper mapper = new MapperBuilder()
+                .addConverter(BigDecimal.class, new BigDecimalConverter(4)).setMaxBigDecimalScale(2).build()) {
+            assertEquals(new BigDecimal("1e3"), readScore(mapper, "{\"score\":\"1e3\"}"));
+            assertScaleRejected(mapper, "{\"score\":\"1e5\"}");
+        }
+    }
+
+    @Test
+    public void numericBigDecimalHonorsStricterProviderLimit() {
+        final org.apache.johnzon.core.JsonProviderImpl provider = new org.apache.johnzon.core.JsonProviderImpl();
+        provider.setMaxBigDecimalScale(100);
+        try (final Mapper mapper = new MapperBuilder().setProvider(provider).setMaxBigDecimalScale(1000).build()) {
+            assertEquals(new BigDecimal("1e-100"), readScore(mapper, "{\"score\":1e-100}"));
+            assertScaleRejected(mapper, "{\"score\":1e-101}");
+            assertRejected(() -> mapper.readObject("{\"scores\":[1e-101]}", BigDecimalListHolder.class));
+        }
+    }
+
+    @Test
+    public void builtMapperKeepsScaleWhenBuilderChanges() {
+        final MapperBuilder builder = new MapperBuilder().setMaxBigDecimalScale(2);
+        try (final Mapper first = builder.build()) {
+            try (final Mapper second = builder.setMaxBigDecimalScale(4).build()) {
+                assertScaleRejected(first, "{\"score\":\"1e3\"}");
+                assertScaleRejected(first, "{\"score\":1e3}");
+                assertEquals(new BigDecimal("1e3"), readScore(second, "{\"score\":\"1e3\"}"));
+                assertEquals(new BigDecimal("1e3"), readScore(second, "{\"score\":1e3}"));
+            }
+        }
+    }
+
+    @Test
+    public void nestedBigDecimalsHonorMapperLimit() {
+        try (final Mapper mapper = new MapperBuilder().setProvider(new org.apache.johnzon.core.JsonProviderImpl())
+                .setMaxBigDecimalScale(2).setUseBigDecimalForObjectNumbers(true).build()) {
+            final BigDecimalListHolder list = mapper.readObject("{\"scores\":[1e2]}", BigDecimalListHolder.class);
+            assertEquals(new BigDecimal("1e2"), list.scores.get(0));
+            assertRejected(() -> mapper.readObject("{\"scores\":[1e3]}", BigDecimalListHolder.class));
+            assertRejected(() -> mapper.readObject("{\"scores\":[1e3]}", BigDecimalArrayHolder.class));
+            assertRejected(() -> mapper.readObject("{\"scores\":{\"a\":1e3}}", BigDecimalMapHolder.class));
+            assertRejected(() -> mapper.readObject("{\"scores\":{\"a\":1e3}}", ObjectMapHolder.class));
+            assertRejected(() -> mapper.readObject("1e3", BigDecimal.class));
+        }
+        try (final Mapper mapper = new MapperBuilder().setMaxBigDecimalScale(2).setUseBigDecimalStringAdapter(false).build()) {
+            assertScaleRejected(mapper, "{\"score\":1e3}");
+        }
+    }
+
+    @Test
+    public void defaultBigDecimalConverterIsBounded() {
+        try (final Mapper mapper = new MapperBuilder().addConverter(BigDecimal.class, new BigDecimalConverter()).build()) {
+            assertEquals(new BigDecimal("1e1000"), readScore(mapper, "{\"score\":\"1e1000\"}"));
+            assertScaleRejected(mapper, "{\"score\":\"1e1001\"}");
+        }
+    }
+
+    private static void assertRejected(final Runnable read) {
+        try {
+            read.run();
+        } catch (final RuntimeException e) {
+            Throwable t = e;
+            while (t != null && !ArithmeticException.class.isInstance(t)) {
+                t = t.getCause();
+            }
+            assertNotNull("expected a scale rejection but got " + e, t);
+            return;
+        }
+        fail("expected a scale rejection");
+    }
+
+    private static BigDecimal readScore(final Mapper mapper, final String json) {
+        final BigDecimalHolder holder = mapper.readObject(json, BigDecimalHolder.class);
+        return holder.score;
+    }
+
+    private static void assertScaleRejected(final Mapper mapper, final String json) {
+        try {
+            mapper.readObject(json, BigDecimalHolder.class);
+        } catch (final RuntimeException e) {
+            Throwable t = e;
+            while (t != null && !ArithmeticException.class.isInstance(t)) {
+                t = t.getCause();
+            }
+            assertNotNull("expected a scale rejection for " + json + " but got " + e, t);
+            return;
+        }
+        fail("expected " + json + " to be rejected");
+    }
+
     public static class Holder {
         public long value;
     }
@@ -176,5 +407,25 @@ public class NumberSerializationTest {
 
     public static class BigDecimalHolder {
         public BigDecimal score;
+    }
+
+    public static class BigIntegerHolder {
+        public BigInteger value;
+    }
+
+    public static class BigDecimalListHolder {
+        public java.util.List<BigDecimal> scores;
+    }
+
+    public static class BigDecimalArrayHolder {
+        public BigDecimal[] scores;
+    }
+
+    public static class BigDecimalMapHolder {
+        public java.util.Map<String, BigDecimal> scores;
+    }
+
+    public static class ObjectMapHolder {
+        public java.util.Map<String, Object> scores;
     }
 }

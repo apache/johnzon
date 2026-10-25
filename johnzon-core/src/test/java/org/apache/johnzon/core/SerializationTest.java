@@ -39,6 +39,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class SerializationTest {
     @Test
@@ -57,7 +58,18 @@ public class SerializationTest {
         final JsonNumber deserialized = serialDeser(source);
         assertNotSame(source, deserialized);
         assertEquals(1.0, deserialized.doubleValue(), 0.);
+        assertEquals(new BigDecimal("1.0"), deserialized.numberValue());
+        assertEquals(new BigDecimal("1.0"), deserialized.bigDecimalValue());
         assertEquals("1.0", deserialized.toString());
+    }
+
+    @Test
+    public void deserializedNumberUsesDefaultScaleLimit() throws IOException, ClassNotFoundException {
+        final JsonNumber source = new JsonNumberImpl(new BigDecimal("1e1001"),
+                new JsonProviderImpl()::checkBigDecimalScale);
+        final JsonNumber deserialized = serialDeser(source);
+        assertThrows(ArithmeticException.class, deserialized::numberValue);
+        assertThrows(ArithmeticException.class, deserialized::bigDecimalValue);
     }
 
     @Test

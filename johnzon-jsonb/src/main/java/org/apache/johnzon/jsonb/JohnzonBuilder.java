@@ -36,6 +36,7 @@ import org.apache.johnzon.mapper.ObjectConverter;
 import org.apache.johnzon.mapper.SerializeValueFilter;
 import org.apache.johnzon.mapper.access.AccessMode;
 import org.apache.johnzon.mapper.access.FieldAndMethodAccessMode;
+import org.apache.johnzon.mapper.converter.BigDecimalConverter;
 import org.apache.johnzon.mapper.converter.LocaleConverter;
 import org.apache.johnzon.mapper.internal.AdapterKey;
 
@@ -110,7 +111,8 @@ public class JohnzonBuilder implements JsonbBuilder {
 
         // todo: global spec toggle to disable all these ones at once?
         builder.setUseBigDecimalForObjectNumbers(config.getProperty("johnzon.use-big-decimal-for-object").map(this::toBool).orElse(true));
-        builder.setMaxBigDecimalScale(config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(1000));
+        final int maxBigDecimalScale = config.getProperty("johnzon.max-big-decimal-scale").map(this::toInt).orElse(BigDecimalConverter.DEFAULT_MAX_SCALE);
+        builder.setMaxBigDecimalScale(maxBigDecimalScale);
 
         builder.setSupportEnumContainerDeserialization( // https://github.com/eclipse-ee4j/jakartaee-tck/issues/103
                 toBool(System.getProperty("johnzon.support-enum-container-deserialization", config.getProperty("johnzon.support-enum-container-deserialization")
@@ -226,7 +228,7 @@ public class JohnzonBuilder implements JsonbBuilder {
                         isNillable,
                         config.getProperty("johnzon.supportsPrivateAccess")
                                 .map(this::toBool)
-                                .orElse(false)));
+                                .orElse(false), maxBigDecimalScale));
         builder.setAccessMode(accessMode);
 
         config.getProperty("johnzon.snippetMaxLength")
