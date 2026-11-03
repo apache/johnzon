@@ -26,6 +26,7 @@ import java.util.Map;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import jakarta.json.Json;
 import jakarta.json.JsonConfig;
@@ -169,6 +170,7 @@ public class JsonObjectBuilderImplTest {
         final JsonObjectBuilder builder = Json.createObjectBuilder();
         try {
             builder.add("name", (JsonValue) null);
+            fail("Expected NullPointerException for a null value");
         } catch (final NullPointerException e) {
             assertEquals("value/builder must not be null for name: name", e.getMessage());
         }
