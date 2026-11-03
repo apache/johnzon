@@ -111,14 +111,14 @@ public final class Meta {
             final Class<? extends Annotation> userType = a.annotationType();
             final T aa = userType.getAnnotation(api);
             if (aa != null) {
-                boolean overriden = false;
+                boolean overridden = false;
                 final Map<String, Method> mapping = new HashMap<String, Method>();
                 for (final Class<?> cm : asList(api, userType)) {
                     for (final Method m : cm.getMethods()) {
-                        overriden = mapping.put(m.getName(), m) != null || overriden;
+                        overridden = mapping.put(m.getName(), m) != null || overridden;
                     }
                 }
-                if (!overriden) {
+                if (!overridden) {
                     return aa;
                 }
                 return api.cast(newAnnotation(mapping, a, aa));
