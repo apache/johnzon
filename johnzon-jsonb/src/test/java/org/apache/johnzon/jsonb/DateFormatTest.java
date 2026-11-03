@@ -111,7 +111,7 @@ public class DateFormatTest {
     }
 
     @Test
-    public void packageConfigOverridenByClass() throws Exception {
+    public void packageConfigOverriddenByClass() throws Exception {
         try (final Jsonb jsonb = JsonbBuilder.create(new JsonbConfig()
                 .withDateFormat("E DD MMM yyyy HH:mm:ss z", Locale.CANADA))) {
 
