@@ -80,7 +80,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     private boolean releaseFallBackCopyBuffer = true;
     private int fallBackCopyBufferLength;
     private boolean readingString;
-    private int copiedStringLength;
+    private int copiedValueLength;
     // when boundaries of fallBackCopyBuffer have been reached
     private List<Buffer> previousFallBackCopyBuffers;
 
@@ -205,14 +205,14 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
     //append a single char to the value buffer
     private void appendToCopyBuffer(final char c) {
-        if (copiedStringLength >= maxValueLength) {
+        if (copiedValueLength >= maxValueLength) {
             throw tmc();
         }
         if (fallBackCopyBufferLength >= fallBackCopyBuffer.length) {
             createNewFallBackCopyBuffer();
         }
         fallBackCopyBuffer[fallBackCopyBufferLength++] = c;
-        copiedStringLength++;
+        copiedValueLength++;
     }
 
     //copy content between "start" and "end" from buffer to value buffer 
@@ -220,8 +220,12 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         final int length = endOfValueInBuffer - startOfValueInBuffer;
         if (length > 0) {
 
-            if (readingString && copiedStringLength > maxValueLength - length) {
-                throw tmc();
+            if (readingString) {
+                if (copiedValueLength > maxValueLength - length) {
+                    throw tmc();
+                }
+            } else if (copiedValueLength > maxNumberLength - length) {
+                throw tmn();
             }
 
             if (fallBackCopyBufferLength > fallBackCopyBuffer.length - length) { // not good at runtime but handled
@@ -230,9 +234,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
             System.arraycopy(buffer, startOfValueInBuffer, fallBackCopyBuffer, fallBackCopyBufferLength, length);
             fallBackCopyBufferLength += length;
-            if (readingString) {
-                copiedStringLength += length;
-            }
+            copiedValueLength += length;
         }
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
@@ -252,18 +254,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         previousFallBackCopyBuffers.add(new Buffer(fallBackCopyBuffer, fallBackCopyBufferLength));
         fallBackCopyBuffer = valueProvider.newBuffer();
         fallBackCopyBufferLength = 0;
-    }
-
-    private int previousFallBackCopyBuffersLength() {
-        if (previousFallBackCopyBuffers == null) {
-            return 0;
-        }
-
-        int length = 0;
-        for (final Buffer buffer : previousFallBackCopyBuffers) {
-            length += buffer.length;
-        }
-        return length;
     }
 
     private void releasePreviousFallBackCopyBuffers() {
@@ -505,8 +495,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         if (fallBackCopyBufferLength != 0) {
             fallBackCopyBufferLength = 0;
         }
-        readingString = false;
-        copiedStringLength = 0;
 
         startOfValueInBuffer = endOfValueInBuffer = -1;
 
@@ -672,6 +660,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //if not then denote string start and end in startOfValueInBuffer and endOfValueInBuffer and read directly from buffer
     private void readString() {
         readingString = true;
+        copiedValueLength = 0;
 
         do {
             char n = readNextChar();
@@ -806,6 +795,8 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
     //if a number cross buffer boundary then copy in the value buffer
     //if not then denote string start and end in startOfValueInBuffer and endOfValueInBuffer and read directly from buffer
     private void readNumber() {
+        readingString = false;
+        copiedValueLength = 0;
 
         char c = buffer[bufferPos];
 
@@ -817,7 +808,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         //sum up the digit values 
         int cumulatedDigitValue = 0;
-        int numberLength = 1; // the first digit or minus sign is already in the buffer
         while (isAsciiDigit(y = readNextChar())) {
 
             if (c == ZERO) {
@@ -828,7 +818,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
                 throw uexc("Leading zeros after minus not allowed");
             }
 
-            numberLength = nextNumberLength(numberLength);
             cumulatedDigitValue += y;
 
         }
@@ -839,11 +828,9 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         }
 
         if (y == DOT) {
-            numberLength = nextNumberLength(numberLength);
             isCurrentNumberIntegral = false;
             cumulatedDigitValue = 0;
             while (isAsciiDigit(y = readNextChar())) {
-                numberLength = nextNumberLength(numberLength);
                 cumulatedDigitValue++;
             }
 
@@ -855,7 +842,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         }
 
         if (y == EXP_LOWERCASE || y == EXP_UPPERCASE) {
-            numberLength = nextNumberLength(numberLength);
             isCurrentNumberIntegral = false;
 
             y = readNextChar(); //+ or - or digit
@@ -863,19 +849,17 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
             if (!isAsciiDigit(y) && y != MINUS && y != PLUS) {
                 throw uexc("Expected DIGIT or + or -");
             }
-            numberLength = nextNumberLength(numberLength);
 
             if (y == MINUS || y == PLUS) {
                 y = readNextChar();
                 if (!isAsciiDigit(y)) {
                     throw uexc("Unexpected premature end of number");
                 }
-                numberLength = nextNumberLength(numberLength);
 
             }
 
             while (isAsciiDigit(y = readNextChar())) {
-                numberLength = nextNumberLength(numberLength);
+                //read fast
             }
 
         }
@@ -888,6 +872,9 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
             //['-', DIGIT]
             if (isCurrentNumberIntegral && c == MINUS && cumulatedDigitValue >= 48 && cumulatedDigitValue <= 57) {
+                if (maxNumberLength < 2) {
+                    throw tmn();
+                }
 
                 currentIntegralNumber = -(cumulatedDigitValue - 48); //optimize -0 till -9
                 return;
@@ -902,18 +889,11 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
             if (fallBackCopyBufferLength > 0) {
 
-                //we crossed a buffer boundary, use value buffer
+                //we crossed a buffer boundary, use value buffer, length is checked while copying
                 copyCurrentValue();
 
-                if (previousFallBackCopyBuffersLength() + fallBackCopyBufferLength > maxNumberLength) {
-                    throw tmn();
-                }
-
-            } else {
-                final int length = endOfValueInBuffer - startOfValueInBuffer;
-                if (length > maxNumberLength) {
-                    throw tmn();
-                }
+            } else if (endOfValueInBuffer - startOfValueInBuffer > maxNumberLength) {
+                throw tmn();
             }
 
             return;
@@ -922,13 +902,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
 
         throw uexc("Unexpected premature end of number");
 
-    }
-
-    private int nextNumberLength(final int length) {
-        if (length >= maxNumberLength) {
-            throw tmn();
-        }
-        return length + 1;
     }
 
     //handles false, true, null and numbers
