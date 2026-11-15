@@ -16,17 +16,23 @@
  */
 package org.apache.johnzon.core;
 
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import jakarta.json.spi.JsonProvider;
 import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonParser;
+import jakarta.json.stream.JsonParserFactory;
 
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class BufferStrategyFactoryTest {
@@ -69,6 +75,38 @@ public class BufferStrategyFactoryTest {
 
         assertEquals(1, DummyBufferStrategy.counter.get());
         assertEquals("{\"age\":27,\"name\":\"karl\"}", sw.toString());
+    }
+
+    @Test
+    public void singletonHandsOutBufferOnce() {
+        final BufferStrategy.BufferProvider<char[]> provider = BufferStrategyFactory.valueOf("SINGLETON").newCharProvider(4);
+        final char[] first = provider.newBuffer();
+        final char[] second = provider.newBuffer();
+        assertNotSame(first, second);
+
+        provider.release(second);
+        assertNotSame(first, provider.newBuffer());
+
+        provider.release(first);
+        assertSame(first, provider.newBuffer());
+    }
+
+    @Test
+    public void singletonParsersOpenAtSameTime() {
+        final JsonParserFactory factory = JsonProvider.provider().createParserFactory(Map.of(
+                AbstractJsonFactory.BUFFER_STRATEGY, "SINGLETON",
+                JsonParserFactoryImpl.BUFFER_LENGTH, 2));
+        try (JsonParser first = factory.createParser(new StringReader("[\"abcdef\",123456]"));
+             JsonParser second = factory.createParser(new StringReader("[\"uvwxyz\",987654]"))) {
+            for (int i = 0; i < 2; i++) {
+                assertEquals(first.next(), second.next());
+            }
+            assertEquals("abcdef", first.getString());
+            assertEquals("uvwxyz", second.getString());
+            assertEquals(first.next(), second.next());
+            assertEquals(123456, first.getInt());
+            assertEquals(987654, second.getInt());
+        }
     }
 
     private void verify(Object bufferStrategy) {
