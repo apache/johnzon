@@ -184,7 +184,7 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         super(provider);
         this.autoAdjust = autoAdjust;
         this.maxValueLength = maxStringLength <= 0 ? 8192 : maxStringLength;
-        this.maxNumberLength = maxNumberLength <= 0 ? JsonParserFactoryImpl.DEFAULT_MAX_NUMBER_LENGTH : maxNumberLength;
+        this.maxNumberLength = maxNumberLength;
         this.fallBackCopyBuffer = valueBuffer.newBuffer();
         this.buffer = bufferProvider.newBuffer();
         this.bufferProvider = bufferProvider;
@@ -812,9 +812,6 @@ public class JsonStreamParserImpl extends JohnzonJsonParserImpl implements JsonC
         //sum up the digit values 
         int cumulatedDigitValue = 0;
         int numberLength = 1; // the first digit or minus sign is already in the buffer
-        if (numberLength > maxNumberLength) {
-            throw tmn();
-        }
         while (isAsciiDigit(y = readNextChar())) {
 
             if (c == ZERO) {

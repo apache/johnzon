@@ -347,6 +347,9 @@ public class MapperBuilder {
     }
 
     public MapperBuilder setMaxNumberLength(final int maxNumberLength) {
+        if (maxNumberLength <= 0) {
+            throw new IllegalArgumentException("max number length must be greater than zero");
+        }
         if (this.maxNumberLength == maxNumberLength) {
             return this;
         }

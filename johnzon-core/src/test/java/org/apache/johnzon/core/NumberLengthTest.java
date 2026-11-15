@@ -88,6 +88,16 @@ public class NumberLengthTest {
         read(Collections.singletonMap(JsonParserFactoryImpl.MAX_NUMBER_LENGTH, 6), "-1.2e+3");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void zeroLimitRejectedByFactory() {
+        Json.createReaderFactory(Collections.singletonMap(JsonParserFactoryImpl.MAX_NUMBER_LENGTH, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void negativeLimitRejectedByFactory() {
+        Json.createParserFactory(Collections.singletonMap(JsonParserFactoryImpl.MAX_NUMBER_LENGTH, -1));
+    }
+
     @Test
     public void numberLengthCheckedDuringRead() {
         final CountingReader input = new CountingReader(4_096);
