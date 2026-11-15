@@ -74,9 +74,10 @@ public class JsonParserFactoryImpl extends AbstractJsonFactory implements JsonPa
             throw new IllegalArgumentException("max number length must be greater than zero");
         }
         this.bufferProvider = getBufferProvider().newCharProvider(bufferSize);
-        this.valueBufferProvider = getBufferProvider().newCharProvider(Math.max(maxSize, maxNumberLength));
-        this.supportsComments = getBool(SUPPORTS_COMMENTS, DEFAULT_SUPPORTS_COMMENT);
         this.autoAdjustBuffers = getBool(AUTO_ADJUST_STRING_BUFFER, true);
+        // a fixed value buffer must hold the longest allowed number, a growing one only needs the string size
+        this.valueBufferProvider = getBufferProvider().newCharProvider(autoAdjustBuffers ? maxSize : Math.max(maxSize, maxNumberLength));
+        this.supportsComments = getBool(SUPPORTS_COMMENTS, DEFAULT_SUPPORTS_COMMENT);
         this.defaultEncoding = ofNullable(getString(ENCODING, null)).map(Charset::forName).orElse(null);
     }
 
