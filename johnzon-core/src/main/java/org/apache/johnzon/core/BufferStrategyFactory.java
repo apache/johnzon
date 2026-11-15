@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.johnzon.core.util.ClassUtil;
 
@@ -85,30 +86,36 @@ public class BufferStrategyFactory {
         protected char[] newInstance(int size) {
             return new char[size];
         }
-
-        @Override
-        public void release(final char[] value) {
-            // no-op
-        }
     }
 
+    // the buffer is handed out to one user at a time, other users get a new one.
+    // Sharing it would let users holding buffers at the same time overwrite each other's content, e.g. two
+    // parsers open at once, or one parser whose value spans several value buffers.
     private static abstract class SingletonProvider<T> implements BufferStrategy.BufferProvider<T> {
-        protected final T buffer;
+        private final int size;
+        private final T buffer;
+        // holds the buffer while it is not in use
+        private final AtomicReference<T> available;
 
         public SingletonProvider(final int size) {
-            buffer = newInstance(size);
+            this.size = size;
+            this.buffer = newInstance(size);
+            this.available = new AtomicReference<>(buffer);
         }
 
         protected abstract T newInstance(int size);
 
         @Override
         public T newBuffer() {
-            return buffer;
+            final T value = available.getAndSet(null);
+            return value != null ? value : newInstance(size);
         }
 
         @Override
         public void release(final T value) {
-            // no-op
+            if (value == buffer) {
+                available.set(buffer);
+            }
         }
     }
 
