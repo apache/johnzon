@@ -87,6 +87,16 @@ public class NumberLengthTest {
         read(Map.of(JsonParserFactoryImpl.MAX_NUMBER_LENGTH, 6), "-1.2e+3");
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void zeroLimitRejectedByFactory() {
+        Json.createReaderFactory(Map.of(JsonParserFactoryImpl.MAX_NUMBER_LENGTH, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void negativeLimitRejectedByFactory() {
+        Json.createParserFactory(Map.of(JsonParserFactoryImpl.MAX_NUMBER_LENGTH, -1));
+    }
+
     @Test
     public void numberLengthCheckedDuringRead() {
         final CountingReader input = new CountingReader(4_096);

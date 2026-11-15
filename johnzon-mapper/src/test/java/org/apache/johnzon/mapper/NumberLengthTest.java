@@ -66,6 +66,11 @@ public class NumberLengthTest {
         }
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void zeroLimitRejectedBySetter() {
+        new MapperBuilder().setMaxNumberLength(0);
+    }
+
     @Test
     public void cachedBigIntegerAdapterUsesDefaultLimit() {
         final MapperBuilder builder = new MapperBuilder();
