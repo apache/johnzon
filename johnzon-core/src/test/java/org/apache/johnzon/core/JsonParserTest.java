@@ -1074,6 +1074,7 @@ public class JsonParserTest {
         JsonParser parser = null;
         try {
             parser = Json.createParser(bin);
+            fail();
         } catch (JsonException e) {
             assertEquals("We were expecting another cause", "Expected", e.getCause().getMessage());
         } finally {
